@@ -57,29 +57,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-@Composable
-fun WellnessScreen(modifier: Modifier = Modifier) {
-    WaterCounter(modifier)
-}
-
-@Composable
-fun WaterCounter(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(16.dp)) {
-        var count by remember { mutableStateOf(0) }
-
-        if (count > 0) {
-            // This text is present if the button has been clicked
-            // at least once; absent otherwise
-            Text("You've had $count glasses.")
-        }
-        Button(onClick = { count++ }, Modifier.padding(top = 8.dp)) {
-            Text("Add one")
-        }
-    }
-}
-@Composable
-fun ScreenContent(modifier: Modifier = Modifier) {
-
+//@Composable
+//fun WellnessScreen(modifier: Modifier = Modifier) {
+//    WaterCounter(modifier)
+//}
+//
+//@Composable
+//fun WaterCounter(modifier: Modifier = Modifier) {
+//    Column(modifier = modifier.padding(16.dp)) {
+//        var count by remember { mutableStateOf(0) }
+//
+//        if (count > 0) {
+//            // This text is present if the button has been clicked
+//            // at least once; absent otherwise
+//            Text("You've had $count glasses.")
+//        }
+//        Button(onClick = { count++ }, Modifier.padding(top = 8.dp)) {
+//            Text("Add one")
+//        }
+//    }
+//}
+//@Composable
+//fun ScreenContent(modifier: Modifier = Modifier) {
+//
 
 //    Text(
 //            modifier = Modifier
@@ -142,19 +142,19 @@ fun ScreenContent(modifier: Modifier = Modifier) {
 //    }
 
 
-}
-@Composable
-fun MyMultiline(myText: String, modifier: Modifier = Modifier, fontSize: Int = 30, fontWeight: FontWeight = FontWeight.Bold) {
-    Text(
-        text = myText,
-        modifier = modifier.width(300.dp),
-        fontSize = fontSize.sp,
-        fontWeight = fontWeight,
-        fontFamily = FontFamily.Cursive,
-        maxLines = 2,
-        textAlign = TextAlign.Center
-    )
-}
+//}
+//@Composable
+//fun MyMultiline(myText: String, modifier: Modifier = Modifier, fontSize: Int = 30, fontWeight: FontWeight = FontWeight.Bold) {
+//    Text(
+//        text = myText,
+//        modifier = modifier.width(300.dp),
+//        fontSize = fontSize.sp,
+//        fontWeight = fontWeight,
+//        fontFamily = FontFamily.Cursive,
+//        maxLines = 2,
+//        textAlign = TextAlign.Center
+//    )
+//}
 
 @Preview(showBackground = true)
 @Composable
