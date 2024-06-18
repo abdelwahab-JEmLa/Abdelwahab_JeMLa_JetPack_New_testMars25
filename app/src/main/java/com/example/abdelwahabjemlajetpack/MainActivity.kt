@@ -43,8 +43,7 @@ fun MainScreen() {
         ) {
             Column {
                 Spacer(modifier = Modifier.height(20.dp))
-                // Assume WellnessScreen is defined elsewhere
-                // WellnessScreen()
+                 WellnessScreen()
             }
         }
     }
@@ -92,10 +91,7 @@ fun WellnessTopAppBarPreview() {
     AbdelwahabJeMLaJetPackTheme {
         Scaffold(
             topBar = { WellnessTopAppBar() }
-        ) {
-            // Provide some content here, such as a placeholder or an actual component
-            Text(text = "Placeholder Content")
-        }
+        ) {}
     }
 }
 
