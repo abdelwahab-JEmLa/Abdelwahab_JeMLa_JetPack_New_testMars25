@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
+import com.google.firebase.database.FirebaseDatabase
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,10 +53,45 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    ExportToFirebaseScreen()
                     WellnessScreen()
                 }
             }
         }
+    }
+}
+@Composable
+fun ExportToFirebaseScreen() {
+    var message by remember { mutableStateOf("") }
+    val database = FirebaseDatabase.getInstance("https://abdelwahab-jemla-com-default-rtdb.europe-west1.firebasedatabase.app/")
+    val messagesRef = database.getReference("Message")
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = message,
+            onValueChange = { message = it },
+            label = { Text("Message") },
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Button(onClick = {
+            val messageId = messagesRef.push().key ?: ""
+            messagesRef.child(messageId).setValue(message)
+                .addOnSuccessListener { /* Handle success */ }
+                .addOnFailureListener { /* Handle failure */ }
+        }) {
+            Text("Export to Firebase")
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    AbdelwahabJeMLaJetPackTheme {
+        //    MyMultiline("Android ")
+        //   ScreenContent()
+        WellnessScreen()
     }
 }
 //@Composable
@@ -156,12 +193,3 @@ class MainActivity : ComponentActivity() {
 //    )
 //}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AbdelwahabJeMLaJetPackTheme {
-    //    MyMultiline("Android ")
-     //   ScreenContent()
-        WellnessScreen()
-    }
-}

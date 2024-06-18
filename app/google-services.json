@@ -1,0 +1,125 @@
+{
+  "project_info": {
+    "project_number": "466484994172",
+    "firebase_url": "https://abdelwahab-jemla-com-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "abdelwahab-jemla-com",
+    "storage_bucket": "abdelwahab-jemla-com.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466484994172:android:f06a1b9ba13651910ba9f9",
+        "android_client_info": {
+          "package_name": "com.example.abdelwahabjemlajetpack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD455dGfDPMC808e9NHCPIRQuJYd17VzH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466484994172:android:61a61152d271a1d60ba9f9",
+        "android_client_info": {
+          "package_name": "com.example.android.AbdelwahabClient"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD455dGfDPMC808e9NHCPIRQuJYd17VzH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466484994172:android:ca813d52fd6b25120ba9f9",
+        "android_client_info": {
+          "package_name": "com.example.android.AbdelwahabServeur"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD455dGfDPMC808e9NHCPIRQuJYd17VzH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466484994172:android:e1c73ef4de1181b90ba9f9",
+        "android_client_info": {
+          "package_name": "com.example.android.Abdelwahab_Client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD455dGfDPMC808e9NHCPIRQuJYd17VzH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466484994172:android:fe3f18c2062ceb0e0ba9f9",
+        "android_client_info": {
+          "package_name": "com.example.android.roomwordssample"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD455dGfDPMC808e9NHCPIRQuJYd17VzH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466484994172:android:398fc199558a67e90ba9f9",
+        "android_client_info": {
+          "package_name": "com.lando.recyclerviewrefresh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD455dGfDPMC808e9NHCPIRQuJYd17VzH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
