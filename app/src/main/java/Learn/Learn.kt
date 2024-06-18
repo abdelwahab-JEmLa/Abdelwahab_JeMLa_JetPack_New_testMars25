@@ -1,5 +1,26 @@
 package Learn
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
 //@Composable
 //fun WellnessScreen(modifier: Modifier = Modifier) {
 //    WaterCounter(modifier)
@@ -98,3 +119,68 @@ package Learn
 //        textAlign = TextAlign.Center
 //    )
 //}
+
+
+@Composable
+fun ExportToFirebaseScreen() {
+    var message by remember { mutableStateOf("") }
+    val database = FirebaseDatabase.getInstance("https://abdelwahab-jemla-com-default-rtdb.europe-west1.firebasedatabase.app/")
+    val messagesRef = database.getReference("Message")
+
+    Column(modifier = Modifier.padding(20.dp)) {
+        OutlinedTextField(
+            value = message,
+            onValueChange = { message = it },
+            label = { Text("Message23") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
+
+        Button(
+            onClick = {
+                val messageId = messagesRef.push().key ?: ""
+                messagesRef.child(messageId).setValue(message)
+                    .addOnSuccessListener { /* Handle success */ }
+                    .addOnFailureListener { /* Handle failure */ }
+                message = ""
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Export to Firebase")
+        }
+    }
+}
+
+@Composable
+fun MessagesList() {
+    val database = FirebaseDatabase.getInstance("https://abdelwahab-jemla-com-default-rtdb.europe-west1.firebasedatabase.app/")
+    val messagesRef = database.getReference("Message")
+    var messages by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    DisposableEffect(Unit) {
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newMessages = snapshot.children.mapNotNull { it.getValue(String::class.java) }
+                messages = newMessages
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle database error
+            }
+        }
+        messagesRef.addValueEventListener(listener)
+        onDispose {
+            messagesRef.removeEventListener(listener)
+        }
+    }
+
+    LazyColumn(modifier = Modifier.padding(16.dp)) {
+        items(messages) { message ->
+            Text(
+                text = message,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+    }
+}

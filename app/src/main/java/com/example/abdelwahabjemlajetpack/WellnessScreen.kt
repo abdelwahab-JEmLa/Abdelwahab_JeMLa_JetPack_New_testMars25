@@ -9,10 +9,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun WellnessScreen(
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,  // Utilisation correcte de Modifier ici
     wellnessViewModel: WellnessViewModel = viewModel()
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.fillMaxSize()) {
         StatefulCounter()
 
         WellnessTasksList(
@@ -26,8 +26,10 @@ fun WellnessScreen(
         )
     }
 }
+
+
 @Preview
 @Composable
-private fun preview() {
-   // WellnessScreen(Modifier.fillMaxSize(), viewModel())
+private fun Preview() {
+    WellnessScreen(modifier = Modifier.fillMaxSize())
 }

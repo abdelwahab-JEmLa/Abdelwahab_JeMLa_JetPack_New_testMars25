@@ -6,6 +6,8 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 
 class WellnessViewModel : ViewModel() {
+    private val database = Firebase.database
+    private val refFirebase = database.getReference("tasks")
 
     private val _tasks = getWellnessTasks().toMutableStateList()
     val tasks: List<WellnessTask>
@@ -27,21 +29,26 @@ class WellnessViewModel : ViewModel() {
         }
     }
 
+    fun importFromFirebase() {
+        refFirebase.get().addOnSuccessListener { dataSnapshot ->
+            val tasksFromFirebase = dataSnapshot.children.mapNotNull { it.getValue(WellnessTask::class.java) }
+            _tasks.clear()
+            _tasks.addAll(tasksFromFirebase)
+        }
+    }
+
     private fun syncWithFirebase(task: WellnessTask, remove: Boolean = false) {
-        val refFirebase = Firebase.database.getReference("tasks").child(task.id.toString())
-
+        val taskRef = refFirebase.child(task.id.toString())
         if (remove) {
-            refFirebase.removeValue()
+            taskRef.removeValue()
         } else {
-            refFirebase.setValue(task)
+            taskRef.setValue(task)
         }
     }
 
-    private fun syncInitialTasksWithFirebase(tasks: List<WellnessTask>) {
-        tasks.forEach { task ->
-            syncWithFirebase(task)
-        }
-    }
+    private fun getWellnessTasks() = List(30) { i -> WellnessTask(i + 1, "Task #${i + 1}") }
 
-    private fun getWellnessTasks() = List(30) { i -> WellnessTask(i, "Task #$i") }
+    fun syncInitialTasksWithFirebase(tasks: List<WellnessTask>) {
+        tasks.forEach { syncWithFirebase(it) }
+    }
 }
