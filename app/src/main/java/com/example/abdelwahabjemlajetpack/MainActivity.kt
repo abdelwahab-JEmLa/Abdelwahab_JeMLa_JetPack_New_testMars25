@@ -74,7 +74,7 @@ fun WellnessTopAppBar( ) {
                 DropdownMenuItem(
                     text = { Text("Sync Initial Tasks with Firebase") },
                     onClick = {
-                        WellnessViewModel().syncInitialTasksWithFirebase(WellnessViewModel().tasks)
+                        WellnessViewModel().syncInitialTasksWithFirebase()
                         menuExpanded = false
                     }
                 )
@@ -82,7 +82,6 @@ fun WellnessTopAppBar( ) {
         }
     )
 }
-
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Preview(showBackground = true, widthDp = 350, heightDp = 600)

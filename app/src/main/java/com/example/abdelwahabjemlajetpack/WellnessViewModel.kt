@@ -2,19 +2,23 @@ package com.example.abdelwahabjemlajetpack
 
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class WellnessViewModel : ViewModel() {
     private val database = Firebase.database
     private val refFirebase = database.getReference("tasks")
 
-    private val _tasks = getWellnessTasks().toMutableStateList()
+    private val _tasks = mutableListOf<WellnessTask>().toMutableStateList()
     val tasks: List<WellnessTask>
         get() = _tasks
 
     init {
-        syncInitialTasksWithFirebase(_tasks)
+        importFromFirebase()
     }
 
     fun remove(item: WellnessTask) {
@@ -30,7 +34,8 @@ class WellnessViewModel : ViewModel() {
     }
 
     fun importFromFirebase() {
-        refFirebase.get().addOnSuccessListener { dataSnapshot ->
+        viewModelScope.launch(Dispatchers.IO) {
+            val dataSnapshot = refFirebase.get().await()
             val tasksFromFirebase = dataSnapshot.children.mapNotNull { it.getValue(WellnessTask::class.java) }
             _tasks.clear()
             _tasks.addAll(tasksFromFirebase)
@@ -46,9 +51,12 @@ class WellnessViewModel : ViewModel() {
         }
     }
 
-    private fun getWellnessTasks() = List(30) { i -> WellnessTask(i + 1, "Task #${i + 1}") }
-
-    fun syncInitialTasksWithFirebase(tasks: List<WellnessTask>) {
-        tasks.forEach { syncWithFirebase(it) }
+    fun syncInitialTasksWithFirebase() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val initialTasks = List(30) { i -> WellnessTask(i + 1, "Task #${i + 1}") }
+            initialTasks.forEach { syncWithFirebase(it) }
+            _tasks.clear()
+            _tasks.addAll(initialTasks)
+        }
     }
 }

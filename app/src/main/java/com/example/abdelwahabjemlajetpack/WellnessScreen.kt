@@ -27,7 +27,6 @@ fun WellnessScreen(
     }
 }
 
-
 @Preview
 @Composable
 private fun Preview() {
