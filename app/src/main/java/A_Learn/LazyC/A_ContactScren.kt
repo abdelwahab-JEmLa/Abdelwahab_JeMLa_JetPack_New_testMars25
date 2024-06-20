@@ -1,153 +1,112 @@
 package A_Learn.LazyC
 
-import android.content.Context
-import android.widget.ImageView
-import android.widget.Toast
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import android.annotation.SuppressLint
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
-class A_ContactScren {
-    @Composable
-    fun MainScreen2(viewModel: ContactsViewModel = viewModel()) {
-        val groupedContacts by viewModel.groupedContacts.observeAsState(emptyMap())
-        Column {
-            // ContactsList(grouped = groupedContacts)
-            Spacer(modifier = Modifier.height(16.dp))
-            StaggeredPhotoGrid()
+@Composable
+fun MainScreen2(modifier: Modifier = Modifier) {
+    Column(modifier = modifier.padding(5.dp)) {
+        Spacer(modifier = Modifier.height(16.dp))
+        StaggeredPhotoGrid()
+    }
+}
+
+@Composable
+fun StaggeredPhotoGrid() {
+    val itemsIndexedList = listOf(
+        "A", "Bggggggggggggggggggggggg", "Cddddddddddddddddddddddd", "D", "E",
+        "F", "G", "H", "I", "J"
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        itemsIndexed(itemsIndexedList) { index, _ ->
+            Card(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .fillMaxWidth()
+                    .shadow(8.dp, shape = RoundedCornerShape(4.dp)) // Added shadow modifier
+                    .graphicsLayer {
+                        shape = RoundedCornerShape(4.dp)
+                        clip = true
+                    },
+                elevation = CardDefaults.cardElevation(15.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                ) {
+                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${index + 592}_1"
+                    LoadImageFromPath(imagePath = imagePath)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Item at index $index is ${index + 592}_1", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
         }
     }
-    @Composable
-    fun CharacterHeader(initial: Char) {
-        Text(
-            text = initial.toString(),
+}
+
+@Composable
+fun LoadImageFromPath(imagePath: String) {
+    val defaultDrawable = R.drawable.neaveau
+    val imageExist: String? = when {
+        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
+        File("$imagePath.webp").exists() -> "$imagePath.webp"
+        else -> null
+    }
+
+    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.Gray)
-                .padding(8.dp)
-        )
-    }
-
-    @Composable
-    fun ContactListItem(contact: Contact) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Text(text = "${contact.firstName} ${contact.lastName}")
-        }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    fun ContactsList(grouped: Map<Char, List<Contact>>) {
-        LazyColumn {
-            grouped.forEach { (initial, contactsForInitial) ->
-                stickyHeader {
-                    CharacterHeader(initial)
-                }
-                items(contactsForInitial) { contact ->
-                    ContactListItem(contact)
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun StaggeredPhotoGrid() {
-        val itemsList = (0..5).toList()
-        val itemsIndexedList = listOf("A",
-            "Bggggggggggggggggggggggg",
-            "Cddddddddddddddddddddddd",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
+                .aspectRatio(1f)
 
         )
-        val itemModifier = Modifier
-            .border(1.dp, Color.Blue)
-            .padding(16.dp)
-            .wrapContentSize()
-
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(3),
-            verticalItemSpacing = 4.dp,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            items(itemsList) {
-                Text("Item is $it", itemModifier)
-            }
-            item {
-                Text("Single item", itemModifier)
-            }
-            itemsIndexed(itemsIndexedList) { index, item ->
-
-
-                val itemModifier = Modifier
-                    .border(1.dp, Color.Blue)
-                    .padding(16.dp)
-                    .wrapContentSize()
-
-                val context = LocalContext.current
-                val imageView = remember { ImageView(context) }
-                loadImageParPathPasseDu(context, imageView, itemsIndexedList[index])
-
-                Text("Item at index $index is $item", itemModifier)
-            }
-        }
     }
-    fun loadImageParPathPasseDu(context: Context, imageView: ImageView, imagePath: String, dimension: Int = 350) {
-        val defaultDrawable = R.drawable.neaveau
-        val imageExist: String? = when {
-            File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-            File("$imagePath.webp").exists() -> "$imagePath.webp"
-            else -> null
-        }
+}
 
-        val finalImagePath = imageExist ?: defaultDrawable
-
-        val density = context.resources.displayMetrics.density
-        val dimensionInPx = (dimension * density).toInt()
-
-        Glide.with(context)
-            .load(finalImagePath)
-            .thumbnail(0.15f)
-            .override(dimensionInPx, dimensionInPx)
-            .apply(RequestOptions().encodeQuality(50))
-            .fitCenter()
-            .into(imageView)
-    }
-
-
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@Preview(showBackground = true)
+@Composable
+fun PreviewContactScreen() {
+    MainScreen2(modifier = Modifier)
 }
