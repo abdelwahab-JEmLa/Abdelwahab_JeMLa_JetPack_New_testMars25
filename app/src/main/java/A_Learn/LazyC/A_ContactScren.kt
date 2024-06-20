@@ -1,5 +1,8 @@
 package A_Learn.LazyC
 
+import android.content.Context
+import android.widget.ImageView
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,12 +24,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.abdelwahabjemlajetpack.R
+import java.io.File
 
 class A_ContactScren {
+    @Composable
+    fun MainScreen2(viewModel: ContactsViewModel = viewModel()) {
+        val groupedContacts by viewModel.groupedContacts.observeAsState(emptyMap())
+        Column {
+            // ContactsList(grouped = groupedContacts)
+            Spacer(modifier = Modifier.height(16.dp))
+            StaggeredPhotoGrid()
+        }
+    }
     @Composable
     fun CharacterHeader(initial: Char) {
         Text(
@@ -96,18 +112,42 @@ class A_ContactScren {
                 Text("Single item", itemModifier)
             }
             itemsIndexed(itemsIndexedList) { index, item ->
+
+
+                val itemModifier = Modifier
+                    .border(1.dp, Color.Blue)
+                    .padding(16.dp)
+                    .wrapContentSize()
+
+                val context = LocalContext.current
+                val imageView = remember { ImageView(context) }
+                loadImageParPathPasseDu(context, imageView, itemsIndexedList[index])
+
                 Text("Item at index $index is $item", itemModifier)
             }
         }
     }
-
-    @Composable
-    fun MainScreen2(viewModel: ContactsViewModel = viewModel()) {
-        val groupedContacts by viewModel.groupedContacts.observeAsState(emptyMap())
-        Column {
-           // ContactsList(grouped = groupedContacts)
-            Spacer(modifier = Modifier.height(16.dp))
-            StaggeredPhotoGrid()
+    fun loadImageParPathPasseDu(context: Context, imageView: ImageView, imagePath: String, dimension: Int = 350) {
+        val defaultDrawable = R.drawable.neaveau
+        val imageExist: String? = when {
+            File("$imagePath.jpg").exists() -> "$imagePath.jpg"
+            File("$imagePath.webp").exists() -> "$imagePath.webp"
+            else -> null
         }
+
+        val finalImagePath = imageExist ?: defaultDrawable
+
+        val density = context.resources.displayMetrics.density
+        val dimensionInPx = (dimension * density).toInt()
+
+        Glide.with(context)
+            .load(finalImagePath)
+            .thumbnail(0.15f)
+            .override(dimensionInPx, dimensionInPx)
+            .apply(RequestOptions().encodeQuality(50))
+            .fitCenter()
+            .into(imageView)
     }
+
+
 }
