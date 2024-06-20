@@ -64,12 +64,25 @@ class A_ContactScren {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun StaggeredPhotoGrid() {
         val itemsList = (0..5).toList()
-        val itemsIndexedList = listOf("A", "B", "C")
-        val itemModifier = Modifier.border(1.dp, Color.Blue).padding(16.dp).wrapContentSize()
+        val itemsIndexedList = listOf("A",
+            "Bggggggggggggggggggggggg",
+            "Cddddddddddddddddddddddd",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+
+        )
+        val itemModifier = Modifier
+            .border(1.dp, Color.Blue)
+            .padding(16.dp)
+            .wrapContentSize()
 
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Fixed(3),
@@ -92,7 +105,7 @@ class A_ContactScren {
     fun MainScreen2(viewModel: ContactsViewModel = viewModel()) {
         val groupedContacts by viewModel.groupedContacts.observeAsState(emptyMap())
         Column {
-            ContactsList(grouped = groupedContacts)
+           // ContactsList(grouped = groupedContacts)
             Spacer(modifier = Modifier.height(16.dp))
             StaggeredPhotoGrid()
         }
