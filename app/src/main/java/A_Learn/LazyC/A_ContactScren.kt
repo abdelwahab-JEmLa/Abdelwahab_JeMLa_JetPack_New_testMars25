@@ -2,6 +2,7 @@ package A_Learn.LazyC
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,20 +26,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
 @Composable
-fun MainScreen2(modifier: Modifier = Modifier) {
+fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
     Column(modifier = modifier.padding(5.dp)) {
         Spacer(modifier = Modifier.height(16.dp))
-        StaggeredPhotoGrid()
+        StaggeredPhotoGrid(navController)
     }
 }
 
 @Composable
-fun StaggeredPhotoGrid() {
+fun StaggeredPhotoGrid(navController: NavController) {
     val itemsIndexedList = listOf(
         "A", "Bggggggggggggggggggggggg", "Cddddddddddddddddddddddd", "D", "E",
         "F", "G", "H", "I", "J"
@@ -54,10 +57,13 @@ fun StaggeredPhotoGrid() {
                 modifier = Modifier
                     .padding(4.dp)
                     .fillMaxWidth()
-                    .shadow(8.dp, shape = RoundedCornerShape(4.dp)) // Added shadow modifier
+                    .shadow(8.dp, shape = RoundedCornerShape(4.dp))
                     .graphicsLayer {
                         shape = RoundedCornerShape(4.dp)
                         clip = true
+                    }
+                    .clickable {
+                        navController.navigate("detail_screen/$index")
                     },
                 elevation = CardDefaults.cardElevation(15.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -108,5 +114,5 @@ fun LoadImageFromPath(imagePath: String) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewContactScreen() {
-    MainScreen2(modifier = Modifier)
+    MainScreen(navController = rememberNavController(), modifier = Modifier)
 }
