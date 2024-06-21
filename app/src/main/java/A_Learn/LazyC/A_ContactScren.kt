@@ -1,118 +1,115 @@
 package A_Learn.LazyC
 
-import android.annotation.SuppressLint
-import androidx.compose.foundation.Image
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import coil.compose.rememberAsyncImagePainter
-import com.example.abdelwahabjemlajetpack.R
-import java.io.File
+
+data class WellnessTask(
+    val id: Int,
+    val label: String,
+    var bigCardView: Boolean = false
+)
 
 @Composable
-fun MainScreen(navController: NavController, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(5.dp)) {
-        Spacer(modifier = Modifier.height(16.dp))
-        StaggeredPhotoGrid(navController)
-    }
-}
+fun WellnessTaskGrid() {
+    var tasks by rememberSaveable { mutableStateOf(generateTasks()) }
+    var expandedItemIndex by rememberSaveable { mutableIntStateOf(-1) }
 
-@Composable
-fun StaggeredPhotoGrid(navController: NavController) {
-    val itemsIndexedList = listOf(
-        "A", "Bggggggggggggggggggggggg", "Cddddddddddddddddddddddd", "D", "E",
-        "F", "G", "H", "I", "J"
-    )
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        val numColumns = 3
+        val items = getItemsForDisplay(tasks, expandedItemIndex, numColumns)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        itemsIndexed(itemsIndexedList) { index, _ ->
-            Card(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxWidth()
-                    .shadow(8.dp, shape = RoundedCornerShape(4.dp))
-                    .graphicsLayer {
-                        shape = RoundedCornerShape(4.dp)
-                        clip = true
+        itemsIndexed(items) { _, item ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                item.forEach { (task, itemIndex) ->
+                    if (itemIndex != -1) {
+                        TaskCard(
+                            task = task,
+                            isExpanded = (itemIndex == expandedItemIndex),
+                            onTaskClick = {
+                                expandedItemIndex = if (expandedItemIndex == itemIndex) -1 else itemIndex
+                                tasks = tasks.map { if (it.id == task.id) it.copy(bigCardView = !it.bigCardView) else it }
+                            },
+                            modifier = if (expandedItemIndex == itemIndex) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
-                    .clickable {
-                        navController.navigate("detail_screen/$index")
-                    },
-                elevation = CardDefaults.cardElevation(15.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                ) {
-                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${index + 592}_1"
-                    LoadImageFromPath(imagePath = imagePath)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Item at index $index is ${index + 592}_1", style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
     }
 }
 
-@Composable
-fun LoadImageFromPath(imagePath: String) {
-    val defaultDrawable = R.drawable.neaveau
-    val imageExist: String? = when {
-        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-        File("$imagePath.webp").exists() -> "$imagePath.webp"
-        else -> null
+fun getItemsForDisplay(tasks: List<WellnessTask>, expandedItemIndex: Int, columns: Int): List<List<Pair<WellnessTask, Int>>> {
+    val rows = mutableListOf<List<Pair<WellnessTask, Int>>>()
+    var currentRow = mutableListOf<Pair<WellnessTask, Int>>()
+
+    tasks.forEachIndexed { i, task ->
+        if (i == expandedItemIndex) {
+            if (currentRow.isNotEmpty()) {
+                rows.add(currentRow)
+                currentRow = mutableListOf()
+            }
+            rows.add(listOf(task to i))
+        } else {
+            currentRow.add(task to i)
+            if (currentRow.size == columns) {
+                rows.add(currentRow)
+                currentRow = mutableListOf()
+            }
+        }
+    }
+    if (currentRow.isNotEmpty()) {
+        rows.add(currentRow)
     }
 
-    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
+    return rows
+}
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
+@Composable
+fun TaskCard(task: WellnessTask, isExpanded: Boolean, onTaskClick: () -> Unit, modifier: Modifier) {
+    val cardHeight by animateDpAsState(
+        targetValue = if (isExpanded) 200.dp else 100.dp,
+        animationSpec = tween(durationMillis = 300), label = ""
+    )
+
+    Card(
+        modifier = modifier
+            .padding(8.dp)
+            .clickable { onTaskClick() }
+            .height(cardHeight)
     ) {
-        Image(
-            painter = painter,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = task.label,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
     }
 }
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Preview(showBackground = true)
-@Composable
-fun PreviewContactScreen() {
-    MainScreen(navController = rememberNavController(), modifier = Modifier)
+fun generateTasks(): List<WellnessTask> {
+    return List(20) { WellnessTask(id = it, label = "Task $it") }
 }

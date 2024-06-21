@@ -28,6 +28,6 @@ fun DetailScreen(index: Int) {
 @Composable
 fun PreviewDetailScreen() {
     AbdelwahabJeMLaJetPackTheme {
-        DetailScreen(index = 0)
+        DetailScreen(index = 1)
     }
 }

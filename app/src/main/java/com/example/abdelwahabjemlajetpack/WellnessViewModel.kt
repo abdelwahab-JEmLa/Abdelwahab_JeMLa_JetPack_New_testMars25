@@ -28,7 +28,7 @@ class WellnessViewModel : ViewModel() {
 
     fun changeTaskChecked(item: WellnessTask, checked: Boolean) {
         _tasks.find { it.id == item.id }?.let { task ->
-            task.checked = checked
+            task.bigCardView = checked
             syncWithFirebase(task)
         }
     }
