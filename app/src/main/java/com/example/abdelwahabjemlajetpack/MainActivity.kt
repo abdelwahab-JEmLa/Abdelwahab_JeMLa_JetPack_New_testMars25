@@ -1,6 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
-import A_Learn.LazyC.WellnessTaskGrid
+import A_Learn.LazyC.LazyGridApp
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                WellnessTaskGrid()
+                LazyGridApp()
             }
         }
 
