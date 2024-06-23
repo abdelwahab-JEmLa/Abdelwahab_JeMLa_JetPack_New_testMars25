@@ -3,7 +3,11 @@ package A_Learn.LazyC
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateRect
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
@@ -39,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -80,16 +86,14 @@ fun LazyGridApp() {
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         pairOfArticles.forEach { article ->
-                            if (article.clicked) {
-                                invisibleWhereItCadreExists()
-                            } else {
+                            AnimatedVisibility(
+                                visible = !article.clicked,
+                                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                            ) {
                                 TestCard(article) { updatedArticle ->
                                     articlesList = articlesList.map {
-                                        if (pairOfArticles.contains(it)) {
-                                            if (it.idArticle == updatedArticle.idArticle) updatedArticle else it.copy(clicked = false)
-                                        } else {
-                                            it
-                                        }
+                                        if (it.idArticle == updatedArticle.idArticle) updatedArticle else it.copy(clicked = false)
                                     }
                                     selectedArticle = updatedArticle
                                 }
@@ -107,38 +111,26 @@ fun LazyGridApp() {
 }
 
 @Composable
-fun invisibleWhereItCadreExists() {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .width(150.dp)
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Spacer(modifier = Modifier.height(1.dp))
-        Box(
-            modifier = Modifier
-                .height(170.dp)
-                .clip(RoundedCornerShape(8.dp))
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_background),
-                contentDescription = "Image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+fun TestCard(article: Article, onClick: (Article) -> Unit) {
+    val alphaAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
+    val yAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        launch {
+            alphaAnimation.animateTo(1f, animationSpec = tween(1500))
+        }
+        launch {
+            yAnimation.animateTo(50f, animationSpec = tween(1500))
         }
     }
-}
 
-@Composable
-fun TestCard(article: Article, onClick: (Article) -> Unit) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .width(150.dp)
-            .padding(8.dp)
-            .clickable { onClick(article.copy(clicked = !article.clicked)) },
+            .clickable { onClick(article.copy(clicked = !article.clicked)) }
+            .animateContentSize(animationSpec = tween(1500))
+            .graphicsLayer(alpha = alphaAnimation.value, translationY = yAnimation.value),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -150,10 +142,11 @@ fun TestCard(article: Article, onClick: (Article) -> Unit) {
                 fontSize = 16.sp,
                 fontStyle = FontStyle.Italic,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Start)
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .height(100.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -172,33 +165,36 @@ fun TestCard(article: Article, onClick: (Article) -> Unit) {
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun DisplayClickedArticle(article: Article) {
-    AnimatedVisibility(
-        visible = article.clicked,
-        enter = slideInVertically(animationSpec = tween(1500)),
-        exit = slideOutVertically(animationSpec = tween(1500))
+    val transition = updateTransition(article.clicked, label = "transition")
+
+    val rect by transition.animateRect(label = "rect") { state ->
+        if (state) Rect(0f, 0f, 300f, 300f) else Rect(0f, 0f, 150f, 150f)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+            .graphicsLayer(
+                scaleX = rect.width / 300f,
+                scaleY = rect.height / 300f
+            )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-                .animateContentSize(animationSpec = tween(1500))
-        ) {
-            Column {
-                Image(
-                    painter = painterResource(R.drawable.ic_launcher_background),
-                    contentDescription = "Image",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                )
-                Text(
-                    text = article.label,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
+        Column {
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_background),
+                contentDescription = "Image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            )
+            Text(
+                text = article.label,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }
