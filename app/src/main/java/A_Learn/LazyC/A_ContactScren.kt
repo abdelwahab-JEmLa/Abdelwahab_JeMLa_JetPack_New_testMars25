@@ -114,6 +114,7 @@ fun LazyGridApp() {
 fun TestCard(article: Article, onClick: (Article) -> Unit) {
     val alphaAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
     val yAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
+    val scaleAnimation = remember { androidx.compose.animation.core.Animatable(0.5f) }
 
     LaunchedEffect(Unit) {
         launch {
@@ -121,6 +122,9 @@ fun TestCard(article: Article, onClick: (Article) -> Unit) {
         }
         launch {
             yAnimation.animateTo(50f, animationSpec = tween(1500))
+        }
+        launch {
+            scaleAnimation.animateTo(1f, animationSpec = tween(2000, delayMillis = 2000))
         }
     }
 
@@ -155,7 +159,9 @@ fun TestCard(article: Article, onClick: (Article) -> Unit) {
                     painter = painterResource(R.drawable.ic_launcher_background),
                     contentDescription = "Image",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(scaleX = scaleAnimation.value, scaleY = scaleAnimation.value)
                 )
             }
         }
