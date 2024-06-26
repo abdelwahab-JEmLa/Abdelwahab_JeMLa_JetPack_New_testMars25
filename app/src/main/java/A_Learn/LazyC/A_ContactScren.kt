@@ -1,4 +1,3 @@
-package A_Learn.LazyC
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -16,12 +15,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -42,17 +42,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -114,55 +110,40 @@ fun LazyGridApp() {
 fun TestCard(article: Article, onClick: (Article) -> Unit) {
     val alphaAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
     val yAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
-    val scaleAnimation = remember { androidx.compose.animation.core.Animatable(0.5f) }
+    val scaleAnimation = remember { androidx.compose.animation.core.Animatable(3f) }
 
     LaunchedEffect(Unit) {
         launch {
-            alphaAnimation.animateTo(1f, animationSpec = tween(1500))
+            alphaAnimation.animateTo(1f, animationSpec = tween(1000))
         }
         launch {
-            yAnimation.animateTo(50f, animationSpec = tween(1500))
+            yAnimation.animateTo(35f, animationSpec = tween(1000))
         }
         launch {
-            scaleAnimation.animateTo(1f, animationSpec = tween(2000, delayMillis = 2000))
+            scaleAnimation.animateTo(1f, animationSpec = tween(800))
         }
     }
 
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
-            .width(150.dp)
+            .width(170.dp)
             .clickable { onClick(article.copy(clicked = !article.clicked)) }
             .animateContentSize(animationSpec = tween(1500))
             .graphicsLayer(alpha = alphaAnimation.value, translationY = yAnimation.value),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = article.label,
-                fontSize = 16.sp,
-                fontStyle = FontStyle.Italic,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .height(100.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .height(230.dp)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_launcher_background),
-                    contentDescription = "Image",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(scaleX = scaleAnimation.value, scaleY = scaleAnimation.value)
-                )
+                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle + 470}_1"
+                LoadImageFromPath(imagePath = imagePath, modifier = Modifier.graphicsLayer(scaleX = scaleAnimation.value, scaleY = scaleAnimation.value))
             }
         }
     }
@@ -174,7 +155,7 @@ fun DisplayClickedArticle(article: Article) {
     val transition = updateTransition(article.clicked, label = "transition")
 
     val rect by transition.animateRect(label = "rect") { state ->
-        if (state) Rect(0f, 0f, 300f, 300f) else Rect(0f, 0f, 150f, 150f)
+        if (state) androidx.compose.ui.geometry.Rect(0f, 0f, 300f, 300f) else androidx.compose.ui.geometry.Rect(0f, 0f, 150f, 150f)
     }
 
     Box(
@@ -187,21 +168,37 @@ fun DisplayClickedArticle(article: Article) {
             )
     ) {
         Column {
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_background),
-                contentDescription = "Image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            )
-            Text(
-                text = article.label,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(8.dp)
-            )
+            val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle + 470}_1"
+            LoadImageFromPath(imagePath = imagePath)
         }
+    }
+}
+
+@Composable
+fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
+    val defaultDrawable = R.drawable.neaveau
+    val imageExist: String? = when {
+        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
+        File("$imagePath.webp").exists() -> "$imagePath.webp"
+        else -> null
+    }
+
+    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.wrapContentSize(Alignment.Center)
+        )
     }
 }
 
@@ -212,5 +209,5 @@ data class Article(
 )
 
 fun generateArticles(): List<Article> {
-    return List(20) { Article(idArticle = it, label = "Article $it") }
+    return List(200) { Article(idArticle = it, label = "Article $it") }
 }

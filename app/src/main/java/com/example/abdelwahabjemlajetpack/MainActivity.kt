@@ -1,6 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
-import A_Learn.LazyC.LazyGridApp
+import LazyGridApp
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
