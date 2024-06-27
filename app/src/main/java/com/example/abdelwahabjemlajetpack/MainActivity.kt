@@ -1,32 +1,34 @@
 package com.example.abdelwahabjemlajetpack
 
-import LazyGridApp
+import A_Learn.A_Main_Ui.MainScreen
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
+import com.example.mycomposeapp.ui.screens.A_Edite_Base_Screen
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            AbdelwahabJeMLaJetPackTheme {
-                LazyGridApp()
-            }
-        }
-
+        FirebaseApp.initializeApp(this)
         if (!checkPermission()) {
             requestPermission()
+        }
+        setContent {
+            AbdelwahabJeMLaJetPackTheme {
+                MyApp()
+            }
         }
     }
 
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    @Deprecated("This method has been deprecated ..")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -57,28 +60,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//@Composable
-//fun MyApp() {
-//    val navController = rememberNavController()
-//    NavHost(navController = navController, startDestination = "main_screen") {
-//        composable("main_screen") { MainScreen() }
-//        composable("detail_screen/{index}") { backStackEntry ->
-//            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
-//            DetailScreen(index)
-//        }
-//    }
-//}
-
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Preview(showBackground = true, widthDp = 350, heightDp = 600)
 @Composable
-fun WellnessTopAppBarPreview() {
-    AbdelwahabJeMLaJetPackTheme {
-        Scaffold(
-            topBar = { WellnessTopAppBar() }
-        ) {
-      //      MainScreen2(modifier = Modifier)
-            }
+fun MyApp() {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "main_screen") {
+        composable("main_screen") { MainScreen(navController) }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen() }
     }
 }

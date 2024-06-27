@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
     id("kotlin-kapt") // Add this line to apply the kapt plugin
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0" // Make sure this matches your Kotlin version
+
 }
 
 android {
@@ -76,6 +78,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.coil.compose)
 }

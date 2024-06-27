@@ -150,7 +150,6 @@ fun TestCard(article: Article, onClick: (Article) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun DisplayClickedArticle(article: Article) {
     val transition = updateTransition(article.clicked, label = "transition")
