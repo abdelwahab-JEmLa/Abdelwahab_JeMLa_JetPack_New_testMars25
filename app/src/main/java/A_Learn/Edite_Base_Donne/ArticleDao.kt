@@ -11,10 +11,10 @@ interface ArticleDao {
     @Query("SELECT * FROM articles ORDER BY idCategorie, classementCate")
     suspend fun getAllArticlesOrder(): List<BaseDonne>
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(articles: List<BaseDonne>)
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(article: BaseDonne)
 
     @Query("DELETE FROM articles")
@@ -23,3 +23,4 @@ interface ArticleDao {
     @Query("DELETE FROM articles WHERE idArticle = :idArticle")
     suspend fun delete(idArticle: Int)
 }
+//SELECT * FROM BaseDonne ORDER BY idCategorie, classementCate

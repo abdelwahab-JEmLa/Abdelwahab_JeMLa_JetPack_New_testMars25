@@ -47,6 +47,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
+import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.KType
+import kotlin.reflect.full.createType
 
 @Composable
 fun A_Edite_Base_Screen(
@@ -172,46 +175,74 @@ fun DisplayClickedArticle(
                 text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            PriceTextField(
-                article = article,
-                mainAppViewModel = mainAppViewModel
+
+            // Assuming monPrixVent and nmbrUnite are properties of BaseDonne
+            val nomColumesList = listOf(
+                BaseDonne::monPrixVent,
+                BaseDonne::nmbrUnite,
+                BaseDonne::nmbrCaron,
             )
+
+            nomColumesList.forEach { nomColume ->
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextFieldDynamique(
+                    article = article,
+                    nomColum = nomColume,
+                    mainAppViewModel = mainAppViewModel
+                )
+            }
         }
     }
 }
 
 @Composable
-fun PriceTextField(
+fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
+    nomColum: KMutableProperty1<BaseDonne, T>,
     mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier
 ) {
-    var priceText by remember { mutableStateOf("") }
-    var initialLabel by remember { mutableStateOf(article.monPrixVent.toString()) }
+    var valeurText by remember { mutableStateOf("") }
+    var initialLabel by remember { mutableStateOf(nomColum.get(article).toString()) }
 
-    // Reset priceText and initialLabel to an empty string whenever the article changes
+    // Reset valeurText and initialLabel whenever the article changes
     LaunchedEffect(article) {
-        priceText = ""
-        initialLabel = article.monPrixVent.toString()
+        valeurText = ""
+        initialLabel = nomColum.get(article).toString()
     }
 
     OutlinedTextField(
-        value = priceText,
+        value = valeurText,
         onValueChange = { newText ->
-            priceText = newText
-            val newPrice = newText.toDoubleOrNull()
-            if (newPrice != null) {
-                article.monPrixVent = newPrice
+            valeurText = newText
+            val newValue: T? = parseValue(newText, nomColum.returnType)
+            if (newValue != null) {
+                nomColum.set(article, newValue)
                 mainAppViewModel.updateOrDelete(article)
             }
         },
-        label = { Text(initialLabel) },
+        label = { Text("${nomColum.name} -> $initialLabel") },
         textStyle = TextStyle(textAlign = TextAlign.Center),
         modifier = modifier
             .padding(8.dp)
             .fillMaxWidth()
     )
+}
+
+fun <T : Any> parseValue(value: String, type: KType): T? {
+    return try {
+        when (type) {
+            Int::class.createType() -> value.toInt() as? T
+            Float::class.createType() -> value.toFloat() as? T
+            Double::class.createType() -> value.toDouble() as? T
+            Long::class.createType() -> value.toLong() as? T
+            Boolean::class.createType() -> value.toBoolean() as? T
+            String::class.createType() -> value as? T
+            else -> null
+        }
+    } catch (e: Exception) {
+        null
+    }
 }
 
 @Composable
