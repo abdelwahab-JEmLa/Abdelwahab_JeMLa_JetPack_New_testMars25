@@ -1,13 +1,12 @@
 package com.example.mycomposeapp.ui.screens
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,14 +25,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,7 +38,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import com.example.mycomposeapp.ui.BaseDonne
 import com.example.mycomposeapp.ui.MainAppViewModel
-import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -106,9 +102,7 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        Column{
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.height(230.dp)
@@ -126,37 +120,27 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 
 @Composable
 fun DisplayClickedArticle(article: BaseDonne) {
-    val alphaAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
-    val yAnimation = remember { androidx.compose.animation.core.Animatable(0f) }
-    val scaleAnimation = remember { androidx.compose.animation.core.Animatable(3f) }
-    LaunchedEffect(Unit) {
-        launch {
-            alphaAnimation.animateTo(1f, animationSpec = tween(1000))
-        }
-        launch {
-            yAnimation.animateTo(35f, animationSpec = tween(1000))
-        }
-        launch {
-            scaleAnimation.animateTo(1f, animationSpec = tween(800))
-        }
-    }
-    Box(
+    Card(
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-            .animateContentSize(animationSpec = tween(1500))
-            .graphicsLayer(alpha = alphaAnimation.value, translationY = yAnimation.value),
+            .wrapContentSize()
+            .padding(25.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.height(230.dp)
+                modifier = Modifier
+                    .height(300.dp)
+                    .wrapContentSize()
             ) {
                 val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                LoadImageFromPath(imagePath = imagePath, modifier = Modifier.graphicsLayer(scaleX = scaleAnimation.value, scaleY = scaleAnimation.value))
+                LoadImageFromPath(imagePath = imagePath)
             }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
@@ -164,6 +148,8 @@ fun DisplayClickedArticle(article: BaseDonne) {
         }
     }
 }
+
+
 
 @Composable
 fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
@@ -180,7 +166,7 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .fillMaxSize(),
+            .wrapContentSize(),
         contentAlignment = Alignment.Center
 
     ) {
