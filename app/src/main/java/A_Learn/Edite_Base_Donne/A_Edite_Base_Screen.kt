@@ -59,6 +59,8 @@ fun A_Edite_Base_Screen(
 @Composable
 fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppViewModel) {
     var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
+    var priceText by remember { mutableStateOf("") }
+    var initialLabel by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
     Scaffold(
@@ -81,12 +83,16 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                         pairOfArticles.forEach { article ->
                             TestCard(article) { updatedArticle ->
                                 selectedArticle = updatedArticle
+                                priceText = "" // Reset the priceText when an article is clicked
+                                initialLabel = updatedArticle.monPrixVent.toString() // Set the initial label
                             }
                         }
                     }
                     selectedArticle?.let { article ->
                         if (pairOfArticles.contains(article)) {
-                            DisplayClickedArticle(article, mainAppViewModel)
+                            DisplayClickedArticle(article, priceText, initialLabel, mainAppViewModel) { newText ->
+                                priceText = newText
+                            }
                         }
                     }
                 }
@@ -123,11 +129,13 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 }
 
 @Composable
-fun DisplayClickedArticle(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
-    // State to manage the text input in the OutlinedTextField
-    var priceText by remember { mutableStateOf("") }
-    val originalPrice = remember { article.monPrixVent } // Store the original price separately
-
+fun DisplayClickedArticle(
+    article: BaseDonne,
+    priceText: String,
+    initialLabel: String,
+    mainAppViewModel: MainAppViewModel,
+    onPriceTextChanged: (String) -> Unit
+) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -158,14 +166,14 @@ fun DisplayClickedArticle(article: BaseDonne, mainAppViewModel: MainAppViewModel
             OutlinedTextField(
                 value = priceText,
                 onValueChange = { newPriceText ->
-                    priceText = newPriceText
+                    onPriceTextChanged(newPriceText)
                     val newPrice = newPriceText.toDoubleOrNull()
                     if (newPrice != null) {
                         article.monPrixVent = newPrice
                         mainAppViewModel.updateOrDelete(article)
                     }
                 },
-                label = { Text(originalPrice.toString()) },
+                label = { Text(initialLabel) },
                 textStyle = TextStyle(textAlign = TextAlign.Center),
                 modifier = Modifier
                     .padding(8.dp)
@@ -174,6 +182,7 @@ fun DisplayClickedArticle(article: BaseDonne, mainAppViewModel: MainAppViewModel
         }
     }
 }
+
 @Composable
 fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
     val defaultDrawable = R.drawable.neaveau
