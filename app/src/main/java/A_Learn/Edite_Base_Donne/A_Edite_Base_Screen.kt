@@ -162,7 +162,7 @@ fun DisplayClickedArticle(article: BaseDonne, mainAppViewModel: MainAppViewModel
                     val newPrice = newPriceText.toDoubleOrNull()
                     if (newPrice != null) {
                         article.monPrixVent = newPrice
-                        mainAppViewModel.syncWithFirebase(article)
+                        mainAppViewModel.updateOrDelete(article)
                     }
                 },
                 label = { Text(originalPrice.toString()) },

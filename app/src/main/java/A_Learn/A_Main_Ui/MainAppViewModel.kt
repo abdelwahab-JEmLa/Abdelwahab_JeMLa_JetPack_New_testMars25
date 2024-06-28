@@ -39,20 +39,23 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         }
     }
 
-    fun syncWithFirebase(article: BaseDonne, remove: Boolean = false) {
+    fun updateOrDelete(article: BaseDonne, remove: Boolean = false) {
         val taskRef = refFirebase.child(article.idArticle.toString())
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                if (remove) {
-                    taskRef.removeValue().await()
-                } else {
+                if (!remove) {
                     taskRef.setValue(article).await()
+                    articleDao.insert(article)
+                } else {
+                    taskRef.removeValue().await()
+                    articleDao.delete(article.idArticle)
                 }
             } catch (e: Exception) {
                 Log.e("MainAppViewModel", "Failed to sync with Firebase", e)
             }
         }
     }
+
 
     fun importFromFirebase() {
         viewModelScope.launch(Dispatchers.IO) {
