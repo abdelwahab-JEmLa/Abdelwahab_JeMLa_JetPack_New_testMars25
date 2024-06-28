@@ -113,11 +113,11 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.height(230.dp)
             ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_1"
+                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(imagePath = imagePath)
             }
             Text(
-                text = article.a_d_nomarticlefinale_c,
+                text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
         }
@@ -154,11 +154,11 @@ fun DisplayClickedArticle(article: BaseDonne) {
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.height(230.dp)
             ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_1"
+                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(imagePath = imagePath, modifier = Modifier.graphicsLayer(scaleX = scaleAnimation.value, scaleY = scaleAnimation.value))
             }
             Text(
-                text = article.a_d_nomarticlefinale_c,
+                text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
         }

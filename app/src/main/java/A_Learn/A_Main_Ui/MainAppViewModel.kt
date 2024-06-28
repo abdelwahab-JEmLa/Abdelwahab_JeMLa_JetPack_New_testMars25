@@ -26,12 +26,12 @@ class MainAppViewModel : ViewModel() {
             val dataSnapshot = refFirebase.get().await()
             val articlesFromFirebase = dataSnapshot.children.mapNotNull { it.getValue(BaseDonne::class.java) }
             _articlesBaseDonne.clear()
-            _articlesBaseDonne.addAll(articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.a_x_idcategorie }.thenBy { it.a_b_classementc }))
+            _articlesBaseDonne.addAll(articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate }))
         }
     }
 
     private fun syncWithFirebase(article: BaseDonne, remove: Boolean = false) {
-        val taskRef = refFirebase.child(article.a_c_idarticle_c.toString())
+        val taskRef = refFirebase.child(article.idArticle.toString())
         if (remove) {
             taskRef.removeValue()
         } else {
@@ -41,33 +41,33 @@ class MainAppViewModel : ViewModel() {
 }
 
 data class BaseDonne(
-    val a_c_idarticle_c: Int = 0,
-    var a_d_nomarticlefinale_c: String = "",
-    var a_b_classementc: Double = 0.0,
-    val a_e_nomarab_c: String = "",
-    val a_f_nombrcat_c: Int = 0,
-    var a_g_cat1_c: String? = null,
-    var a_h_cat2_c: String? = null,
-    var a_i_cat3_c: String? = null,
-    var a_j_cat4_c: String? = null,
-    var a_k_catego_c: String? = null,
-    val a_l_nmbunite_c: Int = 0,
-    val a_m_nmbucaron_c: Int = 0,
-    var a_n_affichageu_c: Boolean = false,
-    val a_o_commment_se_vent_c: String? = null,
-    val a_p_affiche_boit_si_uniter_sidispo_c: String? = null,
-    var a_q_prixachat_c: Double = 0.0,
-    var a_r_prixdevent_c: Double = 0.0,
-    val a_s_quan__1_c: Int = 0,
-    var a_t_benfice_prix_1_q1_c: Double = 0.0,
-    var a_u_prix_1_q1_c: Double = 0.0,
-    var a_v_nomvocale: String = "",
-    val a_w_idcatalogue_categorie: String = "",
-    var a_x_idcategorie: Double = 0.0,
+    val idArticle: Int = 0,
+    var nomArticleFinale: String = "",
+    var classementCate: Double = 0.0,
+    val nomArab: String = "",
+    val nmbrCat: Int = 0,
+    var couleur1: String? = null,
+    var couleur2: String? = null,
+    var couleur3: String? = null,
+    var couleur4: String? = null,
+    var nomCategorie2: String? = null,
+    val nmbrUnite: Int = 0,
+    val nmbrCaron: Int = 0,
+    var affichageUniteState: Boolean = false,
+    val commmentSeVent: String? = null,
+    val afficheBoitSiUniter: String? = null,
+    var monPrixAchat: Double = 0.0,
+    var clienPrixVentUnite: Double = 0.0,
+    val minQuan: Int = 0,
+    var monBenfice: Double = 0.0,
+    var monPrixVent: Double = 0.0,
+    var diponibilityState: String = "",
+    val neaon2: String = "",
+    var idCategorie: Double = 0.0,
     var funChangeImagsDimention: Boolean = false,
-    var a_z_namecate: String = "",
-    var b_a_idcatalogue: Double = 0.0,
-    val b_b_idcatalogueac0: String = "",
-    var b_c_namecatalogue: String = "",
-    val b_d_datecreationcategorie: String = ""
+    var nomCategorie: String = "",
+    var neaon1: Double = 0.0,
+    val lastUpdateState: String = "",
+    var cartonState: String = "",
+    val dateCreationCategorie: String = ""
 )
