@@ -1,7 +1,6 @@
 [versions]
 agp = "8.5.0"
 coilCompose = "2.5.0"
-coreKtxVersion = "1.13.1"
 firebaseBom = "33.1.1"
 foundation = "1.6.8"
 kotlin = "1.9.24"
@@ -16,17 +15,20 @@ composeBom = "2024.06.00"
 lifecycleViewmodelCompose = "2.8.2"
 googleGmsGoogleServices = "4.4.2"
 firebaseDatabase = "21.0.0"
+roomRuntime = "2.6.1"
 runtimeLivedata = "1.6.8"
 navigationCompose = "2.7.7"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-core-ktx-v170 = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
 androidx-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "foundation" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version = "1.6.8" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version = "1.6.8" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version = "1.6.8" }

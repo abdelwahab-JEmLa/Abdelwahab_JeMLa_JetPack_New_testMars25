@@ -1,5 +1,7 @@
-package com.example.mycomposeapp.ui.screens
+package A_Learn.Edite_Base_Donne
 
+import A_Learn.A_Main_Ui.MainAppViewModel
+import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,29 +35,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
-import com.example.mycomposeapp.ui.BaseDonne
-import com.example.mycomposeapp.ui.MainAppViewModel
 import java.io.File
 
 @Composable
 fun A_Edite_Base_Screen(
     modifier: Modifier = Modifier,
-    mainAppViewModel: MainAppViewModel = viewModel()
+    mainAppViewModel: MainAppViewModel,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
-            articlesList = mainAppViewModel.articlesBaseDonne
+            articlesList = mainAppViewModel.articlesBaseDonne,
+            mainAppViewModel = mainAppViewModel
         )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArticlesScreenList(articlesList: List<BaseDonne>) {
+fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppViewModel) {
     var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
     val listState = rememberLazyListState()
 
@@ -83,7 +86,7 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>) {
                     }
                     selectedArticle?.let { article ->
                         if (pairOfArticles.contains(article)) {
-                            DisplayClickedArticle(article)
+                            DisplayClickedArticle(article, mainAppViewModel)
                         }
                     }
                 }
@@ -102,12 +105,13 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
     ) {
-        Column{
+        Column {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.height(230.dp)
             ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                val imagePath =
+                    "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(imagePath = imagePath)
             }
             Text(
@@ -119,7 +123,11 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 }
 
 @Composable
-fun DisplayClickedArticle(article: BaseDonne) {
+fun DisplayClickedArticle(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
+    // State to manage the text input in the OutlinedTextField
+    var priceText by remember { mutableStateOf("") }
+    val originalPrice = remember { article.monPrixVent } // Store the original price separately
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -137,7 +145,8 @@ fun DisplayClickedArticle(article: BaseDonne) {
                     .height(300.dp)
                     .wrapContentSize()
             ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                val imagePath =
+                    "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(imagePath = imagePath)
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -145,12 +154,26 @@ fun DisplayClickedArticle(article: BaseDonne) {
                 text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = priceText,
+                onValueChange = { newPriceText ->
+                    priceText = newPriceText
+                    val newPrice = newPriceText.toDoubleOrNull()
+                    if (newPrice != null) {
+                        article.monPrixVent = newPrice
+                        mainAppViewModel.syncWithFirebase(article)
+                    }
+                },
+                label = { Text(originalPrice.toString()) },
+                textStyle = TextStyle(textAlign = TextAlign.Center),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+            )
         }
     }
 }
-
-
-
 @Composable
 fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
     val defaultDrawable = R.drawable.neaveau

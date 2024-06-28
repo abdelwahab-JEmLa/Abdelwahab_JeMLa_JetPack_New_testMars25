@@ -1,12 +1,12 @@
 # Preserve the Article class along with its constructors and all members
--keepclassmembers class com.example.abdelwahabjemlajetpack.Article {
+-keepclassmembers class a_RoomDB.BaseDonne {
     public <init>(...);
     <fields>;
     <methods>;
 }
 
 # Preserve class metadata for Firebase serialization
--keepnames class com.example.abdelwahabjemlajetpack.Article {
+-keepnames class a_RoomDB.BaseDonne {
     *;
 }
 
@@ -17,3 +17,7 @@
 # Preserve Kotlin serialization metadata
 -keepnames class kotlinx.serialization.** { *; }
 -keep class kotlinx.serialization.** { *; }
+# Keep constructors for Firebase model classes
+-keepclassmembers class a_RoomDB.BaseDonne {
+    public <init>();
+}
