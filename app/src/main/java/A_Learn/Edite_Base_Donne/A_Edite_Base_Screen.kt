@@ -32,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,8 +65,6 @@ fun A_Edite_Base_Screen(
 @Composable
 fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppViewModel) {
     var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
-    var priceText by remember { mutableStateOf("") }
-    var initialLabel by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
 
@@ -89,8 +88,6 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                         pairOfArticles.forEach { article ->
                             TestCard(article) { updatedArticle ->
                                 selectedArticle = updatedArticle
-                                priceText = "" // Reset the priceText when an article is clicked
-                                initialLabel = updatedArticle.monPrixVent.toString() // Set the initial label
                                 focusManager.clearFocus() // Clear the focus from the text field
                             }
                         }
@@ -99,13 +96,9 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                         if (pairOfArticles.contains(article)) {
                             DisplayClickedArticle(
                                 article,
-                                priceText,
-                                initialLabel,
                                 mainAppViewModel,
                                 onClose = { selectedArticle = null } // Reset selected article when close button is clicked
-                            ) { newText ->
-                                priceText = newText
-                            }
+                            )
                         }
                     }
                 }
@@ -129,8 +122,7 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.height(230.dp)
             ) {
-                val imagePath =
-                    "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(imagePath = imagePath)
             }
             Text(
@@ -144,11 +136,8 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 @Composable
 fun DisplayClickedArticle(
     article: BaseDonne,
-    priceText: String,
-    initialLabel: String,
     mainAppViewModel: MainAppViewModel,
     onClose: () -> Unit,
-    onPriceTextChanged: (String) -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -175,8 +164,7 @@ fun DisplayClickedArticle(
                     .height(300.dp)
                     .wrapContentSize()
             ) {
-                val imagePath =
-                    "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(imagePath = imagePath)
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -185,24 +173,45 @@ fun DisplayClickedArticle(
                 modifier = Modifier.padding(8.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = priceText,
-                onValueChange = { newPriceText ->
-                    onPriceTextChanged(newPriceText)
-                    val newPrice = newPriceText.toDoubleOrNull()
-                    if (newPrice != null) {
-                        article.monPrixVent = newPrice
-                        mainAppViewModel.updateOrDelete(article)
-                    }
-                },
-                label = { Text(initialLabel) },
-                textStyle = TextStyle(textAlign = TextAlign.Center),
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
+            PriceTextField(
+                article = article,
+                mainAppViewModel = mainAppViewModel
             )
         }
     }
+}
+
+@Composable
+fun PriceTextField(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    var priceText by remember { mutableStateOf("") }
+    var initialLabel by remember { mutableStateOf(article.monPrixVent.toString()) }
+
+    // Reset priceText and initialLabel to an empty string whenever the article changes
+    LaunchedEffect(article) {
+        priceText = ""
+        initialLabel = article.monPrixVent.toString()
+    }
+
+    OutlinedTextField(
+        value = priceText,
+        onValueChange = { newText ->
+            priceText = newText
+            val newPrice = newText.toDoubleOrNull()
+            if (newPrice != null) {
+                article.monPrixVent = newPrice
+                mainAppViewModel.updateOrDelete(article)
+            }
+        },
+        label = { Text(initialLabel) },
+        textStyle = TextStyle(textAlign = TextAlign.Center),
+        modifier = modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+    )
 }
 
 @Composable
@@ -222,7 +231,6 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
             .aspectRatio(1f)
             .wrapContentSize(),
         contentAlignment = Alignment.Center
-
     ) {
         Image(
             painter = painter,
