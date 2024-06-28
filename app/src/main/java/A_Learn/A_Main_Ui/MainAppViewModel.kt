@@ -29,7 +29,7 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
     private fun initBaseDonne() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val articles = articleDao.getAllArticles()
+                val articles = articleDao.getAllArticlesOrder()
                 withContext(Dispatchers.Main) {
                     _articlesBaseDonne.addAll(articles)
                 }
@@ -59,11 +59,14 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
             try {
                 val dataSnapshot = refFirebase.get().await()
                 val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
+                val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
+
                 articleDao.deleteAll()
-                articleDao.insertAll(articlesFromFirebase)
+                articleDao.insertAll(sortedArticles)
+
                 withContext(Dispatchers.Main) {
                     _articlesBaseDonne.clear()
-                    _articlesBaseDonne.addAll(articlesFromFirebase)
+                    _articlesBaseDonne.addAll(sortedArticles)
                 }
             } catch (e: Exception) {
                 Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
