@@ -3,6 +3,7 @@ package A_Learn.Edite_Base_Donne
 import A_Learn.A_Main_Ui.MainAppViewModel
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,11 +40,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isUnspecified
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
@@ -166,6 +178,38 @@ fun CardDetailleArticle(
     }
 }
 
+@Composable
+fun TopRowQuantitys(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    // Define the column names and their labels
+    val nomColumesList = listOf(
+        Pair(BaseDonne::clienPrixVentUnite, "c.p.U"),
+        Pair(BaseDonne::nmbrCaron, "n.C"),
+        Pair(BaseDonne::nmbrUnite, "n.U")
+    )
+
+    Row(
+        modifier = modifier
+            .padding(3.dp)
+            .fillMaxWidth()
+    ) {
+        nomColumesList.forEach { (nomColume, label) ->
+            Spacer(modifier = Modifier.width(3.dp))
+            OutlinedTextFieldDynamique(
+                article = article,
+                nomColum = nomColume,
+                mainAppViewModel = mainAppViewModel,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(45.dp),
+                abdergNomColum = label // Use the label directly
+            )
+        }
+    }
+}
 
 
 
@@ -221,59 +265,73 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
 
 @Composable
 fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppViewModel, modifier: Modifier = Modifier) {
-    val nomColumesList = listOf(
-        BaseDonne::monPrixVent,
-        BaseDonne::nmbrUnite,
-        BaseDonne::nmbrCaron,
-    )
-
+    val labelFontSize = Pair(7.sp, 18.sp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        nomColumesList.forEach { nomColume ->
-            Spacer(modifier = Modifier.height(3.dp))
+        Spacer(modifier = Modifier.height(3.dp))
+        Row (
+            Modifier
+                .fillMaxWidth()
+                .height(55.dp) // Ensure consistent height for the row
+        ) {
+            val calculatePrixUniter = article.monPrixVent / article.nmbrUnite
+            Box(
+                modifier = Modifier
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .weight(0.40f)
+                    .height(45.dp) // Set the same height as the TextField
+            ) {
+                AutoResizedText(
+                    text = "pA.U -> $calculatePrixUniter",
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .height(45.dp), // Set the same height as the TextField
+                )
+            }
+            Spacer(modifier = Modifier.width(5.dp))
             OutlinedTextFieldDynamique(
                 article = article,
-                nomColum = nomColume,
-                mainAppViewModel = mainAppViewModel
-            )
-        }
-    }
-}
-@Composable
-fun TopRowQuantitys(
-    article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier
-) {
-    val nomColumesList = listOf(
-        BaseDonne::clienPrixVentUnite,
-        BaseDonne::nmbrCaron,
-        BaseDonne::nmbrUnite,
-    )
-
-    Row(modifier = modifier.padding(3.dp).fillMaxWidth()) {
-        nomColumesList.forEach { nomColume ->
-            Spacer(modifier = Modifier.width(3.dp))
-            OutlinedTextFieldDynamique(
-                article = article,
-                nomColum = nomColume,
+                nomColum = BaseDonne::monPrixVent,
                 mainAppViewModel = mainAppViewModel,
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxHeight() // Ensure the TextField takes up the full height
+                    .weight(0.70f)
                     .height(45.dp),
+                abdergNomColum = "M.P.V" // Set the same height as the Box
             )
         }
+        Spacer(modifier = Modifier.height(10.dp))
+        OutlinedTextFieldDynamique(
+            article = article,
+            nomColum = BaseDonne::nmbrUnite,
+            mainAppViewModel = mainAppViewModel,
+            modifier = Modifier.fillMaxWidth(),
+            abdergNomColum = "N.U"
+        )
+        Spacer(modifier = Modifier.height(15.dp))
+        OutlinedTextFieldDynamique(
+            nomColum = BaseDonne::nmbrCaron,
+            abdergNomColum= "N.C",
+            article = article,
+            mainAppViewModel = mainAppViewModel,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
+
+
 
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
     nomColum: KMutableProperty1<BaseDonne, T>,
     mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.height(45.dp),
+    textColore: Color = Color.Red, // Default color
+    labelFontSize: Pair<TextUnit, TextUnit>? = null, // Making labelFontSize an optional parameter
+    abdergNomColum: String?= nomColum.name
 ) {
     var valeurText by remember { mutableStateOf("") }
     var initialLabel by remember { mutableStateOf(nomColum.get(article).toString()) }
@@ -294,16 +352,75 @@ fun <T : Any> OutlinedTextFieldDynamique(
                 mainAppViewModel.updateOrDelete(article)
             }
         },
-        label = { Text(initialLabel) },
-        textStyle = TextStyle(textAlign = TextAlign.Center),
-        modifier = modifier
-            .fillMaxWidth()
+        label = {
+            if (labelFontSize != null) {
+                Text(buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontSize = labelFontSize.first)) {
+                        append(nomColum.name)
+                    }
+                    append(" -> ")
+                    withStyle(style = SpanStyle(fontSize = labelFontSize.second, fontWeight = FontWeight.Bold)) {
+                        append(initialLabel)
+                    }
+                })
+            } else {
+                AutoResizedText(
+                    text = "$abdergNomColum->$initialLabel",
+                    color = textColore,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        textStyle = TextStyle(color = textColore, textAlign = TextAlign.Center), // Apply text color here
+        modifier = modifier.fillMaxWidth()
+    )
+}
+@Composable
+fun AutoResizedText(
+    text: String,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    modifier: Modifier = Modifier,
+    color: Color = style.color,
+    textAlign: TextAlign = TextAlign.Center // Added textAlign parameter with default value
+) {
+    var resizedTextStyle by remember {
+        mutableStateOf(style)
+    }
+    var shouldDraw by remember {
+        mutableStateOf(false)
+    }
+
+    val defaultFontSize = MaterialTheme.typography.bodyMedium.fontSize
+
+    Text(
+        text = text,
+        color = color,
+        modifier = modifier.drawWithContent {
+            if (shouldDraw) {
+                drawContent()
+            }
+        },
+        softWrap = false,
+        style = resizedTextStyle,
+        textAlign = textAlign, // Setting the textAlign property
+        onTextLayout = { result ->
+            if (result.didOverflowWidth) {
+                if (style.fontSize.isUnspecified) {
+                    resizedTextStyle = resizedTextStyle.copy(
+                        fontSize = defaultFontSize
+                    )
+                }
+                resizedTextStyle = resizedTextStyle.copy(
+                    fontSize = resizedTextStyle.fontSize * 0.95
+                )
+            } else {
+                shouldDraw = true
+            }
+        }
     )
 }
 
-
 // Helper function to parse the input text to the appropriate type
-
 fun <T : Any> parseValue(value: String, type: KType): T? {
     return try {
         when (type) {
@@ -319,7 +436,6 @@ fun <T : Any> parseValue(value: String, type: KType): T? {
         null
     }
 }
-
 
 @Composable
 fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
