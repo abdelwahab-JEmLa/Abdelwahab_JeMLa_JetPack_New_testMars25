@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -89,7 +91,7 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         pairOfArticles.forEach { article ->
-                            TestCard(article) { updatedArticle ->
+                            ArticleBoardCard(article) { updatedArticle ->
                                 selectedArticle = updatedArticle
                                 focusManager.clearFocus() // Clear the focus from the text field
                             }
@@ -97,7 +99,7 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                     }
                     selectedArticle?.let { article ->
                         if (pairOfArticles.contains(article)) {
-                            DisplayClickedArticle(
+                            CardDetailleArticle(
                                 article,
                                 mainAppViewModel,
                                 onClose = { selectedArticle = null } // Reset selected article when close button is clicked
@@ -111,7 +113,7 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
 }
 
 @Composable
-fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
+fun ArticleBoardCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -137,7 +139,7 @@ fun TestCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 }
 
 @Composable
-fun DisplayClickedArticle(
+fun CardDetailleArticle(
     article: BaseDonne,
     mainAppViewModel: MainAppViewModel,
     onClose: () -> Unit,
@@ -146,51 +148,132 @@ fun DisplayClickedArticle(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .wrapContentSize()
-            .padding(25.dp),
+            .padding(4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            IconButton(
-                onClick = onClose,
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = "Close")
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
             }
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
+            TopRowQuantitys(article, mainAppViewModel)
+            Row(
                 modifier = Modifier
-                    .height(300.dp)
-                    .wrapContentSize()
+                    .padding(8.dp)
+                    .fillMaxWidth()
             ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                LoadImageFromPath(imagePath = imagePath)
+                DisplayColorsCards(article, Modifier.weight(0.38f))
+                DisplayArticleInformations(article, mainAppViewModel, Modifier.weight(0.62f))
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
+        }
+    }
+}
 
-            // Assuming monPrixVent and nmbrUnite are properties of BaseDonne
-            val nomColumesList = listOf(
-                BaseDonne::monPrixVent,
-                BaseDonne::nmbrUnite,
-                BaseDonne::nmbrCaron,
+@Composable
+fun TopRowQuantitys(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    val nomColumesList = listOf(
+        BaseDonne::clienPrixVentUnite,
+        BaseDonne::nmbrCaron,
+        BaseDonne::nmbrUnite,
+    )
+
+    Row(modifier = modifier.padding(3.dp).fillMaxWidth()) {
+        nomColumesList.forEach { nomColume ->
+            Spacer(modifier = Modifier.width(3.dp))
+            OutlinedTextFieldDynamique(
+                article = article,
+                nomColum = nomColume,
+                mainAppViewModel = mainAppViewModel,
+                modifier = Modifier.weight(1f)
             )
+        }
+    }
+}
 
-            nomColumesList.forEach { nomColume ->
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextFieldDynamique(
-                    article = article,
-                    nomColum = nomColume,
-                    mainAppViewModel = mainAppViewModel
-                )
+
+@Composable
+fun DisplayColorsCards(article: BaseDonne, modifier: Modifier = Modifier) {
+    val couleursList = listOf(
+        article.couleur1,
+        article.couleur2,
+        article.couleur3,
+        article.couleur4,
+    )
+
+    LazyRow(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .padding(3.dp)
+            .fillMaxWidth()
+    ) {
+        itemsIndexed(couleursList) { index, couleur ->
+            if (!couleur.isNullOrEmpty()) {
+                ColorsCard(article.idArticle.toString(), index, couleur)
             }
+        }
+    }
+}
+
+@Composable
+fun ColorsCard(idArticle: String, index: Int, couleur: String) {
+    Card(
+        modifier = Modifier
+            .width(250.dp)
+            .height(300.dp)
+            .padding(end = 8.dp) // Added padding between cards
+    ) {
+        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .height(250.dp)
+                    .fillMaxWidth()
+            ) {
+                LoadImageFromPath(imagePath = imagePath)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = couleur)
+        }
+    }
+}
+
+@Composable
+fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppViewModel, modifier: Modifier = Modifier) {
+    val nomColumesList = listOf(
+        BaseDonne::monPrixVent,
+        BaseDonne::nmbrUnite,
+        BaseDonne::nmbrCaron,
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(3.dp)
+    ) {
+        nomColumesList.forEach { nomColume ->
+            Spacer(modifier = Modifier.height(3.dp))
+            OutlinedTextFieldDynamique(
+                article = article,
+                nomColum = nomColume,
+                mainAppViewModel = mainAppViewModel
+            )
         }
     }
 }
@@ -224,7 +307,7 @@ fun <T : Any> OutlinedTextFieldDynamique(
         label = { Text("${nomColum.name} -> $initialLabel") },
         textStyle = TextStyle(textAlign = TextAlign.Center),
         modifier = modifier
-            .padding(8.dp)
+            .padding(3.dp)
             .fillMaxWidth()
     )
 }
@@ -271,3 +354,4 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
         )
     }
 }
+

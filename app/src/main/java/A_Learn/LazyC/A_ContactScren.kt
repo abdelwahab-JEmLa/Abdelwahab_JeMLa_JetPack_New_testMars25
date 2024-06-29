@@ -1,4 +1,5 @@
 
+import A_Learn.Edite_Base_Donne.LoadImageFromPath
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
@@ -175,7 +176,7 @@ fun DisplayClickedArticle(article: Article) {
 }
 
 @Composable
-fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
+fun LoadImageFromPathgggg(imagePath: String, modifier: Modifier = Modifier) {
     val defaultDrawable = R.drawable.neaveau
     val imageExist: String? = when {
         File("$imagePath.jpg").exists() -> "$imagePath.jpg"
