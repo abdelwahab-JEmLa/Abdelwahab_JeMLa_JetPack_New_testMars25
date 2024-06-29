@@ -288,7 +288,9 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
                     text = "pA.U -> $calculatePrixUniter",
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .height(45.dp), // Set the same height as the TextField
+                        .height(45.dp)
+                        .padding(4.dp) // Adding padding of 2 dp
+                    , // Set the same height as the TextField
                 )
             }
             Spacer(modifier = Modifier.width(5.dp))
@@ -401,7 +403,6 @@ fun AutoResizedText(
             text = text,
             color = color,
             modifier = Modifier
-                .padding(1.dp) // Adding padding of 2 dp
                 .drawWithContent {
                     if (shouldDraw) {
                         drawContent()
