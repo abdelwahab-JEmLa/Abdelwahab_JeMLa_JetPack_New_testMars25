@@ -274,12 +274,12 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
         Row (
             Modifier
                 .fillMaxWidth()
-                .height(55.dp) // Ensure consistent height for the row
+                .height(63.dp) // Ensure consistent height for the row
         ) {
             val calculatePrixUniter = article.monPrixVent / article.nmbrUnite
             Box(
                 modifier = Modifier
-                    .padding(top = 5.dp)
+                    .padding(top = 7.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .weight(0.40f)
                     .height(100.dp)
@@ -287,9 +287,10 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
                 AutoResizedText(
                     text = "pA.U -> $calculatePrixUniter",
                     modifier = Modifier
+                        .padding(4.dp)
                         .align(Alignment.Center)
-                        .height(45.dp)
-                        .padding(4.dp) // Adding padding of 2 dp
+                        .height(40.dp)
+                         // Adding padding of 2 dp
                     , // Set the same height as the TextField
                 )
             }
@@ -302,7 +303,7 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
                     .fillMaxHeight() // Ensure the TextField takes up the full height
                     .weight(0.70f)
                     .height(45.dp),
-                abdergNomColum = "M.P.V" // Set the same height as the Box
+                abdergNomColum = "m.P.V" // Set the same height as the Box
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
