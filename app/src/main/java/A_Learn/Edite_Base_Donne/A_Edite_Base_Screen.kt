@@ -290,8 +290,6 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
                         .padding(4.dp)
                         .align(Alignment.Center)
                         .height(40.dp)
-                         // Adding padding of 2 dp
-                    , // Set the same height as the TextField
                 )
             }
             Spacer(modifier = Modifier.width(5.dp))
