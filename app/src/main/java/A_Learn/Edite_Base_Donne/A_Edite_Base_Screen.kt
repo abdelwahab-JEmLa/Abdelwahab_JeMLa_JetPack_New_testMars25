@@ -22,13 +22,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -102,7 +98,6 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                             CardDetailleArticle(
                                 article,
                                 mainAppViewModel,
-                                onClose = { selectedArticle = null } // Reset selected article when close button is clicked
                             )
                         }
                     }
@@ -142,7 +137,6 @@ fun ArticleBoardCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 fun CardDetailleArticle(
     article: BaseDonne,
     mainAppViewModel: MainAppViewModel,
-    onClose: () -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -153,14 +147,7 @@ fun CardDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier.align(Alignment.TopEnd)
-                ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Close")
-                }
-            }
+
             TopRowQuantitys(article, mainAppViewModel)
             Row(
                 modifier = Modifier
@@ -179,30 +166,7 @@ fun CardDetailleArticle(
     }
 }
 
-@Composable
-fun TopRowQuantitys(
-    article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier
-) {
-    val nomColumesList = listOf(
-        BaseDonne::clienPrixVentUnite,
-        BaseDonne::nmbrCaron,
-        BaseDonne::nmbrUnite,
-    )
 
-    Row(modifier = modifier.padding(3.dp).fillMaxWidth()) {
-        nomColumesList.forEach { nomColume ->
-            Spacer(modifier = Modifier.width(3.dp))
-            OutlinedTextFieldDynamique(
-                article = article,
-                nomColum = nomColume,
-                mainAppViewModel = mainAppViewModel,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
 
 
 @Composable
@@ -277,13 +241,39 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
         }
     }
 }
+@Composable
+fun TopRowQuantitys(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    val nomColumesList = listOf(
+        BaseDonne::clienPrixVentUnite,
+        BaseDonne::nmbrCaron,
+        BaseDonne::nmbrUnite,
+    )
+
+    Row(modifier = modifier.padding(3.dp).fillMaxWidth()) {
+        nomColumesList.forEach { nomColume ->
+            Spacer(modifier = Modifier.width(3.dp))
+            OutlinedTextFieldDynamique(
+                article = article,
+                nomColum = nomColume,
+                mainAppViewModel = mainAppViewModel,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(45.dp),
+            )
+        }
+    }
+}
 
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
     nomColum: KMutableProperty1<BaseDonne, T>,
     mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var valeurText by remember { mutableStateOf("") }
     var initialLabel by remember { mutableStateOf(nomColum.get(article).toString()) }
@@ -304,13 +294,15 @@ fun <T : Any> OutlinedTextFieldDynamique(
                 mainAppViewModel.updateOrDelete(article)
             }
         },
-        label = { Text("${nomColum.name} -> $initialLabel") },
+        label = { Text(initialLabel) },
         textStyle = TextStyle(textAlign = TextAlign.Center),
         modifier = modifier
-            .padding(3.dp)
             .fillMaxWidth()
     )
 }
+
+
+// Helper function to parse the input text to the appropriate type
 
 fun <T : Any> parseValue(value: String, type: KType): T? {
     return try {
@@ -327,6 +319,7 @@ fun <T : Any> parseValue(value: String, type: KType): T? {
         null
     }
 }
+
 
 @Composable
 fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
