@@ -279,9 +279,10 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
             val calculatePrixUniter = article.monPrixVent / article.nmbrUnite
             Box(
                 modifier = Modifier
+                    .padding(top = 5.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .weight(0.40f)
-                    .height(45.dp) // Set the same height as the TextField
+                    .height(100.dp)
             ) {
                 AutoResizedText(
                     text = "pA.U -> $calculatePrixUniter",
@@ -365,7 +366,7 @@ fun <T : Any> OutlinedTextFieldDynamique(
                 })
             } else {
                 AutoResizedText(
-                    text = "$abdergNomColum->$initialLabel",
+                    text = "$abdergNomColum:$initialLabel",
                     color = textColore,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -392,33 +393,41 @@ fun AutoResizedText(
 
     val defaultFontSize = MaterialTheme.typography.bodyMedium.fontSize
 
-    Text(
-        text = text,
-        color = color,
-        modifier = modifier.drawWithContent {
-            if (shouldDraw) {
-                drawContent()
-            }
-        },
-        softWrap = false,
-        style = resizedTextStyle,
-        textAlign = textAlign, // Setting the textAlign property
-        onTextLayout = { result ->
-            if (result.didOverflowWidth) {
-                if (style.fontSize.isUnspecified) {
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center // Center horizontally and vertically
+    ) {
+        Text(
+            text = text,
+            color = color,
+            modifier = Modifier
+                .padding(1.dp) // Adding padding of 2 dp
+                .drawWithContent {
+                    if (shouldDraw) {
+                        drawContent()
+                    }
+                },
+            softWrap = false,
+            style = resizedTextStyle,
+            textAlign = textAlign, // Setting the textAlign property
+            onTextLayout = { result ->
+                if (result.didOverflowWidth) {
+                    if (style.fontSize.isUnspecified) {
+                        resizedTextStyle = resizedTextStyle.copy(
+                            fontSize = defaultFontSize
+                        )
+                    }
                     resizedTextStyle = resizedTextStyle.copy(
-                        fontSize = defaultFontSize
+                        fontSize = resizedTextStyle.fontSize * 0.95
                     )
+                } else {
+                    shouldDraw = true
                 }
-                resizedTextStyle = resizedTextStyle.copy(
-                    fontSize = resizedTextStyle.fontSize * 0.95
-                )
-            } else {
-                shouldDraw = true
             }
-        }
-    )
+        )
+    }
 }
+
 
 // Helper function to parse the input text to the appropriate type
 fun <T : Any> parseValue(value: String, type: KType): T? {
