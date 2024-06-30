@@ -194,48 +194,58 @@ suspend fun transferFirebaseData() {
 
         // Retrieve data from the source reference
         val dataSnapshot = refSource.get().await()
-        val dataMap = dataSnapshot.value as Map<String, Map<String, Any>>
+        val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
 
         // Map the data to a HashMap of BaseDonne objects
         val baseDonneMap = dataMap.mapValues { (_, value) ->
+            val nmbrUnite = (value["a11"] as? String)?.toIntOrNull() ?: 1
+            val clienPrixVentUnite = (value["a17"] as? String)?.toDoubleOrNull() ?: 0.0
+            val monPrixVent = (value["a20"] as? String)?.toDoubleOrNull() ?: 0.0
+            val prixDeVentTotaleChezClient = nmbrUnite * clienPrixVentUnite
+
             BaseDonne(
-                idArticle = (value["a00"] as Long).toInt(),
-                nomArticleFinale = value["a03"] as String,
-                classementCate = (value["a02"] as String).toDouble(),
-                nomArab = value["a04"] as String,
-                nmbrCat = (value["a05"] as String).toInt(),
-                couleur1 = value["a06"] as String?,
-                couleur2 = value["a07"] as String?,
-                couleur3 = value["a08"] as String?,
-                couleur4 = value["a09"] as String?,
-                nomCategorie2 = value["a10"] as String?,
-                nmbrUnite = (value["a11"] as String).toInt(),
-                nmbrCaron = (value["a12"] as String).toInt(),
-                affichageUniteState = (value["a13"] as String).toBoolean(),
-                commmentSeVent = value["a14"] as String?,
-                afficheBoitSiUniter = value["a15"] as String?,
-                monPrixAchat = (value["a16"] as String).toDouble(),
-                clienPrixVentUnite = (value["a17"] as String).toDouble(),
-                minQuan = (value["a18"] as String).toInt(),
-                monBenfice = (value["a19"] as String).toDouble(),
-                monPrixVent = (value["a20"] as String).toDouble(),
-                diponibilityState = value["a21"] as String,
-                neaon2 = value["a22"] as String,
-                idCategorie = (value["a23"] as String).toDouble(),
-                funChangeImagsDimention = (value["a24"] as String).toBoolean(),
-                nomCategorie = value["a25"] as String,
-                neaon1 = (value["a26"] as String).toDouble(),
-                lastUpdateState = value["a27"] as String,
-                cartonState = value["a28"] as String,
-                dateCreationCategorie = value["a29"] as String
+                idArticle = (value["a00"] as? Long)?.toInt() ?: 0,
+                nomArticleFinale = value["a03"] as? String ?: "",
+                classementCate = (value["a02"] as? String)?.toDoubleOrNull() ?: 0.0,
+                nomArab = value["a04"] as? String ?: "",
+                nmbrCat = (value["a05"] as? String)?.toIntOrNull() ?: 0,
+                couleur1 = value["a06"] as? String,
+                couleur2 = value["a07"] as? String,
+                couleur3 = value["a08"] as? String,
+                couleur4 = value["a09"] as? String,
+                nomCategorie2 = value["a10"] as? String,
+                nmbrUnite = nmbrUnite,
+                nmbrCaron = (value["a12"] as? String)?.toIntOrNull() ?: 0,
+                affichageUniteState = (value["a13"] as? String)?.toBoolean() ?: false,
+                commmentSeVent = value["a14"] as? String,
+                afficheBoitSiUniter = value["a15"] as? String,
+                monPrixAchat = (value["a16"] as? String)?.toDoubleOrNull() ?: 0.0,
+                clienPrixVentUnite = clienPrixVentUnite,
+                minQuan = (value["a18"] as? String)?.toIntOrNull() ?: 0,
+                monBenfice = (value["a19"] as? String)?.toDoubleOrNull() ?: 0.0,
+                monPrixVent = monPrixVent,
+                diponibilityState = value["a21"] as? String ?: "",
+                neaon2 = value["a22"] as? String ?: "",
+                idCategorie = (value["a23"] as? String)?.toDoubleOrNull() ?: 0.0,
+                funChangeImagsDimention = (value["a24"] as? String)?.toBoolean() ?: false,
+                nomCategorie = value["a25"] as? String ?: "",
+                neaon1 = (value["a26"] as? String)?.toDoubleOrNull() ?: 0.0,
+                lastUpdateState = value["a27"] as? String ?: "",
+                cartonState = value["a28"] as? String ?: "",
+                dateCreationCategorie = value["a29"] as? String ?: "",
+                prixDeVentTotaleChezClient = prixDeVentTotaleChezClient,
+                benificeTotaleEn2 = prixDeVentTotaleChezClient - monPrixVent,
+                monPrixAchatUniter =  monPrixVent / nmbrUnite ,
+                monPrixVentUniter = monPrixVent / 2
             )
         }
 
         // Insert the HashMap of BaseDonne objects into the destination reference
-        baseDonneMap.forEach { (key, baseDonne) ->
+        baseDonneMap.forEach { (_, baseDonne) ->
             refDestination.child(baseDonne.idArticle.toString()).setValue(baseDonne).await()
         }
     } catch (e: Exception) {
         Log.e("transferFirebaseData", "Failed to transfer data", e)
     }
 }
+

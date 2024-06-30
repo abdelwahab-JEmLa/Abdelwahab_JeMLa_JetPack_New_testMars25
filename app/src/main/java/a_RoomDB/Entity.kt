@@ -33,8 +33,13 @@ data class BaseDonne(
     var neaon1: Double = 0.0,
     var lastUpdateState: String = "",
     var cartonState: String = "",
-    var dateCreationCategorie: String = ""
-) {
+    var dateCreationCategorie: String = "",
+    var prixDeVentTotaleChezClient: Double = 0.0,
+    var benficeTotaleEntreMoiEtClien: Double = 0.0,
+    var benificeTotaleEn2: Double = 0.0,
+    var monPrixAchatUniter: Double = 0.0,
+    var monPrixVentUniter: Double = 0.0,
+    ) {
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
 }

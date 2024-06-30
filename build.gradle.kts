@@ -8,3 +8,14 @@ plugins {
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
 }
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath(libs.gradle.v800)
+        classpath(libs.kotlin.gradle.plugin)
+    }
+}

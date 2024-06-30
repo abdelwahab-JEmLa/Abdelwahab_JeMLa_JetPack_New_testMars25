@@ -1,4 +1,3 @@
-// a_RoomDB/AppDatabase.kt
 package a_RoomDB
 
 import A_Learn.Edite_Base_Donne.ArticleDao

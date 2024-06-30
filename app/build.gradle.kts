@@ -2,9 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
-    id("kotlin-kapt") // Add this line to apply the kapt plugin
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0" // Make sure this matches your Kotlin version
-
+    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
 }
 
 android {
@@ -85,7 +84,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
-    implementation (libs.kotlin.reflect)
+    implementation(libs.kotlin.reflect)
+
 }
 
 apply(plugin = "com.google.gms.google-services")

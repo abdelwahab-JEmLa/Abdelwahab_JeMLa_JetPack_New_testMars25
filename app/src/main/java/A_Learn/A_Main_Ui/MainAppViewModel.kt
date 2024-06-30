@@ -37,6 +37,18 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         }
     }
 
+    fun updateArticle(article: BaseDonne) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                articleDao.update(article)
+                val updatedArticles = articleDao.getAllArticlesOrder()
+                _articlesBaseDonne.value = updatedArticles
+            } catch (e: Exception) {
+                Log.e("MainAppViewModel", "Failed to update article", e)
+            }
+        }
+    }
+
     fun updateOrDelete(article: BaseDonne, remove: Boolean = false) {
         val taskRef = refFirebase.child(article.idArticle.toString())
         viewModelScope.launch(Dispatchers.IO) {
@@ -48,7 +60,8 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
                     taskRef.removeValue().await()
                     articleDao.delete(article.idArticle)
                 }
-                _articlesBaseDonne.value = articleDao.getAllArticlesOrder()
+                val updatedArticles = articleDao.getAllArticlesOrder()
+                _articlesBaseDonne.value = updatedArticles
             } catch (e: Exception) {
                 Log.e("MainAppViewModel", "Failed to sync with Firebase", e)
             }
@@ -86,9 +99,7 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
     }
 }
 
-class MainAppViewModelFactory(
-    private val articleDao: ArticleDao
-) : ViewModelProvider.Factory {
+class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainAppViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
@@ -97,3 +108,4 @@ class MainAppViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

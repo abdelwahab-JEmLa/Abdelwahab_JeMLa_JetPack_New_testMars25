@@ -44,13 +44,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,7 +80,7 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("LazyVerticalGrid Sample") }
+                title = { Text("Articles List") }
             )
         }
     ) { paddingValues ->
@@ -160,7 +155,6 @@ fun CardDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-
             TopRowQuantitys(article, mainAppViewModel)
             Row(
                 modifier = Modifier
@@ -185,7 +179,6 @@ fun TopRowQuantitys(
     mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier
 ) {
-    // Define the column names and their labels
     val nomColumesList = listOf(
         Pair(BaseDonne::clienPrixVentUnite, "c.p.U"),
         Pair(BaseDonne::nmbrCaron, "n.C"),
@@ -205,8 +198,8 @@ fun TopRowQuantitys(
                 mainAppViewModel = mainAppViewModel,
                 modifier = Modifier
                     .weight(1f)
-                    .height(45.dp),
-                abdergNomColum = label // Use the label directly
+                    .height(63.dp),
+                abdergNomColum = label
             )
         }
     }
@@ -241,7 +234,7 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
         modifier = Modifier
             .width(250.dp)
             .height(300.dp)
-            .padding(end = 8.dp) // Added padding between cards
+            .padding(end = 8.dp)
     ) {
         val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
         Column(
@@ -268,8 +261,6 @@ fun DisplayArticleInformations(
     mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier
 ) {
-    val (benificeEntreNous, benificeDiviseEn2, calculatePrixUniter) = remember(article) { CalculatedAndReturned(article) }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
@@ -278,7 +269,7 @@ fun DisplayArticleInformations(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(63.dp) // Ensure consistent height for the row
+                .height(63.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -288,7 +279,7 @@ fun DisplayArticleInformations(
                     .height(100.dp)
             ) {
                 AutoResizedText(
-                    text = "pA.U -> $calculatePrixUniter",
+                    text = "pA.U -> ${article.monPrixAchatUniter}",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -301,17 +292,17 @@ fun DisplayArticleInformations(
                 nomColum = BaseDonne::monPrixVent,
                 mainAppViewModel = mainAppViewModel,
                 modifier = Modifier
-                    .fillMaxHeight() // Ensure the TextField takes up the full height
+                    .fillMaxHeight()
                     .weight(0.70f)
                     .height(45.dp),
-                abdergNomColum = "m.P.V" // Set the same height as the Box
+                abdergNomColum = "m.P.V"
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(63.dp) // Ensure consistent height for the row
+                .height(63.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -321,7 +312,7 @@ fun DisplayArticleInformations(
                     .weight(1f)
             ) {
                 AutoResizedText(
-                    text = "b.EN -> $benificeEntreNous",
+                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -337,7 +328,7 @@ fun DisplayArticleInformations(
                     .weight(1f)
             ) {
                 AutoResizedText(
-                    text = "b./2 -> $benificeDiviseEn2",
+                    text = "b./2 -> ${article.benificeTotaleEn2}",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -345,36 +336,39 @@ fun DisplayArticleInformations(
                 )
             }
         }
+        Spacer(modifier = Modifier.width(5.dp))
+        OutlinedTextFieldDynamique(
+            article = article,
+            nomColum = BaseDonne::monBenfice,
+            mainAppViewModel = mainAppViewModel,
+            modifier = Modifier,
+            abdergNomColum = "m.Be",
+        )
     }
 }
 
-
-fun CalculatedAndReturned(article: BaseDonne): Triple<Double, Double, Double> {
-    val calculatePrixUniter = article.monPrixVent / article.nmbrUnite
-    val sortieDeClientTotale = article.nmbrUnite * article.clienPrixVentUnite
-    val benificeEntreNous = sortieDeClientTotale - article.monPrixVent
-    val benificeDiviseEn2 = benificeEntreNous / 2
-    return Triple(benificeEntreNous, benificeDiviseEn2, calculatePrixUniter)
+fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
+    article.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
+    article.prixDeVentTotaleChezClient = article.nmbrUnite * article.clienPrixVentUnite
+    article.benficeTotaleEntreMoiEtClien = article.prixDeVentTotaleChezClient - article.monPrixAchat
+    article.benificeTotaleEn2 = article.benficeTotaleEntreMoiEtClien / 2
+    article.monBenfice = article.monPrixVent - article.monPrixAchat
+    mainAppViewModel.updateArticle(article)
 }
 
-// Placeholder implementation for OutlinedTextFieldDynamique
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
     nomColum: KMutableProperty1<BaseDonne, T>,
     mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier.height(45.dp),
-    textColore: Color = Color.Red, // Default color
-    labelFontSize: Pair<TextUnit, TextUnit>? = null, // Making labelFontSize an optional parameter
+    modifier: Modifier = Modifier.height(63.dp),
+    textColore: Color = Color.Red,
     abdergNomColum: String? = nomColum.name
 ) {
-    var valeurText by remember { mutableStateOf("") }
-    var initialLabel by remember { mutableStateOf(nomColum.get(article).toString()) }
+    var valeurText by remember { mutableStateOf(nomColum.get(article).toString()) }
 
-    // Reset valeurText and initialLabel whenever the article changes
     LaunchedEffect(article) {
-        valeurText = ""
-        initialLabel = nomColum.get(article).toString()
+        valeurText = nomColum.get(article).toString()
     }
 
     OutlinedTextField(
@@ -384,77 +378,54 @@ fun <T : Any> OutlinedTextFieldDynamique(
             val newValue: T? = parseValue(newText, nomColum.returnType)
             if (newValue != null) {
                 nomColum.set(article, newValue)
-                mainAppViewModel.updateOrDelete(article)
+                calculateurPArRelationsEntreColumes(article, mainAppViewModel)
             }
         },
         label = {
-            if (labelFontSize != null) {
-                Text(buildAnnotatedString {
-                    withStyle(style = SpanStyle(fontSize = labelFontSize.first)) {
-                        append(nomColum.name)
-                    }
-                    append(" -> ")
-                    withStyle(style = SpanStyle(fontSize = labelFontSize.second, fontWeight = FontWeight.Bold)) {
-                        append(initialLabel)
-                    }
-                })
-            } else {
-                AutoResizedText(
-                    text = "$abdergNomColum:$initialLabel",
-                    color = textColore,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            AutoResizedText(
+                text = "$abdergNomColum: ${nomColum.get(article)}",
+                color = textColore,
+                modifier = Modifier.fillMaxWidth(),
+            )
         },
-        textStyle = TextStyle(color = textColore, textAlign = TextAlign.Center), // Apply text color here
+        textStyle = TextStyle(color = textColore, textAlign = TextAlign.Center),
         modifier = modifier.fillMaxWidth()
     )
 }
 
-// AutoResizedText implementation
+
 @Composable
 fun AutoResizedText(
     text: String,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
     color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center // Added textAlign parameter with default value
+    textAlign: TextAlign = TextAlign.Center
 ) {
-    var resizedTextStyle by remember {
-        mutableStateOf(style)
-    }
-    var shouldDraw by remember {
-        mutableStateOf(false)
-    }
+    var resizedTextStyle by remember { mutableStateOf(style) }
+    var shouldDraw by remember { mutableStateOf(false) }
 
     val defaultFontSize = MaterialTheme.typography.bodyMedium.fontSize
 
     Box(
         modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center // Center horizontally and vertically
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = color,
-            modifier = Modifier
-                .drawWithContent {
-                    if (shouldDraw) {
-                        drawContent()
-                    }
-                },
+            modifier = Modifier.drawWithContent {
+                if (shouldDraw) drawContent()
+            },
             softWrap = false,
             style = resizedTextStyle,
-            textAlign = textAlign, // Setting the textAlign property
+            textAlign = textAlign,
             onTextLayout = { result ->
                 if (result.didOverflowWidth) {
                     if (style.fontSize.isUnspecified) {
-                        resizedTextStyle = resizedTextStyle.copy(
-                            fontSize = defaultFontSize
-                        )
+                        resizedTextStyle = resizedTextStyle.copy(fontSize = defaultFontSize)
                     }
-                    resizedTextStyle = resizedTextStyle.copy(
-                        fontSize = resizedTextStyle.fontSize * 0.95
-                    )
+                    resizedTextStyle = resizedTextStyle.copy(fontSize = resizedTextStyle.fontSize * 0.95)
                 } else {
                     shouldDraw = true
                 }
@@ -463,7 +434,6 @@ fun AutoResizedText(
     }
 }
 
-// Helper function to parse the input text to the appropriate type
 fun <T : Any> parseValue(value: String, type: KType): T? {
     return try {
         when (type) {
