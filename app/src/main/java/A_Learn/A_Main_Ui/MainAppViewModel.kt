@@ -3,7 +3,6 @@ package A_Learn.A_Main_Ui
 import A_Learn.Edite_Base_Donne.ArticleDao
 import a_RoomDB.BaseDonne
 import android.util.Log
-import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,16 +10,17 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 
 class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
     private val refFirebase = Firebase.database.getReference("d_db_jetPack")
 
-    private val _articlesBaseDonne = mutableListOf<BaseDonne>().toMutableStateList()
-    val articlesBaseDonne: List<BaseDonne>
-        get() = _articlesBaseDonne
+    private val _articlesBaseDonne = MutableStateFlow<List<BaseDonne>>(emptyList())
+    val articlesBaseDonne: StateFlow<List<BaseDonne>> = _articlesBaseDonne.asStateFlow()
 
     init {
         initBaseDonne()
@@ -30,9 +30,7 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val articles = articleDao.getAllArticlesOrder()
-                withContext(Dispatchers.Main) {
-                    _articlesBaseDonne.addAll(articles)
-                }
+                _articlesBaseDonne.value = articles
             } catch (e: Exception) {
                 Log.e("MainAppViewModel", "Failed to initialize articles", e)
             }
@@ -50,12 +48,12 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
                     taskRef.removeValue().await()
                     articleDao.delete(article.idArticle)
                 }
+                _articlesBaseDonne.value = articleDao.getAllArticlesOrder()
             } catch (e: Exception) {
                 Log.e("MainAppViewModel", "Failed to sync with Firebase", e)
             }
         }
     }
-
 
     fun importFromFirebase() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -67,10 +65,7 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
                 articleDao.deleteAll()
                 articleDao.insertAll(sortedArticles)
 
-                withContext(Dispatchers.Main) {
-                    _articlesBaseDonne.clear()
-                    _articlesBaseDonne.addAll(sortedArticles)
-                }
+                _articlesBaseDonne.value = sortedArticles
             } catch (e: Exception) {
                 Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
             }

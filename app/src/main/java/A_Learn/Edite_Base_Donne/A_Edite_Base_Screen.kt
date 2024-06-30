@@ -53,7 +53,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
@@ -66,9 +66,10 @@ fun A_Edite_Base_Screen(
     modifier: Modifier = Modifier,
     mainAppViewModel: MainAppViewModel,
 ) {
+    val articlesList by mainAppViewModel.articlesBaseDonne.collectAsStateWithLifecycle()
     Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
-            articlesList = mainAppViewModel.articlesBaseDonne,
+            articlesList = articlesList,
             mainAppViewModel = mainAppViewModel
         )
     }
@@ -156,7 +157,7 @@ fun CardDetailleArticle(
             .wrapContentSize()
             .padding(4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -211,8 +212,6 @@ fun TopRowQuantitys(
     }
 }
 
-
-
 @Composable
 fun DisplayColorsCards(article: BaseDonne, modifier: Modifier = Modifier) {
     val couleursList = listOf(
@@ -264,19 +263,23 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
 }
 
 @Composable
-fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppViewModel, modifier: Modifier = Modifier) {
-    val labelFontSize = Pair(7.sp, 18.sp)
+fun DisplayArticleInformations(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    val (benificeEntreNous, benificeDiviseEn2, calculatePrixUniter) = remember(article) { CalculatedAndReturned(article) }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
         Spacer(modifier = Modifier.height(3.dp))
-        Row (
-            Modifier
+        Row(
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(63.dp) // Ensure consistent height for the row
         ) {
-            val calculatePrixUniter = article.monPrixVent / article.nmbrUnite
             Box(
                 modifier = Modifier
                     .padding(top = 7.dp)
@@ -305,26 +308,56 @@ fun DisplayArticleInformations(article: BaseDonne, mainAppViewModel: MainAppView
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
-        OutlinedTextFieldDynamique(
-            article = article,
-            nomColum = BaseDonne::nmbrUnite,
-            mainAppViewModel = mainAppViewModel,
-            modifier = Modifier.fillMaxWidth(),
-            abdergNomColum = "N.U"
-        )
-        Spacer(modifier = Modifier.height(15.dp))
-        OutlinedTextFieldDynamique(
-            nomColum = BaseDonne::nmbrCaron,
-            abdergNomColum= "N.C",
-            article = article,
-            mainAppViewModel = mainAppViewModel,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(63.dp) // Ensure consistent height for the row
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(1f)
+            ) {
+                AutoResizedText(
+                    text = "b.EN -> $benificeEntreNous",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(5.dp))
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(1f)
+            ) {
+                AutoResizedText(
+                    text = "b./2 -> $benificeDiviseEn2",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+        }
     }
 }
 
 
+fun CalculatedAndReturned(article: BaseDonne): Triple<Double, Double, Double> {
+    val calculatePrixUniter = article.monPrixVent / article.nmbrUnite
+    val sortieDeClientTotale = article.nmbrUnite * article.clienPrixVentUnite
+    val benificeEntreNous = sortieDeClientTotale - article.monPrixVent
+    val benificeDiviseEn2 = benificeEntreNous / 2
+    return Triple(benificeEntreNous, benificeDiviseEn2, calculatePrixUniter)
+}
 
+// Placeholder implementation for OutlinedTextFieldDynamique
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
@@ -333,7 +366,7 @@ fun <T : Any> OutlinedTextFieldDynamique(
     modifier: Modifier = Modifier.height(45.dp),
     textColore: Color = Color.Red, // Default color
     labelFontSize: Pair<TextUnit, TextUnit>? = null, // Making labelFontSize an optional parameter
-    abdergNomColum: String?= nomColum.name
+    abdergNomColum: String? = nomColum.name
 ) {
     var valeurText by remember { mutableStateOf("") }
     var initialLabel by remember { mutableStateOf(nomColum.get(article).toString()) }
@@ -377,6 +410,8 @@ fun <T : Any> OutlinedTextFieldDynamique(
         modifier = modifier.fillMaxWidth()
     )
 }
+
+// AutoResizedText implementation
 @Composable
 fun AutoResizedText(
     text: String,
@@ -428,7 +463,6 @@ fun AutoResizedText(
     }
 }
 
-
 // Helper function to parse the input text to the appropriate type
 fun <T : Any> parseValue(value: String, type: KType): T? {
     return try {
@@ -472,4 +506,3 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
         )
     }
 }
-
