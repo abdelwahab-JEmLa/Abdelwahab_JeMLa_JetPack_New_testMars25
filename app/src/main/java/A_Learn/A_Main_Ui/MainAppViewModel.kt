@@ -108,4 +108,3 @@ class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelPro
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-

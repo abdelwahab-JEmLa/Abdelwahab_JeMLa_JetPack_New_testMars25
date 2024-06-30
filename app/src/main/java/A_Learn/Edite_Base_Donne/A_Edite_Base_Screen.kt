@@ -163,7 +163,10 @@ fun CardDetailleArticle(
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
                 DisplayArticleInformations(article, mainAppViewModel, Modifier.weight(0.62f))
+
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            DisplayArticleInformations2(article, mainAppViewModel)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.nomArticleFinale,
@@ -254,13 +257,14 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
         }
     }
 }
-
 @Composable
 fun DisplayArticleInformations(
     article: BaseDonne,
     mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier
 ) {
+    var valeurText by remember { mutableStateOf("") }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
@@ -336,13 +340,63 @@ fun DisplayArticleInformations(
                 )
             }
         }
+
         Spacer(modifier = Modifier.width(5.dp))
-        OutlinedTextFieldDynamique(
-            article = article,
-            nomColum = BaseDonne::monBenfice,
-            mainAppViewModel = mainAppViewModel,
-            modifier = Modifier,
-            abdergNomColum = "m.Be",
+
+        OutlinedTextField(
+            value = valeurText,
+            onValueChange = { newText ->
+                valeurText = newText
+                calculateurPArRelationsEntreColumes(article, mainAppViewModel)
+            },
+            label = { Text(article.monBenfice.toString()) }, // Update the label when the article changes
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
+        )
+    }
+}
+
+@Composable
+fun DisplayArticleInformations2(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier,
+) {
+    // Using state to hold the values that will be shown in the OutlinedTextFields
+    var valeurTextmonBenfice by remember { mutableStateOf(article.monBenfice.toString()) }
+    var valeurmonPrixAchat by remember { mutableStateOf(article.monPrixAchat.toString()) }
+
+    Column(
+        modifier = modifier.padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = valeurTextmonBenfice,
+            onValueChange = { newText ->
+                valeurTextmonBenfice = newText
+                val newValue = newText.toDoubleOrNull()
+                if (newValue != null) {
+                    article.monBenfice = newValue
+                    calculateurPArRelationsEntreColumes(article, mainAppViewModel)
+                }
+            },
+            label = { Text(article.monBenfice.toString()) }, // Update the label when the article changes
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = valeurmonPrixAchat,
+            onValueChange = { newText ->
+                valeurmonPrixAchat = newText
+                val newValue = newText.toDoubleOrNull()
+                if (newValue != null) {
+                    article.monPrixAchat = newValue
+                    calculateurPArRelationsEntreColumes(article, mainAppViewModel)
+                }
+            },
+            label = { Text(article.monPrixAchat.toString()) }, // Update the label when the article changes
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
         )
     }
 }
@@ -392,7 +446,6 @@ fun <T : Any> OutlinedTextFieldDynamique(
         modifier = modifier.fillMaxWidth()
     )
 }
-
 
 @Composable
 fun AutoResizedText(
