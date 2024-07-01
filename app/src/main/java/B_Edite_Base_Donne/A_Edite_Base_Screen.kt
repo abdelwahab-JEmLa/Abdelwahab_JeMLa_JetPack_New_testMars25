@@ -434,7 +434,7 @@ fun <T : Any> calculateurParRelationsEntreColonnes2(
         }
     }
 
-    mainAppViewModel.updateArticle(article)
+    mainAppViewModel.updateArticleAncienMetode(article)
 }
 @Composable
 fun DisplayArticleInformations2(
@@ -495,7 +495,7 @@ fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: Ma
     article.monBenfice = article.monPrixVent - article.monPrixAchat
     article.monPrixVent = article.monBenfice + article.monPrixAchat
 
-    mainAppViewModel.updateArticle(article)
+    mainAppViewModel.updateArticleAncienMetode(article)
 }
 
 

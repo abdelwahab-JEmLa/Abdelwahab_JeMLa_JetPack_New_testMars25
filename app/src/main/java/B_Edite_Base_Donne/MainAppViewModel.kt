@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlin.reflect.KMutableProperty1
 
 class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
     private val refFirebase = Firebase.database.getReference("d_db_jetPack")
@@ -35,36 +36,50 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         }
     }
 
-    fun changeColumeValue(article: BaseDonne, newValue: String) {
-        val newList = _articlesBaseDonne.value.map {
-            if (it.idArticle == article.idArticle)
-                it.copy(monPrixVent = newValue.toDoubleOrNull() ?: it.monPrixVent)
-            else
-                it
+    fun <T : Any> updateViewModelWhithCalulationColumes(
+        newValue: String?,
+        article: BaseDonne,
+        nomColonne: KMutableProperty1<BaseDonne, T>,
+        type: (String) -> T?,
+    ) {
+        val newValueTyped = newValue?.let(type)
+        if (newValueTyped != null) {
+            nomColonne.set(article, newValueTyped)
         }
-        _articlesBaseDonne.value = newList
-        updateArticle(article)
-    }
-    fun changeColumemonBenficeValue(article: BaseDonne, newValue: String) {
-        val newList = _articlesBaseDonne.value.map {
-            if (it.idArticle == article.idArticle)
-                it.copy(monBenfice = newValue.toDoubleOrNull() ?: it.monBenfice)
-            else
-                it
+
+        val monPrixAchat = article.monPrixAchat.toDouble()
+        when (nomColonne) {
+            BaseDonne::monPrixVent -> {
+                val newBenfice = (newValueTyped as? Number)?.toDouble()?.minus(monPrixAchat)
+                if (newBenfice != null) {
+                    article.monBenfice = newBenfice
+                }
+            }
+            BaseDonne::monBenfice -> {
+                val newPrixVent = (newValueTyped as? Number)?.toDouble()?.plus(monPrixAchat)
+                if (newPrixVent != null) {
+                    article.monPrixVent = newPrixVent
+                }
+            }
         }
-        _articlesBaseDonne.value = newList
-        updateArticle(article)
+
+        _articlesBaseDonne.value = _articlesBaseDonne.value.map {
+            if (it.idArticle == article.idArticle) article else it
+        }
+        updateArticleAncienMetode(article)
+
     }
-    fun updateArticle(article: BaseDonne, remove: Boolean = false) {
+
+    fun updateArticleAncienMetode(article: BaseDonne, remove: Boolean = false) {
         val taskRef = refFirebase.child(article.idArticle.toString())
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                if (!remove) {
-                    taskRef.setValue(article).await()
-                    articleDao.insert(article)
-                } else {
+                if (remove) {
                     taskRef.removeValue().await()
                     articleDao.delete(article.idArticle)
+                } else {
+                    taskRef.setValue(article).await()
+                    articleDao.insert(article)
                 }
                 val updatedArticles = articleDao.getAllArticlesOrder()
                 _articlesBaseDonne.value = updatedArticles
@@ -74,7 +89,6 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         }
     }
 }
-
 class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainAppViewModel::class.java)) {

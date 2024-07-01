@@ -28,13 +28,13 @@ class WellnessViewModel : ViewModel() {
 
     fun changeTaskChecked(item: WellnessTask, checked: Boolean) {
         _tasks.find { it.id == item.id }?.let { task ->
-            task.bigCardView = checked
+            task.checked = checked
             syncWithFirebase(task)
         }
     }
     fun changeColumeValue(item: WellnessTask, newValue: String) {
         _tasks.find { it.id == item.id }?.let { task ->
-            task.label = newValue
+      //      task.checked = newValue
             syncWithFirebase(task)
         }
     }

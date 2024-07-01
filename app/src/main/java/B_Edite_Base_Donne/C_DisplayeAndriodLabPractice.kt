@@ -1,13 +1,16 @@
-package B_Edite_Base_Donne
+package B_Edit_Base_Donne
 
+import B_Edite_Base_Donne.MainAppViewModel
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,44 +23,41 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DisplayeAndriodLabPractice(
+fun DisplayAndroidLabPractice(
     mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier,
 ) {
-    // Collect the state as a Compose State
     val articlesBaseDonne by mainAppViewModel.articlesBaseDonne.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
-        AndriodLabPracticeArtList(
+        AndroidLabPracticeArtList(
             list = articlesBaseDonne,
             onValueChanged = { article, value ->
-                mainAppViewModel.changeColumeValue(article, value)
+                mainAppViewModel.updateViewModelWhithCalulationColumes(
+                    value, article, BaseDonne::monPrixVent
+                ) { it.toDoubleOrNull() }
             },
             onValueChangedmonBenfice = { article, value ->
-                mainAppViewModel.changeColumemonBenficeValue(article, value)
+                mainAppViewModel.updateViewModelWhithCalulationColumes(
+                    value, article, BaseDonne::monBenfice
+                ) { it.toDoubleOrNull() }
             },
         )
     }
 }
 
 @Composable
-fun AndriodLabPracticeArtList(
+fun AndroidLabPracticeArtList(
     list: List<BaseDonne>,
     onValueChanged: (BaseDonne, String) -> Unit,
     onValueChangedmonBenfice: (BaseDonne, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
-        modifier = modifier
-    ) {
-        items(
-            items = list,
-            key = { article -> article.idArticle }
-        ) { article ->
-            AndriodLabPracticeArt(
-                monPrixVent = article.monPrixVent.toString(),
+    LazyColumn(modifier = modifier) {
+        items(items = list, key = { article -> article.idArticle }) { article ->
+            AndroidLabPracticeArt(
+                article = article,
                 onValueChange = { newText -> onValueChanged(article, newText) },
-                monBenfice = article.monBenfice.toString(),
                 onValueChangemonBenfice = { newText -> onValueChangedmonBenfice(article, newText) },
             )
         }
@@ -65,28 +65,30 @@ fun AndriodLabPracticeArtList(
 }
 
 @Composable
-fun AndriodLabPracticeArt(
-    monPrixVent: String,
+fun AndroidLabPracticeArt(
+    article: BaseDonne,
     onValueChange: (String) -> Unit,
-    monBenfice: String,
     onValueChangemonBenfice: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column {
-        OutlinedTextField(
-            value = monPrixVent,
-            onValueChange = onValueChange,
-            label = { Text("mpv>$monPrixVent") },
-            modifier = modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center)
-        )
-        Spacer(modifier = Modifier.height(15.dp))
-        OutlinedTextField(
-            value = monBenfice,
-            onValueChange = onValueChangemonBenfice,
-            label = { Text("mBe>$monBenfice") },
-            modifier = modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center)
-        )
+    Spacer(modifier = Modifier.height(8.dp))
+    Card(modifier.padding(10.dp)) {
+        Column {
+            OutlinedTextField(
+                value = article.monPrixVent.toString(),
+                onValueChange = onValueChange,
+                label = { Text("mpv>${article.monPrixVent}") },
+                modifier = modifier.fillMaxWidth(),
+                textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center)
+            )
+            Spacer(modifier = Modifier.height(15.dp))
+            OutlinedTextField(
+                value = article.monBenfice.toString(),
+                onValueChange = onValueChangemonBenfice,
+                label = { Text("mBe>${article.monBenfice}") },
+                modifier = modifier.fillMaxWidth(),
+                textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center)
+            )
+        }
     }
 }
