@@ -66,11 +66,11 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         _articlesBaseDonne.value = _articlesBaseDonne.value.map {
             if (it.idArticle == article.idArticle) article else it
         }
-        updateArticleAncienMetode(article)
+        updateArticle(article)
 
     }
 
-    fun updateArticleAncienMetode(article: BaseDonne, remove: Boolean = false) {
+    fun updateArticle(article: BaseDonne, remove: Boolean = false) {
         val taskRef = refFirebase.child(article.idArticle.toString())
         viewModelScope.launch(Dispatchers.IO) {
             try {
