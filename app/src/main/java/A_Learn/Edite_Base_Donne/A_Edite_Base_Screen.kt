@@ -55,6 +55,7 @@ import java.io.File
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
+import kotlin.reflect.full.withNullability
 
 @Composable
 fun A_Edite_Base_Screen(
@@ -340,76 +341,18 @@ fun DisplayArticleInformations(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.width(5.dp))
-
-        OutlinedTextField(
-            value = valeurText,
-            onValueChange = { newText ->
-                valeurText = newText
-                calculateurPArRelationsEntreColumes(article, mainAppViewModel)
-            },
-            label = { Text(article.monBenfice.toString()) }, // Update the label when the article changes
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
+        Spacer(modifier = Modifier.width(15.dp))
+        OutlinedTextFieldDynamique(
+            article = article,
+            nomColum = BaseDonne::monBenfice,
+            mainAppViewModel = mainAppViewModel,
+            modifier = Modifier
+                .fillMaxHeight()
+                .height(65.dp),
+            abdergNomColum = "m.Be"
         )
     }
 }
-
-@Composable
-fun DisplayArticleInformations2(
-    article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier,
-) {
-    // Using state to hold the values that will be shown in the OutlinedTextFields
-    var valeurTextmonBenfice by remember { mutableStateOf(article.monBenfice.toString()) }
-    var valeurmonPrixAchat by remember { mutableStateOf(article.monPrixAchat.toString()) }
-
-    Column(
-        modifier = modifier.padding(16.dp)
-    ) {
-        OutlinedTextField(
-            value = valeurTextmonBenfice,
-            onValueChange = { newText ->
-                valeurTextmonBenfice = newText
-                val newValue = newText.toDoubleOrNull()
-                if (newValue != null) {
-                    article.monBenfice = newValue
-                    calculateurPArRelationsEntreColumes(article, mainAppViewModel)
-                }
-            },
-            label = { Text(article.monBenfice.toString()) }, // Update the label when the article changes
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = valeurmonPrixAchat,
-            onValueChange = { newText ->
-                valeurmonPrixAchat = newText
-                val newValue = newText.toDoubleOrNull()
-                if (newValue != null) {
-                    article.monPrixAchat = newValue
-                    calculateurPArRelationsEntreColumes(article, mainAppViewModel)
-                }
-            },
-            label = { Text(article.monPrixAchat.toString()) }, // Update the label when the article changes
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
-        )
-    }
-}
-
-fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
-    article.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
-    article.prixDeVentTotaleChezClient = article.nmbrUnite * article.clienPrixVentUnite
-    article.benficeTotaleEntreMoiEtClien = article.prixDeVentTotaleChezClient - article.monPrixAchat
-    article.benificeTotaleEn2 = article.benficeTotaleEntreMoiEtClien / 2
-    article.monBenfice = article.monPrixVent - article.monPrixAchat
-    mainAppViewModel.updateArticle(article)
-}
-
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
@@ -446,6 +389,114 @@ fun <T : Any> OutlinedTextFieldDynamique(
         modifier = modifier.fillMaxWidth()
     )
 }
+
+fun <T : Any> parseValue(value: String?, type: KType): T? {
+    return try {
+        when (type.withNullability(false)) {
+            Int::class.createType() -> value?.toInt()
+            Float::class.createType() -> value?.toFloat()
+            Double::class.createType() -> value?.toDouble()
+            Long::class.createType() -> value?.toLong()
+            Boolean::class.createType() -> value?.toBoolean()
+            String::class.createType() -> value
+            else -> null
+        } as? T
+    } catch (e: Exception) {
+        null
+    }
+}
+fun <T : Any> calculateurParRelationsEntreColonnes2(
+    newValue: String?,
+    article: BaseDonne,
+    nomColonne: KMutableProperty1<BaseDonne, T>,
+    type: (String) -> T?,
+    mainAppViewModel: MainAppViewModel,
+) {
+    val newValueTyped = newValue?.let(type)
+    if (newValueTyped != null) {
+        nomColonne.set(article, newValueTyped)
+    }
+
+    val monPrixAchat = article.monPrixAchat.toDouble()
+    when (nomColonne) {
+        BaseDonne::monPrixVent -> {
+            val newBenfice = (newValueTyped as? Number)?.toDouble()?.minus(monPrixAchat)
+            if (newBenfice != null) {
+                article.monBenfice = newBenfice
+            }
+        }
+        BaseDonne::monBenfice -> {
+            val newPrixVent = (newValueTyped as? Number)?.toDouble()?.plus(monPrixAchat)
+            if (newPrixVent != null) {
+                article.monPrixVent = newPrixVent
+            }
+        }
+    }
+
+    mainAppViewModel.updateArticle(article)
+}
+@Composable
+fun DisplayArticleInformations2(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier,
+) {
+    // Using state to hold the values that will be shown in the OutlinedTextFields
+    var valeurTextmonBenfice by remember { mutableStateOf(article.monBenfice.toString()) }
+    var valeurTextmonPrixVent by remember { mutableStateOf(article.monPrixVent.toString()) }
+    var valeurNmbrUnite by remember { mutableStateOf(article.nmbrUnite.toString()) }
+
+    Column(
+        modifier = modifier.padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = valeurTextmonBenfice,
+            onValueChange = { newText ->
+                valeurTextmonBenfice = newText
+                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::monBenfice, { it.toDoubleOrNull() }, mainAppViewModel)
+            },
+            label = { Text("m.B${article.monBenfice}") },
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = valeurNmbrUnite,
+            onValueChange = { newText ->
+                valeurNmbrUnite = newText
+                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::nmbrUnite, { it.toIntOrNull() }, mainAppViewModel)
+            },
+            label = { Text("n.u${article.nmbrUnite}") },
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = valeurTextmonPrixVent,
+            onValueChange = { newText ->
+                valeurTextmonPrixVent = newText
+                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::monPrixVent, { it.toDoubleOrNull() }, mainAppViewModel)
+            },
+            label = { Text("mpv${article.monPrixVent}") },
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = Color.Black, textAlign = TextAlign.Center)
+        )
+    }
+}
+
+fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
+    article.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
+    article.prixDeVentTotaleChezClient = article.nmbrUnite * article.clienPrixVentUnite
+    article.benficeTotaleEntreMoiEtClien = article.prixDeVentTotaleChezClient - article.monPrixAchat
+    article.benificeTotaleEn2 = article.benficeTotaleEntreMoiEtClien / 2
+    article.monBenfice = article.monPrixVent - article.monPrixAchat
+    article.monPrixVent = article.monBenfice + article.monPrixAchat
+
+    mainAppViewModel.updateArticle(article)
+}
+
 
 @Composable
 fun AutoResizedText(
@@ -487,21 +538,6 @@ fun AutoResizedText(
     }
 }
 
-fun <T : Any> parseValue(value: String, type: KType): T? {
-    return try {
-        when (type) {
-            Int::class.createType() -> value.toInt() as? T
-            Float::class.createType() -> value.toFloat() as? T
-            Double::class.createType() -> value.toDouble() as? T
-            Long::class.createType() -> value.toLong() as? T
-            Boolean::class.createType() -> value.toBoolean() as? T
-            String::class.createType() -> value as? T
-            else -> null
-        }
-    } catch (e: Exception) {
-        null
-    }
-}
 
 @Composable
 fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
