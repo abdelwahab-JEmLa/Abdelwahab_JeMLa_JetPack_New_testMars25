@@ -1,4 +1,4 @@
-package A_Learn.LazyC
+package Z_Learn.LazyC
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

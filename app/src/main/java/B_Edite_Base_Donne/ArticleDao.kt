@@ -1,4 +1,4 @@
-package A_Learn.Edite_Base_Donne
+package B_Edite_Base_Donne
 
 import a_RoomDB.BaseDonne
 import androidx.room.Dao

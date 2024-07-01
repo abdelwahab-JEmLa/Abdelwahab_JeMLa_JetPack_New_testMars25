@@ -1,6 +1,5 @@
-package A_Learn.A_Main_Ui
+package B_Edite_Base_Donne
 
-import A_Learn.Edite_Base_Donne.ArticleDao
 import a_RoomDB.BaseDonne
 import android.util.Log
 import androidx.lifecycle.ViewModel

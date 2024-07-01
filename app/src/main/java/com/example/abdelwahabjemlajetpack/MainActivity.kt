@@ -1,8 +1,8 @@
 package com.example.abdelwahabjemlajetpack
 
-import A_Learn.A_Main_Ui.MainAppViewModel
-import A_Learn.A_Main_Ui.MainAppViewModelFactory
-import A_Learn.Edite_Base_Donne.A_Edite_Base_Screen
+import B_Edite_Base_Donne.A_Edite_Base_Screen
+import B_Edite_Base_Donne.MainAppViewModel
+import B_Edite_Base_Donne.MainAppViewModelFactory
 import a_RoomDB.AppDatabase
 import a_RoomDB.BaseDonne
 import android.Manifest

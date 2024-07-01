@@ -1,4 +1,4 @@
-package com.example.abdelwahabjemlajetpack
+package Z_WellnessExemple
 
 data class WellnessTask(
     val id: Int = 0,

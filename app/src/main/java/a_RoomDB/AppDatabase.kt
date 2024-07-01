@@ -1,6 +1,6 @@
 package a_RoomDB
 
-import A_Learn.Edite_Base_Donne.ArticleDao
+import B_Edite_Base_Donne.ArticleDao
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room

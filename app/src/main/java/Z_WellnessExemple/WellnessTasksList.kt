@@ -1,4 +1,4 @@
-package com.example.abdelwahabjemlajetpack
+package Z_WellnessExemple
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding

@@ -1,6 +1,5 @@
-package A_Learn.Edite_Base_Donne
+package B_Edite_Base_Donne
 
-import A_Learn.A_Main_Ui.MainAppViewModel
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -168,6 +167,7 @@ fun CardDetailleArticle(
             }
             Spacer(modifier = Modifier.height(8.dp))
             DisplayArticleInformations2(article, mainAppViewModel)
+            DisplayArticleInformations3(article, mainAppViewModel)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.nomArticleFinale,
