@@ -16,11 +16,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlin.reflect.KMutableProperty1
 
 @Composable
 fun DisplayAndroidLabPractice(
@@ -30,62 +34,106 @@ fun DisplayAndroidLabPractice(
     val articlesBaseDonne by mainAppViewModel.articlesBaseDonne.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
-        AndroidLabPracticeArtList(
-            list = articlesBaseDonne,
-            onValueChanged = { article, value ->
-                mainAppViewModel.updateViewModelWhithCalulationColumes(
-                    value, article, BaseDonne::monPrixVent
-                ) { it.toDoubleOrNull() }
-            },
-            onValueChangedmonBenfice = { article, value ->
-                mainAppViewModel.updateViewModelWhithCalulationColumes(
-                    value, article, BaseDonne::monBenfice
-                ) { it.toDoubleOrNull() }
-            },
+        ListsController(
+            articles = articlesBaseDonne,
+            mainAppViewModel = mainAppViewModel
         )
     }
 }
 
 @Composable
-fun AndroidLabPracticeArtList(
-    list: List<BaseDonne>,
-    onValueChanged: (BaseDonne, String) -> Unit,
-    onValueChangedmonBenfice: (BaseDonne, String) -> Unit,
+fun ListsController(
+    articles: List<BaseDonne>,
+    mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier) {
-        items(items = list, key = { article -> article.idArticle }) { article ->
-            AndroidLabPracticeArt(
-                article = article,
-                onValueChange = { newText -> onValueChanged(article, newText) },
-                onValueChangemonBenfice = { newText -> onValueChangedmonBenfice(article, newText) },
-            )
+        items(articles, key = { it.idArticle }) { article ->
+            StatetsController(article = article, mainAppViewModel = mainAppViewModel, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-fun AndroidLabPracticeArt(
+fun StatetsController(
     article: BaseDonne,
-    onValueChange: (String) -> Unit,
-    onValueChangemonBenfice: (String) -> Unit,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    var articleState by remember { mutableStateOf(article.copy()) }
+
+    DisplayeArticle(
+        articleState = articleState,
+        onValueChangeDemonPrixVent = { newText ->
+            articleState = calculeNewValues(
+                newText, articleState, BaseDonne::monPrixVent, String::toDoubleOrNull, mainAppViewModel
+            )
+        },
+        onValueChangeDemonBenfice = { newText ->
+            articleState = calculeNewValues(
+                newText, articleState, BaseDonne::monBenfice, String::toDoubleOrNull, mainAppViewModel
+            )
+        },
+        modifier = modifier
+    )
+}
+
+fun <T : Any> calculeNewValues(
+    newValue: String?,
+    article: BaseDonne,
+    nomColonne: KMutableProperty1<BaseDonne, T>,
+    type: (String) -> T?,
+    mainAppViewModel: MainAppViewModel
+): BaseDonne {
+    val newArticle = article.copy()
+    val newValueTyped = newValue?.let(type)
+    if (newValueTyped != null) {
+        nomColonne.set(newArticle, newValueTyped)
+    }
+
+    val monPrixAchat = newArticle.monPrixAchat.toDouble()
+    when (nomColonne) {
+        BaseDonne::monPrixVent -> {
+            val newBenfice = (newValueTyped as? Number)?.toDouble()?.minus(monPrixAchat)
+            if (newBenfice != null) {
+                newArticle.monBenfice = newBenfice
+            }
+        }
+        BaseDonne::monBenfice -> {
+            val newPrixVent = (newValueTyped as? Number)?.toDouble()?.plus(monPrixAchat)
+            if (newPrixVent != null) {
+                newArticle.monPrixVent = newPrixVent
+            }
+        }
+    }
+    mainAppViewModel.updateArticleAncienMetode(newArticle)
+    return newArticle
+}
+
+@Composable
+fun DisplayeArticle(
+    articleState: BaseDonne,
+    onValueChangeDemonPrixVent: (String) -> Unit,
+    onValueChangeDemonBenfice: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Spacer(modifier = Modifier.height(8.dp))
-    Card(modifier.padding(10.dp)) {
+    Card(modifier = modifier.padding(10.dp)) {
         Column {
+            val monPrixVentToStringe = articleState.monPrixVent.toString()
             OutlinedTextField(
-                value = article.monPrixVent.toString(),
-                onValueChange = onValueChange,
-                label = { Text("mpv>${article.monPrixVent}") },
+                value = monPrixVentToStringe,
+                onValueChange = onValueChangeDemonPrixVent,
+                label = { Text("mpv>$monPrixVentToStringe") },
                 modifier = modifier.fillMaxWidth(),
                 textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center)
             )
             Spacer(modifier = Modifier.height(15.dp))
+            val monBenficeToStringe = articleState.monBenfice.toString()
             OutlinedTextField(
-                value = article.monBenfice.toString(),
-                onValueChange = onValueChangemonBenfice,
-                label = { Text("mBe>${article.monBenfice}") },
+                value = monBenficeToStringe,
+                onValueChange = onValueChangeDemonBenfice,
+                label = { Text("mBe>$monBenficeToStringe") },
                 modifier = modifier.fillMaxWidth(),
                 textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center)
             )
