@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
@@ -36,19 +35,27 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         }
     }
 
-    fun updateArticle(article: BaseDonne) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                articleDao.update(article)
-                val updatedArticles = articleDao.getAllArticlesOrder()
-                _articlesBaseDonne.value = updatedArticles
-            } catch (e: Exception) {
-                Log.e("MainAppViewModel", "Failed to update article", e)
-            }
+    fun changeColumeValue(article: BaseDonne, newValue: String) {
+        val newList = _articlesBaseDonne.value.map {
+            if (it.idArticle == article.idArticle)
+                it.copy(monPrixVent = newValue.toDoubleOrNull() ?: it.monPrixVent)
+            else
+                it
         }
+        _articlesBaseDonne.value = newList
+        updateArticle(article)
     }
-
-    fun updateOrDelete(article: BaseDonne, remove: Boolean = false) {
+    fun changeColumemonBenficeValue(article: BaseDonne, newValue: String) {
+        val newList = _articlesBaseDonne.value.map {
+            if (it.idArticle == article.idArticle)
+                it.copy(monBenfice = newValue.toDoubleOrNull() ?: it.monBenfice)
+            else
+                it
+        }
+        _articlesBaseDonne.value = newList
+        updateArticle(article)
+    }
+    fun updateArticle(article: BaseDonne, remove: Boolean = false) {
         val taskRef = refFirebase.child(article.idArticle.toString())
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -65,36 +72,6 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
                 Log.e("MainAppViewModel", "Failed to sync with Firebase", e)
             }
         }
-    }
-
-    fun importFromFirebase() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val dataSnapshot = refFirebase.get().await()
-                val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
-                val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
-
-                articleDao.deleteAll()
-                articleDao.insertAll(sortedArticles)
-
-                _articlesBaseDonne.value = sortedArticles
-            } catch (e: Exception) {
-                Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
-            }
-        }
-    }
-
-    private fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
-        val articles = mutableListOf<BaseDonne>()
-        for (child in dataSnapshot.children) {
-            val article = child.getValue(BaseDonne::class.java)
-            if (article != null) {
-                articles.add(article)
-            } else {
-                Log.e("MainAppViewModel", "Failed to parse article from snapshot: $child")
-            }
-        }
-        return articles
     }
 }
 

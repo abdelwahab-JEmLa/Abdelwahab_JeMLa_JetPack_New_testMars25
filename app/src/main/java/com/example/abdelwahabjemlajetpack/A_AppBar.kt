@@ -1,6 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
-import Z_WellnessExemple.WellnessViewModel
+import Z_Learn.Z_WellnessExemple.WellnessViewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize

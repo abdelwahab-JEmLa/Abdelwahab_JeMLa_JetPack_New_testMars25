@@ -1,4 +1,4 @@
-package Z_WellnessExemple
+package Z_Learn.Z_WellnessExemple
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

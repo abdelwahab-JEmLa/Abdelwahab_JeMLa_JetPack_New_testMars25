@@ -63,6 +63,7 @@ fun A_Edite_Base_Screen(
 ) {
     val articlesList by mainAppViewModel.articlesBaseDonne.collectAsStateWithLifecycle()
     Column(modifier = modifier.fillMaxSize()) {
+
         ArticlesScreenList(
             articlesList = articlesList,
             mainAppViewModel = mainAppViewModel
@@ -167,7 +168,6 @@ fun CardDetailleArticle(
             }
             Spacer(modifier = Modifier.height(8.dp))
             DisplayArticleInformations2(article, mainAppViewModel)
-            DisplayArticleInformations3(article, mainAppViewModel)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.nomArticleFinale,
@@ -353,6 +353,7 @@ fun DisplayArticleInformations(
         )
     }
 }
+
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,

@@ -1,4 +1,4 @@
-package Z_WellnessExemple
+package Z_Learn.Z_WellnessExemple
 
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class LearnWellnessViewModel : ViewModel() {
+class WellnessViewModel : ViewModel() {
     private val database = Firebase.database
     private val refFirebase = database.getReference("tasks")
 
@@ -29,6 +29,12 @@ class LearnWellnessViewModel : ViewModel() {
     fun changeTaskChecked(item: WellnessTask, checked: Boolean) {
         _tasks.find { it.id == item.id }?.let { task ->
             task.bigCardView = checked
+            syncWithFirebase(task)
+        }
+    }
+    fun changeColumeValue(item: WellnessTask, newValue: String) {
+        _tasks.find { it.id == item.id }?.let { task ->
+            task.label = newValue
             syncWithFirebase(task)
         }
     }
