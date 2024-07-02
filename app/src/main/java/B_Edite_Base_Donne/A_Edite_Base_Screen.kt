@@ -171,7 +171,6 @@ fun CardDetailleArticle(
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
                 DisplayArticleInformations(article, mainAppViewModel, Modifier.weight(0.62f))
-
             }
             Spacer(modifier = Modifier.height(8.dp))
             DisplayArticleInformations3(article, mainAppViewModel)
@@ -183,6 +182,7 @@ fun CardDetailleArticle(
         }
     }
 }
+
 @Composable
 fun DisplayArticleInformations3(
     article: BaseDonne,
