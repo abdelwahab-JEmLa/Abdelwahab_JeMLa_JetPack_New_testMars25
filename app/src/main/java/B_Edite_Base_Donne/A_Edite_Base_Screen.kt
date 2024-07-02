@@ -62,19 +62,26 @@ fun A_Edite_Base_Screen(
     mainAppViewModel: MainAppViewModel,
 ) {
     val articlesList by mainAppViewModel.articlesBaseDonne.collectAsStateWithLifecycle()
-    Column(modifier = modifier.fillMaxSize()) {
+    var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
 
+    Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
             articlesList = articlesList,
-            mainAppViewModel = mainAppViewModel
+            mainAppViewModel = mainAppViewModel,
+            selectedArticle = selectedArticle,
+            onArticleSelect = { selectedArticle = it }
         )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppViewModel) {
-    var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
+fun ArticlesScreenList(
+    articlesList: List<BaseDonne>,
+    mainAppViewModel: MainAppViewModel,
+    selectedArticle: BaseDonne?,
+    onArticleSelect: (BaseDonne) -> Unit
+) {
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
 
@@ -97,7 +104,7 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                     ) {
                         pairOfArticles.forEach { article ->
                             ArticleBoardCard(article) { updatedArticle ->
-                                selectedArticle = updatedArticle
+                                onArticleSelect(updatedArticle)
                                 focusManager.clearFocus() // Clear the focus from the text field
                             }
                         }
@@ -105,8 +112,8 @@ fun ArticlesScreenList(articlesList: List<BaseDonne>, mainAppViewModel: MainAppV
                     selectedArticle?.let { article ->
                         if (pairOfArticles.contains(article)) {
                             CardDetailleArticle(
-                                article,
-                                mainAppViewModel,
+                                article = article,
+                                mainAppViewModel = mainAppViewModel,
                             )
                         }
                     }
@@ -167,7 +174,6 @@ fun CardDetailleArticle(
 
             }
             Spacer(modifier = Modifier.height(8.dp))
-            DisplayArticleInformations2(article, mainAppViewModel)
             DisplayArticleInformations3(article, mainAppViewModel)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -272,17 +278,34 @@ fun DisplayArticleInformations3(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        val columnProperty = BaseDonne::monPrixVent
+        val columnProperty1 = BaseDonne::monPrixVent
         OutlinedTextFieldModifier(
             article = articleState,
-            columnProperty = columnProperty,
+            columnProperty = columnProperty1,
             onValueChange = { newValue ->
                 val updatedArticle = calculateNewValues(
-                    columnProperty.name, newValue, articleState
+                    columnProperty1.name, newValue, articleState
                 )
                 articleState = updatedArticle
             },
-            label = "m.b",
+            abregation = "p.v",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(65.dp),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val columnProperty2 = BaseDonne::monBenfice
+        OutlinedTextFieldModifier(
+            article = articleState,
+            columnProperty = columnProperty2,
+            onValueChange = { newValue ->
+                val updatedArticle = calculateNewValues(
+                    columnProperty2.name, newValue, articleState
+                )
+                articleState = updatedArticle
+            },
+            abregation = "m.b",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(65.dp),
@@ -298,11 +321,11 @@ fun <T : Any> OutlinedTextFieldModifier(
     article: BaseDonne,
     columnProperty: KMutableProperty1<BaseDonne, T>,
     onValueChange: (String) -> Unit,
-    label: String,
+    abregation: String,
     modifier: Modifier = Modifier.height(63.dp),
     textColor: Color = Color.Red,
 ) {
-    var textValue by remember { mutableStateOf(columnProperty.get(article).toString()) }
+    var textValue by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = textValue,
@@ -312,7 +335,7 @@ fun <T : Any> OutlinedTextFieldModifier(
         },
         label = {
             AutoResizedText(
-                text = "$label: ${columnProperty.get(article)}",
+                text = "$abregation: ${columnProperty.get(article)}",
                 color = textColor,
                 modifier = Modifier.fillMaxWidth(),
             )
