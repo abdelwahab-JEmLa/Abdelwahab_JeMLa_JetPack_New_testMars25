@@ -183,89 +183,6 @@ fun CardDetailleArticle(
         }
     }
 }
-
-@Composable
-fun TopRowQuantitys(
-    article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier
-) {
-    val nomColumesList = listOf(
-        Pair(BaseDonne::clienPrixVentUnite, "c.p.U"),
-        Pair(BaseDonne::nmbrCaron, "n.C"),
-        Pair(BaseDonne::nmbrUnite, "n.U")
-    )
-
-    Row(
-        modifier = modifier
-            .padding(3.dp)
-            .fillMaxWidth()
-    ) {
-        nomColumesList.forEach { (nomColume, label) ->
-            Spacer(modifier = Modifier.width(3.dp))
-            OutlinedTextFieldDynamique(
-                article = article,
-                nomColum = nomColume,
-                mainAppViewModel = mainAppViewModel,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(63.dp),
-                abdergNomColum = label
-            )
-        }
-    }
-}
-
-@Composable
-fun DisplayColorsCards(article: BaseDonne, modifier: Modifier = Modifier) {
-    val couleursList = listOf(
-        article.couleur1,
-        article.couleur2,
-        article.couleur3,
-        article.couleur4,
-    )
-
-    LazyRow(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .padding(3.dp)
-            .fillMaxWidth()
-    ) {
-        itemsIndexed(couleursList) { index, couleur ->
-            if (!couleur.isNullOrEmpty()) {
-                ColorsCard(article.idArticle.toString(), index, couleur)
-            }
-        }
-    }
-}
-
-@Composable
-fun ColorsCard(idArticle: String, index: Int, couleur: String) {
-    Card(
-        modifier = Modifier
-            .width(250.dp)
-            .height(300.dp)
-            .padding(end = 8.dp)
-    ) {
-        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .height(250.dp)
-                    .fillMaxWidth()
-            ) {
-                LoadImageFromPath(imagePath = imagePath)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = couleur)
-        }
-    }
-}
-
 @Composable
 fun DisplayArticleInformations3(
     article: BaseDonne,
@@ -325,7 +242,7 @@ fun <T : Any> OutlinedTextFieldModifier(
     modifier: Modifier = Modifier.height(63.dp),
     textColor: Color = Color.Red,
 ) {
-    var textValue by remember { mutableStateOf("") }
+    var textValue by remember { mutableStateOf(columnProperty.get(article).toString()) }
 
     OutlinedTextField(
         value = textValue,
@@ -374,6 +291,89 @@ fun calculateNewValues(
     }
 
     return newArticle
+}
+
+@Composable
+fun TopRowQuantitys(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    val nomColumesList = listOf(
+        Pair(BaseDonne::clienPrixVentUnite, "c.p.U"),
+        Pair(BaseDonne::nmbrCaron, "n.C"),
+        Pair(BaseDonne::nmbrUnite, "n.U")
+    )
+
+    Row(
+        modifier = modifier
+            .padding(3.dp)
+            .fillMaxWidth()
+    ) {
+        nomColumesList.forEach { (nomColume, label) ->
+            Spacer(modifier = Modifier.width(3.dp))
+            OutlinedTextFieldDynamique(
+                article = article,
+                nomColum = nomColume,
+                mainAppViewModel = mainAppViewModel,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(63.dp),
+                abdergNomColum = label
+            )
+        }
+    }
+}
+
+@Composable
+fun DisplayColorsCards(article: BaseDonne, modifier: Modifier = Modifier) {
+    val couleursList = listOf(
+        article.couleur1,
+        article.couleur2,
+        article.couleur3,
+        article.couleur4,
+    )
+
+    LazyRow(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .padding(3.dp)
+            .fillMaxWidth()
+    ) {
+        itemsIndexed(couleursList) { index, couleur ->
+            if (!couleur.isNullOrEmpty()) {
+                ColorsCard(article.idArticle.toString(), index, couleur)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ColorsCard(idArticle: String, index: Int, couleur: String) {
+    Card(
+        modifier = Modifier
+            .width(250.dp)
+            .height(300.dp)
+            .padding(end = 8.dp)
+    ) {
+        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .height(250.dp)
+                    .fillMaxWidth()
+            ) {
+                LoadImageFromPath(imagePath = imagePath)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = couleur)
+        }
+    }
 }
 
 
