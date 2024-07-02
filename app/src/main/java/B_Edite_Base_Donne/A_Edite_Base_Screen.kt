@@ -199,8 +199,10 @@ fun CardDetailleArticle(
             Spacer(modifier = Modifier.height(8.dp))
             DisplayArticleInformations3(
                 article = articleState,
-                onValueChange = { articleState = it
-                    function (it)}
+                onValueChange = { updatedArticle ->
+                    articleState = updatedArticle
+                    function(updatedArticle)
+                }
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -245,7 +247,6 @@ fun DisplayArticleInformations3(
         )
     }
 }
-
 @Composable
 fun <T : Any> OutlinedTextFieldModifier(
     article: BaseDonne,
@@ -274,7 +275,6 @@ fun <T : Any> OutlinedTextFieldModifier(
         modifier = modifier.fillMaxWidth()
     )
 }
-
 fun calculateNewValues(
     columnName: String,
     newValue: String?,
@@ -282,6 +282,12 @@ fun calculateNewValues(
 ): BaseDonne {
     val newArticle = article.copy()
     val value = newValue?.toDoubleOrNull() ?: 0.0
+
+    // Reset all fields to 0 before applying the new value
+    newArticle.monBenfice = 0.0
+    newArticle.prixDeVentTotaleChezClient = 0.0
+    newArticle.monPrixVent = 0.0
+    newArticle.monPrixAchatUniter = 0.0
 
     when (columnName) {
         "monBenfice" -> newArticle.monBenfice = value
@@ -304,6 +310,7 @@ fun calculateNewValues(
     }
     return newArticle
 }
+
 
 ////////////////////////////////////////////////////////////////////
 
