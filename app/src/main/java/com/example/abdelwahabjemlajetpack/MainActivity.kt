@@ -2,6 +2,7 @@ package com.example.abdelwahabjemlajetpack
 
 import B_Edit_Base_Donne.DisplayAndroidLabPractice
 import B_Edite_Base_Donne.A_Edite_Base_Screen
+import B_Edite_Base_Donne.ArticleDao
 import B_Edite_Base_Donne.MainAppViewModel
 import B_Edite_Base_Donne.MainAppViewModelFactory
 import a_RoomDB.AppDatabase
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                MyApp(viewModel, )
+                MyApp(viewModel,database.articleDao() )
             }
         }
     }
@@ -100,11 +101,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyApp(mainAppViewModel: MainAppViewModel) {
+fun MyApp(mainAppViewModel: MainAppViewModel, articleDao: ArticleDao) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
         composable("main_screen") { MainScreen(navController,mainAppViewModel) }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(mainAppViewModel = mainAppViewModel) }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(articleDao) }
         composable("DisplayeAndriodLabPractice") { DisplayAndroidLabPractice(mainAppViewModel) }
     }
 }

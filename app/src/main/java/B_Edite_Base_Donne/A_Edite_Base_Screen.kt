@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,29 +48,50 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.File
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.withNullability
 
+private val refFirebase = Firebase.database.getReference("d_db_jetPack")
+
 @Composable
 fun A_Edite_Base_Screen(
+    articleDao: ArticleDao,
     modifier: Modifier = Modifier,
-    mainAppViewModel: MainAppViewModel,
 ) {
-    val articlesList by mainAppViewModel.articlesBaseDonne.collectAsStateWithLifecycle()
+    var articlesList by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(true) {
+        articlesList = articleDao.getAllArticlesOrder()
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
             articlesList = articlesList,
-            mainAppViewModel = mainAppViewModel,
             selectedArticle = selectedArticle,
-            onArticleSelect = { selectedArticle = it }
+            onArticleSelect = { selectedArticle = it },
+            function = { articleUpdated ->
+                coroutineScope.launch(Dispatchers.IO) {
+                    try {
+                        refFirebase.setValue(articleUpdated).await()
+                        articleDao.insert(articleUpdated)
+                    } catch (e: Exception) {
+                        // Handle the error here
+                    }
+                }
+            }
         )
     }
 }
@@ -78,9 +100,9 @@ fun A_Edite_Base_Screen(
 @Composable
 fun ArticlesScreenList(
     articlesList: List<BaseDonne>,
-    mainAppViewModel: MainAppViewModel,
     selectedArticle: BaseDonne?,
-    onArticleSelect: (BaseDonne) -> Unit
+    onArticleSelect: (BaseDonne) -> Unit,
+    function: (BaseDonne) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
@@ -113,7 +135,7 @@ fun ArticlesScreenList(
                         if (pairOfArticles.contains(article)) {
                             CardDetailleArticle(
                                 article = article,
-                                mainAppViewModel = mainAppViewModel,
+                                function = function,
                             )
                         }
                     }
@@ -131,7 +153,7 @@ fun ArticleBoardCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
             .width(170.dp)
             .clickable { onClick(article) },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
             Box(
@@ -152,8 +174,10 @@ fun ArticleBoardCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 @Composable
 fun CardDetailleArticle(
     article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
+    function: (BaseDonne) -> Unit,
 ) {
+    var articleState by remember { mutableStateOf(article.copy()) }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -163,20 +187,24 @@ fun CardDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            TopRowQuantitys(article, mainAppViewModel)
+            TopRowQuantitys(articleState)
             Row(
                 modifier = Modifier
                     .padding(8.dp)
                     .fillMaxWidth()
             ) {
-                DisplayColorsCards(article, Modifier.weight(0.38f))
-                DisplayArticleInformations(article, mainAppViewModel, Modifier.weight(0.62f))
+                DisplayColorsCards(articleState, Modifier.weight(0.38f))
+                DisplayArticleInformations(articleState, Modifier.weight(0.62f))
             }
             Spacer(modifier = Modifier.height(8.dp))
-            DisplayArticleInformations3(article, mainAppViewModel)
+            DisplayArticleInformations3(
+                article = articleState,
+                onValueChange = { articleState = it
+                    function (it)}
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = article.nomArticleFinale,
+                text = articleState.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
         }
@@ -186,25 +214,18 @@ fun CardDetailleArticle(
 @Composable
 fun DisplayArticleInformations3(
     article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onValueChange: (BaseDonne) -> Unit,
 ) {
-    var articleState by remember { mutableStateOf(article.copy()) }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
         val columnProperty1 = BaseDonne::monPrixVent
         OutlinedTextFieldModifier(
-            article = articleState,
+            article = article,
             columnProperty = columnProperty1,
-            onValueChange = { newValue ->
-                val updatedArticle = calculateNewValues(
-                    columnProperty1.name, newValue, articleState
-                )
-                articleState = updatedArticle
-            },
+            onValueChange = onValueChange,
             abregation = "p.v",
             modifier = Modifier
                 .fillMaxWidth()
@@ -214,22 +235,14 @@ fun DisplayArticleInformations3(
 
         val columnProperty2 = BaseDonne::monBenfice
         OutlinedTextFieldModifier(
-            article = articleState,
+            article = article,
             columnProperty = columnProperty2,
-            onValueChange = { newValue ->
-                val updatedArticle = calculateNewValues(
-                    columnProperty2.name, newValue, articleState
-                )
-                articleState = updatedArticle
-            },
+            onValueChange = onValueChange,
             abregation = "m.b",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(65.dp),
         )
-    }
-    LaunchedEffect(articleState) {
-        mainAppViewModel.updateArticle(articleState)
     }
 }
 
@@ -237,7 +250,7 @@ fun DisplayArticleInformations3(
 fun <T : Any> OutlinedTextFieldModifier(
     article: BaseDonne,
     columnProperty: KMutableProperty1<BaseDonne, T>,
-    onValueChange: (String) -> Unit,
+    onValueChange: (BaseDonne) -> Unit,
     abregation: String,
     modifier: Modifier = Modifier.height(63.dp),
     textColor: Color = Color.Red,
@@ -248,16 +261,16 @@ fun <T : Any> OutlinedTextFieldModifier(
         value = textValue,
         onValueChange = {
             textValue = it
-            onValueChange(it)
+            onValueChange(calculateNewValues(columnProperty.name, it, article))
         },
         label = {
-            AutoResizedText(
+            Text(
                 text = "$abregation: ${columnProperty.get(article)}",
                 color = textColor,
                 modifier = Modifier.fillMaxWidth(),
             )
         },
-        textStyle = TextStyle(color = textColor, textAlign = TextAlign.Center),
+        textStyle = TextStyle(color = textColor, textAlign = TextAlign.Center, fontSize = 14.sp),
         modifier = modifier.fillMaxWidth()
     )
 }
@@ -289,14 +302,14 @@ fun calculateNewValues(
     if (columnName != "monPrixAchatUniter") {
         newArticle.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
     }
-
     return newArticle
 }
+
+////////////////////////////////////////////////////////////////////
 
 @Composable
 fun TopRowQuantitys(
     article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier
 ) {
     val nomColumesList = listOf(
@@ -315,7 +328,6 @@ fun TopRowQuantitys(
             OutlinedTextFieldDynamique(
                 article = article,
                 nomColum = nomColume,
-                mainAppViewModel = mainAppViewModel,
                 modifier = Modifier
                     .weight(1f)
                     .height(63.dp),
@@ -380,7 +392,6 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
 @Composable
 fun DisplayArticleInformations(
     article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier
 ) {
     var valeurText by remember { mutableStateOf("") }
@@ -415,7 +426,6 @@ fun DisplayArticleInformations(
             OutlinedTextFieldDynamique(
                 article = article,
                 nomColum = BaseDonne::monPrixVent,
-                mainAppViewModel = mainAppViewModel,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.70f)
@@ -464,7 +474,7 @@ fun DisplayArticleInformations(
 
     }
 }
-fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
+fun calculateurPArRelationsEntreColumes(article: BaseDonne) {
     article.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
     article.prixDeVentTotaleChezClient = article.nmbrUnite * article.clienPrixVentUnite
     article.benficeTotaleEntreMoiEtClien = article.prixDeVentTotaleChezClient - article.monPrixAchat
@@ -472,13 +482,11 @@ fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: Ma
     article.monBenfice = article.monPrixVent - article.monPrixAchat
     article.monPrixVent = article.monBenfice + article.monPrixAchat
 
-    mainAppViewModel.updateArticle(article)
 }
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
     nomColum: KMutableProperty1<BaseDonne, T>,
-    mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier.height(63.dp),
     textColore: Color = Color.Red,
     abdergNomColum: String? = nomColum.name
@@ -496,7 +504,7 @@ fun <T : Any> OutlinedTextFieldDynamique(
             val newValue: T? = parseValue(newText, nomColum.returnType)
             if (newValue != null) {
                 nomColum.set(article, newValue)
-                calculateurPArRelationsEntreColumes(article, mainAppViewModel)
+                calculateurPArRelationsEntreColumes(article, )
             }
         },
         label = {
@@ -531,7 +539,6 @@ fun <T : Any> calculateurParRelationsEntreColonnes2(
     article: BaseDonne,
     nomColonne: KMutableProperty1<BaseDonne, T>,
     type: (String) -> T?,
-    mainAppViewModel: MainAppViewModel,
 ) {
     val newValueTyped = newValue?.let(type)
     if (newValueTyped != null) {
@@ -554,12 +561,10 @@ fun <T : Any> calculateurParRelationsEntreColonnes2(
         }
     }
 
-    mainAppViewModel.updateArticle(article)
 }
 @Composable
 fun DisplayArticleInformations2(
     article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
     modifier: Modifier = Modifier,
 ) {
     // Using state to hold the values that will be shown in the OutlinedTextFields
@@ -574,7 +579,7 @@ fun DisplayArticleInformations2(
             value = valeurTextmonBenfice,
             onValueChange = { newText ->
                 valeurTextmonBenfice = newText
-                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::monBenfice, { it.toDoubleOrNull() }, mainAppViewModel)
+                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::monBenfice, { it.toDoubleOrNull() }, )
             },
             label = { Text("m.B${article.monBenfice}") },
             modifier = Modifier.fillMaxWidth(),
@@ -586,7 +591,7 @@ fun DisplayArticleInformations2(
             value = valeurNmbrUnite,
             onValueChange = { newText ->
                 valeurNmbrUnite = newText
-                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::nmbrUnite, { it.toIntOrNull() }, mainAppViewModel)
+                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::nmbrUnite, { it.toIntOrNull() }, )
             },
             label = { Text("n.u${article.nmbrUnite}") },
             modifier = Modifier.fillMaxWidth(),
@@ -598,7 +603,7 @@ fun DisplayArticleInformations2(
             value = valeurTextmonPrixVent,
             onValueChange = { newText ->
                 valeurTextmonPrixVent = newText
-                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::monPrixVent, { it.toDoubleOrNull() }, mainAppViewModel)
+                calculateurParRelationsEntreColonnes2(newText, article, BaseDonne::monPrixVent, { it.toDoubleOrNull() }, )
             },
             label = { Text("mpv${article.monPrixVent}") },
             modifier = Modifier.fillMaxWidth(),
