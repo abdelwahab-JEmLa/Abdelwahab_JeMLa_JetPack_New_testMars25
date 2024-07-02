@@ -168,6 +168,7 @@ fun CardDetailleArticle(
             }
             Spacer(modifier = Modifier.height(8.dp))
             DisplayArticleInformations2(article, mainAppViewModel)
+            DisplayArticleInformations3(article, mainAppViewModel)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.nomArticleFinale,
@@ -258,6 +259,101 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
         }
     }
 }
+
+@Composable
+fun DisplayArticleInformations3(
+    article: BaseDonne,
+    mainAppViewModel: MainAppViewModel,
+    modifier: Modifier = Modifier
+) {
+    var articleState by remember { mutableStateOf(article.copy()) }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(3.dp)
+    ) {
+        val columnProperty = BaseDonne::monPrixVent
+        OutlinedTextFieldModifier(
+            article = articleState,
+            columnProperty = columnProperty,
+            onValueChange = { newValue ->
+                val updatedArticle = calculateNewValues(
+                    columnProperty.name, newValue, articleState
+                )
+                articleState = updatedArticle
+            },
+            label = "m.b",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(65.dp),
+        )
+    }
+    LaunchedEffect(articleState) {
+        mainAppViewModel.updateArticle(articleState)
+    }
+}
+
+@Composable
+fun <T : Any> OutlinedTextFieldModifier(
+    article: BaseDonne,
+    columnProperty: KMutableProperty1<BaseDonne, T>,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier.height(63.dp),
+    textColor: Color = Color.Red,
+) {
+    var textValue by remember { mutableStateOf(columnProperty.get(article).toString()) }
+
+    OutlinedTextField(
+        value = textValue,
+        onValueChange = {
+            textValue = it
+            onValueChange(it)
+        },
+        label = {
+            AutoResizedText(
+                text = "$label: ${columnProperty.get(article)}",
+                color = textColor,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        textStyle = TextStyle(color = textColor, textAlign = TextAlign.Center),
+        modifier = modifier.fillMaxWidth()
+    )
+}
+
+fun calculateNewValues(
+    columnName: String,
+    newValue: String?,
+    article: BaseDonne,
+): BaseDonne {
+    val newArticle = article.copy()
+    val value = newValue?.toDoubleOrNull() ?: 0.0
+
+    when (columnName) {
+        "monBenfice" -> newArticle.monBenfice = value
+        "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
+        "monPrixVent" -> newArticle.monPrixVent = value
+        "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
+    }
+
+    if (columnName != "monPrixVent") {
+        newArticle.monPrixVent = newArticle.monBenfice + article.monPrixAchat
+    }
+    if (columnName != "prixDeVentTotaleChezClient") {
+        newArticle.prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
+    }
+    if (columnName != "monBenfice") {
+        newArticle.monBenfice = newArticle.monPrixVent - article.monPrixAchat
+    }
+    if (columnName != "monPrixAchatUniter") {
+        newArticle.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
+    }
+
+    return newArticle
+}
+
+
 @Composable
 fun DisplayArticleInformations(
     article: BaseDonne,
@@ -265,6 +361,7 @@ fun DisplayArticleInformations(
     modifier: Modifier = Modifier
 ) {
     var valeurText by remember { mutableStateOf("") }
+    var articleState by remember { mutableStateOf(article.copy()) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -341,19 +438,19 @@ fun DisplayArticleInformations(
                 )
             }
         }
-        Spacer(modifier = Modifier.width(15.dp))
-        OutlinedTextFieldDynamique(
-            article = article,
-            nomColum = BaseDonne::monBenfice,
-            mainAppViewModel = mainAppViewModel,
-            modifier = Modifier
-                .fillMaxHeight()
-                .height(65.dp),
-            abdergNomColum = "m.Be"
-        )
+
     }
 }
+fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
+    article.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
+    article.prixDeVentTotaleChezClient = article.nmbrUnite * article.clienPrixVentUnite
+    article.benficeTotaleEntreMoiEtClien = article.prixDeVentTotaleChezClient - article.monPrixAchat
+    article.benificeTotaleEn2 = article.benficeTotaleEntreMoiEtClien / 2
+    article.monBenfice = article.monPrixVent - article.monPrixAchat
+    article.monPrixVent = article.monBenfice + article.monPrixAchat
 
+    mainAppViewModel.updateArticle(article)
+}
 @Composable
 fun <T : Any> OutlinedTextFieldDynamique(
     article: BaseDonne,
@@ -487,16 +584,7 @@ fun DisplayArticleInformations2(
     }
 }
 
-fun calculateurPArRelationsEntreColumes(article: BaseDonne, mainAppViewModel: MainAppViewModel) {
-    article.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
-    article.prixDeVentTotaleChezClient = article.nmbrUnite * article.clienPrixVentUnite
-    article.benficeTotaleEntreMoiEtClien = article.prixDeVentTotaleChezClient - article.monPrixAchat
-    article.benificeTotaleEn2 = article.benficeTotaleEntreMoiEtClien / 2
-    article.monBenfice = article.monPrixVent - article.monPrixAchat
-    article.monPrixVent = article.monBenfice + article.monPrixAchat
 
-    mainAppViewModel.updateArticle(article)
-}
 
 
 @Composable
