@@ -241,7 +241,13 @@ fun DisplayArticleInformations3(
         }
     }
 }
-
+fun removeTrailingZero(value: String): String {
+    return when {
+        value == "0.0" -> ""
+        value.endsWith(".0") -> value.removeSuffix(".0")
+        else -> value
+    }
+}
 @Composable
 fun OutlinedTextFieldModifier(
     textValue: String,
@@ -252,8 +258,10 @@ fun OutlinedTextFieldModifier(
     textColor: Color = Color.Red,
 ) {
     OutlinedTextField(
-        value = textValue,
-        onValueChange = onValueChange,
+        value = removeTrailingZero(textValue),
+        onValueChange = {
+            onValueChange(removeTrailingZero(it))
+        },
         label = {
             Text(
                 text = "$abbreviation: $labelValue",
