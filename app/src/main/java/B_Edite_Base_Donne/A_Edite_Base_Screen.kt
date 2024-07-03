@@ -219,6 +219,7 @@ fun DisplayArticleInformations3(
     onValueChange: (BaseDonne) -> Unit,
 ) {
     var allColumnsEmptyExceptInputNow by remember { mutableStateOf(BaseDonne()) }
+    var labelValue by remember { mutableStateOf(BaseDonne()) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -226,8 +227,6 @@ fun DisplayArticleInformations3(
     ) {
         val columns = listOf("monPrixVent", "monBenfice")
         columns.forEach { column ->
-            var labelValue by remember { mutableStateOf(BaseDonne()) }
-
             OutlinedTextFieldModifier(
                 textValue = if (allColumnsEmptyExceptInputNow.isEmptyColumn(column)) "" else article.getColumnValue(column).toString(),
                 labelValue = article.getColumnValue(column).toString(),
