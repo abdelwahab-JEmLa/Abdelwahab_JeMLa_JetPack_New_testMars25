@@ -214,24 +214,24 @@ fun DisplayArticleInformations3(
     onValueChange: (BaseDonne) -> Unit,
 ) {
     var articleState by remember { mutableStateOf(article) }
-    var listAllEmptyExcept by remember { mutableStateOf(BaseDonne()) }
+    var currentChangingField by remember { mutableStateOf("") }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        val fields = listOf("monPrixVent", "monBenfice")
-        val labels = listOf("p.v", "m.b")
+        val fields = listOf("monPrixVent", "monBenefice")
+        val abbreviations = listOf("p.v", "m.b")
 
         fields.forEachIndexed { index, field ->
             OutlinedTextFieldModifier(
-                textValue = listAllEmptyExcept.getColumnValue(field).toString(),
+                textValue = if (currentChangingField == field) articleState.getColumnValue(field).toString() else "",
                 onValueChange = {
-                    listAllEmptyExcept = articleState.makeAllEmptyExcept(field, it)
                     articleState = calculateNewValues(field, it, article)
+                    currentChangingField = field
                     onValueChange(articleState)
                 },
-                abregation = labels[index],
+                abbreviation = abbreviations[index],
                 labelValue = articleState.getColumnValue(field).toString(),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -247,16 +247,16 @@ fun OutlinedTextFieldModifier(
     textValue: String,
     labelValue: String,
     onValueChange: (String) -> Unit,
-    abregation: String,
+    abbreviation: String,
     modifier: Modifier = Modifier,
     textColor: Color = Color.Red,
 ) {
     OutlinedTextField(
-        value = if (textValue=="0.0")"" else textValue,
+        value = textValue,
         onValueChange = onValueChange,
         label = {
             Text(
-                text = "$abregation: $labelValue",
+                text = "$abbreviation: $labelValue",
                 color = textColor,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -276,7 +276,7 @@ fun calculateNewValues(
 
     when (columnName) {
         "monPrixVent" -> newArticle.monPrixVent = value
-        "monBenfice" -> newArticle.monBenfice = value
+        "monBenefice" -> newArticle.monBenfice = value
         "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
         "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
     }
@@ -288,7 +288,7 @@ fun calculateNewValues(
         if (columnName != "prixDeVentTotaleChezClient") {
             prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
         }
-        if (columnName != "monBenfice") {
+        if (columnName != "monBenefice") {
             monBenfice = monPrixVent - article.monPrixAchat
         }
         if (columnName != "monPrixAchatUniter") {
@@ -299,16 +299,16 @@ fun calculateNewValues(
     return newArticle
 }
 
-
 fun BaseDonne.getColumnValue(columnName: String): Double? {
     return when (columnName) {
         "monPrixVent" -> monPrixVent
-        "monBenfice" -> monBenfice
+        "monBenefice" -> monBenfice
         "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient
         "monPrixAchatUniter" -> monPrixAchatUniter
         else -> null
     }
 }
+
 
 fun BaseDonne.makeAllEmptyExcept(columnName: String, newValue: String?): BaseDonne {
     return when (columnName) {
