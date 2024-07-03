@@ -214,7 +214,7 @@ fun DisplayArticleInformations3(
     onValueChange: (BaseDonne) -> Unit,
 ) {
     var articleState by remember { mutableStateOf(article) }
-    var currentChangingField by remember { mutableStateOf("") }
+    var currentChangingField by remember { mutableStateOf(articleState.getColumnValue("").toString()) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
