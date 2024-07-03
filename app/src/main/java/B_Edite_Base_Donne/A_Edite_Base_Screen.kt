@@ -225,8 +225,7 @@ fun DisplayArticleInformations3(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        val columns = listOf("monPrixVent", "monBenfice")
-        columns.forEach { column ->
+            val column = "monPrixVent"
             OutlinedTextFieldModifier(
                 textValue = if (allColumnsEmptyExceptInputNow.isEmptyColumn(column)) "" else article.getColumnValue(column).toString(),
                 labelValue = article.getColumnValue(column).toString(),
@@ -241,8 +240,24 @@ fun DisplayArticleInformations3(
                     .fillMaxWidth()
                     .height(65.dp),
             )
+
             Spacer(modifier = Modifier.height(16.dp))
-        }
+
+            val monBenfice ="monBenfice"
+            OutlinedTextFieldModifier(
+                textValue = if (allColumnsEmptyExceptInputNow.isEmptyColumn(monBenfice)) "" else article.getColumnValue(monBenfice).toString(),
+                labelValue = article.getColumnValue(monBenfice).toString(),
+                onValueChange = {
+                    val (newArticle, newAllColumnsEmptyExceptInputNow) = calculateNewValues(monBenfice, it, article, allColumnsEmptyExceptInputNow)
+                    allColumnsEmptyExceptInputNow = newAllColumnsEmptyExceptInputNow
+                    onValueChange(newArticle)
+                    labelValue = newArticle
+                },
+                abregation = "m.b",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(65.dp),
+            )
     }
 }
 
@@ -257,9 +272,7 @@ fun OutlinedTextFieldModifier(
 ) {
     OutlinedTextField(
         value = textValue,
-        onValueChange = {
-            onValueChange(it)
-        },
+        onValueChange = { onValueChange(it) },
         label = {
             Text(
                 text = "$abregation: $labelValue",
@@ -280,16 +293,11 @@ fun calculateNewValues(
 ): Pair<BaseDonne, BaseDonne> {
     val newArticle = article.copy()
     val updatedAllColumnsEmptyExceptInputNow = allColumnsEmptyExceptInputNow.copy()
-
     val value = newValue?.toDoubleOrNull() ?: 0.0
 
     when (columnName) {
-        "monBenfice" -> {
-            newArticle.monBenfice = value
-        }
-        "monPrixVent" -> {
-            newArticle.monPrixVent = value
-        }
+        "monBenfice" ->newArticle.monBenfice = value
+        "monPrixVent" ->newArticle.monPrixVent = value
         "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
         "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
     }
