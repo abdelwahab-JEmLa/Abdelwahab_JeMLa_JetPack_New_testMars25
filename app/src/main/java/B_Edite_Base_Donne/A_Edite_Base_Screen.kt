@@ -170,14 +170,11 @@ fun ArticleBoardCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
         }
     }
 }
-
 @Composable
 fun CardDetailleArticle(
     article: BaseDonne,
     function: (BaseDonne) -> Unit,
 ) {
-    var articleState by remember { mutableStateOf(article.copy()) }
-
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -187,77 +184,61 @@ fun CardDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            TopRowQuantitys(articleState)
+            TopRowQuantitys(article)
             Row(
                 modifier = Modifier
                     .padding(8.dp)
                     .fillMaxWidth()
             ) {
-                DisplayColorsCards(articleState, Modifier.weight(0.38f))
-                DisplayArticleInformations(articleState, Modifier.weight(0.62f))
+                DisplayColorsCards(article, Modifier.weight(0.38f))
+                DisplayArticleInformations(article, Modifier.weight(0.62f))
             }
             Spacer(modifier = Modifier.height(8.dp))
             DisplayArticleInformations3(
-                article = articleState,
-                onValueChange = { updatedArticle ->
-                    articleState = updatedArticle
-                    function(updatedArticle)
-                }
+                article = article,
+                onValueChange = function
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = articleState.nomArticleFinale,
+                text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
         }
     }
 }
+
 @Composable
 fun DisplayArticleInformations3(
     article: BaseDonne,
     modifier: Modifier = Modifier,
     onValueChange: (BaseDonne) -> Unit,
 ) {
-    var allColumnsEmptyExceptInputNow by remember { mutableStateOf(BaseDonne()) }
-    var labelValue by remember { mutableStateOf(BaseDonne()) }
+    var articleState by remember { mutableStateOf(article) }
+    var listAllEmptyExcept by remember { mutableStateOf(BaseDonne()) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-            val column = "monPrixVent"
+        val fields = listOf("monPrixVent", "monBenfice")
+        val labels = listOf("p.v", "m.b")
+
+        fields.forEachIndexed { index, field ->
             OutlinedTextFieldModifier(
-                textValue = if (allColumnsEmptyExceptInputNow.isEmptyColumn(column)) "" else article.getColumnValue(column).toString(),
-                labelValue = article.getColumnValue(column).toString(),
+                textValue = listAllEmptyExcept.getColumnValue(field).toString(),
                 onValueChange = {
-                    val (newArticle, newAllColumnsEmptyExceptInputNow) = calculateNewValues(column, it, article, allColumnsEmptyExceptInputNow)
-                    allColumnsEmptyExceptInputNow = newAllColumnsEmptyExceptInputNow
-                    onValueChange(newArticle)
-                    labelValue = newArticle
+                    listAllEmptyExcept = articleState.makeAllEmptyExcept(field, it)
+                    articleState = calculateNewValues(field, it, article)
+                    onValueChange(articleState)
                 },
-                abregation = "m.b",
+                abregation = labels[index],
+                labelValue = articleState.getColumnValue(field).toString(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(65.dp),
+                    .height(65.dp)
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            val monBenfice ="monBenfice"
-            OutlinedTextFieldModifier(
-                textValue = if (allColumnsEmptyExceptInputNow.isEmptyColumn(monBenfice)) "" else article.getColumnValue(monBenfice).toString(),
-                labelValue = article.getColumnValue(monBenfice).toString(),
-                onValueChange = {
-                    val (newArticle, newAllColumnsEmptyExceptInputNow) = calculateNewValues(monBenfice, it, article, allColumnsEmptyExceptInputNow)
-                    allColumnsEmptyExceptInputNow = newAllColumnsEmptyExceptInputNow
-                    onValueChange(newArticle)
-                    labelValue = newArticle
-                },
-                abregation = "m.b",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(65.dp),
-            )
+        }
     }
 }
 
@@ -267,12 +248,12 @@ fun OutlinedTextFieldModifier(
     labelValue: String,
     onValueChange: (String) -> Unit,
     abregation: String,
-    modifier: Modifier = Modifier.height(63.dp),
+    modifier: Modifier = Modifier,
     textColor: Color = Color.Red,
 ) {
     OutlinedTextField(
-        value = textValue,
-        onValueChange = { onValueChange(it) },
+        value = if (textValue=="0.0")"" else textValue,
+        onValueChange = onValueChange,
         label = {
             Text(
                 text = "$abregation: $labelValue",
@@ -289,58 +270,53 @@ fun calculateNewValues(
     columnName: String,
     newValue: String?,
     article: BaseDonne,
-    allColumnsEmptyExceptInputNow: BaseDonne
-): Pair<BaseDonne, BaseDonne> {
-    val newArticle = article.copy()
-    val updatedAllColumnsEmptyExceptInputNow = allColumnsEmptyExceptInputNow.copy()
+): BaseDonne {
     val value = newValue?.toDoubleOrNull() ?: 0.0
+    val newArticle = article.copy()
 
     when (columnName) {
-        "monBenfice" ->newArticle.monBenfice = value
-        "monPrixVent" ->newArticle.monPrixVent = value
+        "monPrixVent" -> newArticle.monPrixVent = value
+        "monBenfice" -> newArticle.monBenfice = value
         "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
         "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
     }
 
-    if (columnName != "monPrixVent") {
-        newArticle.monPrixVent = newArticle.monBenfice + article.monPrixAchat
-        updatedAllColumnsEmptyExceptInputNow.monPrixVent = 0.0
-    } else {
-        updatedAllColumnsEmptyExceptInputNow.monPrixVent = value
+    newArticle.apply {
+        if (columnName != "monPrixVent") {
+            monPrixVent = monBenfice + article.monPrixAchat
+        }
+        if (columnName != "prixDeVentTotaleChezClient") {
+            prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
+        }
+        if (columnName != "monBenfice") {
+            monBenfice = monPrixVent - article.monPrixAchat
+        }
+        if (columnName != "monPrixAchatUniter") {
+            monPrixAchatUniter = monPrixVent / article.nmbrUnite
+        }
     }
 
-    if (columnName != "prixDeVentTotaleChezClient") {
-        newArticle.prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
-    }
-
-    if (columnName != "monBenfice") {
-        newArticle.monBenfice = newArticle.monPrixVent - article.monPrixAchat
-        updatedAllColumnsEmptyExceptInputNow.monBenfice = 0.0
-    } else {
-        updatedAllColumnsEmptyExceptInputNow.monBenfice = value
-    }
-
-    if (columnName != "monPrixAchatUniter") {
-        newArticle.monPrixAchatUniter = article.monPrixVent / article.nmbrUnite
-    }
-
-    return Pair(newArticle, updatedAllColumnsEmptyExceptInputNow,)
+    return newArticle
 }
 
-// Extension functions to support the changes
-fun BaseDonne.isEmptyColumn(columnName: String): Boolean {
+
+fun BaseDonne.getColumnValue(columnName: String): Double? {
     return when (columnName) {
-        "monPrixVent" -> this.monPrixVent == 0.0
-        "monBenfice" -> this.monBenfice == 0.0
-        else -> false
+        "monPrixVent" -> monPrixVent
+        "monBenfice" -> monBenfice
+        "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient
+        "monPrixAchatUniter" -> monPrixAchatUniter
+        else -> null
     }
 }
 
-fun BaseDonne.getColumnValue(columnName: String): Double {
+fun BaseDonne.makeAllEmptyExcept(columnName: String, newValue: String?): BaseDonne {
     return when (columnName) {
-        "monPrixVent" -> this.monPrixVent
-        "monBenfice" -> this.monBenfice
-        else -> 0.0
+        "monPrixVent" -> this.copy(monPrixVent = newValue?.toDoubleOrNull() ?: 0.0)
+        "monBenfice" -> this.copy(monBenfice = newValue?.toDoubleOrNull() ?: 0.0)
+        "prixDeVentTotaleChezClient" -> this.copy(prixDeVentTotaleChezClient = newValue?.toDoubleOrNull() ?: 0.0)
+        "monPrixAchatUniter" -> this.copy(monPrixAchatUniter = newValue?.toDoubleOrNull() ?: 0.0)
+        else -> this
     }
 }
 
