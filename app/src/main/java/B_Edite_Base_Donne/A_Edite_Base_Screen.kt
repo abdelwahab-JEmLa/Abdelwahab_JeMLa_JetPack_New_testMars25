@@ -62,7 +62,6 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.withNullability
 
-private val refFirebase = Firebase.database.getReference("d_db_jetPack")
 
 @Composable
 fun A_Edite_Base_Screen(
@@ -72,6 +71,7 @@ fun A_Edite_Base_Screen(
     var articlesList by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var selectedArticle by remember { mutableStateOf<BaseDonne?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val refFirebase = Firebase.database.getReference("d_db_jetPack")
 
     LaunchedEffect(true) {
         articlesList = articleDao.getAllArticlesOrder()
@@ -309,16 +309,6 @@ fun BaseDonne.getColumnValue(columnName: String): Double? {
     }
 }
 
-
-fun BaseDonne.makeAllEmptyExcept(columnName: String, newValue: String?): BaseDonne {
-    return when (columnName) {
-        "monPrixVent" -> this.copy(monPrixVent = newValue?.toDoubleOrNull() ?: 0.0)
-        "monBenfice" -> this.copy(monBenfice = newValue?.toDoubleOrNull() ?: 0.0)
-        "prixDeVentTotaleChezClient" -> this.copy(prixDeVentTotaleChezClient = newValue?.toDoubleOrNull() ?: 0.0)
-        "monPrixAchatUniter" -> this.copy(monPrixAchatUniter = newValue?.toDoubleOrNull() ?: 0.0)
-        else -> this
-    }
-}
 
 ////////////////////////////////////////////////////////////////////
 
