@@ -1,10 +1,10 @@
 package com.example.abdelwahabjemlajetpack
 
 import B_Edit_Base_Donne.DisplayAndroidLabPractice
-import B_Edite_Base_Donne.A_Edite_Base_Screen
-import B_Edite_Base_Donne.ArticleDao
-import B_Edite_Base_Donne.MainAppViewModel
-import B_Edite_Base_Donne.MainAppViewModelFactory
+import b_Edite_Base_Donne.A_Edite_Base_Screen
+import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.MainAppViewModel
+import b_Edite_Base_Donne.MainAppViewModelFactory
 import a_RoomDB.AppDatabase
 import android.Manifest
 import android.content.pm.PackageManager

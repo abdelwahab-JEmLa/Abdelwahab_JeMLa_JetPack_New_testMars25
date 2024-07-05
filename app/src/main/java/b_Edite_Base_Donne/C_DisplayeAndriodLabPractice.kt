@@ -1,6 +1,6 @@
 package B_Edit_Base_Donne
 
-import B_Edite_Base_Donne.MainAppViewModel
+import b_Edite_Base_Donne.MainAppViewModel
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

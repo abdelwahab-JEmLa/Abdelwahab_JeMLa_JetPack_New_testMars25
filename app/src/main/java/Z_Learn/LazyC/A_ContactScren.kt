@@ -1,5 +1,5 @@
 
-import B_Edite_Base_Donne.LoadImageFromPath
+import b_Edite_Base_Donne.LoadImageFromPath
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
