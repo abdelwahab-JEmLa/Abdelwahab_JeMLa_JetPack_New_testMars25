@@ -203,41 +203,138 @@ fun DisplayeDetailleArticle(
         }
     }
 }
-
 @Composable
-fun D_InformationsNewPractice(
+fun DisplayArticleInformations(
     article: BaseDonne,
-    modifier: Modifier = Modifier,
-    onValueChange: (BaseDonne) -> Unit,
-) {
-    var articleState by remember { mutableStateOf(article) }
-    var currentChangingField by remember { mutableStateOf("") }
+    function: (BaseDonne) -> Unit,
+    modifier: Modifier = Modifier
 
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        val fields = listOf("monPrixVent", "monBenefice")
-        val abbreviations = listOf("p.v", "m.b")
-
-        fields.forEachIndexed { index, field ->
-            OutlinedTextFieldModifier(
-                textValue = if (currentChangingField == field) articleState.getColumnValue(field).toString() else "",
-                onValueChange = {
-                    articleState = calculateNewValues(field, it, article)
-                    currentChangingField = field
-                    onValueChange(articleState)
-                },
-                abbreviation = abbreviations[index],
-                labelValue = articleState.getColumnValue(field).toString(),
+        Spacer(modifier = Modifier.height(3.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(63.dp)
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(65.dp)
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .weight(0.40f)
+                    .height(100.dp)
+            ) {
+                AutoResizedText(
+                    text = "pA.U -> ${article.monPrixAchatUniter}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(5.dp))
+            OutlinedTextFieldDynamique(
+                article = article,
+                nomColum = BaseDonne::monPrixVent,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(0.70f)
+                    .height(45.dp),
+                abdergNomColum = "m.P.V"
             )
-            Spacer(modifier = Modifier.height(16.dp))
         }
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(63.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(1f)
+            ) {
+                AutoResizedText(
+                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(5.dp))
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(1f)
+            ) {
+                AutoResizedText(
+                    text = "b./2 -> ${article.benificeTotaleEn2}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+        }
+        Dis_InformationsNewPractice(
+            article = article,
+            onValueChange = function,
+        )
+        OutlineTextEditeBaseDonne(
+            article = article,
+            onValueChange = function,
+            valueDBToChange = "monPrixVent",
+            abbreviations = "p.v",
+        )
     }
 }
+
+@Composable
+fun OutlineTextEditeBaseDonne(
+    article: BaseDonne,
+    onValueChange: (BaseDonne) -> Unit,
+    modifier: Modifier = Modifier,
+    valueDBToChange: String,
+    abbreviations: String,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(3.dp)
+    ) {
+        var articleState by remember { mutableStateOf(article) }
+        var currentChangingField by remember { mutableStateOf("") }
+        val textValue = if (currentChangingField == valueDBToChange) articleState.getColumnValue(valueDBToChange)?.toString() ?: "" else ""
+        val labelValue = articleState.getColumnValue(valueDBToChange)?.toString() ?: ""
+
+        OutlinedTextField(
+            value = removeTrailingZero(textValue),
+            onValueChange = {
+                val updatedArticle = calculateNewValues(valueDBToChange, removeTrailingZero(it), articleState)
+                articleState = updatedArticle
+                currentChangingField = valueDBToChange
+                onValueChange(articleState)
+            },
+            label = {
+                Text(
+                    text = "$abbreviations: $labelValue",
+                    color = Color.Red,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center, fontSize = 14.sp),
+            modifier = modifier.fillMaxWidth().height(65.dp)
+        )
+    }
+}
+
 fun removeTrailingZero(value: String): String {
     return when {
         value == "0.0" -> ""
@@ -245,32 +342,6 @@ fun removeTrailingZero(value: String): String {
         else -> value
     }
 }
-@Composable
-fun OutlinedTextFieldModifier(
-    textValue: String,
-    labelValue: String,
-    onValueChange: (String) -> Unit,
-    abbreviation: String,
-    modifier: Modifier = Modifier,
-    textColor: Color = Color.Red,
-) {
-    OutlinedTextField(
-        value = removeTrailingZero(textValue),
-        onValueChange = {
-            onValueChange(removeTrailingZero(it))
-        },
-        label = {
-            Text(
-                text = "$abbreviation: $labelValue",
-                color = textColor,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        textStyle = TextStyle(color = textColor, textAlign = TextAlign.Center, fontSize = 14.sp),
-        modifier = modifier.fillMaxWidth()
-    )
-}
-
 fun calculateNewValues(
     columnName: String,
     newValue: String?,
@@ -311,6 +382,67 @@ fun BaseDonne.getColumnValue(columnName: String): Double? {
         "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient
         "monPrixAchatUniter" -> monPrixAchatUniter
         else -> null
+    }
+}
+//---------------------------------------------------------------------------
+@Composable
+fun OutlinedTextFieldModifier(
+    textValue: String,
+    labelValue: String,
+    onValueChange: (String) -> Unit,
+    abbreviation: String,
+    modifier: Modifier = Modifier,
+    textColor: Color = Color.Red,
+) {
+    OutlinedTextField(
+        value = removeTrailingZero(textValue),
+        onValueChange = {
+            onValueChange(removeTrailingZero(it))
+        },
+        label = {
+            Text(
+                text = "$abbreviation: $labelValue",
+                color = textColor,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        textStyle = TextStyle(color = textColor, textAlign = TextAlign.Center, fontSize = 14.sp),
+        modifier = modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+fun Dis_InformationsNewPractice(
+    article: BaseDonne,
+    modifier: Modifier = Modifier,
+    onValueChange: (BaseDonne) -> Unit,
+) {
+    var articleState by remember { mutableStateOf(article) }
+    var currentChangingField by remember { mutableStateOf("") }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(3.dp)
+    ) {
+        val fields = listOf("monPrixVent", "monBenefice")
+        val abbreviations = listOf("p.v", "m.b")
+
+        fields.forEachIndexed { index, field ->
+            OutlinedTextFieldModifier(
+                textValue = if (currentChangingField == field) articleState.getColumnValue(field).toString() else "",
+                onValueChange = {
+                    articleState = calculateNewValues(field, it, article)
+                    currentChangingField = field
+                    onValueChange(articleState)
+                },
+                abbreviation = abbreviations[index],
+                labelValue = articleState.getColumnValue(field).toString(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(65.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
 
@@ -397,94 +529,6 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
     }
 }
 
-
-@Composable
-fun DisplayArticleInformations(
-    article: BaseDonne,
-    function: (BaseDonne) -> Unit,
-    modifier: Modifier = Modifier
-
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(3.dp)
-    ) {
-        Spacer(modifier = Modifier.height(3.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(63.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .weight(0.40f)
-                    .height(100.dp)
-            ) {
-                AutoResizedText(
-                    text = "pA.U -> ${article.monPrixAchatUniter}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(5.dp))
-            OutlinedTextFieldDynamique(
-                article = article,
-                nomColum = BaseDonne::monPrixVent,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(0.70f)
-                    .height(45.dp),
-                abdergNomColum = "m.P.V"
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(63.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(1f)
-            ) {
-                AutoResizedText(
-                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(5.dp))
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(1f)
-            ) {
-                AutoResizedText(
-                    text = "b./2 -> ${article.benificeTotaleEn2}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-        }
-        D_InformationsNewPractice(
-            article = article,
-            onValueChange = function,
-        )
-    }
-}
 
 
 

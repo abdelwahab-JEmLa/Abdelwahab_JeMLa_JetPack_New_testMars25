@@ -2,6 +2,9 @@ package b_Edite_Base_Donne
 
 import a_RoomDB.BaseDonne
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -15,7 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.reflect.KMutableProperty1
 
-class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
+class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() {
     private val refFirebase = Firebase.database.getReference("d_db_jetPack")
 
     private val _articlesBaseDonne = MutableStateFlow<List<BaseDonne>>(emptyList())
@@ -77,6 +80,7 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
                 if (remove) {
                     taskRef.removeValue().await()
                     articleDao.delete(article.idArticle)
+
                 } else {
                     taskRef.setValue(article).await()
                     articleDao.insert(article)
@@ -89,12 +93,21 @@ class MainAppViewModel(private val articleDao: ArticleDao) : ViewModel() {
         }
     }
 }
+
 class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(MainAppViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MainAppViewModel(articleDao) as T
+            return EditeBaseDonneViewModel(articleDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
+}
+
+class BaseDonneStatTabel(
+    idArticle: Int,
+    nomArticleFinale: String
+) {
+    var idArticle by mutableStateOf(idArticle)
+    var nomArticleFinale by mutableStateOf(nomArticleFinale)
 }

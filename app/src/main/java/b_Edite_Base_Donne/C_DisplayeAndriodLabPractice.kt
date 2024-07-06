@@ -1,6 +1,6 @@
 package B_Edit_Base_Donne
 
-import b_Edite_Base_Donne.MainAppViewModel
+import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,15 +27,15 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun DisplayAndroidLabPractice(
-    mainAppViewModel: MainAppViewModel,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val articlesBaseDonne by mainAppViewModel.articlesBaseDonne.collectAsState()
+    val articlesBaseDonne by editeBaseDonneViewModel.articlesBaseDonne.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
         ListsController(
             articles = articlesBaseDonne,
-            mainAppViewModel = mainAppViewModel
+            editeBaseDonneViewModel = editeBaseDonneViewModel
         )
     }
 }
@@ -43,12 +43,12 @@ fun DisplayAndroidLabPractice(
 @Composable
 fun ListsController(
     articles: List<BaseDonne>,
-    mainAppViewModel: MainAppViewModel,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier) {
         items(articles, key = { it.idArticle }) { article ->
-            StatesController(article = article, mainAppViewModel = mainAppViewModel, modifier = Modifier.fillMaxWidth())
+            StatesController(article = article, editeBaseDonneViewModel = editeBaseDonneViewModel, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -56,7 +56,7 @@ fun ListsController(
 @Composable
 fun StatesController(
     article: BaseDonne,
-    mainAppViewModel: MainAppViewModel,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier
 ) {
     var articleState by remember { mutableStateOf(article.copy()) }
@@ -65,12 +65,12 @@ fun StatesController(
         articleState = articleState,
         onValueChangePrixDeVent = { newText ->
             articleState = calculateNewValues(
-                newText, articleState, "monPrixVent",  mainAppViewModel
+                newText, articleState, "monPrixVent",  editeBaseDonneViewModel
             )
         },
         onValueChangeBenfice = { newText ->
             articleState = calculateNewValues(
-                newText, articleState, "monBenfice", mainAppViewModel
+                newText, articleState, "monBenfice", editeBaseDonneViewModel
             )
         },
         modifier = modifier
@@ -81,7 +81,7 @@ fun calculateNewValues(
     newValue: String?,
     article: BaseDonne,
     nomColonne: String,
-    mainAppViewModel: MainAppViewModel
+    editeBaseDonneViewModel: EditeBaseDonneViewModel
 ): BaseDonne {
     val newArticle = article.copy()
     val value = newValue?.toDoubleOrNull() ?: 0.0
@@ -107,7 +107,7 @@ fun calculateNewValues(
     if (nomColonne != "monBenfice") {
         newArticle.monBenfice = newArticle.monPrixVent - article.monPrixAchat
     }
-    mainAppViewModel.updateArticle(newArticle)
+    editeBaseDonneViewModel.updateArticle(newArticle)
     return newArticle
 }
 

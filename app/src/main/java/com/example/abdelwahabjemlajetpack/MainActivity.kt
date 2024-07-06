@@ -3,7 +3,7 @@ package com.example.abdelwahabjemlajetpack
 import B_Edit_Base_Donne.DisplayAndroidLabPractice
 import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
-import b_Edite_Base_Donne.MainAppViewModel
+import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.MainAppViewModelFactory
 import a_RoomDB.AppDatabase
 import android.Manifest
@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
     private val database by lazy { AppDatabase.getInstance(this) }
-    private val viewModel: MainAppViewModel by viewModels {
+    private val viewModel: EditeBaseDonneViewModel by viewModels {
         MainAppViewModelFactory(database.articleDao())
     }
 
@@ -101,19 +101,19 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyApp(mainAppViewModel: MainAppViewModel, articleDao: ArticleDao) {
+fun MyApp(editeBaseDonneViewModel: EditeBaseDonneViewModel, articleDao: ArticleDao) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
-        composable("main_screen") { MainScreen(navController,mainAppViewModel) }
+        composable("main_screen") { MainScreen(navController,editeBaseDonneViewModel) }
         composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(articleDao) }
-        composable("DisplayeAndriodLabPractice") { DisplayAndroidLabPractice(mainAppViewModel) }
+        composable("DisplayeAndriodLabPractice") { DisplayAndroidLabPractice(editeBaseDonneViewModel) }
     }
 }
 @Composable
-fun MainScreen(navController: NavHostController = rememberNavController(), mainAppViewModel: MainAppViewModel) {
+fun MainScreen(navController: NavHostController = rememberNavController(), editeBaseDonneViewModel: EditeBaseDonneViewModel) {
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
-        topBar = { TopAppBar(coroutineScope, mainAppViewModel) }
+        topBar = { TopAppBar(coroutineScope, editeBaseDonneViewModel) }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
@@ -168,7 +168,7 @@ fun MainScreen(navController: NavHostController = rememberNavController(), mainA
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBar(coroutineScope: CoroutineScope, mainAppViewModel: MainAppViewModel) {
+fun TopAppBar(coroutineScope: CoroutineScope, editeBaseDonneViewModel: EditeBaseDonneViewModel) {
     var menuExpanded by remember { mutableStateOf(false) }
     androidx.compose.material3.TopAppBar(
         title = { Text("d_db_jetPack") },
