@@ -1,10 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
 import B_Edit_Base_Donne.DisplayAndroidLabPractice
-import b_Edite_Base_Donne.A_Edite_Base_Screen
-import b_Edite_Base_Donne.ArticleDao
-import b_Edite_Base_Donne.EditeBaseDonneViewModel
-import b_Edite_Base_Donne.MainAppViewModelFactory
 import a_RoomDB.AppDatabase
 import android.Manifest
 import android.content.pm.PackageManager
@@ -46,6 +42,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import b_Edite_Base_Donne.A_Edite_Base_Screen
+import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import b_Edite_Base_Donne.MainAppViewModelFactory
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -104,16 +104,20 @@ class MainActivity : ComponentActivity() {
 fun MyApp(editeBaseDonneViewModel: EditeBaseDonneViewModel, articleDao: ArticleDao) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
-        composable("main_screen") { MainScreen(navController,editeBaseDonneViewModel) }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(articleDao) }
+        composable("main_screen") { MainScreen(navController,editeBaseDonneViewModel,articleDao) }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao,) }
         composable("DisplayeAndriodLabPractice") { DisplayAndroidLabPractice(editeBaseDonneViewModel) }
     }
 }
 @Composable
-fun MainScreen(navController: NavHostController = rememberNavController(), editeBaseDonneViewModel: EditeBaseDonneViewModel) {
+fun MainScreen(
+    navController: NavHostController = rememberNavController(),
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    articleDao: ArticleDao
+) {
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
-        topBar = { TopAppBar(coroutineScope, editeBaseDonneViewModel) }
+        topBar = { TopAppBar(coroutineScope, editeBaseDonneViewModel, articleDao) }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
@@ -168,7 +172,11 @@ fun MainScreen(navController: NavHostController = rememberNavController(), edite
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBar(coroutineScope: CoroutineScope, editeBaseDonneViewModel: EditeBaseDonneViewModel) {
+fun TopAppBar(
+    coroutineScope: CoroutineScope,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    articleDao: ArticleDao
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     androidx.compose.material3.TopAppBar(
         title = { Text("d_db_jetPack") },
@@ -184,7 +192,7 @@ fun TopAppBar(coroutineScope: CoroutineScope, editeBaseDonneViewModel: EditeBase
                     text = { Text("Transfer Firebase Data") },
                     onClick = {
                         coroutineScope.launch {
-                            transferFirebaseData()
+                            transferFirebaseData( articleDao)
                         }
                         menuExpanded = false
                     }
@@ -193,7 +201,7 @@ fun TopAppBar(coroutineScope: CoroutineScope, editeBaseDonneViewModel: EditeBase
                     text = { Text("Import Firebase Data") },
                     onClick = {
                         coroutineScope.launch {
-                     //       importFromFirebase()
+                            importFromFirebase(articleDao)
                         }
                         menuExpanded = false
                     }

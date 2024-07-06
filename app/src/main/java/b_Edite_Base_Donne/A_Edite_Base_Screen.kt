@@ -61,6 +61,7 @@ import java.io.File
 
 @Composable
 fun A_Edite_Base_Screen(
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
     modifier: Modifier = Modifier,
 ) {
@@ -75,6 +76,7 @@ fun A_Edite_Base_Screen(
 
     Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
+            editeBaseDonneViewModel,
             articlesList = articlesList,
             selectedArticle = selectedArticle,
             onArticleSelect = { selectedArticle = it },
@@ -96,6 +98,7 @@ fun A_Edite_Base_Screen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticlesScreenList(
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articlesList: List<BaseDonne>,
     selectedArticle: BaseDonne?,
     onArticleSelect: (BaseDonne) -> Unit,
@@ -134,6 +137,7 @@ fun ArticlesScreenList(
                             DisplayeDetailleArticle(
                                 article = article,
                                 function = function,
+                                editeBaseDonneViewModel
                             )
                         }
                     }
@@ -173,6 +177,7 @@ fun ArticleBoardCard(article: BaseDonne, onClick: (BaseDonne) -> Unit) {
 fun DisplayeDetailleArticle(
     article: BaseDonne,
     function: (BaseDonne) -> Unit,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -190,7 +195,7 @@ fun DisplayeDetailleArticle(
                     .fillMaxWidth()
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
-                DisplayArticleInformations(article,function, Modifier.weight(0.62f))
+                DisplayArticleInformations(editeBaseDonneViewModel,article,function, Modifier.weight(0.62f))
 
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -205,6 +210,7 @@ fun DisplayeDetailleArticle(
 }
 @Composable
 fun DisplayArticleInformations(
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     article: BaseDonne,
     function: (BaseDonne) -> Unit,
     modifier: Modifier = Modifier
@@ -284,53 +290,60 @@ fun DisplayArticleInformations(
                 )
             }
         }
+
         Dis_InformationsNewPractice(
             article = article,
             onValueChange = function,
         )
+
         OutlineTextEditeBaseDonne(
-            article = article,
-            onValueChange = function,
-            valueDBToChange = "monPrixVent",
+            articles = editeBaseDonneViewModel.baseDonneStatTabel,
+            viewModel =editeBaseDonneViewModel,
+            columnToChange = "monPrixVent",
+            articleBaseDonne = article,
             abbreviations = "p.v",
         )
     }
 }
+//----------------------------------------------------------------
 
 @Composable
 fun OutlineTextEditeBaseDonne(
-    article: BaseDonne,
-    onValueChange: (BaseDonne) -> Unit,
-    modifier: Modifier = Modifier,
-    valueDBToChange: String,
+    articles: List<BaseDonneStatTabel>,
+    viewModel: EditeBaseDonneViewModel,
+    columnToChange: String,
+    articleBaseDonne: BaseDonne,
     abbreviations: String,
+    modifier: Modifier = Modifier,
 ) {
+    val articleState = articles.find { it.idArticle == articleBaseDonne.idArticle }
+        ?: BaseDonneStatTabel(articleBaseDonne.idArticle, articleBaseDonne.nomArticleFinale, articleBaseDonne.monPrixVent)
+    var currentChangingField by remember { mutableStateOf("") }
+
+    val textValue = if (currentChangingField == columnToChange) articleState.getColumnValue(columnToChange)?.toString() ?: "" else ""
+    val labelValue = articleState.getColumnValue(columnToChange)?.toString() ?: ""
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        var articleState by remember { mutableStateOf(article) }
-        var currentChangingField by remember { mutableStateOf("") }
-        val textValue = if (currentChangingField == valueDBToChange) articleState.getColumnValue(valueDBToChange)?.toString() ?: "" else ""
-        val labelValue = articleState.getColumnValue(valueDBToChange)?.toString() ?: ""
-
         OutlinedTextField(
             value = removeTrailingZero(textValue),
-            onValueChange = {
-                val updatedArticle = calculateNewValues(valueDBToChange, removeTrailingZero(it), articleState)
-                articleState = updatedArticle
-                currentChangingField = valueDBToChange
-                onValueChange(articleState)
+            onValueChange = { newValue ->
+                viewModel.updateBaseDonneStatTabel(articleState, removeTrailingZero(newValue))
+                currentChangingField = columnToChange
             },
             label = {
                 Text(
                     text = "$abbreviations: $labelValue",
-                    color = Color.Red,
+                    color = Color.Blue,
                     modifier = Modifier.fillMaxWidth(),
                 )
             },
-            textStyle = TextStyle(color = Color.Red, textAlign = TextAlign.Center, fontSize = 14.sp),
-            modifier = modifier.fillMaxWidth().height(65.dp)
+            textStyle = TextStyle(color = Color.Blue, textAlign = TextAlign.Center, fontSize = 14.sp),
+            modifier = modifier
+                .fillMaxWidth()
+                .height(65.dp)
         )
     }
 }
@@ -342,7 +355,49 @@ fun removeTrailingZero(value: String): String {
         else -> value
     }
 }
+fun BaseDonneStatTabel.getColumnValue(columnName: String): Double? {
+    return when (columnName) {
+        "monPrixVent" -> this.monPrixVent
+        else -> null
+    }
+}
+
 fun calculateNewValues(
+    columnName: String,
+    newValue: String?,
+    article: BaseDonne,
+): BaseDonne {
+    val value = newValue?.toDoubleOrNull() ?: 0.0
+    val newArticle = article.copy()
+
+    when (columnName) {
+        "monPrixVent" -> newArticle.monPrixVent = value
+        "monBenefice" -> newArticle.monBenfice = value
+        "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
+        "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
+    }
+
+    newArticle.apply {
+        if (columnName != "monPrixVent") {
+            monPrixVent = monBenfice + article.monPrixAchat
+        }
+        if (columnName != "prixDeVentTotaleChezClient") {
+            prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
+        }
+        if (columnName != "monBenefice") {
+            monBenfice = monPrixVent - article.monPrixAchat
+        }
+        if (columnName != "monPrixAchatUniter") {
+            monPrixAchatUniter = monPrixVent / article.nmbrUnite
+        }
+    }
+
+    return newArticle
+}
+
+
+
+fun calculateNewValuesBaseDonneStatTabel(
     columnName: String,
     newValue: String?,
     article: BaseDonne,

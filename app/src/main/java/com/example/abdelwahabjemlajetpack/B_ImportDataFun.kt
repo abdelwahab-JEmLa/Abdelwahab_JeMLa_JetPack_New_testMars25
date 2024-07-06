@@ -2,42 +2,43 @@ package com.example.abdelwahabjemlajetpack
 
 import a_RoomDB.BaseDonne
 import android.util.Log
+import b_Edite_Base_Donne.ArticleDao
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 
 private val refFirebase = Firebase.database.getReference("d_db_jetPack")
 
-//fun importFromFirebase() {
-//        try {
-//            val dataSnapshot = refFirebase.get().await()
-//            val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
-//            val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
-//
-//            articleDao.deleteAll()
-//            articleDao.insertAll(sortedArticles)
-//
-//        } catch (e: Exception) {
-//            Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
-//        }
-//
-//}
+suspend fun importFromFirebase(articleDao: ArticleDao) {
+    try {
+        val dataSnapshot = Firebase.database.getReference("d_db_jetPack").get().await()
+        val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
+        val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
 
-private fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
-    val articles = mutableListOf<BaseDonne>()
-    for (child in dataSnapshot.children) {
-        val article = child.getValue(BaseDonne::class.java)
-        if (article != null) {
-            articles.add(article)
-        } else {
-            Log.e("MainAppViewModel", "Failed to parse article from snapshot: $child")
-        }
+        articleDao.deleteAll()
+        articleDao.insertAll(sortedArticles)
+
+    } catch (e: Exception) {
+        Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
     }
-    return articles
 }
 
-suspend fun transferFirebaseData() {
+fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
+    val articlesList = mutableListOf<BaseDonne>()
+    for (snapshot in dataSnapshot.children) {
+        try {
+            val article = snapshot.getValue(BaseDonne::class.java)
+            article?.let { articlesList.add(it) }
+        } catch (e: DatabaseException) {
+            Log.e("parseDataSnapshot", "Error parsing article: ${e.message}")
+        }
+    }
+    return articlesList
+}
+
+suspend fun transferFirebaseData(articleDao: ArticleDao) {
     val refSource = Firebase.database.getReference("c_db_de_base_down_test")
     val refDestination = Firebase.database.getReference("d_db_jetPack")
 
