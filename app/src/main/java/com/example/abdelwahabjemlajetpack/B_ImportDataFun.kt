@@ -11,6 +11,8 @@ import kotlinx.coroutines.tasks.await
 
 private val refFirebase = Firebase.database.getReference("d_db_jetPack")
 
+
+
 suspend fun importFromFirebase(articleDao: ArticleDao) {
     try {
         val dataSnapshot = Firebase.database.getReference("d_db_jetPack").get().await()
@@ -38,7 +40,7 @@ fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
     return articlesList
 }
 
-suspend fun transferFirebaseData(articleDao: ArticleDao) {
+suspend fun transferFirebaseData() {
     val refSource = Firebase.database.getReference("c_db_de_base_down_test")
     val refDestination = Firebase.database.getReference("d_db_jetPack")
 

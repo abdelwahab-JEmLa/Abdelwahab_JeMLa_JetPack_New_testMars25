@@ -1,6 +1,5 @@
 package com.example.abdelwahabjemlajetpack
 
-import B_Edit_Base_Donne.DisplayAndroidLabPractice
 import a_RoomDB.AppDatabase
 import android.Manifest
 import android.content.pm.PackageManager
@@ -105,8 +104,7 @@ fun MyApp(editeBaseDonneViewModel: EditeBaseDonneViewModel, articleDao: ArticleD
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
         composable("main_screen") { MainScreen(navController,editeBaseDonneViewModel,articleDao) }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao,) }
-        composable("DisplayeAndriodLabPractice") { DisplayAndroidLabPractice(editeBaseDonneViewModel) }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,) }
     }
 }
 @Composable
@@ -192,7 +190,7 @@ fun TopAppBar(
                     text = { Text("Transfer Firebase Data") },
                     onClick = {
                         coroutineScope.launch {
-                            transferFirebaseData( articleDao)
+                            transferFirebaseData( )
                         }
                         menuExpanded = false
                     }
