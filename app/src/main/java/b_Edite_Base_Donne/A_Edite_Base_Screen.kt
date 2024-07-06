@@ -181,32 +181,33 @@ fun TopRowQuantitys(
     viewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier
 ) {
-    val nomColumesList = listOf(
-        Pair("clienPrixVentUnite", "c.p.U"),
-        Pair("nmbrCaron", "n.C"),
-        Pair("nmbrUnite", "n.U")
-    )
 
     Row(
         modifier = modifier
             .padding(3.dp)
             .fillMaxWidth()
     ) {
-        nomColumesList.forEach { (nomColume, label) ->
-            Spacer(modifier = Modifier.width(3.dp))
-            OutlineTextEditeBaseDonne(
-                article = article,
-                columnToChange = nomColume,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(63.dp),
-                abbreviations = label,
-                viewModel = viewModel
-
-            )
-        }
+        Spacer(modifier = Modifier.width(3.dp))
+        OutlineTextEditeBaseDonne(
+            article = article,
+            viewModel = viewModel,
+            columnToChangePlusAbrevation = article.nmbrUniteIndicator,
+            modifier = Modifier
+                .weight(1f)
+                .height(63.dp)
+        )
+        Spacer(modifier = Modifier.width(3.dp))
+        OutlineTextEditeBaseDonne(
+            article = article,
+            viewModel = viewModel,
+            columnToChangePlusAbrevation = article.nmbrCaronIndicator,
+            modifier = Modifier
+                .weight(1f)
+                .height(63.dp)
+        )
     }
 }
+
 
 @Composable
 fun DisplayColorsCards(
@@ -295,13 +296,12 @@ fun DisplayArticleInformations(
             Spacer(modifier = Modifier.width(5.dp))
             OutlineTextEditeBaseDonne(
                 article = article,
-                columnToChange = "monPrixVent",
+                viewModel =editeBaseDonneViewModel,
+                columnToChangePlusAbrevation =article.nmbrUniteIndicator,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.70f)
-                    .height(45.dp),
-                abbreviations = "p.v",
-                viewModel =editeBaseDonneViewModel
+                    .height(45.dp)
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
@@ -342,6 +342,12 @@ fun DisplayArticleInformations(
                 )
             }
         }
+        Spacer(modifier = Modifier.width(5.dp))
+        OutlineTextEditeBaseDonne(
+            columnToChangePlusAbrevation =article.monPrixVentIndicator,
+            article = article,
+            viewModel =editeBaseDonneViewModel,
+        )
     }
 }
 //---------------------------------------------------------------
@@ -350,14 +356,15 @@ fun DisplayArticleInformations(
 fun OutlineTextEditeBaseDonne(
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
-    columnToChange: String,
-    abbreviations: String,
+    columnToChangePlusAbrevation :  Pair<String, String>,
     modifier: Modifier = Modifier,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
 
-    val textValue = if (currentChangingField == columnToChange) article.getColumnValue(columnToChange)?.toString() ?: "" else ""
-    val labelValue = article.getColumnValue(columnToChange)?.toString() ?: ""
+    val textValue = if (currentChangingField == columnToChangePlusAbrevation.first) article.getColumnValue(
+        columnToChangePlusAbrevation.first
+    )?.toString() ?: "" else ""
+    val labelValue = article.getColumnValue(columnToChangePlusAbrevation.first)?.toString() ?: ""
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -367,11 +374,11 @@ fun OutlineTextEditeBaseDonne(
             value = removeTrailingZero(textValue),
             onValueChange = { newValue ->
                 viewModel.updateBaseDonneStatTabel(article, removeTrailingZero(newValue))
-                currentChangingField = columnToChange
+                currentChangingField = columnToChangePlusAbrevation.first
             },
             label = {
                 Text(
-                    text = "$abbreviations: $labelValue",
+                    text = "${columnToChangePlusAbrevation.second}: $labelValue",
                     color = Color.Blue,
                     modifier = Modifier.fillMaxWidth(),
                 )

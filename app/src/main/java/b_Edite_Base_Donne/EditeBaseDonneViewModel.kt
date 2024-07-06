@@ -77,8 +77,6 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
             }
         }
     }
-
-
 }
 
 class BaseDonneStatTabel(
@@ -151,7 +149,43 @@ class BaseDonneStatTabel(
     var benificeTotaleEn2 by mutableDoubleStateOf(benificeTotaleEn2)
     var monPrixAchatUniter by mutableDoubleStateOf(monPrixAchatUniter)
     var monPrixVentUniter by mutableDoubleStateOf(monPrixVentUniter)
+
+
+    val nomArticleFinaleIndicator: Pair<String, String> get() = "nomArticleFinale" to "n.AF"
+    val classementCateIndicator: Pair<String, String> get() = "classementCate" to "c.C"
+    val nomArabIndicator: Pair<String, String> get() = "nomArab" to "n.A"
+    val nmbrCatIndicator: Pair<String, String> get() = "nmbrCat" to "n.Cat"
+    val couleur1Indicator: Pair<String, String> get() = "couleur1" to "c.1"
+    val couleur2Indicator: Pair<String, String> get() = "couleur2" to "c.2"
+    val couleur3Indicator: Pair<String, String> get() = "couleur3" to "c.3"
+    val couleur4Indicator: Pair<String, String> get() = "couleur4" to "c.4"
+    val nomCategorie2Indicator: Pair<String, String> get() = "nomCategorie2" to "n.Cat2"
+    val nmbrUniteIndicator: Pair<String, String> get() = "nmbrUnite" to "n.U"
+    val nmbrCaronIndicator: Pair<String, String> get() = "nmbrCaron" to "n.C"
+    val affichageUniteStateIndicator: Pair<String, String> get() = "affichageUniteState" to "a.US"
+    val commmentSeVentIndicator: Pair<String, String> get() = "commmentSeVent" to "c.SV"
+    val afficheBoitSiUniterIndicator: Pair<String, String> get() = "afficheBoitSiUniter" to "a.BSU"
+    val monPrixAchatIndicator: Pair<String, String> get() = "monPrixAchat" to "m.PA"
+    val clienPrixVentUniteIndicator: Pair<String, String> get() = "clienPrixVentUnite" to "c.PVU"
+    val minQuanIndicator: Pair<String, String> get() = "minQuan" to "m.Q"
+    val monBenficeIndicator: Pair<String, String> get() = "monBenfice" to "m.B"
+    val monPrixVentIndicator: Pair<String, String> get() = "monPrixVent" to "m.PV"
+    val diponibilityStateIndicator: Pair<String, String> get() = "diponibilityState" to "d.S"
+    val neaon2Indicator: Pair<String, String> get() = "neaon2" to "n.2"
+    val idCategorieIndicator: Pair<String, String> get() = "idCategorie" to "i.C"
+    val funChangeImagsDimentionIndicator: Pair<String, String> get() = "funChangeImagsDimention" to "f.CID"
+    val nomCategorieIndicator: Pair<String, String> get() = "nomCategorie" to "n.Cat"
+    val neaon1Indicator: Pair<String, String> get() = "neaon1" to "n.1"
+    val lastUpdateStateIndicator: Pair<String, String> get() = "lastUpdateState" to "l.US"
+    val cartonStateIndicator: Pair<String, String> get() = "cartonState" to "c.S"
+    val dateCreationCategorieIndicator: Pair<String, String> get() = "dateCreationCategorie" to "d.CC"
+    val prixDeVentTotaleChezClientIndicator: Pair<String, String> get() = "prixDeVentTotaleChezClient" to "p.VTCC"
+    val benficeTotaleEntreMoiEtClienIndicator: Pair<String, String> get() = "benficeTotaleEntreMoiEtClien" to "b.TEMEC"
+    val benificeTotaleEn2Indicator: Pair<String, String> get() = "benificeTotaleEn2" to "b.TE2"
+    val monPrixAchatUniterIndicator: Pair<String, String> get() = "monPrixAchatUniter" to "m.PAU"
+    val monPrixVentUniterIndicator: Pair<String, String> get() = "monPrixVentUniter" to "m.PVU"
 }
+
 
 class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
