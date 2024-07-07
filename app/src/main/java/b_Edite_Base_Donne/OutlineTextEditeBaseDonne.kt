@@ -24,11 +24,12 @@ import androidx.compose.ui.unit.sp
 fun OutlineTextEditeBaseDonne(
     columnToChangeInString: String,
     abbreviation: String,
+    currentChangingField: String,
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier,
+    function: (String) -> Unit,
 ) {
-    var currentChangingField by remember { mutableStateOf("") }
     var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChangeInString)?.toString() ?: "") }
 
     val textValue = if (currentChangingField == columnToChangeInString) {
@@ -46,7 +47,7 @@ fun OutlineTextEditeBaseDonne(
             onValueChange = { newValue ->
                 textFieldValue = removeTrailingZero(newValue)
                 viewModel.updateBaseDonneStatTabel(columnToChangeInString, article, removeTrailingZero(newValue))
-                currentChangingField = columnToChangeInString
+                function(columnToChangeInString)
             },
             label = {
                 Text(

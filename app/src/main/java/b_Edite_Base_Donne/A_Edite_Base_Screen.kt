@@ -181,6 +181,7 @@ fun TopRowQuantitys(
     viewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier
 ) {
+    var currentChangingField by remember { mutableStateOf("") }
 
     Row(
         modifier = modifier
@@ -191,21 +192,26 @@ fun TopRowQuantitys(
         OutlineTextEditeBaseDonne(
             columnToChangeInString = "nmbrUnite",
             abbreviation = "n.u",
+            currentChangingField =currentChangingField ,
             article = article,
             viewModel = viewModel,
             modifier = Modifier
                 .weight(1f)
-                .height(63.dp)
+                .height(63.dp),
+            function = { currentChangingField = it }
         )
         Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
             columnToChangeInString = "nmbrCaron",
             abbreviation = "n.c",
+            currentChangingField = currentChangingField,
             article = article,
             viewModel = viewModel,
             modifier = Modifier
                 .weight(1f)
-                .height(63.dp)
+                .height(63.dp),
+            function = { currentChangingField = it }
+
         )
     }
 }
@@ -270,6 +276,8 @@ fun DisplayArticleInformations(
     article: BaseDonneStatTabel,
     modifier: Modifier = Modifier
 ) {
+    var currentChangingField by remember { mutableStateOf("") }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
@@ -299,12 +307,15 @@ fun DisplayArticleInformations(
             OutlineTextEditeBaseDonne(
                 columnToChangeInString = "nmbrUniteIndicator",
                 abbreviation = "",
+                currentChangingField = currentChangingField,
                 article = article,
                 viewModel =editeBaseDonneViewModel,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.70f)
-                    .height(45.dp)
+                    .height(45.dp),
+                function = { currentChangingField = it }
+
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
@@ -349,8 +360,11 @@ fun DisplayArticleInformations(
         OutlineTextEditeBaseDonne(
             columnToChangeInString = "monPrixVentIndicator",
             abbreviation = "",
+            currentChangingField = currentChangingField,
             article = article,
             viewModel =editeBaseDonneViewModel,
+            function = { currentChangingField = it }
+
         )
     }
 }
