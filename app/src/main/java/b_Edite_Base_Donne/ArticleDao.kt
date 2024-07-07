@@ -5,7 +5,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 
 @Dao
 interface ArticleDao {
@@ -23,7 +22,6 @@ interface ArticleDao {
 
     @Query("DELETE FROM articles WHERE idArticle = :idArticle")
     suspend fun delete(idArticle: Int)
-    @Update
-    suspend fun update(article: BaseDonne)
+
 }
 //SELECT * FROM BaseDonne ORDER BY idCategorie, classementCate

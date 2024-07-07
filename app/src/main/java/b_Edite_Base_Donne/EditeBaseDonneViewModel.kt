@@ -1,11 +1,6 @@
 package b_Edite_Base_Donne
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -22,13 +17,54 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         initBaseDonneStatTabel()
     }
 
-    fun updateBaseDonneStatTabel(article: BaseDonneStatTabel, newValue: String?) {
+    fun updateBaseDonneStatTabel(
+        columnToChangeInString: String,
+        article: BaseDonneStatTabel,
+        newValue: String?
+    ) {
         newValue?.let {
             viewModelScope.launch(Dispatchers.Main) {
-                _baseDonneStatTabel.find { it.idArticle == article.idArticle }?.monPrixVent = (if (it == "") "0.0" else it).toDouble()
+                _baseDonneStatTabel.find { it.idArticle == article.idArticle }?.apply {
+                    when (columnToChangeInString) {
+                        "nomArticleFinale" -> nomArticleFinale = it.ifEmpty { "0.0" }
+                        "classementCate" -> classementCate = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "nomArab" -> nomArab = it.ifEmpty { "0.0" }
+                        "nmbrCat" -> nmbrCat = if (it.isEmpty()) 0 else it.toInt()
+                        "couleur1" -> couleur1 = it.ifEmpty { null }
+                        "couleur2" -> couleur2 = if (it.isEmpty()) null else it
+                        "couleur3" -> couleur3 = if (it.isEmpty()) null else it
+                        "couleur4" -> couleur4 = if (it.isEmpty()) null else it
+                        "nomCategorie2" -> nomCategorie2 = if (it.isEmpty()) null else it
+                        "nmbrUnite" -> nmbrUnite = if (it.isEmpty()) 0 else it.toInt()
+                        "nmbrCaron" -> nmbrCaron = if (it.isEmpty()) 0 else it.toInt()
+                        "affichageUniteState" -> affichageUniteState = it.toBoolean()
+                        "commmentSeVent" -> commmentSeVent = if (it.isEmpty()) null else it
+                        "afficheBoitSiUniter" -> afficheBoitSiUniter = if (it.isEmpty()) null else it
+                        "monPrixAchat" -> monPrixAchat = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "clienPrixVentUnite" -> clienPrixVentUnite = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "minQuan" -> minQuan = if (it.isEmpty()) 0 else it.toInt()
+                        "monBenfice" -> monBenfice = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monPrixVent" -> monPrixVent = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "diponibilityState" -> diponibilityState = if (it.isEmpty()) "" else it
+                        "neaon2" -> neaon2 = if (it.isEmpty()) "" else it
+                        "idCategorie" -> idCategorie = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "funChangeImagsDimention" -> funChangeImagsDimention = it.toBoolean()
+                        "nomCategorie" -> nomCategorie = if (it.isEmpty()) "" else it
+                        "neaon1" -> neaon1 = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "lastUpdateState" -> lastUpdateState = if (it.isEmpty()) "" else it
+                        "cartonState" -> cartonState = if (it.isEmpty()) "" else it
+                        "dateCreationCategorie" -> dateCreationCategorie = if (it.isEmpty()) "" else it
+                        "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "benficeTotaleEntreMoiEtClien" -> benficeTotaleEntreMoiEtClien = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "benificeTotaleEn2" -> benificeTotaleEn2 = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monPrixAchatUniter" -> monPrixAchatUniter = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monPrixVentUniter" -> monPrixVentUniter = if (it.isEmpty()) 0.0 else it.toDouble()
+                    }
+                }
             }
         }
     }
+
 
     private fun initBaseDonneStatTabel() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -78,115 +114,6 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         }
     }
 }
-
-class BaseDonneStatTabel(
-    idArticle: Int,
-    nomArticleFinale: String = "",
-    classementCate: Double = 0.0,
-    nomArab: String = "",
-    nmbrCat: Int = 0,
-    couleur1: String? = null,
-    couleur2: String? = null,
-    couleur3: String? = null,
-    couleur4: String? = null,
-    nomCategorie2: String? = null,
-    nmbrUnite: Int = 0,
-    nmbrCaron: Int = 0,
-    affichageUniteState: Boolean = false,
-    commmentSeVent: String? = null,
-    afficheBoitSiUniter: String? = null,
-    monPrixAchat: Double = 0.0,
-    clienPrixVentUnite: Double = 0.0,
-    minQuan: Int = 0,
-    monBenfice: Double = 0.0,
-    monPrixVent: Double = 0.0,
-    diponibilityState: String = "",
-    neaon2: String = "",
-    idCategorie: Double = 0.0,
-    funChangeImagsDimention: Boolean = false,
-    nomCategorie: String = "",
-    neaon1: Double = 0.0,
-    lastUpdateState: String = "",
-    cartonState: String = "",
-    dateCreationCategorie: String = "",
-    prixDeVentTotaleChezClient: Double = 0.0,
-    benficeTotaleEntreMoiEtClien: Double = 0.0,
-    benificeTotaleEn2: Double = 0.0,
-    monPrixAchatUniter: Double = 0.0,
-    monPrixVentUniter: Double = 0.0,
-) {
-    var idArticle by mutableIntStateOf(idArticle)
-    var nomArticleFinale by mutableStateOf(nomArticleFinale)
-    var classementCate by mutableDoubleStateOf(classementCate)
-    var nomArab by mutableStateOf(nomArab)
-    var nmbrCat by mutableIntStateOf(nmbrCat)
-    var couleur1 by mutableStateOf(couleur1)
-    var couleur2 by mutableStateOf(couleur2)
-    var couleur3 by mutableStateOf(couleur3)
-    var couleur4 by mutableStateOf(couleur4)
-    var nomCategorie2 by mutableStateOf(nomCategorie2)
-    var nmbrUnite by mutableIntStateOf(nmbrUnite)
-    var nmbrCaron by mutableIntStateOf(nmbrCaron)
-    var affichageUniteState by mutableStateOf(affichageUniteState)
-    var commmentSeVent by mutableStateOf(commmentSeVent)
-    var afficheBoitSiUniter by mutableStateOf(afficheBoitSiUniter)
-    var monPrixAchat by mutableDoubleStateOf(monPrixAchat)
-    var clienPrixVentUnite by mutableDoubleStateOf(clienPrixVentUnite)
-    var minQuan by mutableIntStateOf(minQuan)
-    var monBenfice by mutableDoubleStateOf(monBenfice)
-    var monPrixVent by mutableDoubleStateOf(monPrixVent)
-    var diponibilityState by mutableStateOf(diponibilityState)
-    var neaon2 by mutableStateOf(neaon2)
-    var idCategorie by mutableDoubleStateOf(idCategorie)
-    var funChangeImagsDimention by mutableStateOf(funChangeImagsDimention)
-    var nomCategorie by mutableStateOf(nomCategorie)
-    var neaon1 by mutableDoubleStateOf(neaon1)
-    var lastUpdateState by mutableStateOf(lastUpdateState)
-    var cartonState by mutableStateOf(cartonState)
-    var dateCreationCategorie by mutableStateOf(dateCreationCategorie)
-    var prixDeVentTotaleChezClient by mutableDoubleStateOf(prixDeVentTotaleChezClient)
-    var benficeTotaleEntreMoiEtClien by mutableDoubleStateOf(benficeTotaleEntreMoiEtClien)
-    var benificeTotaleEn2 by mutableDoubleStateOf(benificeTotaleEn2)
-    var monPrixAchatUniter by mutableDoubleStateOf(monPrixAchatUniter)
-    var monPrixVentUniter by mutableDoubleStateOf(monPrixVentUniter)
-
-
-    val nomArticleFinaleIndicator: Pair<String, String> get() = "nomArticleFinale" to "n.AF"
-    val classementCateIndicator: Pair<String, String> get() = "classementCate" to "c.C"
-    val nomArabIndicator: Pair<String, String> get() = "nomArab" to "n.A"
-    val nmbrCatIndicator: Pair<String, String> get() = "nmbrCat" to "n.Cat"
-    val couleur1Indicator: Pair<String, String> get() = "couleur1" to "c.1"
-    val couleur2Indicator: Pair<String, String> get() = "couleur2" to "c.2"
-    val couleur3Indicator: Pair<String, String> get() = "couleur3" to "c.3"
-    val couleur4Indicator: Pair<String, String> get() = "couleur4" to "c.4"
-    val nomCategorie2Indicator: Pair<String, String> get() = "nomCategorie2" to "n.Cat2"
-    val nmbrUniteIndicator: Pair<String, String> get() = "nmbrUnite" to "n.U"
-    val nmbrCaronIndicator: Pair<String, String> get() = "nmbrCaron" to "n.C"
-    val affichageUniteStateIndicator: Pair<String, String> get() = "affichageUniteState" to "a.US"
-    val commmentSeVentIndicator: Pair<String, String> get() = "commmentSeVent" to "c.SV"
-    val afficheBoitSiUniterIndicator: Pair<String, String> get() = "afficheBoitSiUniter" to "a.BSU"
-    val monPrixAchatIndicator: Pair<String, String> get() = "monPrixAchat" to "m.PA"
-    val clienPrixVentUniteIndicator: Pair<String, String> get() = "clienPrixVentUnite" to "c.PVU"
-    val minQuanIndicator: Pair<String, String> get() = "minQuan" to "m.Q"
-    val monBenficeIndicator: Pair<String, String> get() = "monBenfice" to "m.B"
-    val monPrixVentIndicator: Pair<String, String> get() = "monPrixVent" to "m.PV"
-    val diponibilityStateIndicator: Pair<String, String> get() = "diponibilityState" to "d.S"
-    val neaon2Indicator: Pair<String, String> get() = "neaon2" to "n.2"
-    val idCategorieIndicator: Pair<String, String> get() = "idCategorie" to "i.C"
-    val funChangeImagsDimentionIndicator: Pair<String, String> get() = "funChangeImagsDimention" to "f.CID"
-    val nomCategorieIndicator: Pair<String, String> get() = "nomCategorie" to "n.Cat"
-    val neaon1Indicator: Pair<String, String> get() = "neaon1" to "n.1"
-    val lastUpdateStateIndicator: Pair<String, String> get() = "lastUpdateState" to "l.US"
-    val cartonStateIndicator: Pair<String, String> get() = "cartonState" to "c.S"
-    val dateCreationCategorieIndicator: Pair<String, String> get() = "dateCreationCategorie" to "d.CC"
-    val prixDeVentTotaleChezClientIndicator: Pair<String, String> get() = "prixDeVentTotaleChezClient" to "p.VTCC"
-    val benficeTotaleEntreMoiEtClienIndicator: Pair<String, String> get() = "benficeTotaleEntreMoiEtClien" to "b.TEMEC"
-    val benificeTotaleEn2Indicator: Pair<String, String> get() = "benificeTotaleEn2" to "b.TE2"
-    val monPrixAchatUniterIndicator: Pair<String, String> get() = "monPrixAchatUniter" to "m.PAU"
-    val monPrixVentUniterIndicator: Pair<String, String> get() = "monPrixVentUniter" to "m.PVU"
-}
-
-
 class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
@@ -194,5 +121,6 @@ class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelPro
             return EditeBaseDonneViewModel(articleDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
+
     }
 }

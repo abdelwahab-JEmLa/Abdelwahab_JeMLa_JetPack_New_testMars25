@@ -189,18 +189,20 @@ fun TopRowQuantitys(
     ) {
         Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
+            columnToChangeInString = "nmbrUnite",
+            abbreviation = "n.u",
             article = article,
             viewModel = viewModel,
-            columnToChangePlusAbrevation = article.nmbrUniteIndicator,
             modifier = Modifier
                 .weight(1f)
                 .height(63.dp)
         )
         Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
+            columnToChangeInString = "nmbrCaron",
+            abbreviation = "n.c",
             article = article,
             viewModel = viewModel,
-            columnToChangePlusAbrevation = article.nmbrCaronIndicator,
             modifier = Modifier
                 .weight(1f)
                 .height(63.dp)
@@ -295,9 +297,10 @@ fun DisplayArticleInformations(
             }
             Spacer(modifier = Modifier.width(5.dp))
             OutlineTextEditeBaseDonne(
+                columnToChangeInString = "nmbrUniteIndicator",
+                abbreviation = "",
                 article = article,
                 viewModel =editeBaseDonneViewModel,
-                columnToChangePlusAbrevation =article.nmbrUniteIndicator,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.70f)
@@ -344,7 +347,8 @@ fun DisplayArticleInformations(
         }
         Spacer(modifier = Modifier.width(5.dp))
         OutlineTextEditeBaseDonne(
-            columnToChangePlusAbrevation =article.monPrixVentIndicator,
+            columnToChangeInString = "monPrixVentIndicator",
+            abbreviation = "",
             article = article,
             viewModel =editeBaseDonneViewModel,
         )
@@ -354,17 +358,19 @@ fun DisplayArticleInformations(
 
 @Composable
 fun OutlineTextEditeBaseDonne(
+    columnToChangeInString: String,
+    abbreviation : String,
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
-    columnToChangePlusAbrevation :  Pair<String, String>,
     modifier: Modifier = Modifier,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
 
-    val textValue = if (currentChangingField == columnToChangePlusAbrevation.first) article.getColumnValue(
-        columnToChangePlusAbrevation.first
-    )?.toString() ?: "" else ""
-    val labelValue = article.getColumnValue(columnToChangePlusAbrevation.first)?.toString() ?: ""
+    val textValue = if (currentChangingField == columnToChangeInString) {
+        article.getColumnValue(columnToChangeInString)?.toString() ?: ""
+    } else ""
+
+    val labelValue = article.getColumnValue(columnToChangeInString)?.toString() ?: ""
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -373,12 +379,12 @@ fun OutlineTextEditeBaseDonne(
         OutlinedTextField(
             value = removeTrailingZero(textValue),
             onValueChange = { newValue ->
-                viewModel.updateBaseDonneStatTabel(article, removeTrailingZero(newValue))
-                currentChangingField = columnToChangePlusAbrevation.first
+                viewModel.updateBaseDonneStatTabel(columnToChangeInString,article, removeTrailingZero(newValue))
+                currentChangingField = columnToChangeInString
             },
             label = {
                 Text(
-                    text = "${columnToChangePlusAbrevation.second}: $labelValue",
+                    text = "${abbreviation}: $labelValue",
                     color = Color.Blue,
                     modifier = Modifier.fillMaxWidth(),
                 )
