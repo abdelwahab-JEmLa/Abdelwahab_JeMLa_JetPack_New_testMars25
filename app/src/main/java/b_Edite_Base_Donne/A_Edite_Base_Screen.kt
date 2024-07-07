@@ -148,6 +148,7 @@ fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
 ) {
+    var currentChangingField by remember { mutableStateOf("") }
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -157,7 +158,12 @@ fun DisplayDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            TopRowQuantitys(article, viewModel =editeBaseDonneViewModel)
+            TopRowQuantitys(
+                article,
+                viewModel =editeBaseDonneViewModel,
+                currentChangingField = currentChangingField,
+                function = { currentChangingField = it }
+            )
             Row(
                 modifier = Modifier
                     .padding(8.dp)
@@ -179,9 +185,11 @@ fun DisplayDetailleArticle(
 fun TopRowQuantitys(
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    function: (String) -> Unit,
+    currentChangingField: String
 ) {
-    var currentChangingField by remember { mutableStateOf("") }
+
 
     Row(
         modifier = modifier
@@ -198,7 +206,7 @@ fun TopRowQuantitys(
             modifier = Modifier
                 .weight(1f)
                 .height(63.dp),
-            function = { currentChangingField = it }
+            function = function
         )
         Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
@@ -210,7 +218,7 @@ fun TopRowQuantitys(
             modifier = Modifier
                 .weight(1f)
                 .height(63.dp),
-            function = { currentChangingField = it }
+            function = function
 
         )
     }
