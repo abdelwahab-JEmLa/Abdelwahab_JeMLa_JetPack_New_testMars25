@@ -357,61 +357,6 @@ fun DisplayArticleInformations(
 //---------------------------------------------------------------
 
 @Composable
-fun OutlineTextEditeBaseDonne(
-    columnToChangeInString: String,
-    abbreviation : String,
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    modifier: Modifier = Modifier,
-) {
-    var currentChangingField by remember { mutableStateOf("") }
-
-    val textValue = if (currentChangingField == columnToChangeInString) {
-        article.getColumnValue(columnToChangeInString)?.toString() ?: ""
-    } else ""
-
-    val labelValue = article.getColumnValue(columnToChangeInString)?.toString() ?: ""
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(3.dp)
-    ) {
-        OutlinedTextField(
-            value = removeTrailingZero(textValue),
-            onValueChange = { newValue ->
-                viewModel.updateBaseDonneStatTabel(columnToChangeInString,article, removeTrailingZero(newValue))
-                currentChangingField = columnToChangeInString
-            },
-            label = {
-                Text(
-                    text = "${abbreviation}: $labelValue",
-                    color = Color.Blue,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            textStyle = TextStyle(color = Color.Blue, textAlign = TextAlign.Center, fontSize = 14.sp),
-            modifier = modifier
-                .fillMaxWidth()
-                .height(65.dp)
-        )
-    }
-}
-
-fun removeTrailingZero(value: String): String {
-    return when {
-        value == "0.0" -> ""
-        value.endsWith(".0") -> value.removeSuffix(".0")
-        else -> value
-    }
-}
-
-fun BaseDonneStatTabel.getColumnValue(columnName: String): Double? {
-    return when (columnName) {
-        "monPrixVent" -> this.monPrixVent
-        else -> null
-    }
-}
-@Composable
 fun AutoResizedText(
     text: String,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
