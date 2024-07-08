@@ -163,7 +163,7 @@ fun DisplayDetailleArticle(
                 viewModel =editeBaseDonneViewModel,
                 currentChangingField = currentChangingField,
                 function = { currentChangingField = it }
-            )
+            ) 
             Row(
                 modifier = Modifier
                     .padding(8.dp)
@@ -189,8 +189,6 @@ fun TopRowQuantitys(
     function: (String) -> Unit,
     currentChangingField: String
 ) {
-
-
     Row(
         modifier = modifier
             .padding(3.dp)
@@ -212,19 +210,123 @@ fun TopRowQuantitys(
         OutlineTextEditeBaseDonne(
             columnToChangeInString = "nmbrCaron",
             abbreviation = "n.c",
+            function = function,
             currentChangingField = currentChangingField,
             article = article,
             viewModel = viewModel,
             modifier = Modifier
                 .weight(1f)
-                .height(63.dp),
-            function = function
-
+                .height(63.dp)
         )
     }
 }
 
 
+@Composable
+fun DisplayArticleInformations(
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    article: BaseDonneStatTabel,
+    modifier: Modifier = Modifier
+) {
+    var currentChangingField by remember { mutableStateOf("") }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(3.dp)
+    ) {
+        Spacer(modifier = Modifier.height(3.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(63.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .weight(0.40f)
+                    .height(100.dp)
+            ) {
+                AutoResizedText(
+                    text = "pA.U -> ${article.monPrixAchatUniter}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(5.dp))
+            OutlineTextEditeBaseDonne(
+                columnToChangeInString = "nmbrUniteIndicator",
+                abbreviation = "",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel =editeBaseDonneViewModel,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(0.70f)
+                    .height(45.dp),
+                function = { currentChangingField = it }
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(63.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(1f)
+            ) {
+                AutoResizedText(
+                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(5.dp))
+            Box(
+                            modifier = Modifier
+                                .padding(top = 7.dp)
+                                .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                                .height(100.dp)
+                                .weight(1f)
+            ) {
+                AutoResizedText(
+                    text = "m.PF -> ${article.monPrixVent}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(5.dp))
+        OutlineTextEditeBaseDonne(
+            columnToChangeInString = "monPrixVent",
+            abbreviation = "M.P.V",
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel =editeBaseDonneViewModel,
+            function = { currentChangingField = it }
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        OutlineTextEditeBaseDonne(
+            columnToChangeInString = "monBenfice",
+            abbreviation = "M.B",
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel =editeBaseDonneViewModel,
+            function = { currentChangingField = it }
+        )
+    }
+}
 @Composable
 fun DisplayColorsCards(
     article: BaseDonneStatTabel,
@@ -278,104 +380,6 @@ fun ColorsCard(idArticle: String, index: Int, couleur: String) {
     }
 }
 
-@Composable
-fun DisplayArticleInformations(
-    editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    article: BaseDonneStatTabel,
-    modifier: Modifier = Modifier
-) {
-    var currentChangingField by remember { mutableStateOf("") }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(3.dp)
-    ) {
-        Spacer(modifier = Modifier.height(3.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(63.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .weight(0.40f)
-                    .height(100.dp)
-            ) {
-                AutoResizedText(
-                    text = "pA.U -> ${article.monPrixAchatUniter}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(5.dp))
-            OutlineTextEditeBaseDonne(
-                columnToChangeInString = "nmbrUniteIndicator",
-                abbreviation = "",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel =editeBaseDonneViewModel,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(0.70f)
-                    .height(45.dp),
-                function = { currentChangingField = it }
-
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(63.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(1f)
-            ) {
-                AutoResizedText(
-                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(5.dp))
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(1f)
-            ) {
-                AutoResizedText(
-                    text = "m.PF -> ${article.monPrixVent}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(5.dp))
-        OutlineTextEditeBaseDonne(
-            columnToChangeInString = "monPrixVentIndicator",
-            abbreviation = "",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel =editeBaseDonneViewModel,
-            function = { currentChangingField = it }
-
-        )
-    }
-}
 //---------------------------------------------------------------
 
 @Composable
