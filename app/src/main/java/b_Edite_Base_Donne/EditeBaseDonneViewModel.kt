@@ -23,7 +23,6 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         article: BaseDonneStatTabel,
         viewModel: EditeBaseDonneViewModel
     ) {
-        val updatedColumns = mutableListOf<Pair<String, String>>()
         val newValue = textFieldValue.toDoubleOrNull()
         val monPrixAchat = article.monPrixAchat
 
@@ -31,27 +30,63 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
 
         if (newValue != null) {
             // Mettre à jour les colonnes spécifiées
-            updatedColumns.add(columnToChange to textFieldValue)
+            calculeSansIf( columnToChange, textFieldValue, newValue, article)
 
+            calculeAcIF(columnToChange, newValue, article, monPrixAchat, )
+        }
+    }
+
+    private fun calculeSansIf(
+        columnToChange: String,
+        textFieldValue: String,
+        newValue: Double?,
+        article: BaseDonneStatTabel
+    )  {
+        val updatedColumns = mutableListOf<Pair<String, String>>()
+
+        updatedColumns.add(columnToChange to textFieldValue)
+
+        val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
+        val monPrixVentUniterCal = monPrixVent?.div(article.nmbrUnite)
+        updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
+
+        val prixDeVentTotaleChezClientCal = article.clienPrixVentUnite  *  article.nmbrUnite
+        updatedColumns.add("prixDeVentTotaleChezClient" to prixDeVentTotaleChezClientCal.toString())
+
+        val benficeTotaleEntreMoiEtClienCal = prixDeVentTotaleChezClientCal - article.monPrixAchat
+        updatedColumns.add("benficeTotaleEntreMoiEtClien" to benficeTotaleEntreMoiEtClienCal.toString())
+
+        val benificeTotaleEn2Cal = prixDeVentTotaleChezClientCal / 2
+        updatedColumns.add("benificeTotaleEn2" to benificeTotaleEn2Cal.toString())
+
+        for ((column, value) in updatedColumns) {
+            updateBaseDonneStatTabel(column, article, value)
+        }
+    }
+
+    private fun calculeAcIF(
+        columnToChange: String,
+        newValue: Double?,
+        article: BaseDonneStatTabel,
+        monPrixAchat: Double,
+    ) {
+        val updatedColumns = mutableListOf<Pair<String, String>>()
+
+        if (columnToChange != "monPrixVent") {
+            val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
+            val monPrixVentCal = monBenfice?.plus(monPrixAchat)
+            updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
+        }
+
+        if (columnToChange != "monBenfice") {
             val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
-            val monPrixVentUniterCal = monPrixVent / article.nmbrUnite
-            updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
+            val benficeCal = monPrixVent?.minus(monPrixAchat)
+            updatedColumns.add("monBenfice" to benficeCal.toString())
+        }
 
-            if (columnToChange != "monPrixVent") {
-                val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
-                val monPrixVentCal = monBenfice + monPrixAchat
-                updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
-            }
-
-            if (columnToChange != "monBenfice") {
-                val benficeCal = monPrixVent - monPrixAchat
-                updatedColumns.add("monBenfice" to benficeCal.toString())
-            }
-
-            // Mettre à jour l'article dans la base de données
-            for ((column, value) in updatedColumns) {
-                viewModel.updateBaseDonneStatTabel(column, article, value)
-            }
+        // Mettre à jour l'article dans la base de données
+        for ((column, value) in updatedColumns) {
+            updateBaseDonneStatTabel(column, article, value)
         }
     }
 

@@ -158,7 +158,6 @@ fun DisplayDetailleArticle(
             ) 
             Row(
                 modifier = Modifier
-                    .padding(8.dp)
                     .fillMaxWidth()
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
@@ -229,7 +228,6 @@ fun DisplayArticleInformations(
         Row(
             modifier = Modifier
                 .height(63.dp)
-
         ) {
             if (article.nmbrUnite >1 ){
             Box(
@@ -257,7 +255,7 @@ fun DisplayArticleInformations(
                     .height(100.dp)
             ) {
                 AutoResizedText(
-                    text = "m.PA -> ${article.monPrixAchat}",
+                    text = "m.pA -> ${article.monPrixAchat}",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -266,7 +264,7 @@ fun DisplayArticleInformations(
 
             }
         }
-        Spacer(modifier = Modifier.height(10.dp))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
