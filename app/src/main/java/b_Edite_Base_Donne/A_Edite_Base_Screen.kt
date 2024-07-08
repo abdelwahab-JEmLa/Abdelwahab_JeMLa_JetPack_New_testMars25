@@ -226,17 +226,18 @@ fun DisplayArticleInformations(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.padding(3.dp)
     ) {
-        Spacer(modifier = Modifier.height(3.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .height(63.dp)
+
         ) {
+            if (article.nmbrUnite >1 ){
             Box(
                 modifier = Modifier
-                    .padding(top = 7.dp)
+                    .padding(top =7.dp, start =3.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .height(100.dp)
+                    .weight(0.30f)
             ) {
                 AutoResizedText(
                     text = "${article.monPrixAchatUniter}/U",
@@ -244,11 +245,13 @@ fun DisplayArticleInformations(
                         .padding(4.dp)
                         .align(Alignment.Center)
                         .height(40.dp)
+
                 )
+            }
             }
             Box(
                 modifier = Modifier
-                    .padding(top = 7.dp)
+                    .padding(top =7.dp, start =7.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .weight(0.70f)
                     .height(100.dp)
