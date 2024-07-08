@@ -53,8 +53,7 @@ fun OutlineTextEditeBaseDonne(
             value = textValue,
             onValueChange = { newValue ->
                 textFieldValue = newValue
-                updateCalculated(textFieldValue, columnToChange, article, viewModel)
-                viewModel.updateBaseDonneStatTabel(columnToChange, article, textFieldValue)
+                viewModel.updateCalculated(textFieldValue, columnToChange, article, viewModel)
                 function(columnToChange)
             },
             label = {
@@ -77,48 +76,6 @@ fun OutlineTextEditeBaseDonne(
     }
 }
 
-fun updateCalculated(
-    textFieldValue: String,
-    columnToChange: String,
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel
-) {
-    val updatedColumns = mutableListOf<Pair<String, String>>()
-
-    // Convertir textFieldValue en nombre
-    val newValue = textFieldValue.toDoubleOrNull()
-
-    if (newValue != null) {
-        // Mettre à jour les colonnes spécifiées
-        updatedColumns.add(columnToChange to textFieldValue)
-
-        if (columnToChange != "monPrixVent") {
-            val monPrixAchat = article.monPrixAchat
-            val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
-            val monPrixVentCal = monBenfice + monPrixAchat
-            updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
-        }
-
-        if (columnToChange != "monPrixVent") {
-            val monPrixAchat = article.monPrixAchat
-            val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
-            val monPrixVentUniterCal = (monBenfice + monPrixAchat) / article.nmbrUnite
-            updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
-        }
-
-        if (columnToChange != "monBenfice") {
-            val monPrixAchat = article.monPrixAchat
-            val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
-            val benficeCal = monPrixVent - monPrixAchat
-            updatedColumns.add("monBenfice" to benficeCal.toString())
-        }
-
-        // Mettre à jour l'article dans la base de données
-        for ((column, value) in updatedColumns) {
-            viewModel.updateBaseDonneStatTabel(column, article, value)
-        }
-    }
-}
 
 @Composable
 fun AutoResizedText(
