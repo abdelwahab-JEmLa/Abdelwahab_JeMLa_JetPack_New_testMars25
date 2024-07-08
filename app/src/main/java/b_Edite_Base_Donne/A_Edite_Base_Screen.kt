@@ -196,7 +196,7 @@ fun TopRowQuantitys(
     ) {
         Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
-            columnToChangeInString = "nmbrUnite",
+            columnToChange = "nmbrUnite",
             abbreviation = "n.u",
             currentChangingField =currentChangingField ,
             article = article,
@@ -208,7 +208,7 @@ fun TopRowQuantitys(
         )
         Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
-            columnToChangeInString = "nmbrCaron",
+            columnToChange = "nmbrCaron",
             abbreviation = "n.c",
             function = function,
             currentChangingField = currentChangingField,
@@ -257,7 +257,7 @@ fun DisplayArticleInformations(
             }
             Spacer(modifier = Modifier.width(5.dp))
             OutlineTextEditeBaseDonne(
-                columnToChangeInString = "nmbrUniteIndicator",
+                columnToChange = "nmbrUniteIndicator",
                 abbreviation = "",
                 currentChangingField = currentChangingField,
                 article = article,
@@ -309,7 +309,7 @@ fun DisplayArticleInformations(
         }
         Spacer(modifier = Modifier.width(5.dp))
         OutlineTextEditeBaseDonne(
-            columnToChangeInString = "monPrixVent",
+            columnToChange = "monPrixVent",
             abbreviation = "M.P.V",
             currentChangingField = currentChangingField,
             article = article,
@@ -319,7 +319,7 @@ fun DisplayArticleInformations(
 
         Spacer(modifier = Modifier.width(5.dp))
         OutlineTextEditeBaseDonne(
-            columnToChangeInString = "monBenfice",
+            columnToChange = "monBenfice",
             abbreviation = "M.B",
             currentChangingField = currentChangingField,
             article = article,

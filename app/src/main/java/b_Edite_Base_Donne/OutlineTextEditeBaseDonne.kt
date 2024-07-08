@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun OutlineTextEditeBaseDonne(
-    columnToChangeInString: String,
+    columnToChange: String,
     abbreviation: String,
     currentChangingField: String,
     article: BaseDonneStatTabel,
@@ -31,15 +31,15 @@ fun OutlineTextEditeBaseDonne(
     modifier: Modifier = Modifier,
     function: (String) -> Unit,
 ) {
-    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChangeInString)?.toString() ?: "") }
+    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString() ?: "") }
 
     // Déterminer la valeur du champ texte
-    val textValue = if (currentChangingField == columnToChangeInString) {
+    val textValue = if (currentChangingField == columnToChange) {
         textFieldValue
     } else ""
 
     // Déterminer la valeur de l'étiquette
-    val labelValue = article.getColumnValue(columnToChangeInString)?.toString() ?: ""
+    val labelValue = article.getColumnValue(columnToChange)?.toString() ?: ""
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -49,10 +49,9 @@ fun OutlineTextEditeBaseDonne(
             value = textValue,
             onValueChange = { newValue ->
                 textFieldValue = newValue
-                updateCalculated(textFieldValue, columnToChangeInString, article, viewModel)
-                viewModel.updateBaseDonneStatTabel(columnToChangeInString, article, textFieldValue)
-
-                function(columnToChangeInString)
+                updateCalculated(textFieldValue, columnToChange, article, viewModel)
+                viewModel.updateBaseDonneStatTabel(columnToChange, article, textFieldValue)
+                function(columnToChange)
             },
             label = {
                 Text(
@@ -76,28 +75,37 @@ fun OutlineTextEditeBaseDonne(
 
 fun updateCalculated(
     textFieldValue: String,
-    columnToChangeInString: String,
+    columnToChange: String,
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel
 ) {
     val updatedColumns = mutableListOf<Pair<String, String>>()
 
-    // Mettre à jour les colonnes spécifiées
-    viewModel.updateBaseDonneStatTabel(columnToChangeInString, article, textFieldValue)
+    // Convertir textFieldValue en nombre
+    val newValue = textFieldValue.toDoubleOrNull()
 
-    if (columnToChangeInString != "monPrixVent") {
-        val monPrixVentCal = article.monBenfice + article.monPrixAchat
-        updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
-    }
+    if (newValue != null) {
+        // Mettre à jour les colonnes spécifiées
+        updatedColumns.add(columnToChange to textFieldValue)
 
-    if (columnToChangeInString != "monBenfice") {
-        val benficeCal = article.monPrixVent - article.monPrixAchat
-        updatedColumns.add("monBenfice" to benficeCal.toString())
-    }
+        if (columnToChange != "monPrixVent") {
+            val monPrixAchat = article.monPrixAchat
+            val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
+            val monPrixVentCal = monBenfice + monPrixAchat
+            updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
+        }
 
-    // Mettre à jour l'article dans la base de données
-    for ((column, value) in updatedColumns) {
-        viewModel.updateBaseDonneStatTabel(column, article, value)
+        if (columnToChange != "monBenfice") {
+            val monPrixAchat = article.monPrixAchat
+            val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
+            val benficeCal = monPrixVent - monPrixAchat
+            updatedColumns.add("monBenfice" to benficeCal.toString())
+        }
+
+        // Mettre à jour l'article dans la base de données
+        for ((column, value) in updatedColumns) {
+            viewModel.updateBaseDonneStatTabel(column, article, value)
+        }
     }
 }
 
