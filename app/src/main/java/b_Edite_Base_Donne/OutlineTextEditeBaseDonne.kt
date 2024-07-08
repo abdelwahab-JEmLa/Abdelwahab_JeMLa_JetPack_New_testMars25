@@ -1,10 +1,12 @@
 package b_Edite_Base_Donne
 
 import a_RoomDB.BaseDonne
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,11 +16,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 
 @Composable
@@ -54,7 +58,7 @@ fun OutlineTextEditeBaseDonne(
                 function(columnToChange)
             },
             label = {
-                Text(
+                AutoResizedText(
                     text = "$abbreviation: $labelValue",
                     color = Color.Blue,
                     modifier = Modifier.fillMaxWidth(),
@@ -95,6 +99,13 @@ fun updateCalculated(
             updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
         }
 
+        if (columnToChange != "monPrixVent") {
+            val monPrixAchat = article.monPrixAchat
+            val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
+            val monPrixVentUniterCal = (monBenfice + monPrixAchat) / article.nmbrUnite
+            updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
+        }
+
         if (columnToChange != "monBenfice") {
             val monPrixAchat = article.monPrixAchat
             val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
@@ -109,13 +120,47 @@ fun updateCalculated(
     }
 }
 
-fun removeTrailingZero(value: String): String {
-    return if (value.contains(".")) {
-        value.replace(Regex("0*$"), "").replace(Regex("\\.$"), "")
-    } else {
-        value
+@Composable
+fun AutoResizedText(
+    text: String,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    modifier: Modifier = Modifier,
+    color: Color = style.color,
+    textAlign: TextAlign = TextAlign.Center
+) {
+    var resizedTextStyle by remember { mutableStateOf(style) }
+    var shouldDraw by remember { mutableStateOf(false) }
+
+    val defaultFontSize = MaterialTheme.typography.bodyMedium.fontSize
+
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = color,
+            modifier = Modifier.drawWithContent {
+                if (shouldDraw) drawContent()
+            },
+            softWrap = false,
+            style = resizedTextStyle,
+            textAlign = textAlign,
+            onTextLayout = { result ->
+                if (result.didOverflowWidth) {
+                    if (style.fontSize.isUnspecified) {
+                        resizedTextStyle = resizedTextStyle.copy(fontSize = defaultFontSize)
+                    }
+                    resizedTextStyle = resizedTextStyle.copy(fontSize = resizedTextStyle.fontSize * 0.95)
+                } else {
+                    shouldDraw = true
+                }
+            }
+        )
     }
 }
+
+
 
 
 

@@ -27,7 +27,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,15 +37,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.isUnspecified
-import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
@@ -261,7 +255,7 @@ fun DisplayArticleInformations(
                 abbreviation = "",
                 currentChangingField = currentChangingField,
                 article = article,
-                viewModel =editeBaseDonneViewModel,
+                viewModel = editeBaseDonneViewModel,
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.70f)
@@ -292,11 +286,11 @@ fun DisplayArticleInformations(
             }
             Spacer(modifier = Modifier.width(5.dp))
             Box(
-                    modifier = Modifier
-                        .padding(top = 7.dp)
-                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                        .height(100.dp)
-                        .weight(1f)
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(1f)
             ) {
                 AutoResizedText(
                     text = "m.PF -> ${article.monPrixVent}",
@@ -307,29 +301,56 @@ fun DisplayArticleInformations(
                 )
             }
         }
-        Spacer(modifier = Modifier.width(5.dp))
-        OutlineTextEditeBaseDonne(
-            columnToChange = "monPrixVent",
-            abbreviation = "M.P.V",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel =editeBaseDonneViewModel,
-            function = { currentChangingField = it }
-        )
 
         Spacer(modifier = Modifier.width(5.dp))
+
         OutlineTextEditeBaseDonne(
             columnToChange = "monBenfice",
             abbreviation = "M.B",
             currentChangingField = currentChangingField,
             article = article,
-            viewModel =editeBaseDonneViewModel,
-            function = { currentChangingField = it }
+            viewModel = editeBaseDonneViewModel,
+            function = { currentChangingField = it },
+            modifier = Modifier
         )
 
+        Spacer(modifier = Modifier.width(5.dp))
+        Row(
+            modifier = Modifier
+                .height(63.dp)
+        )
+        {
+            Spacer(modifier = Modifier.width(5.dp))
+
+            Box(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                    .height(100.dp)
+                    .weight(0.30f)
+            ) {
+                AutoResizedText(
+                    text = "${article.monPrixVentUniter}/U",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+            }
+
+            OutlineTextEditeBaseDonne(
+                columnToChange = "monPrixVent",
+                abbreviation = "M.P.V",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = editeBaseDonneViewModel,
+                function = { currentChangingField = it },
+                modifier = Modifier
+                    .weight(0.70f)
+            )
+        }
     }
 }
-
 
 @Composable
 fun DisplayColorsCards(
@@ -381,45 +402,6 @@ fun DisplayColorsCards(
 
 //---------------------------------------------------------------
 
-@Composable
-fun AutoResizedText(
-    text: String,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
-    modifier: Modifier = Modifier,
-    color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center
-) {
-    var resizedTextStyle by remember { mutableStateOf(style) }
-    var shouldDraw by remember { mutableStateOf(false) }
-
-    val defaultFontSize = MaterialTheme.typography.bodyMedium.fontSize
-
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = color,
-            modifier = Modifier.drawWithContent {
-                if (shouldDraw) drawContent()
-            },
-            softWrap = false,
-            style = resizedTextStyle,
-            textAlign = textAlign,
-            onTextLayout = { result ->
-                if (result.didOverflowWidth) {
-                    if (style.fontSize.isUnspecified) {
-                        resizedTextStyle = resizedTextStyle.copy(fontSize = defaultFontSize)
-                    }
-                    resizedTextStyle = resizedTextStyle.copy(fontSize = resizedTextStyle.fontSize * 0.95)
-                } else {
-                    shouldDraw = true
-                }
-            }
-        )
-    }
-}
 
 
 @Composable
@@ -502,31 +484,6 @@ fun BaseDonne.getColumnValue(columnName: String): Double? {
     }
 }
 //---------------------------------------------------------------------------
-@Composable
-fun OutlinedTextFieldModifier(
-    textValue: String,
-    labelValue: String,
-    onValueChange: (String) -> Unit,
-    abbreviation: String,
-    modifier: Modifier = Modifier,
-    textColor: Color = Color.Red,
-) {
-    OutlinedTextField(
-        value = removeTrailingZero(textValue),
-        onValueChange = {
-            onValueChange(removeTrailingZero(it))
-        },
-        label = {
-            Text(
-                text = "$abbreviation: $labelValue",
-                color = textColor,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        textStyle = TextStyle(color = textColor, textAlign = TextAlign.Center, fontSize = 14.sp),
-        modifier = modifier.fillMaxWidth()
-    )
-}
 
 
 
