@@ -1,5 +1,6 @@
 package b_Edite_Base_Donne
 
+import a_RoomDB.BaseDonne
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -60,11 +61,11 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
                         "monPrixAchatUniter" -> monPrixAchatUniter = if (it.isEmpty()) 0.0 else it.toDouble()
                         "monPrixVentUniter" -> monPrixVentUniter = if (it.isEmpty()) 0.0 else it.toDouble()
                     }
+                    articleDao.update(toBaseDonne(this))
                 }
             }
         }
     }
-
 
     private fun initBaseDonneStatTabel() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -73,7 +74,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
                 BaseDonneStatTabel(
                     it.idArticle,
                     it.nomArticleFinale,
-                    it.classementCate.toDouble(),
+                    it.classementCate,
                     it.nomArab,
                     it.nmbrCat,
                     it.couleur1,
@@ -96,7 +97,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
                     it.idCategorie,
                     it.funChangeImagsDimention,
                     it.nomCategorie,
-                    it.neaon1.toDouble(),
+                    it.neaon1,
                     it.lastUpdateState,
                     it.cartonState,
                     it.dateCreationCategorie,
@@ -113,7 +114,47 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
             }
         }
     }
+
+    private fun toBaseDonne(baseDonneStatTabel: BaseDonneStatTabel): BaseDonne {
+        return BaseDonne(
+            baseDonneStatTabel.idArticle,
+            baseDonneStatTabel.nomArticleFinale,
+            baseDonneStatTabel.classementCate,
+            baseDonneStatTabel.nomArab,
+            baseDonneStatTabel.nmbrCat,
+            baseDonneStatTabel.couleur1,
+            baseDonneStatTabel.couleur2,
+            baseDonneStatTabel.couleur3,
+            baseDonneStatTabel.couleur4,
+            baseDonneStatTabel.nomCategorie2,
+            baseDonneStatTabel.nmbrUnite,
+            baseDonneStatTabel.nmbrCaron,
+            baseDonneStatTabel.affichageUniteState,
+            baseDonneStatTabel.commmentSeVent,
+            baseDonneStatTabel.afficheBoitSiUniter,
+            baseDonneStatTabel.monPrixAchat,
+            baseDonneStatTabel.clienPrixVentUnite,
+            baseDonneStatTabel.minQuan,
+            baseDonneStatTabel.monBenfice,
+            baseDonneStatTabel.monPrixVent,
+            baseDonneStatTabel.diponibilityState,
+            baseDonneStatTabel.neaon2,
+            baseDonneStatTabel.idCategorie,
+            baseDonneStatTabel.funChangeImagsDimention,
+            baseDonneStatTabel.nomCategorie,
+            baseDonneStatTabel.neaon1,
+            baseDonneStatTabel.lastUpdateState,
+            baseDonneStatTabel.cartonState,
+            baseDonneStatTabel.dateCreationCategorie,
+            baseDonneStatTabel.prixDeVentTotaleChezClient,
+            baseDonneStatTabel.benficeTotaleEntreMoiEtClien,
+            baseDonneStatTabel.benificeTotaleEn2,
+            baseDonneStatTabel.monPrixAchatUniter,
+            baseDonneStatTabel.monPrixVentUniter
+        )
+    }
 }
+
 class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
@@ -121,6 +162,5 @@ class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelPro
             return EditeBaseDonneViewModel(articleDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
-
     }
 }

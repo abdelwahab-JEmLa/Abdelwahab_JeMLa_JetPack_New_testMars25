@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 
 @Dao
 interface ArticleDao {
@@ -15,7 +16,10 @@ interface ArticleDao {
     suspend fun insertAll(articles: List<BaseDonne>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(article: BaseDonne)
+    suspend fun insertArticle(article: BaseDonne)
+
+    @Update
+    suspend fun update(article: BaseDonne)
 
     @Query("DELETE FROM articles")
     suspend fun deleteAll()

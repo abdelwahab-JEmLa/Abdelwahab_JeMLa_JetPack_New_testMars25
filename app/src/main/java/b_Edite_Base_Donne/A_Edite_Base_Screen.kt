@@ -292,11 +292,11 @@ fun DisplayArticleInformations(
             }
             Spacer(modifier = Modifier.width(5.dp))
             Box(
-                            modifier = Modifier
-                                .padding(top = 7.dp)
-                                .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                                .height(100.dp)
-                                .weight(1f)
+                    modifier = Modifier
+                        .padding(top = 7.dp)
+                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                        .height(100.dp)
+                        .weight(1f)
             ) {
                 AutoResizedText(
                     text = "m.PF -> ${article.monPrixVent}",
@@ -316,6 +316,7 @@ fun DisplayArticleInformations(
             viewModel =editeBaseDonneViewModel,
             function = { currentChangingField = it }
         )
+
         Spacer(modifier = Modifier.width(5.dp))
         OutlineTextEditeBaseDonne(
             columnToChangeInString = "monBenfice",
@@ -325,8 +326,11 @@ fun DisplayArticleInformations(
             viewModel =editeBaseDonneViewModel,
             function = { currentChangingField = it }
         )
+
     }
 }
+
+
 @Composable
 fun DisplayColorsCards(
     article: BaseDonneStatTabel,
@@ -347,35 +351,30 @@ fun DisplayColorsCards(
     ) {
         itemsIndexed(couleursList) { index, couleur ->
             if (!couleur.isNullOrEmpty()) {
-                ColorsCard(article.idArticle.toString(), index, couleur)
+                Card(
+                    modifier = Modifier
+                        .width(250.dp)
+                        .height(300.dp)
+                        .padding(end = 8.dp)
+                ) {
+                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .height(250.dp)
+                                .fillMaxWidth()
+                        ) {
+                            LoadImageFromPath(imagePath = imagePath)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = couleur)
+                    }
+                }
             }
-        }
-    }
-}
-
-@Composable
-fun ColorsCard(idArticle: String, index: Int, couleur: String) {
-    Card(
-        modifier = Modifier
-            .width(250.dp)
-            .height(300.dp)
-            .padding(end = 8.dp)
-    ) {
-        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .height(250.dp)
-                    .fillMaxWidth()
-            ) {
-                LoadImageFromPath(imagePath = imagePath)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = couleur)
         }
     }
 }
@@ -455,38 +454,6 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
 //----------------------------------------------------------------------
 
 
-fun calculateNewValues(
-    columnName: String,
-    newValue: String?,
-    article: BaseDonne,
-): BaseDonne {
-    val value = newValue?.toDoubleOrNull() ?: 0.0
-    val newArticle = article.copy()
-
-    when (columnName) {
-        "monPrixVent" -> newArticle.monPrixVent = value
-        "monBenefice" -> newArticle.monBenfice = value
-        "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
-        "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
-    }
-
-    newArticle.apply {
-        if (columnName != "monPrixVent") {
-            monPrixVent = monBenfice + article.monPrixAchat
-        }
-        if (columnName != "prixDeVentTotaleChezClient") {
-            prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
-        }
-        if (columnName != "monBenefice") {
-            monBenfice = monPrixVent - article.monPrixAchat
-        }
-        if (columnName != "monPrixAchatUniter") {
-            monPrixAchatUniter = monPrixVent / article.nmbrUnite
-        }
-    }
-
-    return newArticle
-}
 
 
 
@@ -561,38 +528,5 @@ fun OutlinedTextFieldModifier(
     )
 }
 
-@Composable
-fun Dis_InformationsNewPractice(
-    article: BaseDonne,
-    modifier: Modifier = Modifier,
-    onValueChange: (BaseDonne) -> Unit,
-) {
-    var articleState by remember { mutableStateOf(article) }
-    var currentChangingField by remember { mutableStateOf("") }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(3.dp)
-    ) {
-        val fields = listOf("monPrixVent", "monBenefice")
-        val abbreviations = listOf("p.v", "m.b")
-
-        fields.forEachIndexed { index, field ->
-            OutlinedTextFieldModifier(
-                textValue = if (currentChangingField == field) articleState.getColumnValue(field).toString() else "",
-                onValueChange = {
-                    articleState = calculateNewValues(field, it, article)
-                    currentChangingField = field
-                    onValueChange(articleState)
-                },
-                abbreviation = abbreviations[index],
-                labelValue = articleState.getColumnValue(field).toString(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(65.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
 

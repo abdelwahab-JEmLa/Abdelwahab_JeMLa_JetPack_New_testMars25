@@ -1,5 +1,6 @@
 package b_Edite_Base_Donne
 
+import a_RoomDB.BaseDonne
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,10 +33,12 @@ fun OutlineTextEditeBaseDonne(
 ) {
     var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChangeInString)?.toString() ?: "") }
 
+    // Déterminer la valeur du champ texte
     val textValue = if (currentChangingField == columnToChangeInString) {
         textFieldValue
     } else ""
 
+    // Déterminer la valeur de l'étiquette
     val labelValue = article.getColumnValue(columnToChangeInString)?.toString() ?: ""
 
     Column(
@@ -45,8 +48,10 @@ fun OutlineTextEditeBaseDonne(
         OutlinedTextField(
             value = textValue,
             onValueChange = { newValue ->
-                textFieldValue = removeTrailingZero(newValue)
-                viewModel.updateBaseDonneStatTabel(columnToChangeInString, article, removeTrailingZero(newValue))
+                textFieldValue = newValue
+                updateCalculated(textFieldValue, columnToChangeInString, article, viewModel)
+                viewModel.updateBaseDonneStatTabel(columnToChangeInString, article, textFieldValue)
+
                 function(columnToChangeInString)
             },
             label = {
@@ -64,8 +69,35 @@ fun OutlineTextEditeBaseDonne(
             modifier = modifier
                 .fillMaxWidth()
                 .height(65.dp),
-            visualTransformation = VisualTransformation.None // Ensuring no transformation
+            visualTransformation = VisualTransformation.None // Aucune transformation
         )
+    }
+}
+
+fun updateCalculated(
+    textFieldValue: String,
+    columnToChangeInString: String,
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel
+) {
+    val updatedColumns = mutableListOf<Pair<String, String>>()
+
+    // Mettre à jour les colonnes spécifiées
+    viewModel.updateBaseDonneStatTabel(columnToChangeInString, article, textFieldValue)
+
+    if (columnToChangeInString != "monPrixVent") {
+        val monPrixVentCal = article.monBenfice + article.monPrixAchat
+        updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
+    }
+
+    if (columnToChangeInString != "monBenfice") {
+        val benficeCal = article.monPrixVent - article.monPrixAchat
+        updatedColumns.add("monBenfice" to benficeCal.toString())
+    }
+
+    // Mettre à jour l'article dans la base de données
+    for ((column, value) in updatedColumns) {
+        viewModel.updateBaseDonneStatTabel(column, article, value)
     }
 }
 
@@ -75,4 +107,44 @@ fun removeTrailingZero(value: String): String {
     } else {
         value
     }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////
+/////////                        cOMMENT                     ///////
+////////////////////////////////////////////////////////////////////
+fun calculateNewValues(
+    columnName: String,
+    newValue: String?,
+    article: BaseDonne,
+): Any {
+    val value = newValue?.toDoubleOrNull() ?: 0.0
+    val columeAchange = article.copy()
+
+    when (columnName) {
+        "monPrixVent" -> columeAchange.monPrixVent = value
+        "monBenefice" -> columeAchange.monBenfice = value
+        "prixDeVentTotaleChezClient" -> columeAchange.prixDeVentTotaleChezClient = value
+        "monPrixAchatUniter" -> columeAchange.monPrixAchatUniter = value
+    }
+
+    columeAchange.apply {
+        if (columnName != "monPrixVent") {
+            monPrixVent = monBenfice + article.monPrixAchat
+        }
+        if (columnName != "prixDeVentTotaleChezClient") {
+            prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
+        }
+        if (columnName != "monBenefice") {
+            monBenfice = monPrixVent - article.monPrixAchat
+        }
+        if (columnName != "monPrixAchatUniter") {
+            monPrixAchatUniter = monPrixVent / article.nmbrUnite
+        }
+    }
+
+    return columeAchange
 }
