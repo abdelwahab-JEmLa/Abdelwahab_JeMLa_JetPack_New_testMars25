@@ -46,7 +46,7 @@ fun OutlineTextEditeBaseDonne(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(3.dp)
+        modifier = modifier.padding(5.dp)
     ) {
         OutlinedTextField(
             value = textValue,

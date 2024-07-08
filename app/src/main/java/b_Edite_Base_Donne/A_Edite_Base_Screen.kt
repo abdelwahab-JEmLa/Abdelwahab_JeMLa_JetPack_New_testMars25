@@ -182,25 +182,11 @@ fun TopRowQuantitys(
 ) {
     Row(
         modifier = modifier
-            .padding(3.dp)
             .fillMaxWidth()
     ) {
-        Spacer(modifier = Modifier.width(3.dp))
         OutlineTextEditeBaseDonne(
-            columnToChange = "nmbrUnite",
-            abbreviation = "n.u",
-            currentChangingField =currentChangingField ,
-            article = article,
-            viewModel = viewModel,
-            modifier = Modifier
-                .weight(1f)
-                .height(63.dp),
-            function = function
-        )
-        Spacer(modifier = Modifier.width(3.dp))
-        OutlineTextEditeBaseDonne(
-            columnToChange = "nmbrCaron",
-            abbreviation = "n.c",
+            columnToChange = "clienPrixVentUnite",
+            abbreviation = "c.pU",
             function = function,
             currentChangingField = currentChangingField,
             article = article,
@@ -209,6 +195,29 @@ fun TopRowQuantitys(
                 .weight(1f)
                 .height(63.dp)
         )
+        OutlineTextEditeBaseDonne(
+            columnToChange = "nmbrCaron",
+            abbreviation = "n.c",
+            currentChangingField =currentChangingField ,
+            article = article,
+            viewModel = viewModel,
+            modifier = Modifier
+                .weight(1f)
+                .height(63.dp),
+            function = function
+        )
+        OutlineTextEditeBaseDonne(
+            columnToChange = "nmbrUnite",
+            abbreviation = "n.u",
+            function = function,
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel = viewModel,
+            modifier = Modifier
+                .weight(1f)
+                .height(63.dp)
+        )
+
     }
 }
 
