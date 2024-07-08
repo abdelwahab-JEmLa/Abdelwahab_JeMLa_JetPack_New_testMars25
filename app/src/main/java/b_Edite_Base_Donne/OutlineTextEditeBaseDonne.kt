@@ -1,6 +1,5 @@
 package b_Edite_Base_Donne
 
-import a_RoomDB.BaseDonne
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,7 +57,7 @@ fun OutlineTextEditeBaseDonne(
             },
             label = {
                 AutoResizedText(
-                    text = "$abbreviation: $labelValue",
+                    text = "$abbreviation>$labelValue",
                     color = Color.Blue,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -126,35 +125,3 @@ fun AutoResizedText(
 ////////////////////////////////////////////////////////////////////
 /////////                        cOMMENT                     ///////
 ////////////////////////////////////////////////////////////////////
-fun calculateNewValues(
-    columnName: String,
-    newValue: String?,
-    article: BaseDonne,
-): Any {
-    val value = newValue?.toDoubleOrNull() ?: 0.0
-    val columeAchange = article.copy()
-
-    when (columnName) {
-        "monPrixVent" -> columeAchange.monPrixVent = value
-        "monBenefice" -> columeAchange.monBenfice = value
-        "prixDeVentTotaleChezClient" -> columeAchange.prixDeVentTotaleChezClient = value
-        "monPrixAchatUniter" -> columeAchange.monPrixAchatUniter = value
-    }
-
-    columeAchange.apply {
-        if (columnName != "monPrixVent") {
-            monPrixVent = monBenfice + article.monPrixAchat
-        }
-        if (columnName != "prixDeVentTotaleChezClient") {
-            prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
-        }
-        if (columnName != "monBenefice") {
-            monBenfice = monPrixVent - article.monPrixAchat
-        }
-        if (columnName != "monPrixAchatUniter") {
-            monPrixAchatUniter = monPrixVent / article.nmbrUnite
-        }
-    }
-
-    return columeAchange
-}

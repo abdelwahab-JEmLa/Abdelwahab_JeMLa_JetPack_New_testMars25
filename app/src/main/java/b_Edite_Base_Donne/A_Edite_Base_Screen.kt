@@ -1,6 +1,5 @@
 package b_Edite_Base_Donne
 
-import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -238,30 +236,32 @@ fun DisplayArticleInformations(
                 modifier = Modifier
                     .padding(top = 7.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .weight(0.40f)
                     .height(100.dp)
             ) {
                 AutoResizedText(
-                    text = "pA.U -> ${article.monPrixAchatUniter}",
+                    text = "${article.monPrixAchatUniter}/U",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
                         .height(40.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(5.dp))
-            OutlineTextEditeBaseDonne(
-                columnToChange = "nmbrUniteIndicator",
-                abbreviation = "",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = editeBaseDonneViewModel,
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight()
+                    .padding(top = 7.dp)
+                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .weight(0.70f)
-                    .height(45.dp),
-                function = { currentChangingField = it }
-            )
+                    .height(100.dp)
+            ) {
+                AutoResizedText(
+                    text = "m.PA -> ${article.monPrixAchat}",
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.Center)
+                        .height(40.dp)
+                )
+
+            }
         }
         Spacer(modifier = Modifier.height(10.dp))
         Row(
@@ -432,58 +432,6 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
 }
 
 
-
-//----------------------------------------------------------------------
-
-
-
-
-
-
-
-fun calculateNewValuesBaseDonneStatTabel(
-    columnName: String,
-    newValue: String?,
-    article: BaseDonne,
-): BaseDonne {
-    val value = newValue?.toDoubleOrNull() ?: 0.0
-    val newArticle = article.copy()
-
-    when (columnName) {
-        "monPrixVent" -> newArticle.monPrixVent = value
-        "monBenefice" -> newArticle.monBenfice = value
-        "prixDeVentTotaleChezClient" -> newArticle.prixDeVentTotaleChezClient = value
-        "monPrixAchatUniter" -> newArticle.monPrixAchatUniter = value
-    }
-
-    newArticle.apply {
-        if (columnName != "monPrixVent") {
-            monPrixVent = monBenfice + article.monPrixAchat
-        }
-        if (columnName != "prixDeVentTotaleChezClient") {
-            prixDeVentTotaleChezClient = article.clienPrixVentUnite * article.nmbrUnite
-        }
-        if (columnName != "monBenefice") {
-            monBenfice = monPrixVent - article.monPrixAchat
-        }
-        if (columnName != "monPrixAchatUniter") {
-            monPrixAchatUniter = monPrixVent / article.nmbrUnite
-        }
-    }
-
-    return newArticle
-}
-
-fun BaseDonne.getColumnValue(columnName: String): Double? {
-    return when (columnName) {
-        "monPrixVent" -> monPrixVent
-        "monBenefice" -> monBenfice
-        "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient
-        "monPrixAchatUniter" -> monPrixAchatUniter
-        else -> null
-    }
-}
-//---------------------------------------------------------------------------
 
 
 
