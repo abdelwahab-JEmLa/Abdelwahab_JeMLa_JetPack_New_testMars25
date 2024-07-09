@@ -170,7 +170,13 @@ fun DisplayDetailleArticle(
                     .fillMaxWidth()
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
-                DisplayArticleInformations(editeBaseDonneViewModel, article, Modifier.weight(0.62f))
+                DisplayArticleInformations(
+                    editeBaseDonneViewModel,
+                    article,
+                    Modifier.weight(0.62f),
+                    function = { currentChangingField = it },
+                    currentChangingField = currentChangingField,
+                    )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -234,9 +240,10 @@ fun TopRowQuantitys(
 fun DisplayArticleInformations(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     article: BaseDonneStatTabel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    function: (String) -> Unit,
+    currentChangingField: String
 ) {
-    var currentChangingField by remember { mutableStateOf("") }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -325,7 +332,7 @@ fun DisplayArticleInformations(
             currentChangingField = currentChangingField,
             article = article,
             viewModel = editeBaseDonneViewModel,
-            function = { currentChangingField = it },
+            function = function,
             modifier = Modifier
         )
         Spacer(modifier = Modifier.width(5.dp))
@@ -336,7 +343,7 @@ fun DisplayArticleInformations(
             currentChangingField = currentChangingField,
             article = article,
             viewModel = editeBaseDonneViewModel,
-            function = { currentChangingField = it },
+            function = function,
             modifier = Modifier
         )
 
@@ -370,7 +377,7 @@ fun DisplayArticleInformations(
                 currentChangingField = currentChangingField,
                 article = article,
                 viewModel = editeBaseDonneViewModel,
-                function = { currentChangingField = it },
+                function = function,
                 modifier = Modifier
                     .weight(0.70f)
             )
