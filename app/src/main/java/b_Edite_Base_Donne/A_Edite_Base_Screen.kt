@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,15 +32,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
+import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -49,16 +53,25 @@ fun A_Edite_Base_Screen(
     modifier: Modifier = Modifier,
 ) {
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
             editeBaseDonneViewModel,
             articlesBaseDonneStatTabel = editeBaseDonneViewModel.baseDonneStatTabel,
             selectedArticle = selectedArticle,
-            onArticleSelect = {
-                editeBaseDonneViewModel.updateCalculated("0.0", "", it)
-                selectedArticle = it
-            }
+            onArticleSelect = { article ->
+                editeBaseDonneViewModel.updateCalculated("0.0", "", article)
+                selectedArticle = article
+                val index = editeBaseDonneViewModel.baseDonneStatTabel.indexOf(article)
+                coroutineScope.launch {
+                    if (index >= 0) {
+                        listState.scrollToItem(index / 2) // Divide by 2 because we are chunking by 2
+                    }
+                }
+            },
+            listState = listState
         )
     }
 }
@@ -70,8 +83,8 @@ fun ArticlesScreenList(
     articlesBaseDonneStatTabel: List<BaseDonneStatTabel>,
     selectedArticle: BaseDonneStatTabel?,
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
+    listState: LazyListState
 ) {
-    val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
 
     Scaffold(
@@ -85,8 +98,14 @@ fun ArticlesScreenList(
             state = listState,
             modifier = Modifier.padding(paddingValues)
         ) {
-            items(items = articlesBaseDonneStatTabel.chunked(2)) { pairOfArticles ->
+            itemsIndexed(items = articlesBaseDonneStatTabel.chunked(2)) { index, pairOfArticles ->
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    if (selectedArticle != null && pairOfArticles.contains(selectedArticle)) {
+                        DisplayDetailleArticle(
+                            article = selectedArticle,
+                            editeBaseDonneViewModel = editeBaseDonneViewModel
+                        )
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
@@ -96,14 +115,6 @@ fun ArticlesScreenList(
                                 onArticleSelect(updatedArticle)
                                 focusManager.clearFocus()
                             }
-                        }
-                    }
-                    selectedArticle?.let { article ->
-                        if (pairOfArticles.contains(article)) {
-                            DisplayDetailleArticle(
-                                article = article,
-                                editeBaseDonneViewModel = editeBaseDonneViewModel
-                            )
                         }
                     }
                 }
@@ -161,32 +172,46 @@ fun DisplayDetailleArticle(
         Column(modifier = Modifier.fillMaxWidth()) {
             TopRowQuantitys(
                 article,
-                viewModel =editeBaseDonneViewModel,
+                viewModel = editeBaseDonneViewModel,
                 currentChangingField = currentChangingField,
                 function = { currentChangingField = it }
-            ) 
+            )
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+
             ) {
-                DisplayColorsCards(article, Modifier.weight(0.38f))
+                DisplayColorsCards(article,
+                    Modifier.weight(0.38f),
+                )
                 DisplayArticleInformations(
                     editeBaseDonneViewModel,
                     article,
                     Modifier.weight(0.62f),
                     function = { currentChangingField = it },
                     currentChangingField = currentChangingField,
-                    )
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            AutoResizedText(
-                text = article.nomArticleFinale,
-                modifier = Modifier.padding(8.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = capitalizeFirstLetter(article.nomArticleFinale),
+                    fontSize = 25.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color.Red
+                )
+            }
         }
     }
 }
-
+fun capitalizeFirstLetter(text: String): String {
+    return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+}
 @Composable
 fun TopRowQuantitys(
     article: BaseDonneStatTabel,
@@ -208,7 +233,7 @@ fun TopRowQuantitys(
             viewModel = viewModel,
             modifier = Modifier
                 .weight(1f)
-                .height(63.dp)
+                .height(67.dp)
         )
         OutlineTextEditeBaseDonne(
             columnToChange = "nmbrCaron",
@@ -218,7 +243,7 @@ fun TopRowQuantitys(
             viewModel = viewModel,
             modifier = Modifier
                 .weight(1f)
-                .height(63.dp),
+                .height(67.dp),
             function = function
         )
         OutlineTextEditeBaseDonne(
@@ -230,7 +255,7 @@ fun TopRowQuantitys(
             viewModel = viewModel,
             modifier = Modifier
                 .weight(1f)
-                .height(63.dp)
+                .height(67.dp)
         )
 
     }
@@ -247,7 +272,7 @@ fun DisplayArticleInformations(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(3.dp)
+        modifier = modifier
     ) {
         Row(
             modifier = Modifier
@@ -292,11 +317,13 @@ fun DisplayArticleInformations(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(63.dp)
+                .height(55.dp)
+                .padding(top= 5.dp)
+
         ) {
             Box(
                 modifier = Modifier
-                    .padding(top = 7.dp)
+                    .padding(top = 3.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .height(100.dp)
                     .weight(1f)
@@ -312,7 +339,7 @@ fun DisplayArticleInformations(
             Spacer(modifier = Modifier.width(5.dp))
             Box(
                 modifier = Modifier
-                    .padding(top = 7.dp)
+                    .padding(top = 3.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .height(100.dp)
                     .weight(1f)
@@ -335,7 +362,6 @@ fun DisplayArticleInformations(
             function = function,
             modifier = Modifier
         )
-        Spacer(modifier = Modifier.width(5.dp))
 
         OutlineTextEditeBaseDonne(
             columnToChange = "monBenfice",
@@ -347,13 +373,11 @@ fun DisplayArticleInformations(
             modifier = Modifier
         )
 
-        Spacer(modifier = Modifier.width(5.dp))
         Row(
             modifier = Modifier
                 .height(63.dp)
         )
         {
-            Spacer(modifier = Modifier.width(5.dp))
 
             Box(
                 modifier = Modifier

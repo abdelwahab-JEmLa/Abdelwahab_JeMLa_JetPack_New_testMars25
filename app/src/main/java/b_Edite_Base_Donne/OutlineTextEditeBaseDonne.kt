@@ -54,7 +54,7 @@ fun OutlineTextEditeBaseDonne(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(5.dp)
+        modifier = modifier.padding(horizontal = 3.dp)
     ) {
         OutlinedTextField(
             value = textValue,
@@ -98,12 +98,13 @@ fun AutoResizedText(
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
     color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center
+    textAlign: TextAlign = TextAlign.Center,
+    bodyLarge: Boolean= false
 ) {
     var resizedTextStyle by remember { mutableStateOf(style) }
     var shouldDraw by remember { mutableStateOf(false) }
 
-    val defaultFontSize = MaterialTheme.typography.bodyMedium.fontSize
+    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
 
     Box(
         modifier = modifier.fillMaxWidth(),
