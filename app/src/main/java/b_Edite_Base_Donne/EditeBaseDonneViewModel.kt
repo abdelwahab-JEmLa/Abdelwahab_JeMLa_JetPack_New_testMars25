@@ -41,14 +41,17 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         val updatedColumns = mutableListOf<Pair<String, String>>()
 
         updatedColumns.add(columnToChange to textFieldValue)
-        calculateUnitPurchasePrice(article, updatedColumns)
+
+        calculateUnitPurchasePrice(article, updatedColumns,columnToChange,newValue)
+
+        val nmbrUnite = if (columnToChange == "nmbrUnite") newValue else article.nmbrUnite
 
         val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
-        val monPrixVentUniterCal = monPrixVent?.div(article.nmbrUnite)
+        val monPrixVentUniterCal = nmbrUnite?.let { monPrixVent?.div(it.toDouble()) }
         updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
 
         val clienPrixVentUniteCal = if (columnToChange == "clienPrixVentUnite") newValue else article.clienPrixVentUnite
-        val prixDeVentTotaleChezClientCal = clienPrixVentUniteCal?.times(article.nmbrUnite)
+        val prixDeVentTotaleChezClientCal = nmbrUnite?.let { clienPrixVentUniteCal?.times(it.toDouble()) }
         updatedColumns.add("prixDeVentTotaleChezClient" to prixDeVentTotaleChezClientCal.toString())
 
         val benficeTotaleEntreMoiEtClienCal = prixDeVentTotaleChezClientCal?.minus(article.monPrixAchat)
@@ -64,9 +67,13 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
 
     private fun calculateUnitPurchasePrice(
         article: BaseDonneStatTabel,
-        updatedColumns: MutableList<Pair<String, String>>
-    ) {
-        val monPrixAchatUniterCal = article.monPrixAchat.div(article.nmbrUnite)
+        updatedColumns: MutableList<Pair<String, String>>,
+        columnToChange: String,
+        newValue: Double?,
+        ) {
+        val nmbrUnite = if (columnToChange == "nmbrUnite") newValue else article.nmbrUnite
+
+        val monPrixAchatUniterCal = nmbrUnite?.let { article.monPrixAchat.div(it.toDouble()) }
         updatedColumns.add("monPrixAchatUniter" to monPrixAchatUniterCal.toString())
     }
 
@@ -76,11 +83,20 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         article: BaseDonneStatTabel
     ) {
         val updatedColumns = mutableListOf<Pair<String, String>>()
+        if (columnToChange!="monPrixVent") {
+            monPrixVent(columnToChange, newValue, updatedColumns, article)
 
-        monPrixVent(columnToChange, newValue, updatedColumns, article)
+        }
+        if (columnToChange!="monBenfice") {
+            calculateMyBenefit(columnToChange, newValue, updatedColumns, article)
 
-        calculateMyBenefit(columnToChange, newValue, article, updatedColumns)
-        calculateClientBenefit(columnToChange, newValue, article, updatedColumns)
+        }
+
+        if (columnToChange!="benificeClient") {
+            calculateClientBenefit(columnToChange, newValue, updatedColumns, article)
+
+        }
+
 
         for ((column, value) in updatedColumns) {
             updateBaseDonneStatTabel(column, article, value)
@@ -93,12 +109,12 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         updatedColumns: MutableList<Pair<String, String>>,
         article: BaseDonneStatTabel
     ) {
+
         when (columnToChange) {
             "benificeClient" -> {
                 newValue?.let {
                     updatedColumns.add(
-                        "monPrixVent" to ((article.prixDeVentTotaleChezClient
-                            ?: 0.0) - it).toString()
+                        "monPrixVent" to ((article.prixDeVentTotaleChezClient) - it).toString()
                     )
                 }
             }
@@ -110,34 +126,66 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
                     )
                 }
             }
+            else ->  updatedColumns.add(
+                "monPrixVent" to (article.monBenfice + (article.monPrixAchat ?: 0.0)).toString())
         }
     }
-
     private fun calculateMyBenefit(
         columnToChange: String,
         newValue: Double?,
-        article: BaseDonneStatTabel,
-        updatedColumns: MutableList<Pair<String, String>>
+        updatedColumns: MutableList<Pair<String, String>>,
+        article: BaseDonneStatTabel
     ) {
-        if (columnToChange != "monBenfice") {
-            val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
-            val monBenficeCal = monPrixVent?.let { it - (article.monPrixAchat ?: 0.0) }
-            monBenficeCal?.let { updatedColumns.add("monBenfice" to it.toString()) }
+        when (columnToChange) {
+            "monPrixVent" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBenfice" to (it - (article.monPrixAchat)).toString()
+                    )
+                }
+            }
+
+            "benificeClient" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBenfice" to ((article.prixDeVentTotaleChezClient -it ) - (article.monPrixAchat) ).toString()
+                    )
+                }
+            }
+            else ->  updatedColumns.add(
+                "monBenfice" to ((article.monPrixVent ) - (article.monPrixAchat)).toString())
         }
     }
 
     private fun calculateClientBenefit(
         columnToChange: String,
         newValue: Double?,
-        article: BaseDonneStatTabel,
-        updatedColumns: MutableList<Pair<String, String>>
+        updatedColumns: MutableList<Pair<String, String>>,
+        article: BaseDonneStatTabel
     ) {
-        if (columnToChange != "benificeClient") {
-            val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
-            val benificeClientCal = monPrixVent?.let { (article.prixDeVentTotaleChezClient ?: 0.0) - it }
-            benificeClientCal?.let { updatedColumns.add("benificeClient" to it.toString()) }
+        when (columnToChange) {
+            "monPrixVent" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "benificeClient" to ((article.prixDeVentTotaleChezClient) -it).toString()
+                    )
+                }
+            }
+
+            "monBenfice" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "benificeClient" to ((article.prixDeVentTotaleChezClient) -(article.monPrixAchat +it) ).toString()
+                    )
+                }
+            }
+            else ->  updatedColumns.add(
+                "benificeClient" to ((article.prixDeVentTotaleChezClient) -article.monPrixVent).toString())
         }
     }
+
+
+    
     private fun updateBaseDonneStatTabel(
         columnToChangeInString: String,
         article: BaseDonneStatTabel,
