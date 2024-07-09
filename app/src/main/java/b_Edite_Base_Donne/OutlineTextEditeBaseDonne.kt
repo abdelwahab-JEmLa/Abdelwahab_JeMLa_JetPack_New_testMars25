@@ -49,10 +49,10 @@ fun OutlineTextEditeBaseDonne(
     val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
     val roundedValue = try {
         val doubleValue = labelValue.toDouble()
-        if (doubleValue.toString().contains(".")) {
-            String.format("%.1f", doubleValue)
+        if (doubleValue % 1 == 0.0) {
+            doubleValue.toInt().toString()
         } else {
-            doubleValue.toString()
+            String.format("%.1f", doubleValue)
         }
     } catch (e: NumberFormatException) {
         labelValue // Retourner la valeur initiale en cas d'exception

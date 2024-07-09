@@ -375,7 +375,7 @@ fun DisplayArticleInformations(
                 viewModel = editeBaseDonneViewModel,
                 function = function,
                 modifier = Modifier
-                    .weight(0.30f)
+                    .weight(0.35f)
             )
 
             OutlineTextEditeBaseDonne(
@@ -386,7 +386,7 @@ fun DisplayArticleInformations(
                 viewModel = editeBaseDonneViewModel,
                 function = function,
                 modifier = Modifier
-                    .weight(0.70f)
+                    .weight(0.65f)
             )
         }
     }
