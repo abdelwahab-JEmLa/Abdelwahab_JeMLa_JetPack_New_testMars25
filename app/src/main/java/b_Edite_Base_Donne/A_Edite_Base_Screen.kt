@@ -179,7 +179,7 @@ fun DisplayDetailleArticle(
                     )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
+            AutoResizedText(
                 text = article.nomArticleFinale,
                 modifier = Modifier.padding(8.dp)
             )
