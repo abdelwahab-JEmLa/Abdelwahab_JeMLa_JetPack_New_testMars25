@@ -111,20 +111,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
     ) {
 
         when (columnToChange) {
-            "nmbrUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVent" to ((it * article.clienPrixVentUnite) - article.benificeClient).toString()
-                    )
-                }
-            }
-            "clienPrixVentUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVent" to ((it * article.nmbrUnite) - article.benificeClient).toString()
-                    )
-                }
-            }
+
 
             "benificeClient" -> {
                 newValue?.let {
@@ -152,20 +139,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         article: BaseDonneStatTabel
     ) {
         when (columnToChange) {
-            "nmbrUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBenfice" to ((it * article.clienPrixVentUnite) - article.benificeClient - article.monPrixAchat).toString()
-                    )
-                }
-            }
-            "clienPrixVentUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBenfice" to ((it * article.nmbrUnite) - article.benificeClient - article.monPrixAchat).toString()
-                    )
-                }
-            }
+
             "monPrixVent" -> {
                 newValue?.let {
                     updatedColumns.add(
