@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
-
 @Composable
 fun OutlineTextEditeBaseDonne(
     columnToChange: String,
@@ -39,7 +38,7 @@ fun OutlineTextEditeBaseDonne(
     modifier: Modifier = Modifier,
     function: (String) -> Unit,
 ) {
-    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString() ?: "") }
+    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
 
     // Déterminer la valeur du champ texte
     val textValue = if (currentChangingField == columnToChange) {
@@ -47,7 +46,17 @@ fun OutlineTextEditeBaseDonne(
     } else ""
 
     // Déterminer la valeur de l'étiquette
-    val labelValue = article.getColumnValue(columnToChange)?.toString() ?: ""
+    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    val roundedValue = try {
+        val doubleValue = labelValue.toDouble()
+        if (doubleValue.toString().contains(".")) {
+            String.format("%.1f", doubleValue)
+        } else {
+            doubleValue.toString()
+        }
+    } catch (e: NumberFormatException) {
+        labelValue // Retourner la valeur initiale en cas d'exception
+    }
 
     // Get the keyboard controller
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -59,13 +68,13 @@ fun OutlineTextEditeBaseDonne(
         OutlinedTextField(
             value = textValue,
             onValueChange = { newValue ->
-                textFieldValue = newValue
-                viewModel.updateCalculated(textFieldValue, columnToChange, article,)
+                textFieldValue = newValue.replace(',', '.')
+                viewModel.updateCalculated(textFieldValue, columnToChange, article)
                 function(columnToChange)
             },
             label = {
                 AutoResizedText(
-                    text = "$abbreviation$labelValue",
+                    text = "$abbreviation$roundedValue",
                     color = Color.Red,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -91,7 +100,6 @@ fun OutlineTextEditeBaseDonne(
         )
     }
 }
-
 @Composable
 fun AutoResizedText(
     text: String,

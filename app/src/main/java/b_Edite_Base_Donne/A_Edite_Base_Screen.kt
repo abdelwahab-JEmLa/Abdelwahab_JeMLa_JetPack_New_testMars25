@@ -276,49 +276,37 @@ fun DisplayArticleInformations(
     ) {
         Row(
             modifier = Modifier
-                .height(63.dp)
         ) {
-            if (article.nmbrUnite >1 ){
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp, start = 3.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(0.30f)
-            ) {
-                AutoResizedText(
-                    text = "${article.monPrixAchatUniter}/U",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
+            if (article.nmbrUnite > 1) {
 
+                OutlineTextEditeBaseDonne(
+                    columnToChange = "monPrixAchatUniter",
+                    abbreviation = "U/",
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    viewModel = editeBaseDonneViewModel,
+                    function = function,
+                    modifier = Modifier.weight(0.40f).height(63.dp)
                 )
             }
-            }
-            Box(
-                modifier = Modifier
-                    .padding(top = 7.dp, start = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .weight(0.70f)
-                    .height(100.dp)
-            ) {
-                AutoResizedText(
-                    text = "m.pA -> ${article.monPrixAchat}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
 
-            }
+            OutlineTextEditeBaseDonne(
+                columnToChange = "monPrixAchat",
+                abbreviation = "m.pA>",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = editeBaseDonneViewModel,
+                function = function,
+                modifier = Modifier.weight(0.60f).height(63.dp)
+
+            )
         }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp)
-                .padding(top= 5.dp)
+                .padding(top = 5.dp)
 
         ) {
             Box(
@@ -379,21 +367,16 @@ fun DisplayArticleInformations(
         )
         {
 
-            Box(
+            OutlineTextEditeBaseDonne(
+                columnToChange = "monPrixVentUniter",
+                abbreviation = "u/",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = editeBaseDonneViewModel,
+                function = function,
                 modifier = Modifier
-                    .padding(top = 7.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
                     .weight(0.30f)
-            ) {
-                AutoResizedText(
-                    text = "${article.monPrixVentUniter}/U",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
+            )
 
             OutlineTextEditeBaseDonne(
                 columnToChange = "monPrixVent",
