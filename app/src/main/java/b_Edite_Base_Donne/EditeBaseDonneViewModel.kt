@@ -17,6 +17,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
     init {
         initBaseDonneStatTabel()
     }
+
     fun updateCalculated(
         textFieldValue: String,
         columnToChange: String,
@@ -50,13 +51,14 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         val monPrixVentUniterCal = monPrixVent?.div(article.nmbrUnite)
         updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
 
-        val prixDeVentTotaleChezClientCal = article.clienPrixVentUnite  *  article.nmbrUnite
+        val clienPrixVentUniteCal = if (columnToChange == "clienPrixVentUnite") newValue else article.clienPrixVentUnite
+        val prixDeVentTotaleChezClientCal = clienPrixVentUniteCal?.times(article.nmbrUnite)
         updatedColumns.add("prixDeVentTotaleChezClient" to prixDeVentTotaleChezClientCal.toString())
 
-        val benficeTotaleEntreMoiEtClienCal = prixDeVentTotaleChezClientCal - article.monPrixAchat
+        val benficeTotaleEntreMoiEtClienCal = prixDeVentTotaleChezClientCal?.minus(article.monPrixAchat)
         updatedColumns.add("benficeTotaleEntreMoiEtClien" to benficeTotaleEntreMoiEtClienCal.toString())
 
-        val benificeTotaleEn2Cal = prixDeVentTotaleChezClientCal / 2
+        val benificeTotaleEn2Cal = prixDeVentTotaleChezClientCal?.div(2)
         updatedColumns.add("benificeTotaleEn2" to benificeTotaleEn2Cal.toString())
 
         for ((column, value) in updatedColumns) {
