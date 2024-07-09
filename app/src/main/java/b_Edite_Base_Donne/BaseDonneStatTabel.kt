@@ -41,7 +41,9 @@ class BaseDonneStatTabel(
     benificeTotaleEn2: Double = 0.0,
     monPrixAchatUniter: Double = 0.0,
     monPrixVentUniter: Double = 0.0,
-) {
+    benificeClient: Double = 0.0,
+
+    ) {
     var idArticle by mutableIntStateOf(idArticle)
     var nomArticleFinale by mutableStateOf(nomArticleFinale)
     var classementCate by mutableDoubleStateOf(classementCate)
@@ -76,6 +78,7 @@ class BaseDonneStatTabel(
     var benificeTotaleEn2 by mutableDoubleStateOf(benificeTotaleEn2)
     var monPrixAchatUniter by mutableDoubleStateOf(monPrixAchatUniter)
     var monPrixVentUniter by mutableDoubleStateOf(monPrixVentUniter)
+    var benificeClient by mutableDoubleStateOf(benificeClient)
 
     // Fonction pour obtenir la valeur d'une colonne
     fun getColumnValue(columnName: String): Any? {
@@ -113,6 +116,7 @@ class BaseDonneStatTabel(
             "benificeTotaleEn2" -> benificeTotaleEn2
             "monPrixAchatUniter" -> monPrixAchatUniter
             "monPrixVentUniter" -> monPrixVentUniter
+            "benificeClient" -> benificeClient
             else -> null
         }
     }

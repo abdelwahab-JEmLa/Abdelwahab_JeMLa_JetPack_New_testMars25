@@ -22,18 +22,14 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         textFieldValue: String,
         columnToChange: String,
         article: BaseDonneStatTabel,
-        viewModel: EditeBaseDonneViewModel
     ) {
         val newValue = textFieldValue.toDoubleOrNull()
-        val monPrixAchat = article.monPrixAchat
-
-        // Convertir textFieldValue en nombre
 
         if (newValue != null) {
             // Mettre à jour les colonnes spécifiées
             calculeSansIf( columnToChange, textFieldValue, newValue, article)
 
-            calculeAcIF(columnToChange, newValue, article, monPrixAchat, )
+            calculeAcIF(columnToChange, newValue, article, )
         }
     }
 
@@ -58,7 +54,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         val benficeTotaleEntreMoiEtClienCal = prixDeVentTotaleChezClientCal?.minus(article.monPrixAchat)
         updatedColumns.add("benficeTotaleEntreMoiEtClien" to benficeTotaleEntreMoiEtClienCal.toString())
 
-        val benificeTotaleEn2Cal = prixDeVentTotaleChezClientCal?.div(2)
+        val benificeTotaleEn2Cal = benficeTotaleEntreMoiEtClienCal?.div(2)
         updatedColumns.add("benificeTotaleEn2" to benificeTotaleEn2Cal.toString())
 
         for ((column, value) in updatedColumns) {
@@ -69,21 +65,26 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
     private fun calculeAcIF(
         columnToChange: String,
         newValue: Double?,
-        article: BaseDonneStatTabel,
-        monPrixAchat: Double,
+        article: BaseDonneStatTabel
     ) {
         val updatedColumns = mutableListOf<Pair<String, String>>()
 
         if (columnToChange != "monPrixVent") {
             val monBenfice = if (columnToChange == "monBenfice") newValue else article.monBenfice
-            val monPrixVentCal = monBenfice?.plus(monPrixAchat)
-            updatedColumns.add("monPrixVent" to monPrixVentCal.toString())
+            val monPrixVentCal = monBenfice?.let { it + (article.monPrixAchat ?: 0.0) }
+            monPrixVentCal?.let { updatedColumns.add("monPrixVent" to it.toString()) }
         }
 
         if (columnToChange != "monBenfice") {
             val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
-            val benficeCal = monPrixVent?.minus(monPrixAchat)
-            updatedColumns.add("monBenfice" to benficeCal.toString())
+            val benficeCal = monPrixVent?.let { it - (article.monPrixAchat ?: 0.0) }
+            benficeCal?.let { updatedColumns.add("monBenfice" to it.toString()) }
+        }
+
+        if (columnToChange != "benificeClient") {
+            val monPrixVent = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
+            val benificeClientCal = monPrixVent?.let { (article.prixDeVentTotaleChezClient ?: 0.0) - it }
+            benificeClientCal?.let { updatedColumns.add("benificeClient" to it.toString()) }
         }
 
         // Mettre à jour l'article dans la base de données
@@ -91,6 +92,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
             updateBaseDonneStatTabel(column, article, value)
         }
     }
+
 
     private fun updateBaseDonneStatTabel(
         columnToChangeInString: String,
@@ -134,6 +136,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
                         "benificeTotaleEn2" -> benificeTotaleEn2 = if (it.isEmpty()) 0.0 else it.toDouble()
                         "monPrixAchatUniter" -> monPrixAchatUniter = if (it.isEmpty()) 0.0 else it.toDouble()
                         "monPrixVentUniter" -> monPrixVentUniter = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "benificeClient" -> benificeClient = if (it.isEmpty()) 0.0 else it.toDouble()
                     }
                     articleDao.update(toBaseDonne(this))
                 }

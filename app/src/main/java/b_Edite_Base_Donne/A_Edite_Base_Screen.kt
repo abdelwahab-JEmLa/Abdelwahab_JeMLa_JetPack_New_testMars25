@@ -55,7 +55,10 @@ fun A_Edite_Base_Screen(
             editeBaseDonneViewModel,
             articlesBaseDonneStatTabel = editeBaseDonneViewModel.baseDonneStatTabel,
             selectedArticle = selectedArticle,
-            onArticleSelect = { selectedArticle = it }
+            onArticleSelect = {
+                editeBaseDonneViewModel.updateCalculated("0.0", "", it)
+                selectedArticle = it
+            }
         )
     }
 }
@@ -89,7 +92,7 @@ fun ArticlesScreenList(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         pairOfArticles.forEach { article ->
-                            ArticleBoardCard(article) { updatedArticle ->
+                            ArticleBoardCard(article, editeBaseDonneViewModel) { updatedArticle ->
                                 onArticleSelect(updatedArticle)
                                 focusManager.clearFocus()
                             }
@@ -110,12 +113,18 @@ fun ArticlesScreenList(
 }
 
 @Composable
-fun ArticleBoardCard(article: BaseDonneStatTabel, onClick: (BaseDonneStatTabel) -> Unit) {
+fun ArticleBoardCard(
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel,
+    onClick: (BaseDonneStatTabel) -> Unit
+) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .width(170.dp)
-            .clickable { onClick(article) },
+            .clickable {
+                onClick(article)
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -221,7 +230,6 @@ fun TopRowQuantitys(
     }
 }
 
-
 @Composable
 fun DisplayArticleInformations(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -241,7 +249,7 @@ fun DisplayArticleInformations(
             if (article.nmbrUnite >1 ){
             Box(
                 modifier = Modifier
-                    .padding(top =7.dp, start =3.dp)
+                    .padding(top = 7.dp, start = 3.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .height(100.dp)
                     .weight(0.30f)
@@ -258,7 +266,7 @@ fun DisplayArticleInformations(
             }
             Box(
                 modifier = Modifier
-                    .padding(top =7.dp, start =7.dp)
+                    .padding(top = 7.dp, start = 7.dp)
                     .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
                     .weight(0.70f)
                     .height(100.dp)
@@ -287,7 +295,7 @@ fun DisplayArticleInformations(
                     .weight(1f)
             ) {
                 AutoResizedText(
-                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                    text = "b.E2 -> ${article.benificeTotaleEn2}",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -303,7 +311,7 @@ fun DisplayArticleInformations(
                     .weight(1f)
             ) {
                 AutoResizedText(
-                    text = "m.PF -> ${article.monPrixVent}",
+                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
                     modifier = Modifier
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -311,7 +319,15 @@ fun DisplayArticleInformations(
                 )
             }
         }
-
+        OutlineTextEditeBaseDonne(
+            columnToChange = "benificeClient",
+            abbreviation = "b.c",
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel = editeBaseDonneViewModel,
+            function = { currentChangingField = it },
+            modifier = Modifier
+        )
         Spacer(modifier = Modifier.width(5.dp))
 
         OutlineTextEditeBaseDonne(

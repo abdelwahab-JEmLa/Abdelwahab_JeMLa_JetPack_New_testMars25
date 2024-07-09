@@ -52,12 +52,12 @@ fun OutlineTextEditeBaseDonne(
             value = textValue,
             onValueChange = { newValue ->
                 textFieldValue = newValue
-                viewModel.updateCalculated(textFieldValue, columnToChange, article, viewModel)
+                viewModel.updateCalculated(textFieldValue, columnToChange, article,)
                 function(columnToChange)
             },
             label = {
                 AutoResizedText(
-                    text = "$abbreviation>$labelValue",
+                    text = "$abbreviation$labelValue",
                     color = Color.Blue,
                     modifier = Modifier.fillMaxWidth(),
                 )
