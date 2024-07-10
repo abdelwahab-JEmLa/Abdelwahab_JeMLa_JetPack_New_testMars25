@@ -5,17 +5,17 @@ import android.util.Log
 import b_Edite_Base_Donne.ArticleDao
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
-
-private val refFirebase = Firebase.database.getReference("d_db_jetPack")
-
+import kotlinx.coroutines.withContext
 
 
-suspend fun importFromFirebase(articleDao: ArticleDao) {
+suspend fun importFromFirebase(refFireBase: String, articleDao: ArticleDao) {
     try {
-        val dataSnapshot = Firebase.database.getReference("d_db_jetPack").get().await()
+        val dataSnapshot = Firebase.database.getReference(refFireBase).get().await()
         val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
         val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
 
@@ -39,7 +39,61 @@ fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
     }
     return articlesList
 }
+suspend fun exportToFireBase(articleDao: ArticleDao) {
+    // Récupérer les articles depuis Room
+    val articlesFromRoom = withContext(Dispatchers.IO) {
+        articleDao.getAllArticlesOrder()
+    }
 
+    // Référence Firebase
+    val refFirebase = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
+
+    // Parcourir les articles et les envoyer à Firebase
+    articlesFromRoom.forEach { article ->
+        val articleMap = article.toMap()
+        refFirebase.child(article.idArticle.toString()).setValue(articleMap)
+    }
+}
+
+// Extension function pour convertir un article en Map
+fun BaseDonne.toMap(): Map<String, Any?> {
+    return mapOf(
+        "idArticle" to idArticle,
+        "nomArticleFinale" to nomArticleFinale,
+        "classementCate" to classementCate,
+        "nomArab" to nomArab,
+        "nmbrCat" to nmbrCat,
+        "couleur1" to couleur1,
+        "couleur2" to couleur2,
+        "couleur3" to couleur3,
+        "couleur4" to couleur4,
+        "nomCategorie2" to nomCategorie2,
+        "nmbrUnite" to nmbrUnite,
+        "nmbrCaron" to nmbrCaron,
+        "affichageUniteState" to affichageUniteState,
+        "commmentSeVent" to commmentSeVent,
+        "afficheBoitSiUniter" to afficheBoitSiUniter,
+        "monPrixAchat" to monPrixAchat,
+        "clienPrixVentUnite" to clienPrixVentUnite,
+        "minQuan" to minQuan,
+        "monBenfice" to monBenfice,
+        "monPrixVent" to monPrixVent,
+        "diponibilityState" to diponibilityState,
+        "neaon2" to neaon2,
+        "idCategorie" to idCategorie,
+        "funChangeImagsDimention" to funChangeImagsDimention,
+        "nomCategorie" to nomCategorie,
+        "neaon1" to neaon1,
+        "lastUpdateState" to lastUpdateState,
+        "cartonState" to cartonState,
+        "dateCreationCategorie" to dateCreationCategorie,
+        "prixDeVentTotaleChezClient" to prixDeVentTotaleChezClient,
+        "benficeTotaleEntreMoiEtClien" to benficeTotaleEntreMoiEtClien,
+        "benificeTotaleEn2" to benificeTotaleEn2,
+        "monPrixAchatUniter" to monPrixAchatUniter,
+        "monPrixVentUniter" to monPrixVentUniter
+    )
+}
 suspend fun transferFirebaseData() {
     val refSource = Firebase.database.getReference("c_db_de_base_down_test")
     val refDestination = Firebase.database.getReference("d_db_jetPack")
@@ -58,6 +112,8 @@ suspend fun transferFirebaseData() {
             val clienPrixVentUnite = (value["a17"] as? String)?.toDoubleOrNull() ?: 0.0
             val monPrixVent = (value["a20"] as? String)?.toDoubleOrNull() ?: 0.0
             val prixDeVentTotaleChezClient = nmbrUnite * clienPrixVentUnite
+            val benificeClient = prixDeVentTotaleChezClient / nmbrUnite
+
 
             BaseDonne(
                 idArticle = (value["a00"] as? Long)?.toInt() ?: 0,
@@ -92,7 +148,8 @@ suspend fun transferFirebaseData() {
                 prixDeVentTotaleChezClient = prixDeVentTotaleChezClient,
                 benificeTotaleEn2 = prixDeVentTotaleChezClient - monPrixVent,
                 monPrixAchatUniter =  monPrixVent / nmbrUnite ,
-                monPrixVentUniter = monPrixVent / 2
+                monPrixVentUniter = monPrixVent / 2,
+                benificeClient= benificeClient,
             )
         }
 

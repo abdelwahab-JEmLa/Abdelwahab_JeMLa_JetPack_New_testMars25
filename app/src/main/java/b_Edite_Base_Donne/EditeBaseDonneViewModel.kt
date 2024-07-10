@@ -438,7 +438,8 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
                     it.benficeTotaleEntreMoiEtClien,
                     it.benificeTotaleEn2,
                     it.monPrixAchatUniter,
-                    it.monPrixVentUniter
+                    it.monPrixVentUniter,
+                    it.benificeClient,
                 )
             }
             withContext(Dispatchers.Main) {
@@ -483,7 +484,8 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
             baseDonneStatTabel.benficeTotaleEntreMoiEtClien,
             baseDonneStatTabel.benificeTotaleEn2,
             baseDonneStatTabel.monPrixAchatUniter,
-            baseDonneStatTabel.monPrixVentUniter
+            baseDonneStatTabel.monPrixVentUniter,
+            baseDonneStatTabel.benificeClient
         )
     }
 }
