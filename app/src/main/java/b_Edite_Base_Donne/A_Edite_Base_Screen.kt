@@ -269,7 +269,6 @@ fun DisplayArticleInformations(
     function: (String) -> Unit,
     currentChangingField: String
 ) {
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -301,7 +300,7 @@ fun DisplayArticleInformations(
 
             )
         }
-
+        if (article.clienPrixVentUnite>0){
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -350,6 +349,7 @@ fun DisplayArticleInformations(
             function = function,
             modifier = Modifier
         )
+        }
 
         OutlineTextEditeBaseDonne(
             columnToChange = "monBenfice",
@@ -366,7 +366,7 @@ fun DisplayArticleInformations(
                 .height(63.dp)
         )
         {
-
+            if (article.nmbrUnite > 1) {
             OutlineTextEditeBaseDonne(
                 columnToChange = "monPrixVentUniter",
                 abbreviation = "u/",
@@ -377,6 +377,7 @@ fun DisplayArticleInformations(
                 modifier = Modifier
                     .weight(0.35f)
             )
+            }
 
             OutlineTextEditeBaseDonne(
                 columnToChange = "monPrixVent",
