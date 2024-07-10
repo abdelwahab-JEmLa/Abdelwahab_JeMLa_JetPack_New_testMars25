@@ -400,7 +400,7 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
         }
     }
 
-    private fun initBaseDonneStatTabel() {
+    fun initBaseDonneStatTabel() {
         viewModelScope.launch(Dispatchers.IO) {
             val articlesFromRoom = articleDao.getAllArticlesOrder()
             val baseDonneStatTabelList = articlesFromRoom.map {

@@ -3,6 +3,7 @@ package com.example.abdelwahabjemlajetpack
 import a_RoomDB.BaseDonne
 import android.util.Log
 import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.FirebaseDatabase
@@ -13,7 +14,11 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 
-suspend fun importFromFirebase(refFireBase: String, articleDao: ArticleDao) {
+suspend fun importFromFirebase(
+    refFireBase: String,
+    articleDao: ArticleDao,
+    viewModel: EditeBaseDonneViewModel
+) {
     try {
         val dataSnapshot = Firebase.database.getReference(refFireBase).get().await()
         val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
@@ -21,7 +26,7 @@ suspend fun importFromFirebase(refFireBase: String, articleDao: ArticleDao) {
 
         articleDao.deleteAll()
         articleDao.insertAll(sortedArticles)
-
+        viewModel.initBaseDonneStatTabel()
     } catch (e: Exception) {
         Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
     }

@@ -119,7 +119,7 @@ fun MainScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
-        topBar = { TopAppBar(coroutineScope, articleDao) }
+        topBar = { TopAppBar(coroutineScope, editeBaseDonneViewModel, articleDao) }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
@@ -176,6 +176,7 @@ fun MainScreen(
 @Composable
 fun TopAppBar(
     coroutineScope: CoroutineScope,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -237,7 +238,7 @@ fun TopAppBar(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
-                                importFromFirebase(refFireBase = "d_db_jetPack", articleDao)
+                                importFromFirebase(viewModel= editeBaseDonneViewModel,refFireBase = "d_db_jetPack", articleDao =articleDao)
                             }
                             dialogOpen = false
                         }
@@ -247,7 +248,11 @@ fun TopAppBar(
                     TextButton(
                         onClick = {
                             coroutineScope.launch {
-                                importFromFirebase(refFireBase = "e_DBJetPackExport", articleDao)
+                                importFromFirebase(
+                                    refFireBase = "e_DBJetPackExport",
+                                    articleDao,
+                                    editeBaseDonneViewModel
+                                )
                             }
                             dialogOpen = false
                         }
