@@ -388,35 +388,57 @@ fun DisplayArticleInformations(
                 modifier = Modifier.weight(0.65f)
             )
         }
+        ArticleToggleButton(article = article, viewModel = editeBaseDonneViewModel)
 
-        val articleDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne.find { it.idArticle == article.idArticle }
-        articleDataBaseDonne?.let {
-            UniteTBut(articleDataBaseDonne = it, viewModel = editeBaseDonneViewModel)
-        }
+    }
+}
+@Composable
+fun ArticleToggleButton(
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel
+) {
+    // Utilisation d'un état mutable pour que l'UI réagisse aux changements
+    var articleDataBaseDonneStat by remember {
+        mutableStateOf(viewModel.dataBaseDonne.find { it.idArticle == article.idArticle })
+    }
+
+    // Si articleDataBaseDonneStat n'est pas null, afficher le bouton
+    articleDataBaseDonneStat?.let { data ->
+        UniteToggleButton(
+            articleDataBaseDonneStat = data,
+            onClick = {
+                // Inverser l'état de affichageUniteState et mettre à jour l'état mutable
+                val copyChange = data.copy(affichageUniteState = !data.affichageUniteState)
+                articleDataBaseDonneStat = copyChange
+                viewModel.updateDataBaseDonne(copyChange)
+            }
+        )
     }
 }
 
-// Composable Function for Unit Toggle Button
 @Composable
-fun UniteTBut(articleDataBaseDonne: DataBaseDonne, viewModel: EditeBaseDonneViewModel) {
-    val affichageUniteState = remember { mutableStateOf(articleDataBaseDonne.affichageUniteState) }
-
+fun UniteToggleButton(
+    articleDataBaseDonneStat: DataBaseDonne,
+    onClick: () -> Unit
+) {
     Button(
-        onClick = {
-            val updatedArticle = articleDataBaseDonne.copy(affichageUniteState = !articleDataBaseDonne.affichageUniteState)
-            viewModel.updateDataBaseDonne(updatedArticle)
-            affichageUniteState.value = !affichageUniteState.value
-        },
+        onClick = onClick,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (affichageUniteState.value) Color.Green else Color.Red
+            containerColor = if (articleDataBaseDonneStat.affichageUniteState) Color.Green else Color.Red
         ),
         modifier = Modifier
             .padding(top = 8.dp)
             .fillMaxWidth()
     ) {
-        Text(text = if (affichageUniteState.value) "Cacher les Unités" else "Afficher les Unités")
+        Text(
+            text = if (articleDataBaseDonneStat.affichageUniteState)
+                "Cacher les Unités"
+            else
+                "Afficher les Unités"
+        )
     }
 }
+
 @Composable
 fun DisplayColorsCards(
     article: BaseDonneStatTabel,
