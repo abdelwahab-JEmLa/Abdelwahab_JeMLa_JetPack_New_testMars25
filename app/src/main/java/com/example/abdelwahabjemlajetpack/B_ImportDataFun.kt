@@ -3,6 +3,7 @@ package com.example.abdelwahabjemlajetpack
 import a_RoomDB.BaseDonne
 import android.util.Log
 import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.DataBaseDonne
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
@@ -12,6 +13,51 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+
+
+suspend fun importFromFirebaseToDataBaseDonne(
+    refFireBase: String,
+    viewModel: EditeBaseDonneViewModel
+) {
+    try {
+        val dataSnapshot = Firebase.database.getReference(refFireBase).get().await()
+        val articlesFromFirebase = parseDataSnapshotDataBaseDonne(dataSnapshot)
+        val sortedArticles = articlesFromFirebase.sortedWith(compareBy<DataBaseDonne> { it.idCategorie }.thenBy { it.classementCate })
+
+        viewModel.insertAllDataBaseDonne(sortedArticles)
+
+    } catch (e: Exception) {
+        Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
+    }
+}
+
+fun parseDataSnapshotDataBaseDonne(dataSnapshot: DataSnapshot): List<DataBaseDonne> {
+    val articlesList = mutableListOf<DataBaseDonne>()
+    for (snapshot in dataSnapshot.children) {
+        try {
+            val article = snapshot.getValue(DataBaseDonne::class.java)
+            article?.let { articlesList.add(it) }
+        } catch (e: DatabaseException) {
+            Log.e("parseDataSnapshot", "Error parsing article: ${e.message}")
+        }
+    }
+    return articlesList
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
+    val articlesList = mutableListOf<BaseDonne>()
+    for (snapshot in dataSnapshot.children) {
+        try {
+            val article = snapshot.getValue(BaseDonne::class.java)
+            article?.let { articlesList.add(it) }
+        } catch (e: DatabaseException) {
+            Log.e("parseDataSnapshot", "Error parsing article: ${e.message}")
+        }
+    }
+    return articlesList
+}
+
 
 
 suspend fun importFromFirebase(
@@ -32,18 +78,7 @@ suspend fun importFromFirebase(
     }
 }
 
-fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
-    val articlesList = mutableListOf<BaseDonne>()
-    for (snapshot in dataSnapshot.children) {
-        try {
-            val article = snapshot.getValue(BaseDonne::class.java)
-            article?.let { articlesList.add(it) }
-        } catch (e: DatabaseException) {
-            Log.e("parseDataSnapshot", "Error parsing article: ${e.message}")
-        }
-    }
-    return articlesList
-}
+
 suspend fun exportToFireBase(articleDao: ArticleDao) {
     // Récupérer les articles depuis Room
     val articlesFromRoom = withContext(Dispatchers.IO) {
@@ -99,6 +134,7 @@ fun BaseDonne.toMap(): Map<String, Any?> {
         "monPrixVentUniter" to monPrixVentUniter
     )
 }
+
 suspend fun transferFirebaseData() {
     val refSource = Firebase.database.getReference("c_db_de_base_down_test")
     val refDestination = Firebase.database.getReference("d_db_jetPack")
@@ -118,7 +154,6 @@ suspend fun transferFirebaseData() {
             val monPrixVent = (value["a20"] as? String)?.toDoubleOrNull() ?: 0.0
             val prixDeVentTotaleChezClient = nmbrUnite * clienPrixVentUnite
             val benificeClient = prixDeVentTotaleChezClient / nmbrUnite
-
 
             BaseDonne(
                 idArticle = (value["a00"] as? Long)?.toInt() ?: 0,

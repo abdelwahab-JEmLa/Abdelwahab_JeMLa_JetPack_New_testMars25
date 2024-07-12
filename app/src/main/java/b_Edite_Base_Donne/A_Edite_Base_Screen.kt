@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -161,6 +163,7 @@ fun DisplayDetailleArticle(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -186,9 +189,9 @@ fun DisplayDetailleArticle(
                     Modifier.weight(0.38f),
                 )
                 DisplayArticleInformations(
-                    editeBaseDonneViewModel,
-                    article,
-                    Modifier.weight(0.62f),
+                    editeBaseDonneViewModel = editeBaseDonneViewModel,
+                    article = article,
+                    modifier = Modifier.weight(0.62f),
                     function = { currentChangingField = it },
                     currentChangingField = currentChangingField,
                 )
@@ -260,14 +263,14 @@ fun TopRowQuantitys(
 
     }
 }
-
+// Composable Function to Display Article Information
 @Composable
 fun DisplayArticleInformations(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     article: BaseDonneStatTabel,
     modifier: Modifier = Modifier,
     function: (String) -> Unit,
-    currentChangingField: String
+    currentChangingField: String,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -277,7 +280,6 @@ fun DisplayArticleInformations(
             modifier = Modifier
         ) {
             if (article.nmbrUnite > 1) {
-
                 OutlineTextEditeBaseDonne(
                     columnToChange = "monPrixAchatUniter",
                     abbreviation = "U/",
@@ -297,58 +299,57 @@ fun DisplayArticleInformations(
                 viewModel = editeBaseDonneViewModel,
                 function = function,
                 modifier = Modifier.weight(0.60f).height(63.dp)
-
             )
         }
-        if (article.clienPrixVentUnite>0){
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(55.dp)
-                .padding(top = 5.dp)
 
-        ) {
-            Box(
+        if (article.clienPrixVentUnite > 0) {
+            Row(
                 modifier = Modifier
-                    .padding(top = 3.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(1f)
+                    .fillMaxWidth()
+                    .height(55.dp)
+                    .padding(top = 5.dp)
             ) {
-                AutoResizedText(
-                    text = "b.E2 -> ${article.benificeTotaleEn2}",
+                Box(
                     modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
+                        .padding(top = 3.dp)
+                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                        .height(100.dp)
+                        .weight(1f)
+                ) {
+                    AutoResizedText(
+                        text = "b.E2 -> ${article.benificeTotaleEn2}",
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .align(Alignment.Center)
+                            .height(40.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(5.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(top = 3.dp)
+                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                        .height(100.dp)
+                        .weight(1f)
+                ) {
+                    AutoResizedText(
+                        text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .align(Alignment.Center)
+                            .height(40.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(5.dp))
-            Box(
+            OutlineTextEditeBaseDonne(
+                columnToChange = "benificeClient",
+                abbreviation = "b.c",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = editeBaseDonneViewModel,
+                function = function,
                 modifier = Modifier
-                    .padding(top = 3.dp)
-                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                    .height(100.dp)
-                    .weight(1f)
-            ) {
-                AutoResizedText(
-                    text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .align(Alignment.Center)
-                        .height(40.dp)
-                )
-            }
-        }
-        OutlineTextEditeBaseDonne(
-            columnToChange = "benificeClient",
-            abbreviation = "b.c",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = editeBaseDonneViewModel,
-            function = function,
-            modifier = Modifier
-        )
+            )
         }
 
         OutlineTextEditeBaseDonne(
@@ -364,19 +365,17 @@ fun DisplayArticleInformations(
         Row(
             modifier = Modifier
                 .height(63.dp)
-        )
-        {
+        ) {
             if (article.nmbrUnite > 1) {
-            OutlineTextEditeBaseDonne(
-                columnToChange = "monPrixVentUniter",
-                abbreviation = "u/",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = editeBaseDonneViewModel,
-                function = function,
-                modifier = Modifier
-                    .weight(0.35f)
-            )
+                OutlineTextEditeBaseDonne(
+                    columnToChange = "monPrixVentUniter",
+                    abbreviation = "u/",
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    viewModel = editeBaseDonneViewModel,
+                    function = function,
+                    modifier = Modifier.weight(0.35f)
+                )
             }
 
             OutlineTextEditeBaseDonne(
@@ -386,13 +385,38 @@ fun DisplayArticleInformations(
                 article = article,
                 viewModel = editeBaseDonneViewModel,
                 function = function,
-                modifier = Modifier
-                    .weight(0.65f)
+                modifier = Modifier.weight(0.65f)
             )
+        }
+
+        val articleDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne.find { it.idArticle == article.idArticle }
+        articleDataBaseDonne?.let {
+            UniteTBut(articleDataBaseDonne = it, viewModel = editeBaseDonneViewModel)
         }
     }
 }
 
+// Composable Function for Unit Toggle Button
+@Composable
+fun UniteTBut(articleDataBaseDonne: DataBaseDonne, viewModel: EditeBaseDonneViewModel) {
+    val affichageUniteState = remember { mutableStateOf(articleDataBaseDonne.affichageUniteState) }
+
+    Button(
+        onClick = {
+            val updatedArticle = articleDataBaseDonne.copy(affichageUniteState = !articleDataBaseDonne.affichageUniteState)
+            viewModel.updateDataBaseDonne(updatedArticle)
+            affichageUniteState.value = !affichageUniteState.value
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (affichageUniteState.value) Color.Green else Color.Red
+        ),
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .fillMaxWidth()
+    ) {
+        Text(text = if (affichageUniteState.value) "Cacher les Unités" else "Afficher les Unités")
+    }
+}
 @Composable
 fun DisplayColorsCards(
     article: BaseDonneStatTabel,

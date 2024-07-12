@@ -9,14 +9,91 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() {
+class EditeBaseDonneViewModel(
+    private val articleDao: ArticleDao,
+    private val dataBaseDonneDao: DataBaseDonneDao
+) : ViewModel() {
 
     private val _baseDonneStatTabel = mutableStateListOf<BaseDonneStatTabel>()
     val baseDonneStatTabel: List<BaseDonneStatTabel> get() = _baseDonneStatTabel
 
+    private val _dataBaseDonne = mutableStateListOf<DataBaseDonne>()
+    val dataBaseDonne: List<DataBaseDonne> get() = _dataBaseDonne
+
     init {
         initBaseDonneStatTabel()
+        initDataBaseDonne()
     }
+
+    fun updateDataBaseDonne(articleDataBaseDonne: DataBaseDonne) {
+        val itemIndex = _dataBaseDonne.indexOfFirst { it.idArticle == articleDataBaseDonne.idArticle }
+        if (itemIndex != -1) {
+            _dataBaseDonne[itemIndex] = articleDataBaseDonne
+
+            // Launch a coroutine in the ViewModel scope
+            viewModelScope.launch {
+                // Update the local database
+                dataBaseDonneDao.updateFromeDataBaseDonne(articleDataBaseDonne)
+            }
+        }
+    }
+
+    fun insertAllDataBaseDonne(articles: List<DataBaseDonne>) {
+        viewModelScope.launch {
+            dataBaseDonneDao.upsert(articles)
+        }
+    }
+
+    fun initDataBaseDonne() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val articlesFromRoom = dataBaseDonneDao.getAllArticlesOrder()
+            val dataBaseDonneList = articlesFromRoom.map {
+                DataBaseDonne(
+                    it.idArticle,
+                    it.nomArticleFinale,
+                    it.classementCate,
+                    it.nomArab,
+                    it.nmbrCat,
+                    it.couleur1,
+                    it.couleur2,
+                    it.couleur3,
+                    it.couleur4,
+                    it.nomCategorie2,
+                    it.nmbrUnite,
+                    it.nmbrCaron,
+                    it.affichageUniteState,
+                    it.commmentSeVent,
+                    it.afficheBoitSiUniter,
+                    it.monPrixAchat,
+                    it.clienPrixVentUnite,
+                    it.minQuan,
+                    it.monBenfice,
+                    it.monPrixVent,
+                    it.diponibilityState,
+                    it.neaon2,
+                    it.idCategorie,
+                    it.funChangeImagsDimention,
+                    it.nomCategorie,
+                    it.neaon1,
+                    it.lastUpdateState,
+                    it.cartonState,
+                    it.dateCreationCategorie,
+                    it.prixDeVentTotaleChezClient,
+                    it.benficeTotaleEntreMoiEtClien,
+                    it.benificeTotaleEn2,
+                    it.monPrixAchatUniter,
+                    it.monPrixVentUniter,
+                    it.benificeClient,
+                )
+            }
+            withContext(Dispatchers.Main) {
+                _dataBaseDonne.clear()
+                _dataBaseDonne.addAll(dataBaseDonneList)
+            }
+        }
+    }
+
+    ///////////////////////////////////////////////////////////
 
     fun updateCalculated(
         textFieldValue: String,
@@ -490,12 +567,16 @@ class EditeBaseDonneViewModel(private val articleDao: ArticleDao) : ViewModel() 
     }
 }
 
-class MainAppViewModelFactory(private val articleDao: ArticleDao) : ViewModelProvider.Factory {
+class MainAppViewModelFactory(
+    private val articleDao: ArticleDao,
+    private val dataBaseDonneDao: DataBaseDonneDao
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return EditeBaseDonneViewModel(articleDao) as T
+            return EditeBaseDonneViewModel(articleDao, dataBaseDonneDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

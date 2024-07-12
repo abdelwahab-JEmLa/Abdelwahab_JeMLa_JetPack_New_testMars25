@@ -5,10 +5,15 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.DataBaseDonne
+import b_Edite_Base_Donne.DataBaseDonneDao
 
-@Database(entities = [BaseDonne::class], version = 1, exportSchema = false)
+@Database(entities = [BaseDonne::class,
+                    DataBaseDonne::class
+                     ], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun articleDao(): ArticleDao
+    abstract fun dataBaseDonneDao(): DataBaseDonneDao
 
     companion object {
         @Volatile
