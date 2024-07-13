@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
     private val database by lazy { AppDatabase.getInstance(this) }
     private val viewModel: EditeBaseDonneViewModel by viewModels {
-        MainAppViewModelFactory(database.articleDao(),database.dataBaseDonneDao())
+        MainAppViewModelFactory(database.articleDao())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

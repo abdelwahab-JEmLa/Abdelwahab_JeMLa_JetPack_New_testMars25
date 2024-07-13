@@ -11,21 +11,20 @@ import kotlinx.coroutines.withContext
 
 class EditeBaseDonneViewModel(
     private val articleDao: ArticleDao,
-    private val dataBaseDonneDao: DataBaseDonneDao
 ) : ViewModel() {
 
     private val _baseDonneStatTabel = mutableStateListOf<BaseDonneStatTabel>()
     val baseDonneStatTabel: List<BaseDonneStatTabel> get() = _baseDonneStatTabel
 
-    private val _dataBaseDonne = mutableStateListOf<DataBaseDonne>()
-    val dataBaseDonne: List<DataBaseDonne> get() = _dataBaseDonne
+    private val _dataBaseDonne = mutableStateListOf<BaseDonne>()
+    val dataBaseDonne: List<BaseDonne> get() = _dataBaseDonne
 
     init {
         initBaseDonneStatTabel()
         initDataBaseDonne()
     }
 
-    fun updateDataBaseDonne(articleDataBaseDonne: DataBaseDonne) {
+    fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne) {
         val itemIndex = _dataBaseDonne.indexOfFirst { it.idArticle == articleDataBaseDonne.idArticle }
         if (itemIndex != -1) {
             _dataBaseDonne[itemIndex] = articleDataBaseDonne
@@ -33,22 +32,22 @@ class EditeBaseDonneViewModel(
             // Launch a coroutine in the ViewModel scope
             viewModelScope.launch {
                 // Update the local database
-                dataBaseDonneDao.updateFromeDataBaseDonne(articleDataBaseDonne)
+                articleDao.updateFromeDataBaseDonne(articleDataBaseDonne)
             }
         }
     }
 
-    fun insertAllDataBaseDonne(articles: List<DataBaseDonne>) {
+    fun insertAllDataBaseDonne(articles: List<BaseDonne>) {
         viewModelScope.launch {
-            dataBaseDonneDao.upsert(articles)
+            articleDao.upsert(articles)
         }
     }
 
     fun initDataBaseDonne() {
         viewModelScope.launch(Dispatchers.IO) {
-            val articlesFromRoom = dataBaseDonneDao.getAllArticlesOrder()
+            val articlesFromRoom = articleDao.getAllArticlesOrder()
             val dataBaseDonneList = articlesFromRoom.map {
-                DataBaseDonne(
+                BaseDonne(
                     it.idArticle,
                     it.nomArticleFinale,
                     it.classementCate,
@@ -569,12 +568,11 @@ class EditeBaseDonneViewModel(
 
 class MainAppViewModelFactory(
     private val articleDao: ArticleDao,
-    private val dataBaseDonneDao: DataBaseDonneDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return EditeBaseDonneViewModel(articleDao, dataBaseDonneDao) as T
+            return EditeBaseDonneViewModel(articleDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

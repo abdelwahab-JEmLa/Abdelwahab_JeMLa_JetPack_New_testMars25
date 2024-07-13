@@ -1,5 +1,6 @@
 package b_Edite_Base_Donne
 
+import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -418,7 +419,7 @@ fun ArticleToggleButton(
 
 @Composable
 fun UniteToggleButton(
-    articleDataBaseDonneStat: DataBaseDonne,
+    articleDataBaseDonneStat: BaseDonne,
     onClick: () -> Unit
 ) {
     Button(

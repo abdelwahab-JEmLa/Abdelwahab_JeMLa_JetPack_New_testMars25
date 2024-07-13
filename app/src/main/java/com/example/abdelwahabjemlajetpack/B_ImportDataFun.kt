@@ -3,7 +3,6 @@ package com.example.abdelwahabjemlajetpack
 import a_RoomDB.BaseDonne
 import android.util.Log
 import b_Edite_Base_Donne.ArticleDao
-import b_Edite_Base_Donne.DataBaseDonne
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
@@ -22,20 +21,21 @@ suspend fun importFromFirebaseToDataBaseDonne(
     try {
         val dataSnapshot = Firebase.database.getReference(refFireBase).get().await()
         val articlesFromFirebase = parseDataSnapshotDataBaseDonne(dataSnapshot)
-        val sortedArticles = articlesFromFirebase.sortedWith(compareBy<DataBaseDonne> { it.idCategorie }.thenBy { it.classementCate })
+        val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
 
         viewModel.insertAllDataBaseDonne(sortedArticles)
+        viewModel.initDataBaseDonne()
 
     } catch (e: Exception) {
         Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
     }
 }
 
-fun parseDataSnapshotDataBaseDonne(dataSnapshot: DataSnapshot): List<DataBaseDonne> {
-    val articlesList = mutableListOf<DataBaseDonne>()
+fun parseDataSnapshotDataBaseDonne(dataSnapshot: DataSnapshot): List<BaseDonne> {
+    val articlesList = mutableListOf<BaseDonne>()
     for (snapshot in dataSnapshot.children) {
         try {
-            val article = snapshot.getValue(DataBaseDonne::class.java)
+            val article = snapshot.getValue(BaseDonne::class.java)
             article?.let { articlesList.add(it) }
         } catch (e: DatabaseException) {
             Log.e("parseDataSnapshot", "Error parsing article: ${e.message}")
