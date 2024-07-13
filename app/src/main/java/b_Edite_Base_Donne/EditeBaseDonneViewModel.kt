@@ -6,32 +6,93 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class EditeBaseDonneViewModel(
     private val articleDao: ArticleDao,
 ) : ViewModel() {
-
-    private val _baseDonneStatTabel = mutableStateListOf<BaseDonneStatTabel>()
-    val baseDonneStatTabel: List<BaseDonneStatTabel> get() = _baseDonneStatTabel
-
     private val _dataBaseDonne = mutableStateListOf<BaseDonne>()
     val dataBaseDonne: List<BaseDonne> get() = _dataBaseDonne
+
+    private val _baseDonneStatTabel = MutableStateFlow<List<BaseDonneStatTabel>>(emptyList())
+    private val _originalBaseDonneStatTabel = mutableListOf<BaseDonneStatTabel>()
+    val baseDonneStatTabel: StateFlow<List<BaseDonneStatTabel>> = _baseDonneStatTabel.asStateFlow()
+
+    private val _isFilterApplied = MutableStateFlow(false)
+    val isFilterApplied: StateFlow<Boolean> get() = _isFilterApplied
 
     init {
         initBaseDonneStatTabel()
         initDataBaseDonneForNewByStatInCompos()
     }
 
+    fun toggleFilter() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val filterApplied = _isFilterApplied.value
+            _isFilterApplied.value = !filterApplied
+            val articlesFromRoom = articleDao.getAllArticlesOrder()
+            val baseDonneStatTabelList = articlesFromRoom.map {
+                BaseDonneStatTabel(
+                    it.idArticle,
+                    it.nomArticleFinale,
+                    it.classementCate,
+                    it.nomArab,
+                    it.nmbrCat,
+                    it.couleur1,
+                    it.couleur2,
+                    it.couleur3,
+                    it.couleur4,
+                    it.nomCategorie2,
+                    it.nmbrUnite,
+                    it.nmbrCaron,
+                    it.affichageUniteState,
+                    it.commmentSeVent,
+                    it.afficheBoitSiUniter,
+                    it.monPrixAchat,
+                    it.clienPrixVentUnite,
+                    it.minQuan,
+                    it.monBenfice,
+                    it.monPrixVent,
+                    it.diponibilityState,
+                    it.neaon2,
+                    it.idCategorie,
+                    it.funChangeImagsDimention,
+                    it.nomCategorie,
+                    it.neaon1,
+                    it.lastUpdateState,
+                    it.cartonState,
+                    it.dateCreationCategorie,
+                    it.prixDeVentTotaleChezClient,
+                    it.benficeTotaleEntreMoiEtClien,
+                    it.benificeTotaleEn2,
+                    it.monPrixAchatUniter,
+                    it.monPrixVentUniter,
+                    it.benificeClient,
+                    it.monBeneficeUniter,
+                )
+            }
+
+            withContext(Dispatchers.Main) {
+                if (!filterApplied) {
+                    _originalBaseDonneStatTabel.clear()
+                    _originalBaseDonneStatTabel.addAll(baseDonneStatTabelList)
+                    _baseDonneStatTabel.value = _originalBaseDonneStatTabel.filter { it.monPrixVent == 0.0 }
+                } else {
+                    _baseDonneStatTabel.value = _originalBaseDonneStatTabel
+                }
+            }
+        }
+    }
     fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne) {
         val itemIndex = _dataBaseDonne.indexOfFirst { it.idArticle == articleDataBaseDonne.idArticle }
         if (itemIndex != -1) {
             _dataBaseDonne[itemIndex] = articleDataBaseDonne
 
-            // Launch a coroutine in the ViewModel scope
             viewModelScope.launch {
-                // Update the local database
                 articleDao.updateFromeDataBaseDonne(articleDataBaseDonne)
             }
         }
@@ -92,6 +153,57 @@ class EditeBaseDonneViewModel(
         }
     }
 
+    fun initBaseDonneStatTabel() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val articlesFromRoom = articleDao.getAllArticlesOrder()
+            val baseDonneStatTabelList = articlesFromRoom.map {
+                BaseDonneStatTabel(
+                    it.idArticle,
+                    it.nomArticleFinale,
+                    it.classementCate,
+                    it.nomArab,
+                    it.nmbrCat,
+                    it.couleur1,
+                    it.couleur2,
+                    it.couleur3,
+                    it.couleur4,
+                    it.nomCategorie2,
+                    it.nmbrUnite,
+                    it.nmbrCaron,
+                    it.affichageUniteState,
+                    it.commmentSeVent,
+                    it.afficheBoitSiUniter,
+                    it.monPrixAchat,
+                    it.clienPrixVentUnite,
+                    it.minQuan,
+                    it.monBenfice,
+                    it.monPrixVent,
+                    it.diponibilityState,
+                    it.neaon2,
+                    it.idCategorie,
+                    it.funChangeImagsDimention,
+                    it.nomCategorie,
+                    it.neaon1,
+                    it.lastUpdateState,
+                    it.cartonState,
+                    it.dateCreationCategorie,
+                    it.prixDeVentTotaleChezClient,
+                    it.benficeTotaleEntreMoiEtClien,
+                    it.benificeTotaleEn2,
+                    it.monPrixAchatUniter,
+                    it.monPrixVentUniter,
+                    it.benificeClient,
+                    it.monBeneficeUniter,
+                )
+            }
+            withContext(Dispatchers.Main) {
+                _baseDonneStatTabel.value = baseDonneStatTabelList
+                _originalBaseDonneStatTabel.clear()
+                _originalBaseDonneStatTabel.addAll(baseDonneStatTabelList)
+            }
+        }
+    }
+
     ///////////////////////////////////////////////////////////
 
     fun updateCalculated(
@@ -118,7 +230,6 @@ class EditeBaseDonneViewModel(
 
         updatedColumns.add(columnToChange to textFieldValue)
 
-
         val nmbrUnite = if (columnToChange == "nmbrUnite") newValue else article.nmbrUnite
 
         val clienPrixVentUniteCal =
@@ -139,8 +250,6 @@ class EditeBaseDonneViewModel(
         }
     }
 
-
-
     private fun calculateWithCondition(
         columnToChange: String,
         newValue: Double?,
@@ -149,15 +258,12 @@ class EditeBaseDonneViewModel(
         val updatedColumns = mutableListOf<Pair<String, String>>()
         if (columnToChange != "monPrixVent") {
             monPrixVent(columnToChange, newValue, updatedColumns, article)
-
         }
         if (columnToChange != "monBenfice") {
             calculateMyBenefit(columnToChange, newValue, updatedColumns, article)
-
         }
         if (columnToChange != "benificeClient") {
             calculateClientBenefit(columnToChange, newValue, updatedColumns, article)
-
         }
         if (columnToChange != "monPrixAchat") {
             monPrixAchat(columnToChange, newValue, updatedColumns, article)
@@ -171,11 +277,10 @@ class EditeBaseDonneViewModel(
         if (columnToChange != "monBeneficeUniter") {
             monBeneficeUniter(columnToChange, newValue, updatedColumns, article)
         }
-        ///////////////////////////////////////////////////////////////////
+
         for ((column, value) in updatedColumns) {
             updateBaseDonneStatTabel(column, article, value)
         }
-        ///////////////////////////////////////////////////////////////////
     }
 
     private fun monPrixVentUniter(
@@ -184,126 +289,26 @@ class EditeBaseDonneViewModel(
         updatedColumns: MutableList<Pair<String, String>>,
         article: BaseDonneStatTabel
     ) {
-
-        when (columnToChange) {
-            "nmbrUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVentUniter" to ((article.monPrixVent / it)).toString()
-                    )
-                }
-            }
-            "monPrixVent" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVentUniter" to (it / article.nmbrUnite).toString()
-                    )
-                }
-            }
-
-            "monPrixAchatUniter" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVentUniter" to ((((article.monBenfice/ article.nmbrUnite)) + it)).toString()
-                    )
-                }
-            }
-
-            "monPrixAchat" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVentUniter" to (((article.monBenfice + it))/ article.nmbrUnite).toString()
-                    )
-                }
-            }
-
-            "benificeClient" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVentUniter" to ((((article.prixDeVentTotaleChezClient) - it))/article.nmbrUnite).toString()
-                    )
-                }
-            }
-
-            "monBenfice" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixVentUniter" to ((it + article.monPrixAchat)/article.nmbrUnite).toString()
-                    )
-                }
-            }
-
+        if (columnToChange == "nmbrUnite") {
+            val monPrixVentUniterCal =
+                newValue?.let { article.monPrixVent?.div(it.toDouble()) }
+            updatedColumns.add("monPrixVentUniter" to monPrixVentUniterCal.toString())
         }
     }
+
     private fun monBeneficeUniter(
         columnToChange: String,
         newValue: Double?,
         updatedColumns: MutableList<Pair<String, String>>,
         article: BaseDonneStatTabel
     ) {
-
-        when (columnToChange) {
-            "benificeClient" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBeneficeUniter" to (((article.prixDeVentTotaleChezClient -it) - article.monPrixAchat)/ article.nmbrUnite).toString()
-                    )
-                }
-            }
-            "monPrixVentUniter" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBeneficeUniter" to (it - article.monPrixAchatUniter).toString()
-                    )
-                }
-            }
-            "nmbrUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBeneficeUniter" to ((article.monBenfice / it)).toString()
-                    )
-                }
-            }
-            "monBenfice" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBeneficeUniter" to (it / article.nmbrUnite).toString()
-                    )
-                }
-            }
-
-            "benificeClient" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBeneficeUniter" to ((((article.benificeTotaleEn2) - it))/article.nmbrUnite).toString()
-                    )
-                }
-            }
-            "monPrixVent" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBeneficeUniter" to ((it / article.nmbrUnite) - article.monPrixAchatUniter).toString()
-                    )
-                }
-            }
-        }
-    }
-    private fun monPrixAchat(
-        columnToChange: String,
-        newValue: Double?,
-        updatedColumns: MutableList<Pair<String, String>>,
-        article: BaseDonneStatTabel
-    ) {
-
-        when (columnToChange) {
-            "monPrixAchatUniter" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixAchat" to (((it)) * article.nmbrUnite).toString()
-                    )
-                }
-            }
-
+        if (columnToChange == "monPrixVentUniter" || columnToChange == "monPrixAchatUniter") {
+            val prixVentUniterCal =
+                if (columnToChange == "monPrixVentUniter") newValue else article.monPrixVentUniter
+            val prixAchatUniterCal =
+                if (columnToChange == "monPrixAchatUniter") newValue else article.monPrixAchatUniter
+            val monBeneficeUniterCal = prixVentUniterCal?.minus(prixAchatUniterCal ?: 0.0)
+            updatedColumns.add("monBeneficeUniter" to monBeneficeUniterCal.toString())
         }
     }
 
@@ -313,26 +318,57 @@ class EditeBaseDonneViewModel(
         updatedColumns: MutableList<Pair<String, String>>,
         article: BaseDonneStatTabel
     ) {
-
-        when (columnToChange) {
-            "monPrixAchat" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixAchatUniter" to (it / article.nmbrUnite).toString()
-                    )
-                }
-            }
-            "nmbrUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monPrixAchatUniter" to (((article.monPrixAchat / it))).toString()
-                    )
-                }
-            }
-
+        if (columnToChange == "nmbrUnite") {
+            val monPrixAchatUniterCal =
+                newValue?.let { article.monPrixAchat?.div(it.toDouble()) }
+            updatedColumns.add("monPrixAchatUniter" to monPrixAchatUniterCal.toString())
         }
     }
 
+    private fun monPrixAchat(
+        columnToChange: String,
+        newValue: Double?,
+        updatedColumns: MutableList<Pair<String, String>>,
+        article: BaseDonneStatTabel
+    ) {
+        if (columnToChange == "monPrixVent" || columnToChange == "monBenfice") {
+            val monPrixVentCal = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
+            val monBenficeCal = if (columnToChange == "monBenfice") newValue else article.monBenfice
+            val monPrixAchatCal = monPrixVentCal?.minus(monBenficeCal ?: 0.0)
+            updatedColumns.add("monPrixAchat" to monPrixAchatCal.toString())
+        }
+    }
+
+    private fun calculateClientBenefit(
+        columnToChange: String,
+        newValue: Double?,
+        updatedColumns: MutableList<Pair<String, String>>,
+        article: BaseDonneStatTabel
+    ) {
+        if (columnToChange == "prixDeVentTotaleChezClient" || columnToChange == "benificeTotaleEn2") {
+            val prixDeVentTotaleChezClientCal =
+                if (columnToChange == "prixDeVentTotaleChezClient") newValue else article.prixDeVentTotaleChezClient
+            val benificeTotaleEn2Cal =
+                if (columnToChange == "benificeTotaleEn2") newValue else article.benificeTotaleEn2
+            val benificeClientCal =
+                prixDeVentTotaleChezClientCal?.minus(benificeTotaleEn2Cal ?: 0.0)
+            updatedColumns.add("benificeClient" to benificeClientCal.toString())
+        }
+    }
+
+    private fun calculateMyBenefit(
+        columnToChange: String,
+        newValue: Double?,
+        updatedColumns: MutableList<Pair<String, String>>,
+        article: BaseDonneStatTabel
+    ) {
+        if (columnToChange == "monPrixVent" || columnToChange == "monPrixAchat") {
+            val monPrixVentCal = if (columnToChange == "monPrixVent") newValue else article.monPrixVent
+            val monPrixAchatCal = if (columnToChange == "monPrixAchat") newValue else article.monPrixAchat
+            val monBenficeCal = monPrixVentCal?.minus(monPrixAchatCal ?: 0.0)
+            updatedColumns.add("monBenfice" to monBenficeCal.toString())
+        }
+    }
     private fun monPrixVent(
         columnToChange: String,
         newValue: Double?,
@@ -392,93 +428,6 @@ class EditeBaseDonneViewModel(
         }
     }
 
-    private fun calculateMyBenefit(
-        columnToChange: String,
-        newValue: Double?,
-        updatedColumns: MutableList<Pair<String, String>>,
-        article: BaseDonneStatTabel
-    ) {
-        when (columnToChange) {
-            "monBeneficeUniter" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBenfice" to (it * article.nmbrUnite).toString()
-                    )
-                }
-            }
-            "monPrixVent" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBenfice" to (it - (article.monPrixAchat)).toString()
-                    )
-                }
-            }
-            "monPrixVentUniter" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBenfice" to ((it*article.nmbrUnite) - (article.monPrixAchat)).toString()
-                    )
-                }
-            }
-            "benificeClient" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "monBenfice" to ((article.prixDeVentTotaleChezClient - it) - (article.monPrixAchat)).toString()
-                    )
-                }
-            }
-        }
-    }
-
-    private fun calculateClientBenefit(
-        columnToChange: String,
-        newValue: Double?,
-        updatedColumns: MutableList<Pair<String, String>>,
-        article: BaseDonneStatTabel
-    ) {
-        when (columnToChange) {
-            "monBeneficeUniter" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "benificeClient" to ((it * article.nmbrUnite) - article.benificeTotaleEn2).toString()
-                    )
-                }
-            }
-            "nmbrUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "benificeClient" to ((it * article.clienPrixVentUnite) - article.monPrixVent).toString()
-                    )
-                }
-            }
-
-            "clienPrixVentUnite" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "benificeClient" to ((it * article.nmbrUnite) - article.monPrixVent).toString()
-                    )
-                }
-            }
-
-            "monPrixVent" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "benificeClient" to ((article.prixDeVentTotaleChezClient) - it).toString()
-                    )
-                }
-            }
-
-            "monBenfice" -> {
-                newValue?.let {
-                    updatedColumns.add(
-                        "benificeClient" to ((article.prixDeVentTotaleChezClient) - (article.monPrixAchat + it)).toString()
-                    )
-                }
-            }
-
-
-        }
-    }
 
 
     private fun updateBaseDonneStatTabel(
@@ -488,11 +437,10 @@ class EditeBaseDonneViewModel(
     ) {
         newValue?.let {
             viewModelScope.launch(Dispatchers.Main) {
-                _baseDonneStatTabel.find { it.idArticle == article.idArticle }?.apply {
+                _baseDonneStatTabel.value.find { it.idArticle == article.idArticle }?.apply {
                     when (columnToChangeInString) {
                         "nomArticleFinale" -> nomArticleFinale = it.ifEmpty { "0.0" }
-                        "classementCate" -> classementCate =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
+                        "classementCate" -> classementCate = if (it.isEmpty()) 0.0 else it.toDouble()
 
                         "nomArab" -> nomArab = it.ifEmpty { "0.0" }
                         "nmbrCat" -> nmbrCat = if (it.isEmpty()) 0 else it.toInt()
@@ -551,55 +499,7 @@ class EditeBaseDonneViewModel(
         }
     }
 
-    fun initBaseDonneStatTabel() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val articlesFromRoom = articleDao.getAllArticlesOrder()
-            val baseDonneStatTabelList = articlesFromRoom.map {
-                BaseDonneStatTabel(
-                    it.idArticle,
-                    it.nomArticleFinale,
-                    it.classementCate,
-                    it.nomArab,
-                    it.nmbrCat,
-                    it.couleur1,
-                    it.couleur2,
-                    it.couleur3,
-                    it.couleur4,
-                    it.nomCategorie2,
-                    it.nmbrUnite,
-                    it.nmbrCaron,
-                    it.affichageUniteState,
-                    it.commmentSeVent,
-                    it.afficheBoitSiUniter,
-                    it.monPrixAchat,
-                    it.clienPrixVentUnite,
-                    it.minQuan,
-                    it.monBenfice,
-                    it.monPrixVent,
-                    it.diponibilityState,
-                    it.neaon2,
-                    it.idCategorie,
-                    it.funChangeImagsDimention,
-                    it.nomCategorie,
-                    it.neaon1,
-                    it.lastUpdateState,
-                    it.cartonState,
-                    it.dateCreationCategorie,
-                    it.prixDeVentTotaleChezClient,
-                    it.benficeTotaleEntreMoiEtClien,
-                    it.benificeTotaleEn2,
-                    it.monPrixAchatUniter,
-                    it.monPrixVentUniter,
-                    it.benificeClient,
-                    it.monBeneficeUniter,
-                )
-            }
-            withContext(Dispatchers.Main) {
-                _baseDonneStatTabel.clear()
-                _baseDonneStatTabel.addAll(baseDonneStatTabelList)
-            }
-        }
-    }
+
 
     private fun toBaseDonne(baseDonneStatTabel: BaseDonneStatTabel): BaseDonne {
         return BaseDonne(

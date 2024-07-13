@@ -1,16 +1,17 @@
 package b_Edite_Base_Donne
 
 import a_RoomDB.BaseDonne
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,16 +23,22 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,44 +52,100 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.launch
 import java.io.File
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun A_Edite_Base_Screen(
-    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel = viewModel(),
     modifier: Modifier = Modifier,
 ) {
-    var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
+    val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()
+    val isFilterApplied by editeBaseDonneViewModel.isFilterApplied.collectAsState()
+    var showDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var currentChangingField by remember { mutableStateOf("") }
+    var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        ArticlesScreenList(
-            editeBaseDonneViewModel,
-            articlesBaseDonneStatTabel = editeBaseDonneViewModel.baseDonneStatTabel,
-            selectedArticle = selectedArticle,
-            onArticleSelect = { article ->
-                editeBaseDonneViewModel.updateCalculated("0.0", "", article)
-                selectedArticle = article
-                val index = editeBaseDonneViewModel.baseDonneStatTabel.indexOf(article)
-                coroutineScope.launch {
-                    if (index >= 0) {
-                        listState.scrollToItem(index / 2) // Divide by 2 because we are chunking by 2
+    if (showDialog) {
+        FilterDialog(
+            isFilterApplied = isFilterApplied,
+            onToggleFilter = {
+                editeBaseDonneViewModel.toggleFilter()
+                showDialog = false
+            },
+            onDismiss = { showDialog = false }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Articles List") },
+                actions = {
+                    IconButton(onClick = { showDialog = true }) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
                     }
                 }
-                currentChangingField = ""
-            },
-            listState = listState,
-            currentChangingField = currentChangingField
-        ) { currentChangingField = it }
-    }
+            )
+        },
+        content = { paddingValues ->
+            ArticlesScreenList(
+                editeBaseDonneViewModel = editeBaseDonneViewModel,
+                articlesBaseDonneStatTabel = articles,
+                selectedArticle = selectedArticle,
+                onArticleSelect = { article ->
+                    editeBaseDonneViewModel.updateCalculated("0.0", "", article)
+                    val index = articles.indexOf(article)
+                    selectedArticle = article
+                    coroutineScope.launch {
+                        if (index >= 0) {
+                            listState.scrollToItem(index / 2)
+                        }
+                    }
+                    currentChangingField = ""
+                },
+                listState = listState,
+                currentChangingField = currentChangingField,
+                paddingValues = paddingValues
+            ) { currentChangingField = it }
+        }
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FilterDialog(
+    isFilterApplied: Boolean,
+    onToggleFilter: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Filter") },
+        confirmButton = {
+            Button(
+                onClick = onToggleFilter,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isFilterApplied) Color.Red else Color.Gray
+                )
+            ) {
+                Text(text = if (isFilterApplied) "Enlever le filtre" else "Appliquer le filtre")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ArticlesScreenList(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -91,40 +154,33 @@ fun ArticlesScreenList(
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
     listState: LazyListState,
     currentChangingField: String,
+    paddingValues: PaddingValues, // Add this parameter to receive padding values
     function: (String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Articles List") }
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            itemsIndexed(items = articlesBaseDonneStatTabel.chunked(2)) { index, pairOfArticles ->
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    if (selectedArticle != null && pairOfArticles.contains(selectedArticle)) {
-                        DisplayDetailleArticle(
-                            article = selectedArticle,
-                            editeBaseDonneViewModel = editeBaseDonneViewModel,
-                            currentChangingField = currentChangingField,
-                            function = function
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        pairOfArticles.forEach { article ->
-                            ArticleBoardCard(article, editeBaseDonneViewModel) { updatedArticle ->
-                                onArticleSelect(updatedArticle)
-                                focusManager.clearFocus()
-                            }
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.padding(paddingValues) // Apply padding values here
+    ) {
+        itemsIndexed(items = articlesBaseDonneStatTabel.chunked(2)) { _, pairOfArticles ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (selectedArticle != null && pairOfArticles.contains(selectedArticle)) {
+                    DisplayDetailleArticle(
+                        article = selectedArticle,
+                        editeBaseDonneViewModel = editeBaseDonneViewModel,
+                        currentChangingField = currentChangingField,
+                        function = function
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    pairOfArticles.forEach { article ->
+                        ArticleBoardCard(article, editeBaseDonneViewModel) { updatedArticle ->
+                            onArticleSelect(updatedArticle)
+                            focusManager.clearFocus()
                         }
                     }
                 }
@@ -172,7 +228,6 @@ fun DisplayDetailleArticle(
     currentChangingField: String,
     function: (String) -> Unit,
 ) {
-
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -192,11 +247,8 @@ fun DisplayDetailleArticle(
                 modifier = Modifier
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
-
             ) {
-                DisplayColorsCards(article,
-                    Modifier.weight(0.38f),
-                )
+                DisplayColorsCards(article, Modifier.weight(0.38f))
                 DisplayArticleInformations(
                     editeBaseDonneViewModel = editeBaseDonneViewModel,
                     article = article,
@@ -221,9 +273,11 @@ fun DisplayDetailleArticle(
         }
     }
 }
+
 fun capitalizeFirstLetter(text: String): String {
     return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
+
 @Composable
 fun TopRowQuantitys(
     article: BaseDonneStatTabel,
@@ -250,7 +304,7 @@ fun TopRowQuantitys(
         OutlineTextEditeBaseDonne(
             columnToChange = "nmbrCaron",
             abbreviation = "n.c",
-            currentChangingField =currentChangingField ,
+            currentChangingField = currentChangingField,
             article = article,
             viewModel = viewModel,
             modifier = Modifier
@@ -269,7 +323,6 @@ fun TopRowQuantitys(
                 .weight(1f)
                 .height(67.dp)
         )
-
     }
 }
 // Composable Function to Display Article Information

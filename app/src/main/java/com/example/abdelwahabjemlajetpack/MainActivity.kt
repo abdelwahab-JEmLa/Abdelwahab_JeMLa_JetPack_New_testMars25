@@ -90,10 +90,11 @@ class MainActivity : ComponentActivity() {
 fun MyApp(editeBaseDonneViewModel: EditeBaseDonneViewModel, articleDao: ArticleDao) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
-        composable("main_screen") { MainScreen(navController,editeBaseDonneViewModel,articleDao) }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,) }
+        composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel) }
     }
 }
+
 @Composable
 fun MainScreen(
     navController: NavHostController = rememberNavController(),
@@ -155,7 +156,5 @@ fun MainScreen(
         }
     }
 }
-
-
 
 
