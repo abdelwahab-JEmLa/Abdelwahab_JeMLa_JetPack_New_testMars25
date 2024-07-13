@@ -92,7 +92,6 @@ fun A_Edite_Base_Screen(
                 articlesBaseDonneStatTabel = articles,
                 selectedArticle = selectedArticle,
                 onArticleSelect = { article ->
-                    editeBaseDonneViewModel.updateCalculated("0.0", "", article)
                     val index = articles.indexOf(article)
                     selectedArticle = article
                     coroutineScope.launch {
@@ -100,6 +99,7 @@ fun A_Edite_Base_Screen(
                             listState.scrollToItem(index / 2)
                         }
                     }
+                    editeBaseDonneViewModel.updateCalculated(article.monPrixVent.toString(), "monPrixVentUniter", article)
                     currentChangingField = ""
                 },
                 listState = listState,
