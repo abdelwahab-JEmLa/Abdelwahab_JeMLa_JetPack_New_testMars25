@@ -73,7 +73,7 @@ fun A_Edite_Base_Screen(
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
 
     //Explication : Apllique filter par Prix = 0.0
-    showDialog = ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel)
+    Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel) { showDialog = false }
 
     Scaffold(
         topBar = {
@@ -109,6 +109,7 @@ fun A_Edite_Base_Screen(
         }
     )
 }
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable

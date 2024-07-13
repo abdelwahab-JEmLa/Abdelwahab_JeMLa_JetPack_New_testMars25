@@ -8,30 +8,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun ab_FilterManager(
+fun Ab_FilterManager(
     showDialog: Boolean,
     isFilterApplied: Boolean,
-    editeBaseDonneViewModel: EditeBaseDonneViewModel
-): Boolean {
-    var showDialog1 = showDialog
-    if (showDialog1) {
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    onDismiss: () -> Unit // Add onDismiss parameter
+) {
+    if (showDialog) {
         FilterDialog(
             isFilterApplied = isFilterApplied,
             onToggleFilter = {
                 editeBaseDonneViewModel.toggleFilter()
-                showDialog1 = false
+                onDismiss()
             },
-            onDismiss = { showDialog1 = false }
+            onDismiss = onDismiss,
+            onOrderByDate = {
+                editeBaseDonneViewModel.orderByDateCreation()
+                onDismiss()
+            }
         )
     }
-    return showDialog1
 }
-
 @Composable
 fun FilterDialog(
     isFilterApplied: Boolean,
     onToggleFilter: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onOrderByDate: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -50,6 +53,17 @@ fun FilterDialog(
             Button(onClick = onDismiss) {
                 Text("Cancel")
             }
+        },
+        text = {
+            Button(
+                onClick = onOrderByDate,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Blue
+                )
+            ) {
+                Text("Trier par date")
+            }
         }
     )
 }
+

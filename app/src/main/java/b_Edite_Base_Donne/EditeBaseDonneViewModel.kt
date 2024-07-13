@@ -87,6 +87,56 @@ class EditeBaseDonneViewModel(
             }
         }
     }
+
+    fun orderByDateCreation() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val articlesFromRoom = articleDao.getAllArticlesOrder()
+            val baseDonneStatTabelList = articlesFromRoom.map {
+                BaseDonneStatTabel(
+                    it.idArticle,
+                    it.nomArticleFinale,
+                    it.classementCate,
+                    it.nomArab,
+                    it.nmbrCat,
+                    it.couleur1,
+                    it.couleur2,
+                    it.couleur3,
+                    it.couleur4,
+                    it.nomCategorie2,
+                    it.nmbrUnite,
+                    it.nmbrCaron,
+                    it.affichageUniteState,
+                    it.commmentSeVent,
+                    it.afficheBoitSiUniter,
+                    it.monPrixAchat,
+                    it.clienPrixVentUnite,
+                    it.minQuan,
+                    it.monBenfice,
+                    it.monPrixVent,
+                    it.diponibilityState,
+                    it.neaon2,
+                    it.idCategorie,
+                    it.funChangeImagsDimention,
+                    it.nomCategorie,
+                    it.neaon1,
+                    it.lastUpdateState,
+                    it.cartonState,
+                    it.dateCreationCategorie,
+                    it.prixDeVentTotaleChezClient,
+                    it.benficeTotaleEntreMoiEtClien,
+                    it.benificeTotaleEn2,
+                    it.monPrixAchatUniter,
+                    it.monPrixVentUniter,
+                    it.benificeClient,
+                    it.monBeneficeUniter,
+                )
+            }.sortedBy { it.dateCreationCategorie }
+
+            withContext(Dispatchers.Main) {
+                _baseDonneStatTabel.value = baseDonneStatTabelList
+            }
+        }
+    }
     fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne) {
         val itemIndex = _dataBaseDonne.indexOfFirst { it.idArticle == articleDataBaseDonne.idArticle }
         if (itemIndex != -1) {
@@ -250,7 +300,7 @@ class EditeBaseDonneViewModel(
         }
     }
 
-    private fun calculateWithCondition(
+     fun calculateWithCondition(
         columnToChange: String,
         newValue: Double?,
         article: BaseDonneStatTabel
