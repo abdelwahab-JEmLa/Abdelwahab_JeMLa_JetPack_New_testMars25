@@ -25,7 +25,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -58,6 +57,7 @@ import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.launch
 import java.io.File
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun A_Edite_Base_Screen(
@@ -72,16 +72,8 @@ fun A_Edite_Base_Screen(
     var currentChangingField by remember { mutableStateOf("") }
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
 
-    if (showDialog) {
-        FilterDialog(
-            isFilterApplied = isFilterApplied,
-            onToggleFilter = {
-                editeBaseDonneViewModel.toggleFilter()
-                showDialog = false
-            },
-            onDismiss = { showDialog = false }
-        )
-    }
+    //Explication : Apllique filter par Prix = 0.0
+    showDialog = ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel)
 
     Scaffold(
         topBar = {
@@ -114,33 +106,6 @@ fun A_Edite_Base_Screen(
                 currentChangingField = currentChangingField,
                 paddingValues = paddingValues
             ) { currentChangingField = it }
-        }
-    )
-}
-
-@Composable
-fun FilterDialog(
-    isFilterApplied: Boolean,
-    onToggleFilter: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Filter") },
-        confirmButton = {
-            Button(
-                onClick = onToggleFilter,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFilterApplied) Color.Red else Color.Gray
-                )
-            ) {
-                Text(text = if (isFilterApplied) "Enlever le filtre" else "Appliquer le filtre")
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Cancel")
-            }
         }
     )
 }
