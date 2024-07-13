@@ -21,7 +21,7 @@ class EditeBaseDonneViewModel(
 
     init {
         initBaseDonneStatTabel()
-        initDataBaseDonne()
+        initDataBaseDonneForNewByStatInCompos()
     }
 
     fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne) {
@@ -43,7 +43,7 @@ class EditeBaseDonneViewModel(
         }
     }
 
-    fun initDataBaseDonne() {
+    fun initDataBaseDonneForNewByStatInCompos() {
         viewModelScope.launch(Dispatchers.IO) {
             val articlesFromRoom = articleDao.getAllArticlesOrder()
             val dataBaseDonneList = articlesFromRoom.map {
@@ -168,7 +168,9 @@ class EditeBaseDonneViewModel(
         if (columnToChange != "monPrixVentUniter") {
             monPrixVentUniter(columnToChange, newValue, updatedColumns, article)
         }
-
+        if (columnToChange != "monBeneficeUniter") {
+            monBeneficeUniter(columnToChange, newValue, updatedColumns, article)
+        }
         ///////////////////////////////////////////////////////////////////
         for ((column, value) in updatedColumns) {
             updateBaseDonneStatTabel(column, article, value)
@@ -233,7 +235,59 @@ class EditeBaseDonneViewModel(
 
         }
     }
+    private fun monBeneficeUniter(
+        columnToChange: String,
+        newValue: Double?,
+        updatedColumns: MutableList<Pair<String, String>>,
+        article: BaseDonneStatTabel
+    ) {
 
+        when (columnToChange) {
+            "benificeClient" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBeneficeUniter" to (((article.prixDeVentTotaleChezClient -it) - article.monPrixAchat)/ article.nmbrUnite).toString()
+                    )
+                }
+            }
+            "monPrixVentUniter" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBeneficeUniter" to (it - article.monPrixAchatUniter).toString()
+                    )
+                }
+            }
+            "nmbrUnite" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBeneficeUniter" to ((article.monBenfice / it)).toString()
+                    )
+                }
+            }
+            "monBenfice" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBeneficeUniter" to (it / article.nmbrUnite).toString()
+                    )
+                }
+            }
+
+            "benificeClient" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBeneficeUniter" to ((((article.benificeTotaleEn2) - it))/article.nmbrUnite).toString()
+                    )
+                }
+            }
+            "monPrixVent" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBeneficeUniter" to ((it / article.nmbrUnite) - article.monPrixAchatUniter).toString()
+                    )
+                }
+            }
+        }
+    }
     private fun monPrixAchat(
         columnToChange: String,
         newValue: Double?,
@@ -287,6 +341,13 @@ class EditeBaseDonneViewModel(
     ) {
 
         when (columnToChange) {
+            "monBeneficeUniter" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monPrixVent" to ((it * article.nmbrUnite)+ article.monPrixAchat).toString()
+                    )
+                }
+            }
             "monPrixVentUniter" -> {
                 newValue?.let {
                     updatedColumns.add(
@@ -338,7 +399,13 @@ class EditeBaseDonneViewModel(
         article: BaseDonneStatTabel
     ) {
         when (columnToChange) {
-
+            "monBeneficeUniter" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monBenfice" to (it * article.nmbrUnite).toString()
+                    )
+                }
+            }
             "monPrixVent" -> {
                 newValue?.let {
                     updatedColumns.add(
@@ -370,6 +437,13 @@ class EditeBaseDonneViewModel(
         article: BaseDonneStatTabel
     ) {
         when (columnToChange) {
+            "monBeneficeUniter" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "benificeClient" to ((it * article.nmbrUnite) - article.benificeTotaleEn2).toString()
+                    )
+                }
+            }
             "nmbrUnite" -> {
                 newValue?.let {
                     updatedColumns.add(
@@ -469,7 +543,8 @@ class EditeBaseDonneViewModel(
 
                         "benificeClient" -> benificeClient =
                             if (it.isEmpty()) 0.0 else it.toDouble()
-                    }
+                        "monBeneficeUniter" -> monBeneficeUniter =
+                            if (it.isEmpty()) 0.0 else it.toDouble()}
                     articleDao.update(toBaseDonne(this))
                 }
             }
@@ -516,6 +591,7 @@ class EditeBaseDonneViewModel(
                     it.monPrixAchatUniter,
                     it.monPrixVentUniter,
                     it.benificeClient,
+                    it.monBeneficeUniter,
                 )
             }
             withContext(Dispatchers.Main) {
@@ -561,7 +637,8 @@ class EditeBaseDonneViewModel(
             baseDonneStatTabel.benificeTotaleEn2,
             baseDonneStatTabel.monPrixAchatUniter,
             baseDonneStatTabel.monPrixVentUniter,
-            baseDonneStatTabel.benificeClient
+            baseDonneStatTabel.benificeClient,
+            baseDonneStatTabel.monBeneficeUniter,
         )
     }
 }

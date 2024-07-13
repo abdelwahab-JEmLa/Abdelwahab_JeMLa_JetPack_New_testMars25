@@ -58,6 +58,7 @@ fun A_Edite_Base_Screen(
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    var currentChangingField by remember { mutableStateOf("") }
 
     Column(modifier = modifier.fillMaxSize()) {
         ArticlesScreenList(
@@ -73,9 +74,11 @@ fun A_Edite_Base_Screen(
                         listState.scrollToItem(index / 2) // Divide by 2 because we are chunking by 2
                     }
                 }
+                currentChangingField = ""
             },
-            listState = listState
-        )
+            listState = listState,
+            currentChangingField = currentChangingField
+        ) { currentChangingField = it }
     }
 }
 
@@ -86,7 +89,9 @@ fun ArticlesScreenList(
     articlesBaseDonneStatTabel: List<BaseDonneStatTabel>,
     selectedArticle: BaseDonneStatTabel?,
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
-    listState: LazyListState
+    listState: LazyListState,
+    currentChangingField: String,
+    function: (String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -106,7 +111,9 @@ fun ArticlesScreenList(
                     if (selectedArticle != null && pairOfArticles.contains(selectedArticle)) {
                         DisplayDetailleArticle(
                             article = selectedArticle,
-                            editeBaseDonneViewModel = editeBaseDonneViewModel
+                            editeBaseDonneViewModel = editeBaseDonneViewModel,
+                            currentChangingField = currentChangingField,
+                            function = function
                         )
                     }
                     Row(
@@ -162,8 +169,9 @@ fun ArticleBoardCard(
 fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    currentChangingField: String,
+    function: (String) -> Unit,
 ) {
-    var currentChangingField by remember { mutableStateOf("") }
 
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -178,7 +186,7 @@ fun DisplayDetailleArticle(
                 article,
                 viewModel = editeBaseDonneViewModel,
                 currentChangingField = currentChangingField,
-                function = { currentChangingField = it }
+                function = function
             )
             Row(
                 modifier = Modifier
@@ -193,7 +201,7 @@ fun DisplayDetailleArticle(
                     editeBaseDonneViewModel = editeBaseDonneViewModel,
                     article = article,
                     modifier = Modifier.weight(0.62f),
-                    function = { currentChangingField = it },
+                    function = function,
                     currentChangingField = currentChangingField,
                 )
             }
@@ -288,7 +296,9 @@ fun DisplayArticleInformations(
                     article = article,
                     viewModel = editeBaseDonneViewModel,
                     function = function,
-                    modifier = Modifier.weight(0.40f).height(63.dp)
+                    modifier = Modifier
+                        .weight(0.40f)
+                        .height(63.dp)
                 )
             }
 
@@ -299,7 +309,9 @@ fun DisplayArticleInformations(
                 article = article,
                 viewModel = editeBaseDonneViewModel,
                 function = function,
-                modifier = Modifier.weight(0.60f).height(63.dp)
+                modifier = Modifier
+                    .weight(0.60f)
+                    .height(63.dp)
             )
         }
 
@@ -352,17 +364,31 @@ fun DisplayArticleInformations(
                 modifier = Modifier
             )
         }
-
-        OutlineTextEditeBaseDonne(
-            columnToChange = "monBenfice",
-            abbreviation = "M.B",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = editeBaseDonneViewModel,
-            function = function,
+        Row(
             modifier = Modifier
-        )
-
+                .height(63.dp)
+        ) {
+            if (article.nmbrUnite > 1) {
+                OutlineTextEditeBaseDonne(
+                    columnToChange = "monBeneficeUniter",
+                    abbreviation = "u/",
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    viewModel = editeBaseDonneViewModel,
+                    function = function,
+                    modifier = Modifier.weight(0.35f)
+                )
+            }
+            OutlineTextEditeBaseDonne(
+                columnToChange = "monBenfice",
+                abbreviation = "M.B",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = editeBaseDonneViewModel,
+                function = function,
+                modifier = Modifier.weight(0.65f)
+            )
+        }
         Row(
             modifier = Modifier
                 .height(63.dp)

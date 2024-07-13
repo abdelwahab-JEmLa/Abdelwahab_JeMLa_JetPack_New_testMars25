@@ -24,7 +24,7 @@ suspend fun importFromFirebaseToDataBaseDonne(
         val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
 
         viewModel.insertAllDataBaseDonne(sortedArticles)
-        viewModel.initDataBaseDonne()
+        viewModel.initDataBaseDonneForNewByStatInCompos()
 
     } catch (e: Exception) {
         Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
@@ -73,6 +73,8 @@ suspend fun importFromFirebase(
         articleDao.deleteAll()
         articleDao.insertAll(sortedArticles)
         viewModel.initBaseDonneStatTabel()
+        viewModel.initDataBaseDonneForNewByStatInCompos()
+
     } catch (e: Exception) {
         Log.e("MainAppViewModel", "Failed to import data from Firebase", e)
     }
