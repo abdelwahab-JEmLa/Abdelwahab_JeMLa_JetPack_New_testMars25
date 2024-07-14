@@ -145,7 +145,6 @@ class EditeBaseDonneViewModel(
             if (articleDataBaseDonne != null) {
                 _dataBaseDonne[itemIndex] = articleDataBaseDonne
             }
-
             viewModelScope.launch {
                 if (articleDataBaseDonne != null) {
                     articleDao.updateFromeDataBaseDonne(articleDataBaseDonne)

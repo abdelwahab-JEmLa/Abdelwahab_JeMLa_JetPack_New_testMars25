@@ -112,7 +112,8 @@ fun A_Edite_Base_Screen(
                 function =  { currentChangingField = it },
                 function1 = { articlesDataBaseDonne ->
                     if (articlesDataBaseDonne != null) {
-                        articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !selectedArticle?.affichageUniteState!!)
+                        articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
+                        editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
                     }
                 }
             )
@@ -474,9 +475,7 @@ fun ArticleToggleButton(
 ) {
         UniteToggleButton(
             articleDataBaseDonneStat = article,
-            onClick = {function1(article)
-                viewModel.updateDataBaseDonne(article)
-            }
+            onClick = {function1(article) }
         )
 }
 
@@ -495,14 +494,12 @@ fun UniteToggleButton(
                 .padding(top = 8.dp)
                 .fillMaxWidth()
         ) {
-            if (articleDataBaseDonneStat != null) {
-                Text(
-                    text = if (articleDataBaseDonneStat.affichageUniteState)
-                        "Cacher les Unités"
-                    else
-                        "Afficher les Unités"
-                )
-            }
+            Text(
+                text = if (articleDataBaseDonneStat.affichageUniteState)
+                    "Cacher les Unités"
+                else
+                    "Afficher les Unités"
+            )
         }
     }
 }
