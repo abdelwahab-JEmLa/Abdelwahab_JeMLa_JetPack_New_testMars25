@@ -44,7 +44,7 @@ fun parseDataSnapshotDataBaseDonne(dataSnapshot: DataSnapshot): List<BaseDonne> 
     return articlesList
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+
 fun parseDataSnapshot(dataSnapshot: DataSnapshot): List<BaseDonne> {
     val articlesList = mutableListOf<BaseDonne>()
     for (snapshot in dataSnapshot.children) {
