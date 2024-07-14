@@ -137,13 +137,19 @@ class EditeBaseDonneViewModel(
             }
         }
     }
-    fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne) {
-        val itemIndex = _dataBaseDonne.indexOfFirst { it.idArticle == articleDataBaseDonne.idArticle }
+    fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne?) {
+        val itemIndex = _dataBaseDonne.indexOfFirst {
+            it.idArticle == (articleDataBaseDonne?.idArticle ?: 0)
+        }
         if (itemIndex != -1) {
-            _dataBaseDonne[itemIndex] = articleDataBaseDonne
+            if (articleDataBaseDonne != null) {
+                _dataBaseDonne[itemIndex] = articleDataBaseDonne
+            }
 
             viewModelScope.launch {
-                articleDao.updateFromeDataBaseDonne(articleDataBaseDonne)
+                if (articleDataBaseDonne != null) {
+                    articleDao.updateFromeDataBaseDonne(articleDataBaseDonne)
+                }
             }
         }
     }
@@ -285,6 +291,7 @@ class EditeBaseDonneViewModel(
 
         val clienPrixVentUniteCal =
             if (columnToChange == "clienPrixVentUnite") newValue else article.clienPrixVentUnite
+
         val prixDeVentTotaleChezClientCal =
             nmbrUnite?.let { clienPrixVentUniteCal?.times(it.toDouble()) }
         updatedColumns.add("prixDeVentTotaleChezClient" to prixDeVentTotaleChezClientCal.toString())
@@ -311,15 +318,12 @@ class EditeBaseDonneViewModel(
         val updatedColumns = mutableListOf<Pair<String, String>>()
         if (columnToChange != "monPrixVent") {
             monPrixVent(columnToChange, newValue, updatedColumns, article)
-
         }
         if (columnToChange != "monBenfice") {
             calculateMyBenefit(columnToChange, newValue, updatedColumns, article)
-
         }
         if (columnToChange != "benificeClient") {
             calculateClientBenefit(columnToChange, newValue, updatedColumns, article)
-
         }
         if (columnToChange != "monPrixAchat") {
             monPrixAchat(columnToChange, newValue, updatedColumns, article)
@@ -644,67 +648,57 @@ class EditeBaseDonneViewModel(
     ) {
         newValue?.let {
             viewModelScope.launch(Dispatchers.Main) {
-                _baseDonneStatTabel.value.find { it.idArticle == article.idArticle }?.apply {
+                val originalItem = _originalBaseDonneStatTabel.find { it.idArticle == article.idArticle }
+                val baseItem = _baseDonneStatTabel.value.find { it.idArticle == article.idArticle }
+
+                val itemsToUpdate = listOfNotNull(originalItem, baseItem)
+
+                itemsToUpdate.forEach { item ->
                     when (columnToChangeInString) {
-                        "nomArticleFinale" -> nomArticleFinale = it.ifEmpty { "0.0" }
-                        "classementCate" -> classementCate = if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "nomArab" -> nomArab = it.ifEmpty { "0.0" }
-                        "nmbrCat" -> nmbrCat = if (it.isEmpty()) 0 else it.toInt()
-                        "couleur1" -> couleur1 = it.ifEmpty { null }
-                        "couleur2" -> couleur2 = if (it.isEmpty()) null else it
-                        "couleur3" -> couleur3 = if (it.isEmpty()) null else it
-                        "couleur4" -> couleur4 = if (it.isEmpty()) null else it
-                        "nomCategorie2" -> nomCategorie2 = if (it.isEmpty()) null else it
-                        "nmbrUnite" -> nmbrUnite = if (it.isEmpty()) 0 else it.toInt()
-                        "nmbrCaron" -> nmbrCaron = if (it.isEmpty()) 0 else it.toInt()
-                        "affichageUniteState" -> affichageUniteState = it.toBoolean()
-                        "commmentSeVent" -> commmentSeVent = if (it.isEmpty()) null else it
-                        "afficheBoitSiUniter" -> afficheBoitSiUniter =
-                            if (it.isEmpty()) null else it
-
-                        "monPrixAchat" -> monPrixAchat = if (it.isEmpty()) 0.0 else it.toDouble()
-                        "clienPrixVentUnite" -> clienPrixVentUnite =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "minQuan" -> minQuan = if (it.isEmpty()) 0 else it.toInt()
-                        "monBenfice" -> monBenfice = if (it.isEmpty()) 0.0 else it.toDouble()
-                        "monPrixVent" -> monPrixVent = if (it.isEmpty()) 0.0 else it.toDouble()
-                        "diponibilityState" -> diponibilityState = if (it.isEmpty()) "" else it
-                        "neaon2" -> neaon2 = if (it.isEmpty()) "" else it
-                        "idCategorie" -> idCategorie = if (it.isEmpty()) 0.0 else it.toDouble()
-                        "funChangeImagsDimention" -> funChangeImagsDimention = it.toBoolean()
-                        "nomCategorie" -> nomCategorie = if (it.isEmpty()) "" else it
-                        "neaon1" -> neaon1 = if (it.isEmpty()) 0.0 else it.toDouble()
-                        "lastUpdateState" -> lastUpdateState = if (it.isEmpty()) "" else it
-                        "cartonState" -> cartonState = if (it.isEmpty()) "" else it
-                        "dateCreationCategorie" -> dateCreationCategorie =
-                            if (it.isEmpty()) "" else it
-
-                        "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "benficeTotaleEntreMoiEtClien" -> benficeTotaleEntreMoiEtClien =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "benificeTotaleEn2" -> benificeTotaleEn2 =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "monPrixAchatUniter" -> monPrixAchatUniter =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "monPrixVentUniter" -> monPrixVentUniter =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-
-                        "benificeClient" -> benificeClient =
-                            if (it.isEmpty()) 0.0 else it.toDouble()
-                        "monBeneficeUniter" -> monBeneficeUniter =
-                            if (it.isEmpty()) 0.0 else it.toDouble()}
-                    articleDao.update(toBaseDonne(this))
+                        "nomArticleFinale" -> item.nomArticleFinale = it.ifEmpty { "0.0" }
+                        "classementCate" -> item.classementCate = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "nomArab" -> item.nomArab = it.ifEmpty { "0.0" }
+                        "nmbrCat" -> item.nmbrCat = if (it.isEmpty()) 0 else it.toInt()
+                        "couleur1" -> item.couleur1 = it.ifEmpty { null }
+                        "couleur2" -> item.couleur2 = if (it.isEmpty()) null else it
+                        "couleur3" -> item.couleur3 = if (it.isEmpty()) null else it
+                        "couleur4" -> item.couleur4 = if (it.isEmpty()) null else it
+                        "nomCategorie2" -> item.nomCategorie2 = if (it.isEmpty()) null else it
+                        "nmbrUnite" -> item.nmbrUnite = if (it.isEmpty()) 0 else it.toInt()
+                        "nmbrCaron" -> item.nmbrCaron = if (it.isEmpty()) 0 else it.toInt()
+                        "affichageUniteState" -> item.affichageUniteState = it.toBoolean()
+                        "commmentSeVent" -> item.commmentSeVent = if (it.isEmpty()) null else it
+                        "afficheBoitSiUniter" -> item.afficheBoitSiUniter = if (it.isEmpty()) null else it
+                        "monPrixAchat" -> item.monPrixAchat = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "clienPrixVentUnite" -> item.clienPrixVentUnite = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "minQuan" -> item.minQuan = if (it.isEmpty()) 0 else it.toInt()
+                        "monBenfice" -> item.monBenfice = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monPrixVent" -> item.monPrixVent = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "diponibilityState" -> item.diponibilityState = if (it.isEmpty()) "" else it
+                        "neaon2" -> item.neaon2 = if (it.isEmpty()) "" else it
+                        "idCategorie" -> item.idCategorie = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "funChangeImagsDimention" -> item.funChangeImagsDimention = it.toBoolean()
+                        "nomCategorie" -> item.nomCategorie = if (it.isEmpty()) "" else it
+                        "neaon1" -> item.neaon1 = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "lastUpdateState" -> item.lastUpdateState = if (it.isEmpty()) "" else it
+                        "cartonState" -> item.cartonState = if (it.isEmpty()) "" else it
+                        "dateCreationCategorie" -> item.dateCreationCategorie = if (it.isEmpty()) "" else it
+                        "prixDeVentTotaleChezClient" -> item.prixDeVentTotaleChezClient = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "benficeTotaleEntreMoiEtClien" -> item.benficeTotaleEntreMoiEtClien = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "benificeTotaleEn2" -> item.benificeTotaleEn2 = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monPrixAchatUniter" -> item.monPrixAchatUniter = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monPrixVentUniter" -> item.monPrixVentUniter = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "benificeClient" -> item.benificeClient = if (it.isEmpty()) 0.0 else it.toDouble()
+                        "monBeneficeUniter" -> item.monBeneficeUniter = if (it.isEmpty()) 0.0 else it.toDouble()
+                    }
                 }
+
+                // Si vous devez enregistrer les changements dans la base de données pour chaque article mis à jour
+                itemsToUpdate.forEach { articleDao.update(toBaseDonne(it)) }
             }
         }
     }
+
 
 
 

@@ -65,14 +65,16 @@ fun A_Edite_Base_Screen(
     modifier: Modifier = Modifier,
 ) {
     val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()
+    val articlesDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne
     val isFilterApplied by editeBaseDonneViewModel.isFilterApplied.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var currentChangingField by remember { mutableStateOf("") }
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
+    var articleDataBaseDonne by remember { mutableStateOf<BaseDonne?>(null) }
 
-    //Explication : Apllique filter par Prix = 0.0
+    // Explication : Appliquez le filtre par Prix = 0.0
     Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel) { showDialog = false }
 
     Scaffold(
@@ -89,8 +91,10 @@ fun A_Edite_Base_Screen(
         content = { paddingValues ->
             ArticlesScreenList(
                 editeBaseDonneViewModel = editeBaseDonneViewModel,
+                articlesDataBaseDonne = articleDataBaseDonne,
                 articlesBaseDonneStatTabel = articles,
                 selectedArticle = selectedArticle,
+                // Dans onArticleSelect
                 onArticleSelect = { article ->
                     val index = articles.indexOf(article)
                     selectedArticle = article
@@ -99,13 +103,19 @@ fun A_Edite_Base_Screen(
                             listState.scrollToItem(index / 2)
                         }
                     }
-                    editeBaseDonneViewModel.updateCalculated(article.monPrixVent.toString(), "monPrixVentUniter", article)
                     currentChangingField = ""
+                    articleDataBaseDonne = articlesDataBaseDonne.find { it.idArticle == article.idArticle }
                 },
                 listState = listState,
                 currentChangingField = currentChangingField,
-                paddingValues = paddingValues
-            ) { currentChangingField = it }
+                paddingValues = paddingValues,
+                function =  { currentChangingField = it },
+                function1 = { articlesDataBaseDonne ->
+                    if (articlesDataBaseDonne != null) {
+                        articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !selectedArticle?.affichageUniteState!!)
+                    }
+                }
+            )
         }
     )
 }
@@ -115,13 +125,15 @@ fun A_Edite_Base_Screen(
 @Composable
 fun ArticlesScreenList(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    articlesDataBaseDonne: BaseDonne?,
     articlesBaseDonneStatTabel: List<BaseDonneStatTabel>,
     selectedArticle: BaseDonneStatTabel?,
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
     listState: LazyListState,
-    currentChangingField: String,
-    paddingValues: PaddingValues, // Add this parameter to receive padding values
-    function: (String) -> Unit
+    currentChangingField: String, // Add this parameter to receive padding values
+    paddingValues: PaddingValues,
+    function: (String) -> Unit,
+    function1: (BaseDonne?) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -134,10 +146,12 @@ fun ArticlesScreenList(
                 if (selectedArticle != null && pairOfArticles.contains(selectedArticle)) {
                     DisplayDetailleArticle(
                         article = selectedArticle,
+                        articlesDataBaseDonne= articlesDataBaseDonne,
                         editeBaseDonneViewModel = editeBaseDonneViewModel,
                         currentChangingField = currentChangingField,
-                        function = function
-                    )
+                        function = function,
+                        function1 = function1,
+                        )
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -190,9 +204,11 @@ fun ArticleBoardCard(
 @Composable
 fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
+    articlesDataBaseDonne: BaseDonne?,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     currentChangingField: String,
     function: (String) -> Unit,
+    function1: (BaseDonne?) -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -205,6 +221,7 @@ fun DisplayDetailleArticle(
         Column(modifier = Modifier.fillMaxWidth()) {
             TopRowQuantitys(
                 article,
+                articlesDataBaseDonne= articlesDataBaseDonne,
                 viewModel = editeBaseDonneViewModel,
                 currentChangingField = currentChangingField,
                 function = function
@@ -218,9 +235,11 @@ fun DisplayDetailleArticle(
                 DisplayArticleInformations(
                     editeBaseDonneViewModel = editeBaseDonneViewModel,
                     article = article,
+                    articlesDataBaseDonne= articlesDataBaseDonne,
                     modifier = Modifier.weight(0.62f),
                     function = function,
                     currentChangingField = currentChangingField,
+                    function1 =function1,
                 )
             }
             Box(
@@ -247,11 +266,12 @@ fun capitalizeFirstLetter(text: String): String {
 @Composable
 fun TopRowQuantitys(
     article: BaseDonneStatTabel,
+    articlesDataBaseDonne: BaseDonne?,
     viewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier,
     function: (String) -> Unit,
-    currentChangingField: String
-) {
+    currentChangingField: String,
+    ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -296,10 +316,12 @@ fun TopRowQuantitys(
 fun DisplayArticleInformations(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     article: BaseDonneStatTabel,
+    articlesDataBaseDonne: BaseDonne?,
     modifier: Modifier = Modifier,
     function: (String) -> Unit,
     currentChangingField: String,
-) {
+    function1: (BaseDonne?) -> Unit,
+    ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -434,54 +456,54 @@ fun DisplayArticleInformations(
                 modifier = Modifier.weight(0.65f)
             )
         }
-        ArticleToggleButton(article = article, viewModel = editeBaseDonneViewModel)
+        // Utilisation d'un état mutable pour que l'UI réagisse aux changements
+
+        ArticleToggleButton(
+            article = articlesDataBaseDonne,
+            viewModel = editeBaseDonneViewModel,
+            function1 = function1
+        )
 
     }
 }
 @Composable
 fun ArticleToggleButton(
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel
+    article: BaseDonne?,
+    viewModel: EditeBaseDonneViewModel,
+    function1: (BaseDonne?) -> Unit,
 ) {
-    // Utilisation d'un état mutable pour que l'UI réagisse aux changements
-    var articleDataBaseDonneStat by remember {
-        mutableStateOf(viewModel.dataBaseDonne.find { it.idArticle == article.idArticle })
-    }
-
-    // Si articleDataBaseDonneStat n'est pas null, afficher le bouton
-    articleDataBaseDonneStat?.let { data ->
         UniteToggleButton(
-            articleDataBaseDonneStat = data,
-            onClick = {
-                // Inverser l'état de affichageUniteState et mettre à jour l'état mutable
-                val copyChange = data.copy(affichageUniteState = !data.affichageUniteState)
-                articleDataBaseDonneStat = copyChange
-                viewModel.updateDataBaseDonne(copyChange)
+            articleDataBaseDonneStat = article,
+            onClick = {function1(article)
+                viewModel.updateDataBaseDonne(article)
             }
         )
-    }
 }
 
 @Composable
 fun UniteToggleButton(
-    articleDataBaseDonneStat: BaseDonne,
+    articleDataBaseDonneStat: BaseDonne?,
     onClick: () -> Unit
 ) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (articleDataBaseDonneStat.affichageUniteState) Color.Green else Color.Red
-        ),
-        modifier = Modifier
-            .padding(top = 8.dp)
-            .fillMaxWidth()
-    ) {
-        Text(
-            text = if (articleDataBaseDonneStat.affichageUniteState)
-                "Cacher les Unités"
-            else
-                "Afficher les Unités"
-        )
+    if (articleDataBaseDonneStat != null) {
+        Button(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (articleDataBaseDonneStat.affichageUniteState) Color.Green else Color.Red
+            ),
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth()
+        ) {
+            if (articleDataBaseDonneStat != null) {
+                Text(
+                    text = if (articleDataBaseDonneStat.affichageUniteState)
+                        "Cacher les Unités"
+                    else
+                        "Afficher les Unités"
+                )
+            }
+        }
     }
 }
 
