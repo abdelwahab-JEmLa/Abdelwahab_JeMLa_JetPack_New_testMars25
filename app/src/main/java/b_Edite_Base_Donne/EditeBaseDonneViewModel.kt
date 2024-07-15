@@ -137,6 +137,57 @@ class EditeBaseDonneViewModel(
             }
         }
     }
+    fun orderByIdAndFilterByDiponibility() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val articlesFromRoom = articleDao.getAllArticlesOrder()
+            val filteredAndSortedArticles = articlesFromRoom.map {
+                BaseDonneStatTabel(
+                    it.idArticle,
+                    it.nomArticleFinale,
+                    it.classementCate,
+                    it.nomArab,
+                    it.nmbrCat,
+                    it.couleur1,
+                    it.couleur2,
+                    it.couleur3,
+                    it.couleur4,
+                    it.nomCategorie2,
+                    it.nmbrUnite,
+                    it.nmbrCaron,
+                    it.affichageUniteState,
+                    it.commmentSeVent,
+                    it.afficheBoitSiUniter,
+                    it.monPrixAchat,
+                    it.clienPrixVentUnite,
+                    it.minQuan,
+                    it.monBenfice,
+                    it.monPrixVent,
+                    it.diponibilityState,
+                    it.neaon2,
+                    it.idCategorie,
+                    it.funChangeImagsDimention,
+                    it.nomCategorie,
+                    it.neaon1,
+                    it.lastUpdateState,
+                    it.cartonState,
+                    it.dateCreationCategorie,
+                    it.prixDeVentTotaleChezClient,
+                    it.benficeTotaleEntreMoiEtClien,
+                    it.benificeTotaleEn2,
+                    it.monPrixAchatUniter,
+                    it.monPrixVentUniter,
+                    it.benificeClient,
+                    it.monBeneficeUniter,
+                )
+            }.filter { it.diponibilityState != "non Dispo" }
+                .sortedByDescending { it.idArticle } // Trier par idArticle dans l'ordre décroissant
+
+            withContext(Dispatchers.Main) {
+                _baseDonneStatTabel.value = filteredAndSortedArticles
+            }
+        }
+    }
+
     fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne?) {
         val itemIndex = _dataBaseDonne.indexOfFirst {
             it.idArticle == (articleDataBaseDonne?.idArticle ?: 0)
@@ -351,6 +402,13 @@ class EditeBaseDonneViewModel(
     ) {
 
         when (columnToChange) {
+            "monBeneficeUniter" -> {
+                newValue?.let {
+                    updatedColumns.add(
+                        "monPrixVentUniter" to (it + article.monPrixAchatUniter).toString()
+                    )
+                }
+            }
             "nmbrUnite" -> {
                 newValue?.let {
                     updatedColumns.add(

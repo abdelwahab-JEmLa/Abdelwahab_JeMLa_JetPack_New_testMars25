@@ -313,6 +313,7 @@ fun TopRowQuantitys(
     }
 }
 // Composable Function to Display Article Information
+// Composable Function to Display Article Information
 @Composable
 fun DisplayArticleInformations(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -322,7 +323,7 @@ fun DisplayArticleInformations(
     function: (String) -> Unit,
     currentChangingField: String,
     function1: (BaseDonne?) -> Unit,
-    ) {
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -457,16 +458,47 @@ fun DisplayArticleInformations(
                 modifier = Modifier.weight(0.65f)
             )
         }
-        // Utilisation d'un état mutable pour que l'UI réagisse aux changements
 
+        // Nouvelle ligne pour les boutons de calcul
+        Row(
+            modifier = Modifier
+                .height(60.dp)
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(
+                onClick = {
+                    val newPrice = article.monPrixAchat / article.nmbrUnite
+                    function("monPrixAchat")
+                    editeBaseDonneViewModel.updateCalculated(newPrice.toString(), "monPrixAchat", article)
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("/")
+            }
+            Button(
+                onClick = {
+                    val newPrice2 = article.monPrixAchat * article.nmbrUnite
+                    function("monPrixAchat")
+                    editeBaseDonneViewModel.updateCalculated(newPrice2.toString(), "monPrixAchat", article)
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("*")
+            }
+        }
+
+
+        // Utilisation d'un état mutable pour que l'UI réagisse aux changements
         ArticleToggleButton(
             article = articlesDataBaseDonne,
             viewModel = editeBaseDonneViewModel,
             function1 = function1
         )
-
     }
 }
+
 @Composable
 fun ArticleToggleButton(
     article: BaseDonne?,
