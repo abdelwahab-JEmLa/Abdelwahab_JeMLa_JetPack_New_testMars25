@@ -2,6 +2,7 @@ package b_Edite_Base_Donne
 
 import a_RoomDB.BaseDonne
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -18,6 +19,9 @@ interface ArticleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertArticle(article: BaseDonne)
+
+    @Delete
+    suspend fun delete(article: BaseDonne)
 
     @Upsert
     suspend fun upsert(articles: List<BaseDonne>)

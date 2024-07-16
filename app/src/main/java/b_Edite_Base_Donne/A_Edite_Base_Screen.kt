@@ -67,6 +67,7 @@ import java.io.File
 @Composable
 fun A_Edite_Base_Screen(
     editeBaseDonneViewModel: EditeBaseDonneViewModel = viewModel(),
+    articleDao: ArticleDao,
 ) {
     val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()
     val articlesDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne
@@ -224,8 +225,10 @@ fun ArticleBoardCard(
                                 .background(Color.White.copy(alpha = 0.7f))
                                 .padding(0.dp)
                         ) {
+                            val articlemonBenfice = article.monPrixVent - article.monPrixAchat
+                            val monBeneficeUniter = articlemonBenfice / article.nmbrUnite
                             AutoResizedText(
-                                text = "Be>${if (articlesDataBaseDonne?.affichageUniteState == false) article.monBenfice else article.monBeneficeUniter}",
+                                text = "Be>${if (articlesDataBaseDonne?.affichageUniteState == false) String.format("%.1f", articlemonBenfice) else String.format("%.1f", monBeneficeUniter)}",
                                 textAlign = TextAlign.Center,
                                 color = DarkGreen,
                             )
@@ -237,7 +240,7 @@ fun ArticleBoardCard(
                                 .padding(0.dp)
                         ) {
                             AutoResizedText(
-                                text = "Pv>${if (articlesDataBaseDonne?.affichageUniteState == false) article.monPrixVent else article.monPrixVentUniter}",
+                                text = "Pv>${if (articlesDataBaseDonne?.affichageUniteState == false) String.format("%.1f", article.monPrixVent) else String.format("%.1f", article.monPrixVentUniter)}",
                                 textAlign = TextAlign.Center,
                                 color = Color.Red,
                             )
@@ -385,7 +388,6 @@ fun TopRowQuantitys(
         )
     }
 }
-// Composable Function to Display Article Information
 // Composable Function to Display Article Information
 @Composable
 fun DisplayArticleInformations(

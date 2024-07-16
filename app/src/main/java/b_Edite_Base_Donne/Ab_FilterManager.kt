@@ -27,13 +27,18 @@ fun Ab_FilterManager(
                 editeBaseDonneViewModel.orderByDateCreation()
                 onDismiss()
             },
-            onOrderByIdAndFilterByDiponibility = { // Ajout de la nouvelle fonction ici
+            onOrderByIdAndFilterByDiponibility = {
                 editeBaseDonneViewModel.orderByIdAndFilterByDiponibility()
                 onDismiss()
-            }
+            },
+            deletArticlesWher = {
+                editeBaseDonneViewModel.deleteFilteredArticles()
+                onDismiss()
+            },
         )
     }
 }
+
 
 
 @Composable
@@ -42,7 +47,8 @@ fun FilterDialog(
     onToggleFilter: () -> Unit,
     onDismiss: () -> Unit,
     onOrderByDate: () -> Unit,
-    onOrderByIdAndFilterByDiponibility: () -> Unit // Ajout de la nouvelle fonction ici
+    onOrderByIdAndFilterByDiponibility: () -> Unit,
+    deletArticlesWher: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -72,13 +78,21 @@ fun FilterDialog(
                 ) {
                     Text("Trier par date")
                 }
-                Button( // Ajout du nouveau bouton ici
+                Button(
                     onClick = onOrderByIdAndFilterByDiponibility,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Green
                     )
                 ) {
                     Text("Trier par ID et Filtrer par disponibilité")
+                }
+                Button(
+                    onClick = deletArticlesWher,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red
+                    )
+                ) {
+                    Text("deletArticlesWher")
                 }
             }
         }

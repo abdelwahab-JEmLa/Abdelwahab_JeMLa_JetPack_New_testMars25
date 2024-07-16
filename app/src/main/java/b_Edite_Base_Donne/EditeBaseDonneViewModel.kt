@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,30 @@ class EditeBaseDonneViewModel(
     init {
         initBaseDonneStatTabel()
         initDataBaseDonneForNewByStatInCompos()
+    }
+    fun deleteFilteredArticles() {
+        viewModelScope.launch {
+            val articles = articleDao.getAllArticlesOrder()
+            val filterList = articles.filter { it.nomCategorie == "supp" || it.nomCategorie == "New Categorie" }
+
+            // Supprimer les articles de la base de données locale
+            filterList.forEach { article ->
+                articleDao.delete(article)
+            }
+
+            val refFirebase = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
+
+            // Supprimer les articles de Firebase
+            filterList.forEach { article ->
+                refFirebase.child(article.idArticle.toString()).removeValue().addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        println("Article ${article.idArticle} supprimé de Firebase")
+                    } else {
+                        println("Erreur lors de la suppression de l'article ${article.idArticle} de Firebase")
+                    }
+                }
+            }
+        }
     }
 
     fun toggleFilter() {

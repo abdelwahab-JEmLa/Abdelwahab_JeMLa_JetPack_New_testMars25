@@ -91,7 +91,7 @@ fun MyApp(editeBaseDonneViewModel: EditeBaseDonneViewModel, articleDao: ArticleD
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
         composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel) }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao) }
     }
 }
 
