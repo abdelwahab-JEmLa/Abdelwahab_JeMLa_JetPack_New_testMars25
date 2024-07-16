@@ -3,6 +3,7 @@ package b_Edite_Base_Donne
 import a_RoomDB.BaseDonne
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
+import com.example.abdelwahabjemlajetpack.ui.theme.Pink80
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -62,7 +66,6 @@ import java.io.File
 @Composable
 fun A_Edite_Base_Screen(
     editeBaseDonneViewModel: EditeBaseDonneViewModel = viewModel(),
-    modifier: Modifier = Modifier,
 ) {
     val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()
     val articlesDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne
@@ -73,6 +76,7 @@ fun A_Edite_Base_Screen(
     var currentChangingField by remember { mutableStateOf("") }
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
     var articleDataBaseDonne by remember { mutableStateOf<BaseDonne?>(null) }
+    val focusManager = LocalFocusManager.current
 
     // Explication : Appliquez le filtre par Prix = 0.0
     Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel) { showDialog = false }
@@ -91,12 +95,12 @@ fun A_Edite_Base_Screen(
         content = { paddingValues ->
             ArticlesScreenList(
                 editeBaseDonneViewModel = editeBaseDonneViewModel,
-                articlesDataBaseDonne = articleDataBaseDonne,
+                articlesDataBaseDonne = articlesDataBaseDonne,
                 articlesBaseDonneStatTabel = articles,
                 selectedArticle = selectedArticle,
-                // Dans onArticleSelect
                 onArticleSelect = { article ->
                     val index = articles.indexOf(article)
+                    focusManager.clearFocus()
                     selectedArticle = article
                     coroutineScope.launch {
                         if (index >= 0) {
@@ -104,65 +108,73 @@ fun A_Edite_Base_Screen(
                         }
                     }
                     currentChangingField = ""
-                    articleDataBaseDonne = articlesDataBaseDonne.find { it.idArticle == article.idArticle }
+                    articleDataBaseDonne =
+                        articlesDataBaseDonne.find { it.idArticle == article.idArticle }
                 },
                 listState = listState,
                 currentChangingField = currentChangingField,
                 paddingValues = paddingValues,
-                function =  { currentChangingField = it },
+                function = { currentChangingField = it },
                 function1 = { articlesDataBaseDonne ->
                     if (articlesDataBaseDonne != null) {
                         articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
                         editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
                     }
+                },
+                onClickImageDimentionChangeur = { baseDonne ->
+                    val updatedArticle = baseDonne.copy(funChangeImagsDimention = !baseDonne.funChangeImagsDimention)
+                    editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
                 }
             )
         }
     )
 }
 
-
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ArticlesScreenList(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    articlesDataBaseDonne: BaseDonne?,
+    articlesDataBaseDonne: List<BaseDonne>,
     articlesBaseDonneStatTabel: List<BaseDonneStatTabel>,
     selectedArticle: BaseDonneStatTabel?,
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
     listState: LazyListState,
-    currentChangingField: String, // Add this parameter to receive padding values
+    currentChangingField: String,
     paddingValues: PaddingValues,
     function: (String) -> Unit,
     function1: (BaseDonne?) -> Unit,
+    onClickImageDimentionChangeur: (BaseDonne) -> Unit,
 ) {
-    val focusManager = LocalFocusManager.current
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.padding(paddingValues) // Apply padding values here
+        modifier = Modifier.padding(paddingValues)
     ) {
         itemsIndexed(items = articlesBaseDonneStatTabel.chunked(2)) { _, pairOfArticles ->
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (selectedArticle != null && pairOfArticles.contains(selectedArticle)) {
+                    val relatedBaseDonne = articlesDataBaseDonne.find { it.idArticle == selectedArticle.idArticle }
                     DisplayDetailleArticle(
                         article = selectedArticle,
-                        articlesDataBaseDonne= articlesDataBaseDonne,
+                        articlesDataBaseDonne = relatedBaseDonne,
                         editeBaseDonneViewModel = editeBaseDonneViewModel,
                         currentChangingField = currentChangingField,
                         function = function,
                         function1 = function1,
-                        )
+                    )
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     pairOfArticles.forEach { article ->
-                        ArticleBoardCard(article, editeBaseDonneViewModel) { updatedArticle ->
-                            onArticleSelect(updatedArticle)
-                            focusManager.clearFocus()
-                        }
+                        val relatedBaseDonne = articlesDataBaseDonne.find { it.idArticle == article.idArticle }
+                        ArticleBoardCard(
+                            article = article,
+                            articlesDataBaseDonne = relatedBaseDonne,
+                            onClickImageDimentionChangeur = onClickImageDimentionChangeur,
+                            onArticleSelect = onArticleSelect
+                        )
                     }
                 }
             }
@@ -173,31 +185,93 @@ fun ArticlesScreenList(
 @Composable
 fun ArticleBoardCard(
     article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    onClick: (BaseDonneStatTabel) -> Unit
+    articlesDataBaseDonne: BaseDonne?,
+    onClickImageDimentionChangeur: (BaseDonne) -> Unit,
+    onArticleSelect: (BaseDonneStatTabel) -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .width(170.dp)
             .clickable {
-                onClick(article)
+                if (articlesDataBaseDonne != null) {
+                    onClickImageDimentionChangeur(articlesDataBaseDonne)
+                }
+                onArticleSelect(article)
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.height(230.dp)
-            ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                LoadImageFromPath(imagePath = imagePath)
+        Box(
+            modifier = Modifier.padding(2.dp)
+        ) {
+            Column {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.height(230.dp)
+                ) {
+                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                    LoadImageFromPath(imagePath = imagePath)
+
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .background(Color.White.copy(alpha = 0.7f))
+                            .padding(0.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(0.3f)
+                                .background(Color.White.copy(alpha = 0.7f))
+                                .padding(0.dp)
+                        ) {
+                            AutoResizedText(
+                                text = "Be>${article.monBenfice}",
+                                textAlign = TextAlign.Center,
+                                color = Color.Green,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(0.7f)
+                                .background(Color.White.copy(alpha = 0.7f))
+                                .padding(0.dp)
+                        ) {
+                            AutoResizedText(
+                                text = "Pv>${article.monPrixVent}",
+                                textAlign = TextAlign.Center,
+                                color = Color.Red,
+                            )
+                        }
+                    }
+                }
+                AutoResizedText(
+                    text = capitalizeFirstLetter(article.nomArticleFinale),
+                    modifier = Modifier.padding(vertical = 0.dp),
+                    textAlign = TextAlign.Center,
+                    color = Color.Red
+                )
+                AutoResizedText(
+                    text = capitalizeFirstLetter(article.nomCategorie),
+                    modifier = Modifier.padding(vertical = 0.dp),
+                    textAlign = TextAlign.Center,
+                    color = Pink80
+                )
             }
-            Text(
-                text = article.nomArticleFinale,
-                modifier = Modifier.padding(8.dp)
-            )
+            if (articlesDataBaseDonne != null) {
+                IconButton(
+                    onClick = { onClickImageDimentionChangeur(articlesDataBaseDonne) },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                ) {
+                    Icon(
+                        imageVector = if (articlesDataBaseDonne.funChangeImagsDimention) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Toggle Favorite",
+                        tint = if (articlesDataBaseDonne.funChangeImagsDimention) Color.Red else Color.Green
+                    )
+                }
+            }
         }
     }
 }

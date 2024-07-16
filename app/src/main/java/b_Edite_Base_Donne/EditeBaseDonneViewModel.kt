@@ -179,7 +179,7 @@ class EditeBaseDonneViewModel(
                     it.benificeClient,
                     it.monBeneficeUniter,
                 )
-            }.filter { it.diponibilityState != "non Dispo" }
+            }.filter { it.diponibilityState != "Non Dispo" }
                 .sortedByDescending { it.idArticle } // Trier par idArticle dans l'ordre décroissant
 
             withContext(Dispatchers.Main) {
