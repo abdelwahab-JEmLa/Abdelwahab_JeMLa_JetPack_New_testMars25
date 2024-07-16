@@ -13,3 +13,6 @@ val Pink40 = Color(0xFF7D5260)
 val veriLightGray = Color(0xFFCFC6C6)
 
 val White = Color(0xFFFFFFFF)
+
+// Ajout de la couleur vert foncé
+val DarkGreen = Color(0xFF006400)

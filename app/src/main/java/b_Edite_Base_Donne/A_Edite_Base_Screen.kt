@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
+import com.example.abdelwahabjemlajetpack.ui.theme.DarkGreen
 import com.example.abdelwahabjemlajetpack.ui.theme.Pink80
 import kotlinx.coroutines.launch
 import java.io.File
@@ -227,9 +228,9 @@ fun ArticleBoardCard(
                                 .padding(0.dp)
                         ) {
                             AutoResizedText(
-                                text = "Be>${article.monBenfice}",
+                                text = "Be>${if (articlesDataBaseDonne?.affichageUniteState == false) article.monBenfice else article.monBeneficeUniter}",
                                 textAlign = TextAlign.Center,
-                                color = Color.Green,
+                                color = DarkGreen,
                             )
                         }
                         Box(
@@ -239,7 +240,7 @@ fun ArticleBoardCard(
                                 .padding(0.dp)
                         ) {
                             AutoResizedText(
-                                text = "Pv>${article.monPrixVent}",
+                                text = "Pv>${if (articlesDataBaseDonne?.affichageUniteState == false) article.monPrixVent else article.monPrixVentUniter}",
                                 textAlign = TextAlign.Center,
                                 color = Color.Red,
                             )
@@ -275,6 +276,7 @@ fun ArticleBoardCard(
         }
     }
 }
+
 
 @Composable
 fun DisplayDetailleArticle(
