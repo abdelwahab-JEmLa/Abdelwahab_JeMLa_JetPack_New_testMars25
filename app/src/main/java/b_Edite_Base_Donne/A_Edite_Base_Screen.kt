@@ -195,9 +195,6 @@ fun ArticleBoardCard(
         modifier = Modifier
             .width(170.dp)
             .clickable {
-                if (articlesDataBaseDonne != null) {
-                    onClickImageDimentionChangeur(articlesDataBaseDonne)
-                }
                 onArticleSelect(article)
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -269,7 +266,7 @@ fun ArticleBoardCard(
                     Icon(
                         imageVector = if (articlesDataBaseDonne.funChangeImagsDimention) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Toggle Favorite",
-                        tint = if (articlesDataBaseDonne.funChangeImagsDimention) Color.Red else Color.Green
+                        tint = if (articlesDataBaseDonne.funChangeImagsDimention) Color.Red else DarkGreen
                     )
                 }
             }
@@ -596,7 +593,7 @@ fun UniteToggleButton(
         Button(
             onClick = onClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (articleDataBaseDonneStat.affichageUniteState) Color.Green else Color.Red
+                containerColor = if (articleDataBaseDonneStat.affichageUniteState) DarkGreen else Color.Red
             ),
             modifier = Modifier
                 .padding(top = 8.dp)

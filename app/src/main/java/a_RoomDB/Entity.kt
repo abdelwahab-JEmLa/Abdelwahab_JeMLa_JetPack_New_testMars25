@@ -28,7 +28,7 @@ data class BaseDonne(
     var diponibilityState: String = "",
     var neaon2: String = "",
     var idCategorie: Double = 0.0,
-    var funChangeImagsDimention: Boolean = false,
+    var funChangeImagsDimention: Boolean = false, //imgStatIsSmall
     var nomCategorie: String = "",
     var neaon1: Double = 0.0,
     var lastUpdateState: String = "",
