@@ -34,6 +34,7 @@ import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.MainAppViewModelFactory
+import c_ManageBonsClients.ArticlesAcheteModeleDao
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -53,7 +54,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                MyApp(viewModel,database.articleDao() )
+                MyApp(viewModel,database.articleDao(),database.articlesAcheteModeleDao() )
             }
         }
     }
@@ -87,11 +88,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyApp(editeBaseDonneViewModel: EditeBaseDonneViewModel, articleDao: ArticleDao) {
+fun MyApp(
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    articleDao: ArticleDao,
+    articlesAcheteModeleDao: ArticlesAcheteModeleDao
+) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
         composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
         composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao) }
+     //   composable("C_ManageBonsClients") { C_ManageBonsClients(articlesAcheteModeleDao) }
     }
 }
 
@@ -139,7 +145,7 @@ fun MainScreen(
                         .fillMaxWidth()
                         .padding(8.dp)
                         .clickable {
-                            navController.navigate("DisplayeAndriodLabPractice")
+                            navController.navigate("C_ManageBonsClients")
                         },
                     elevation = CardDefaults.cardElevation(8.dp)
                 ) {
@@ -147,9 +153,9 @@ fun MainScreen(
                         modifier = Modifier
                             .padding(16.dp)
                     ) {
-                        Text("DisplayeAndriodLabPractice", style = MaterialTheme.typography.titleLarge)
+                        Text("C_ManageBonsClients", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Click to navigate to DisplayeAndriodLabPractice", style = MaterialTheme.typography.bodyMedium)
+                        Text("Click to navigate to C_ManageBonsClients", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }

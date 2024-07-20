@@ -4,6 +4,7 @@ import a_RoomDB.BaseDonne
 import android.util.Log
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.FirebaseDatabase
@@ -203,3 +204,50 @@ suspend fun transferFirebaseData() {
         Log.e("transferFirebaseData", "Failed to transfer data", e)
     }
 }
+
+suspend fun transferFirebaseDataArticlesAcheteModele() {
+    val refSource = Firebase.database.getReference("ArticlesAcheteModele")
+    val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
+
+    try {
+        // Clear existing data in the destination reference
+        refDestination.removeValue().await()
+
+        // Retrieve data from the source reference
+        val dataSnapshot = refSource.get().await()
+        val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+
+        // Map the data to ArticlesAcheteModele objects
+        dataMap.forEach { (key, value) ->
+            val article = ArticlesAcheteModele(
+                vid = (value["id"] as? Long) ?: 0,
+                idArticle = (value["idarticle_c"] as? Long) ?: 0,
+                nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
+                prix_1 = (value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0,
+                prixAchat = (value["prixachat_c"] as? Number)?.toDouble() ?: 0.0,
+                nmbrunite = (value["nmbunite_c"] as? Number)?.toInt() ?: 0,
+                clientPrixVentUnite = (value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0,
+                nomClient = value["nomclient_c"] as? String ?: "",
+                dateDachate = value["datedachate"] as? String ?: "",
+                nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
+                quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
+                nomCouleur2 = value["nomarticlefinale_c_2"] as? String ?: "",
+                quantityAcheteCouleur2 = (value["quantityachete_c_2"] as? Number)?.toInt() ?: 0,
+                nomCouleur3 = value["nomarticlefinale_c_3"] as? String ?: "",
+                quantityAcheteCouleur3 = (value["quantityachete_c_3"] as? Number)?.toInt() ?: 0,
+                nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
+                quantityAcheteCouleur41 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
+                totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
+                nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
+            )
+
+            // Insert the ArticlesAcheteModele object into the destination reference
+            refDestination.child(key).setValue(article).await()
+        }
+
+        Log.d("transferFirebaseData", "Data transfer completed successfully")
+    } catch (e: Exception) {
+        Log.e("transferFirebaseData", "Failed to transfer data", e)
+    }
+}
+

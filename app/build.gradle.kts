@@ -87,6 +87,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlin.reflect)
 
+    implementation(libs.androidx.material.icons.extended)
+
 }
 
 apply(plugin = "com.google.gms.google-services")

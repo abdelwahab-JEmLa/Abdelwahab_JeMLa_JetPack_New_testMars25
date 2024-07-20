@@ -1,9 +1,18 @@
 package com.example.abdelwahabjemlajetpack
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -20,10 +29,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +89,8 @@ fun TopAppBar(
     Dialog(dialogOpen, coroutineScope, editeBaseDonneViewModel, articleDao) { dialogOpen = false }
 }
 
+
+
 @Composable
 private fun Dialog(
     dialogOpen: Boolean,
@@ -88,17 +103,27 @@ private fun Dialog(
         AlertDialog(
             onDismissRequest = { onDismiss() },
             title = {
-                Text(text = "Import Firebase Data")
+                Text(
+                    text = "Import Firebase Data",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
             },
             text = {
-                Text(text = "Choisissez la référence Firebase:")
+                Text(
+                    text = "Choisissez la référence Firebase:",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
             },
             confirmButton = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    TextButton(
+                    DialogButton(
+                        text = "Import d_db_jetPack",
+                        icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
                                 importFromFirebase(
@@ -109,10 +134,10 @@ private fun Dialog(
                             }
                             onDismiss()
                         }
-                    ) {
-                        Text("Import d_db_jetPack", color = Color.Red)
-                    }
-                    TextButton(
+                    )
+                    DialogButton(
+                        text = "Import e_DBJetPackExport",
+                        icon = Icons.Default.DataUsage,
                         onClick = {
                             coroutineScope.launch {
                                 importFromFirebase(
@@ -123,10 +148,10 @@ private fun Dialog(
                             }
                             onDismiss()
                         }
-                    ) {
-                        Text("Import e_DBJetPackExport", color = Color.Red)
-                    }
-                    TextButton(
+                    )
+                    DialogButton(
+                        text = "Import e_DBJetPackExport to DataBaseDonne",
+                        icon = Icons.Default.Storage,
                         onClick = {
                             coroutineScope.launch {
                                 importFromFirebaseToDataBaseDonne(
@@ -136,18 +161,69 @@ private fun Dialog(
                             }
                             onDismiss()
                         }
-                    ) {
-                        Text("Import e_DBJetPackExport to DataBaseDonne", color = Color.Red)
-                    }
+                    )
+                    DialogButton(
+                        text = "Transfer FirebaseData ArticlesAcheteModele",
+                        icon = Icons.Default.Transform,
+                        onClick = {
+                            coroutineScope.launch {
+                                transferFirebaseDataArticlesAcheteModele()
+                            }
+                            onDismiss()
+                        }
+                    )
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { onDismiss() }
+                    onClick = { onDismiss() },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Cancel", color = Color.Gray)
+                    Icon(
+                        imageVector = Icons.Default.Cancel,
+                        contentDescription = "Cancel",
+                        tint = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Cancel",
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         )
     }
 }
+
+@Composable
+private fun DialogButton(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = Color.Red
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = text,
+                color = Color.Red,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
