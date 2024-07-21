@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
@@ -47,6 +49,7 @@ fun TopAppBar(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var dialogOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     androidx.compose.material3.TopAppBar(
         title = { Text("d_db_jetPack") },
@@ -86,19 +89,21 @@ fun TopAppBar(
             }
         }
     )
-    Dialog(dialogOpen, coroutineScope, editeBaseDonneViewModel, articleDao) { dialogOpen = false }
+    Dialog(context,dialogOpen, coroutineScope, editeBaseDonneViewModel, articleDao) { dialogOpen = false }
 }
 
 
 
 @Composable
 private fun Dialog(
+    context: Context,
     dialogOpen: Boolean,
     coroutineScope: CoroutineScope,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
     onDismiss: () -> Unit
 ) {
+
     if (dialogOpen) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
@@ -167,7 +172,7 @@ private fun Dialog(
                         icon = Icons.Default.Transform,
                         onClick = {
                             coroutineScope.launch {
-                                transferFirebaseDataArticlesAcheteModele()
+                                transferFirebaseDataArticlesAcheteModele(context)
                             }
                             onDismiss()
                         }

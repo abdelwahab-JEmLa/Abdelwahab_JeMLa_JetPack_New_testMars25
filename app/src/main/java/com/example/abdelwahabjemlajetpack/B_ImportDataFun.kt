@@ -13,7 +13,10 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-
+import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.withContext
 
 suspend fun importFromFirebaseToDataBaseDonne(
     refFireBase: String,
@@ -205,20 +208,18 @@ suspend fun transferFirebaseData() {
     }
 }
 
-suspend fun transferFirebaseDataArticlesAcheteModele() {
+
+suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context) {
     val refSource = Firebase.database.getReference("ArticlesAcheteModele")
     val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
-
     try {
         // Clear existing data in the destination reference
         refDestination.removeValue().await()
-
         // Retrieve data from the source reference
         val dataSnapshot = refSource.get().await()
         val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
-
         // Map the data to ArticlesAcheteModele objects
-        dataMap.forEach { (key, value) ->
+        dataMap.forEach { (_, value) ->
             val article = ArticlesAcheteModele(
                 vid = (value["id"] as? Long) ?: 0,
                 idArticle = (value["idarticle_c"] as? Long) ?: 0,
@@ -240,14 +241,22 @@ suspend fun transferFirebaseDataArticlesAcheteModele() {
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
             )
-
             // Insert the ArticlesAcheteModele object into the destination reference
-            refDestination.child(key).setValue(article).await()
+            // Use idArticle as the child key
+            refDestination.child(article.idArticle.toString()).setValue(article).await()
         }
-
         Log.d("transferFirebaseData", "Data transfer completed successfully")
+
+        // Show toast message on the main thread
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, "Transfert terminé avec succès", Toast.LENGTH_SHORT).show()
+        }
     } catch (e: Exception) {
         Log.e("transferFirebaseData", "Failed to transfer data", e)
+
+        // Show error toast message on the main thread
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, "Échec du transfert: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 }
-
