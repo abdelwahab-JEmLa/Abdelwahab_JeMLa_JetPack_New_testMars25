@@ -1,6 +1,5 @@
 package c_ManageBonsClients
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -46,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -56,8 +53,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
-import com.example.abdelwahabjemlajetpack.R
+import b_Edite_Base_Donne.LoadImageFromPath
+import b_Edite_Base_Donne.capitalizeFirstLetter
 import com.example.abdelwahabjemlajetpack.ui.theme.DarkGreen
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -66,13 +63,12 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun C_ManageBonsClients(
-) {
+fun C_ManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
+    var selectedArticleId by remember { mutableStateOf<Long?>(null) } // Changed from String? to Long?
     var showDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -82,7 +78,13 @@ fun C_ManageBonsClients(
     LaunchedEffect(Unit) {
         articlesAcheteModeleRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                articles = dataSnapshot.children.mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
+                val newArticles = dataSnapshot.children.mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
+                articles = newArticles
+                selectedArticleId?.let { id ->
+                    if (newArticles.none { it.idArticle == id }) {
+                        selectedArticleId = null
+                    }
+                }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -105,6 +107,8 @@ fun C_ManageBonsClients(
     ) { paddingValues ->
         DisplayManageBonsClients(
             articles = articles,
+            selectedArticleId = selectedArticleId,
+            onArticleSelect = { selectedArticleId = it },
             coroutineScope = coroutineScope,
             listState = listState,
             paddingValues = paddingValues
@@ -115,12 +119,13 @@ fun C_ManageBonsClients(
 @Composable
 fun DisplayManageBonsClients(
     articles: List<ArticlesAcheteModele>,
+    selectedArticleId: Long?, // Changed from String? to Long?
+    onArticleSelect: (Long?) -> Unit, // Changed from (String?) -> Unit to (Long?) -> Unit
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     paddingValues: PaddingValues
 ) {
     var currentChangingField by remember { mutableStateOf("") }
-    var selectedArticle by remember { mutableStateOf<ArticlesAcheteModele?>(null) }
     val focusManager = LocalFocusManager.current
 
     LazyColumn(
@@ -129,16 +134,14 @@ fun DisplayManageBonsClients(
     ) {
         itemsIndexed(items = articles.chunked(2)) { _, pairOfArticles ->
             Column(modifier = Modifier.fillMaxWidth()) {
-                selectedArticle?.let { article ->
-                    if (pairOfArticles.contains(article)) {
-                        DisplayDetailleArticle(
-                            article = article,
-                            currentChangingField = currentChangingField,
-                            onValueOutlineChange = {
-                                currentChangingField = it
-                            }
-                        )
-                    }
+                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                    DisplayDetailleArticle(
+                        article = article,
+                        currentChangingField = currentChangingField,
+                        onValueOutlineChange = {
+                            currentChangingField = it
+                        }
+                    )
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -150,7 +153,7 @@ fun DisplayManageBonsClients(
                             onClickNonTrouveState = {  },
                             onArticleSelect = {
                                 focusManager.clearFocus()
-                                selectedArticle = it
+                                onArticleSelect(it.idArticle)
                                 coroutineScope.launch {
                                     val index = articles.indexOf(it)
                                     if (index >= 0) {
@@ -225,6 +228,7 @@ fun ArticleBoardCard(
         }
     }
 }
+
 @Composable
 fun DisplayDetailleArticle(
     article: ArticlesAcheteModele,
@@ -379,34 +383,6 @@ fun AutoResizedText(
         )
     }
 }
-
-@Composable
-fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
-    val defaultDrawable = R.drawable.neaveau
-    val imageExist: String? = when {
-        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-        File("$imagePath.webp").exists() -> "$imagePath.webp"
-        else -> null
-    }
-
-    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .wrapContentSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painter,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.wrapContentSize(Alignment.Center)
-        )
-    }
-}
-
 fun capitalizeFirstLetter(text: String): String {
     return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
