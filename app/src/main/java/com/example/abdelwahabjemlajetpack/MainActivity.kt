@@ -98,7 +98,7 @@ fun MyApp(
     NavHost(navController = navController, startDestination = "main_screen") {
         composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
         composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao) }
-        composable("C_ManageBonsClients") { C_ManageBonsClients() } //TODO pk le card ne s affiche pas
+        composable("C_ManageBonsClients") { C_ManageBonsClients() }
     }
 }
 

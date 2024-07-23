@@ -1,7 +1,5 @@
 
-import b_Edite_Base_Donne.LoadImageFromPath
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateRect
 import androidx.compose.animation.core.tween
@@ -47,12 +45,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import b_Edite_Base_Donne.LoadImageFromPath
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.launch
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class,)
 @Composable
 fun LazyGridApp() {
     var articlesList by rememberSaveable { mutableStateOf(generateArticles()) }

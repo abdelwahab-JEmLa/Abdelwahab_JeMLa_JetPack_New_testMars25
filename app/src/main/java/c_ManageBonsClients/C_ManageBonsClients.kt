@@ -1,12 +1,16 @@
 package c_ManageBonsClients
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,7 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -116,11 +120,12 @@ fun C_ManageBonsClients() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DisplayManageBonsClients(
     articles: List<ArticlesAcheteModele>,
-    selectedArticleId: Long?, // Changed from String? to Long?
-    onArticleSelect: (Long?) -> Unit, // Changed from (String?) -> Unit to (Long?) -> Unit
+    selectedArticleId: Long?,
+    onArticleSelect: (Long?) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     paddingValues: PaddingValues
@@ -128,48 +133,76 @@ fun DisplayManageBonsClients(
     var currentChangingField by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
-    LazyColumn(
-        state = listState,
+    // Group articles by nomClient
+    val groupedArticles = articles.groupBy { it.nomClient }
+
+    BoxWithConstraints(
         modifier = Modifier.padding(paddingValues)
     ) {
-        itemsIndexed(items = articles.chunked(2)) { _, pairOfArticles ->
-            Column(modifier = Modifier.fillMaxWidth()) {
-                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
-                    DisplayDetailleArticle(
-                        article = article,
-                        currentChangingField = currentChangingField,
-                        onValueOutlineChange = {
-                            currentChangingField = it
-                        }
+        val height = maxHeight
+        var selectedItemOffset by remember { mutableStateOf(0f) }
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            groupedArticles.forEach { (nomClient, clientArticles) ->
+                stickyHeader {
+                    Text(
+                        text = nomClient,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(8.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    pairOfArticles.forEach { article ->
-                        ArticleBoardCard(
-                            article = article,
-                            onClickNonTrouveState = {  },
-                            onArticleSelect = {
-                                focusManager.clearFocus()
-                                onArticleSelect(it.idArticle)
-                                coroutineScope.launch {
-                                    val index = articles.indexOf(it)
-                                    if (index >= 0) {
-                                        listState.scrollToItem(index / 2)
-                                    }
+
+                items(clientArticles.chunked(2)) { pairOfArticles ->
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                            DisplayDetailleArticle(
+                                article = article,
+                                currentChangingField = currentChangingField,
+                                onValueOutlineChange = {
+                                    currentChangingField = it
                                 }
-                                currentChangingField = ""
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            pairOfArticles.forEach { article ->
+                                ArticleBoardCard(
+                                    article = article,
+                                    onClickNonTrouveState = { },
+                                    onArticleSelect = { selectedArticle ->
+                                        focusManager.clearFocus()
+                                        onArticleSelect(selectedArticle.idArticle)
+                                        coroutineScope.launch {
+                                            val layoutInfo = listState.layoutInfo
+                                            val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                                            val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
+
+                                            selectedItemInfo?.let {
+                                                selectedItemOffset = it.offset.toFloat()
+                                                val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
+                                                listState.animateScrollBy(scrollOffset)
+                                            }
+                                        }
+                                        currentChangingField = ""
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
