@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
+import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.LoadImageFromPath
 import b_Edite_Base_Donne.capitalizeFirstLetter
 import com.example.abdelwahabjemlajetpack.ui.theme.DarkGreen
@@ -203,6 +204,7 @@ fun DisplayManageBonsClients(
         }
     }
 }
+
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
@@ -307,22 +309,28 @@ fun OutlinesChangers(
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
-
         OutlineTextEditeRegle(
             columnToChange = "monPrixVentBons",
             abbreviation = "mpv",
-            onValueChange = onValueOutlineChange,
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueOutlineChange(columnChanged)
+                val monBenificeBC = newValue.toDoubleOrNull()?.minus(article.getColumnValue("prixAchat") as? Double ?: 0.0) ?: 0.0
+                    updateFirebase("monBenificeBC", monBenificeBC.toString(), article.idArticle.toString())
+            },
             currentChangingField = currentChangingField,
             article = article,
             modifier = Modifier
                 .weight(1f)
                 .height(67.dp)
         )
-        //
         OutlineTextEditeRegle(
-            columnToChange = "monPrixVentBons",
-            abbreviation = "mpv",
-            onValueChange = onValueOutlineChange,
+            columnToChange = "monBenificeBC",
+            abbreviation = "mB",
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueOutlineChange(columnChanged)
+                val monPrixVentBons = newValue.toDoubleOrNull()?.plus(article.getColumnValue("prixAchat") as? Double ?: 0.0) ?: 0.0
+                updateFirebase("monPrixVentBons", monPrixVentBons.toString(), article.idArticle.toString())
+            },
             currentChangingField = currentChangingField,
             article = article,
             modifier = Modifier
@@ -333,6 +341,21 @@ fun OutlinesChangers(
     }
 }
 
+fun updateFirebase(columnChanged: String, newValue: String, articleId: String) {
+    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId)
+    val articleUpdate = articleFromFireBase.child(columnChanged)
+    articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
+}
+
+fun ArticlesAcheteModele.getColumnValue(columnName: String): Any {
+    return when (columnName) {
+        "monPrixVentBons" -> monPrixVentBons
+        "prixAchat" -> prixAchat
+        "monBenificeBC" -> monBenificeBC
+        else -> ""
+    }
+}
+
 @Composable
 fun OutlineTextEditeRegle(
     columnToChange: String,
@@ -340,13 +363,12 @@ fun OutlineTextEditeRegle(
     currentChangingField: String,
     article: ArticlesAcheteModele,
     modifier: Modifier = Modifier,
-    onValueChange: (String) -> Unit
+    calculateOthersRelated: (String, String) -> Unit
 ) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
+    var textFieldValue by remember { mutableStateOf((article.getColumnValue(columnToChange) as? Double)?.toString() ?: "") }
 
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    val labelValue = (article.getColumnValue(columnToChange) as? Double)?.toString() ?: ""
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -358,10 +380,8 @@ fun OutlineTextEditeRegle(
             value = textValue,
             onValueChange = { newValue ->
                 textFieldValue = newValue
-                onValueChange(columnToChange)
-
-                val articleUpdate = articleFromFireBase.child(columnToChange)
-                articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
+                updateFirebase(columnToChange, newValue, article.idArticle.toString())
+                calculateOthersRelated(columnToChange, newValue)
             },
             label = {
                 AutoResizedText(
@@ -433,10 +453,3 @@ fun capitalizeFirstLetter(text: String): String {
     return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
 
-fun ArticlesAcheteModele.getColumnValue(columnName: String): Any? {
-    return when (columnName) {
-        "monPrixVentBons" -> monPrixVentBons
-        // Add other columns as needed
-        else -> null
-    }
-}

@@ -25,8 +25,9 @@ data class ArticlesAcheteModele(
     val totalQuantity: Int = 0,
     val nonTrouveState: Boolean = false,
     val verifieState: Boolean = false,
-    var changeCaronState: String = ""
-) {
+    var changeCaronState: String = "",
+    var monBenificeBC: Double =  0.0,
+    ) {
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
 }
