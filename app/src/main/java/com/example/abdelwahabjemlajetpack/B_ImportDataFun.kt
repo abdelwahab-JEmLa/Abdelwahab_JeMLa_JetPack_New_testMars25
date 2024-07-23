@@ -14,9 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import android.widget.Toast
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.withContext
 
 suspend fun importFromFirebaseToDataBaseDonne(
     refFireBase: String,
@@ -224,7 +221,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 vid = (value["id"] as? Long) ?: 0,
                 idArticle = (value["idarticle_c"] as? Long) ?: 0,
                 nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
-                prix_1 = (value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0,
+                monPrixVentBons = (value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0,
                 prixAchat = (value["prixachat_c"] as? Number)?.toDouble() ?: 0.0,
                 nmbrunite = (value["nmbunite_c"] as? Number)?.toInt() ?: 0,
                 clientPrixVentUnite = (value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0,
@@ -237,7 +234,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 nomCouleur3 = value["nomarticlefinale_c_3"] as? String ?: "",
                 quantityAcheteCouleur3 = (value["quantityachete_c_3"] as? Number)?.toInt() ?: 0,
                 nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
-                quantityAcheteCouleur41 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
+                quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
             )

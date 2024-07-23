@@ -231,7 +231,7 @@ fun ArticleBoardCard(
                             .padding(0.dp)
                     ) {
                         AutoResizedText(
-                            text = "Pv>${article.prix_1}",
+                            text = "Pv>${article.monPrixVentBons}",
                             textAlign = TextAlign.Center,
                             color = Color.Red,
                         )
@@ -307,8 +307,9 @@ fun OutlinesChangers(
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
+
         OutlineTextEditeRegle(
-            columnToChange = "prix_1",
+            columnToChange = "monPrixVentBons",
             abbreviation = "mpv",
             onValueChange = onValueOutlineChange,
             currentChangingField = currentChangingField,
@@ -317,6 +318,18 @@ fun OutlinesChangers(
                 .weight(1f)
                 .height(67.dp)
         )
+        //
+        OutlineTextEditeRegle(
+            columnToChange = "monPrixVentBons",
+            abbreviation = "mpv",
+            onValueChange = onValueOutlineChange,
+            currentChangingField = currentChangingField,
+            article = article,
+            modifier = Modifier
+                .weight(1f)
+                .height(67.dp)
+        )
+
     }
 }
 
@@ -422,7 +435,7 @@ fun capitalizeFirstLetter(text: String): String {
 
 fun ArticlesAcheteModele.getColumnValue(columnName: String): Any? {
     return when (columnName) {
-        "prix_1" -> prix_1
+        "monPrixVentBons" -> monPrixVentBons
         // Add other columns as needed
         else -> null
     }
