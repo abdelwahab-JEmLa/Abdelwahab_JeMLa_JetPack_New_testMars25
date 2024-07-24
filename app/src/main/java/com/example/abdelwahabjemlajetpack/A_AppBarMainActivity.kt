@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -138,7 +137,8 @@ private fun Dialog(
                                 )
                             }
                             onDismiss()
-                        }
+                        },
+                        tint2 = Color.Black
                     )
                     DialogButton(
                         text = "Import e_DBJetPackExport",
@@ -152,11 +152,12 @@ private fun Dialog(
                                 )
                             }
                             onDismiss()
-                        }
+                        },
+                        tint2 = Color.Black
                     )
                     DialogButton(
-                        text = "Import e_DBJetPackExport to DataBaseDonne",
-                        icon = Icons.Default.Storage,
+                        text = "Import e_DBJetPackExport",
+                        icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
                                 importFromFirebaseToDataBaseDonne(
@@ -165,11 +166,13 @@ private fun Dialog(
                                 )
                             }
                             onDismiss()
-                        }
+                        },
+                        tint2 = Color.Red
                     )
                     DialogButton(
                         text = "Transfer FirebaseData ArticlesAcheteModele",
                         icon = Icons.Default.Transform,
+                        tint2 = Color.Black,
                         onClick = {
                             coroutineScope.launch {
                                 transferFirebaseDataArticlesAcheteModele(context)
@@ -206,8 +209,12 @@ private fun Dialog(
 private fun DialogButton(
     text: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    tint2: Color? = null
 ) {
+    val iconTint = tint2 ?: Color.Black // Use tint2 if not null, otherwise use Color.Red as default
+    val textColor = tint2 ?: Color.Black // Use tint2 if not null, otherwise use Color.Black as default
+
     TextButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
@@ -220,12 +227,12 @@ private fun DialogButton(
             Icon(
                 imageVector = icon,
                 contentDescription = text,
-                tint = Color.Red
+                tint = iconTint
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = text,
-                color = Color.Red,
+                color = textColor,
                 textAlign = TextAlign.Center
             )
         }
