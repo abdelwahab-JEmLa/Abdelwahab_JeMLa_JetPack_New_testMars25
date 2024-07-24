@@ -28,8 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,7 +64,6 @@ import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.capitalizeFirstLetter
 import coil.compose.rememberAsyncImagePainter
 import com.example.abdelwahabjemlajetpack.R
-import com.example.abdelwahabjemlajetpack.ui.theme.DarkGreen
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -185,7 +182,9 @@ fun DisplayManageBonsClients(
                             pairOfArticles.forEach { article ->
                                 ArticleBoardCard(
                                     article = article,
-                                    onClickNonTrouveState = { },
+                                    onClickNonTrouveState = { clickedArticle ->
+                                        updateNonTrouveState(clickedArticle)
+                                    },
                                     onArticleSelect = { selectedArticle ->
                                         focusManager.clearFocus()
                                         onArticleSelect(selectedArticle.idArticle)
@@ -211,26 +210,28 @@ fun DisplayManageBonsClients(
         }
     }
 }
-
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
     onClickNonTrouveState: (ArticlesAcheteModele) -> Unit,
     onArticleSelect: (ArticlesAcheteModele) -> Unit
 ) {
+    val cardColor = if (!article.nonTrouveState) Color.Red else Color.White
+    val textColor = if (!article.nonTrouveState) Color.White else Color.Red
+
     Card(
         shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .width(170.dp)
-            .clickable { onArticleSelect(article) },
+        modifier = Modifier.width(170.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
         Box(modifier = Modifier.padding(2.dp)) {
             Column {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.height(230.dp)
+                    modifier = Modifier
+                        .height(230.dp)
+                        .clickable { onArticleSelect(article) }
                 ) {
                     if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
                         SingleColorImage(article)
@@ -240,13 +241,29 @@ fun ArticleBoardCard(
 
                     PriceOverlay(article.monPrixVentBons)
                 }
-                ArticleName(article.nomArticleFinale)
-                FavoriteButton(
-                    nonTrouveState = article.nonTrouveState,
-                    onClick = { onClickNonTrouveState(article) }
+                ArticleName(
+                    name = article.nomArticleFinale,
+                    color = textColor,
+                    onNameClick = { onClickNonTrouveState(article) }
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ArticleName(name: String, color: Color, onNameClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onNameClick)
+    ) {
+        AutoResizedText(
+            text = capitalizeFirstLetter(name),
+            modifier = Modifier.padding(vertical = 4.dp),
+            textAlign = TextAlign.Center,
+            color = color
+        )
     }
 }
 
@@ -288,6 +305,12 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
     }
 }
 
+// Update Firebase function
+fun updateNonTrouveState(article: ArticlesAcheteModele) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
+}
+
 @Composable
 private fun PriceOverlay(price: Double) {
     Box(
@@ -320,21 +343,7 @@ private fun ArticleName(name: String) {
     )
 }
 
-@Composable
-private fun FavoriteButton(nonTrouveState: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.BottomEnd
-    ) {
-        IconButton(onClick = onClick) {
-            Icon(
-                imageVector = if (nonTrouveState) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = "Toggle Favorite",
-                tint = if (nonTrouveState) Color.Red else DarkGreen
-            )
-        }
-    }
-}
+
 
 @Composable
 fun ImageWithColorName(imagePath: String, colorName: String?) {
