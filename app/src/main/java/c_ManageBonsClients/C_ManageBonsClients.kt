@@ -312,8 +312,49 @@ fun InformationsChanger(
             ColumnBenifices(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
             ColumnPVetPa(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
         }
+        RowAutresInfo(article, onValueChange, currentChangingField,)
     }
 }
+@Composable
+private fun RowAutresInfo(
+    article: ArticlesAcheteModele,
+    onValueChange: (String,) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier
+) {
+    Row {
+        OutlineTextEditeRegle(
+            columnToChange = "clientPrixVentUnite",
+            abbreviation = "cVU",
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueChange(columnChanged)
+            },
+            currentChangingField = currentChangingField,
+            article = article,
+            modifier = Modifier
+                .weight(1f)
+                .height(67.dp)
+
+        )
+        OutlineTextEditeRegle(
+            columnToChange = "nmbrunitBC",
+            abbreviation = "nu",
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueChange(columnChanged)
+            },
+            currentChangingField = currentChangingField,
+            article = article,
+            modifier = Modifier
+                .weight(1f)
+                .height(67.dp)
+
+        )
+
+    }
+
+}
+
+
 
 @Composable
 private fun ColumnBenifices(
@@ -451,43 +492,44 @@ private fun ColumnPVetPa(
                         .height(67.dp)
                 )
             }
-        }
+    }
 
 }
 
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
     when (columnChanged) {
+
         "benificeClient" -> {
-            up("benificeDivise", ((newValueDouble / ar.nmbrunite) - (ar.prixAchat / ar.nmbrunite)).toString(), ar.idArticle)
-            up("monBenificeUniterBC", (((ar.clientPrixVentUnite * ar.nmbrunite) - newValueDouble - ar.prixAchat) / ar.nmbrunite).toString(), ar.idArticle)
-            up("monBenificeBC", ((ar.clientPrixVentUnite * ar.nmbrunite) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", ((ar.clientPrixVentUnite * ar.nmbrunite - newValueDouble) / ar.nmbrunite).toString(), ar.idArticle)
-            up("monPrixVentBons", (ar.clientPrixVentUnite * ar.nmbrunite - newValueDouble).toString(), ar.idArticle)
+            up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monBenificeUniterBC", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeBC", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentBons", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
         }
         "monBenificeUniterBC" -> {
-            up("monBenificeBC", (newValueDouble * ar.nmbrunite).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", (newValueDouble + (ar.prixAchat / ar.nmbrunite)).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunite + ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeBC", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
         }
         "monBenificeBC" -> {
-            up("monBenificeUniterBC", (newValueDouble / ar.nmbrunite).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", ((newValueDouble / ar.nmbrunite) + (ar.prixAchat / ar.nmbrunite)).toString(), ar.idArticle)
+            up("monBenificeUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
             up("monPrixVentBons", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
         }
         "monPrixAchatUniterBC" -> {
-            up("prixAchat", (newValueDouble * ar.nmbrunite).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunite + ar.monBenificeBC).toString(), ar.idArticle)
+            up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBC).toString(), ar.idArticle)
         }
         "prixAchat" -> {
             up("monPrixVentBons", (newValueDouble + ar.monBenificeBC).toString(), ar.idArticle)
         }
         "monPrixVentUniterBC" -> {
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunite).toString(), ar.idArticle)
-            up("monBenificeBC", (newValueDouble * ar.nmbrunite - ar.prixAchat).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeBC", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
         }
         "monPrixVentBons" -> {
-            up("monPrixVentUniterBC", (newValueDouble / ar.nmbrunite).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monBenificeBC", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
         }
     }
@@ -562,6 +604,7 @@ fun OutlineTextEditeRegle(
         )
     }
 }
+
 @Composable
 fun AutoResizedTextBC(
     text: String,

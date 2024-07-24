@@ -222,7 +222,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
                 monPrixVentBons = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
                 prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
-                nmbrunite = (value["nmbunite_c"] as? Number)?.toInt() ?: 0,
+                nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
                 clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
                 nomClient = value["nomclient_c"] as? String ?: "",
                 dateDachate = value["datedachate"] as? String ?: "",
@@ -238,11 +238,11 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
             ).apply {
                 monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
-                monBenificeUniterBC = roundToOneDecimal(if (nmbrunite != 0) monBenificeBC / nmbrunite else 0.0)
-                monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunite != 0) prixAchat / nmbrunite else 0.0)
-                monPrixVentUniterBC = roundToOneDecimal(if (nmbrunite != 0) monPrixVentBons / nmbrunite else 0.0)
-                benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunite) - prixAchat) / 2)
-                benificeClient = roundToOneDecimal((clientPrixVentUnite * nmbrunite) - monPrixVentBons)
+                monBenificeUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBC / nmbrunitBC else 0.0)
+                monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
+                monPrixVentUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBons / nmbrunitBC else 0.0)
+                benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
+                benificeClient = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBons)
             }
 
             refDestination.child(article.idArticle.toString()).setValue(article).await()

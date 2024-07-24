@@ -10,7 +10,7 @@ data class ArticlesAcheteModele(
     val nomArticleFinale: String = "",
     val monPrixVentBons: Double = 0.0,
     val prixAchat: Double = 0.0,
-    val nmbrunite: Int = 0,
+    val nmbrunitBC: Double = 0.0,
     val clientPrixVentUnite: Double = 0.0,
     val nomClient: String = "",
     val dateDachate: String = "",
@@ -37,7 +37,8 @@ data class ArticlesAcheteModele(
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
     fun getColumnValue(columnName: String): Any = when (columnName) {
-        "nmbrunite" -> nmbrunite
+        "clientPrixVentUnite" -> clientPrixVentUnite
+        "nmbrunitBC" -> nmbrunitBC
         "monPrixAchatUniterBC" -> monPrixAchatUniterBC
         "prixAchat" -> prixAchat
         "monPrixVentUniterBC" -> monPrixVentUniterBC
@@ -46,6 +47,7 @@ data class ArticlesAcheteModele(
         "monBenificeBC" -> monBenificeBC
         "benificeDivise" -> benificeDivise
         "benificeClient" -> benificeClient
+
         else -> ""
     }
 }
