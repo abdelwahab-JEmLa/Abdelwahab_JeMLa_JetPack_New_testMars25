@@ -1,6 +1,7 @@
 package c_ManageBonsClients
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +51,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -57,8 +63,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import b_Edite_Base_Donne.AutoResizedText
-import b_Edite_Base_Donne.LoadImageFromPath
 import b_Edite_Base_Donne.capitalizeFirstLetter
+import coil.compose.rememberAsyncImagePainter
+import com.example.abdelwahabjemlajetpack.R
 import com.example.abdelwahabjemlajetpack.ui.theme.DarkGreen
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -67,6 +74,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -224,44 +232,162 @@ fun ArticleBoardCard(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.height(230.dp)
                 ) {
-                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                    LoadImageFromPath(imagePath = imagePath)
-                    Box(
-                        modifier = Modifier
-                            .background(Color.White.copy(alpha = 0.7f))
-                            .padding(0.dp)
-                    ) {
-                        AutoResizedText(
-                            text = "Pv>${article.monPrixVentBons}",
-                            textAlign = TextAlign.Center,
-                            color = Color.Red,
-                        )
+                    if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
+                        SingleColorImage(article)
+                    } else {
+                        MultiColorGrid(article)
                     }
+
+                    PriceOverlay(article.monPrixVentBons)
                 }
-                AutoResizedText(
-                    text = capitalizeFirstLetter(article.nomArticleFinale),
-                    modifier = Modifier.padding(vertical = 0.dp),
-                    textAlign = TextAlign.Center,
-                    color = Color.Red
+                ArticleName(article.nomArticleFinale)
+                FavoriteButton(
+                    nonTrouveState = article.nonTrouveState,
+                    onClick = { onClickNonTrouveState(article) }
                 )
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
-                    IconButton(
-                        onClick = { onClickNonTrouveState(article) }
-                    ) {
-                        Icon(
-                            imageVector = if (article.nonTrouveState) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Toggle Favorite",
-                            tint = if (article.nonTrouveState) Color.Red else DarkGreen
-                        )
-                    }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SingleColorImage(article: ArticlesAcheteModele) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+        LoadImageFromPathBC(imagePath = imagePath)
+        if (!article.nomCouleur1.contains("stan", ignoreCase = true)) {
+            ColorNameOverlay(colorName = article.nomCouleur1)
+        }
+    }
+}
+
+@Composable
+private fun MultiColorGrid(article: ArticlesAcheteModele) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        listOf(
+            article.quantityAcheteCouleur1 to article.nomCouleur1,
+            article.quantityAcheteCouleur2 to article.nomCouleur2,
+            article.quantityAcheteCouleur3 to article.nomCouleur3,
+            article.quantityAcheteCouleur4 to article.nomCouleur4
+        ).forEachIndexed { index, (quantity, colorName) ->
+            item {
+                if (quantity > 0) {
+                    ImageWithColorName(
+                        imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}",
+                        colorName = if (!colorName.contains("stan", ignoreCase = true)) colorName else null
+                    )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun PriceOverlay(price: Double) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(4.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Box(
+            modifier = Modifier
+                .background(Color.White.copy(alpha = 0.7f))
+                .padding(4.dp)
+        ) {
+            AutoResizedText(
+                text = "Pv>$price",
+                textAlign = TextAlign.Center,
+                color = Color.Red,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArticleName(name: String) {
+    AutoResizedText(
+        text = capitalizeFirstLetter(name),
+        modifier = Modifier.padding(vertical = 4.dp),
+        textAlign = TextAlign.Center,
+        color = Color.Red
+    )
+}
+
+@Composable
+private fun FavoriteButton(nonTrouveState: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = if (nonTrouveState) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = "Toggle Favorite",
+                tint = if (nonTrouveState) Color.Red else DarkGreen
+            )
+        }
+    }
+}
+
+@Composable
+fun ImageWithColorName(imagePath: String, colorName: String?) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        LoadImageFromPathBC(imagePath = imagePath)
+        colorName?.let { ColorNameOverlay(colorName = it) }
+    }
+}
+
+
+@Composable
+fun ColorNameOverlay(colorName: String) {
+    Text(
+        text = colorName,
+        color = Color.Red,
+        modifier = Modifier
+            .rotate(45f)
+            .background(Color.White.copy(alpha = 0.7f))
+            .padding(4.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
+    val defaultDrawable = R.drawable.blanc
+    val imageExist: String? = when {
+        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
+        File("$imagePath.webp").exists() -> "$imagePath.webp"
+        else -> null
+    }
+
+    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .wrapContentSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.wrapContentSize(Alignment.Center)
+        )
+    }
+}
+
 
 @Composable
 fun DisplayDetailleArticle(
@@ -499,7 +625,6 @@ private fun ColumnPVetPa(
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
     when (columnChanged) {
-
         "benificeClient" -> {
             up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
             up("monBenificeUniterBC", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
