@@ -77,7 +77,7 @@ import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun C_ManageBonsClients() {
+fun C_ManageBonsClients () {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var selectedArticleId by remember { mutableStateOf<Long?>(null) } // Changed from String? to Long?
     var showDialog by remember { mutableStateOf(false) }
@@ -139,7 +139,8 @@ fun DisplayManageBonsClients(
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
-    var isFiltered by remember { mutableStateOf(false) }
+    var filteredClients by remember { mutableStateOf(emptySet<String>()) }
+    var verificationModeClients by remember { mutableStateOf(emptySet<String>()) }
 
     // Group articles by nomClient
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -167,13 +168,32 @@ fun DisplayManageBonsClients(
                         Text(
                             text = nomClient,
                             color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.clickable {
+                                if (verificationModeClients.contains(nomClient)) {
+                                    // Toggle verification mode off
+                                    verificationModeClients = verificationModeClients - nomClient
+                                } else if (filteredClients.contains(nomClient)) {
+                                    // Enter verification mode
+                                    verificationModeClients = verificationModeClients + nomClient
+                                } else {
+                                    // Enter filter mode
+                                    filteredClients = filteredClients + nomClient
+                                }
+                            }
                         )
                         IconButton(
-                            onClick = { isFiltered = !isFiltered }
+                            onClick = {
+                                if (filteredClients.contains(nomClient)) {
+                                    filteredClients = filteredClients - nomClient
+                                    verificationModeClients = verificationModeClients - nomClient
+                                } else {
+                                    filteredClients = filteredClients + nomClient
+                                }
+                            }
                         ) {
                             Icon(
-                                imageVector = if (isFiltered) Icons.Default.Check else Icons.Default.FilterList,
+                                imageVector = if (filteredClients.contains(nomClient)) Icons.Default.Check else Icons.Default.FilterList,
                                 contentDescription = "Filter",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
@@ -181,7 +201,7 @@ fun DisplayManageBonsClients(
                     }
                 }
 
-                val filteredArticles = if (isFiltered) {
+                val filteredArticles = if (filteredClients.contains(nomClient)) {
                     clientArticles.filter { !it.nonTrouveState }
                 } else {
                     clientArticles
@@ -223,6 +243,10 @@ fun DisplayManageBonsClients(
                                             }
                                         }
                                         currentChangingField = ""
+                                    },
+                                    isVerificationMode = verificationModeClients.contains(article.nomClient),
+                                    onVerificationStateChange = { clickedArticle ->
+                                        updateVerifieState(clickedArticle)
                                     }
                                 )
                             }
@@ -238,9 +262,15 @@ fun DisplayManageBonsClients(
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
     onClickNonTrouveState: (ArticlesAcheteModele) -> Unit,
-    onArticleSelect: (ArticlesAcheteModele) -> Unit
+    onArticleSelect: (ArticlesAcheteModele) -> Unit,
+    isVerificationMode: Boolean,
+    onVerificationStateChange: (ArticlesAcheteModele) -> Unit
 ) {
-    val cardColor = if (!article.nonTrouveState) Color.Red else Color.White
+    val cardColor = when {
+        !article.nonTrouveState -> Color.Red
+        isVerificationMode && article.verifieState -> Color.Yellow
+        else -> Color.White
+    }
     val textColor = if (!article.nonTrouveState) Color.White else Color.Red
 
     Card(
@@ -255,7 +285,13 @@ fun ArticleBoardCard(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .height(230.dp)
-                        .clickable { onArticleSelect(article) }
+                        .clickable {
+                            if (isVerificationMode) {
+                                onVerificationStateChange(article)
+                            } else {
+                                onArticleSelect(article)
+                            }
+                        }
                 ) {
                     if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
                         SingleColorImage(article)
@@ -269,8 +305,9 @@ fun ArticleBoardCard(
                     name = article.nomArticleFinale,
                     color = textColor,
                     onNameClick = {
-                        onClickNonTrouveState(article)
-                        updateVerifieState(article)
+                        if (!isVerificationMode) {
+                            onClickNonTrouveState(article)
+                        }
                     }
                 )
             }
