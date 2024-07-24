@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -137,6 +139,7 @@ fun DisplayManageBonsClients(
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
+    var isFiltered by remember { mutableStateOf(false) }
 
     // Group articles by nomClient
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -153,18 +156,38 @@ fun DisplayManageBonsClients(
         ) {
             groupedArticles.forEach { (nomClient, clientArticles) ->
                 stickyHeader {
-                    Text(
-                        text = nomClient,
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primary)
                             .padding(8.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = nomClient,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        IconButton(
+                            onClick = { isFiltered = !isFiltered }
+                        ) {
+                            Icon(
+                                imageVector = if (isFiltered) Icons.Default.Check else Icons.Default.FilterList,
+                                contentDescription = "Filter",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
                 }
 
-                items(clientArticles.chunked(2)) { pairOfArticles ->
+                val filteredArticles = if (isFiltered) {
+                    clientArticles.filter { !it.nonTrouveState }
+                } else {
+                    clientArticles
+                }
+
+                items(filteredArticles.chunked(2)) { pairOfArticles ->
                     Column(modifier = Modifier.fillMaxWidth()) {
                         pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
                             DisplayDetailleArticle(
@@ -210,6 +233,7 @@ fun DisplayManageBonsClients(
         }
     }
 }
+
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
@@ -244,13 +268,26 @@ fun ArticleBoardCard(
                 ArticleName(
                     name = article.nomArticleFinale,
                     color = textColor,
-                    onNameClick = { onClickNonTrouveState(article) }
+                    onNameClick = {
+                        onClickNonTrouveState(article)
+                        updateVerifieState(article)
+                    }
                 )
             }
         }
     }
 }
 
+// Update Firebase functions
+fun updateNonTrouveState(article: ArticlesAcheteModele) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
+}
+
+fun updateVerifieState(article: ArticlesAcheteModele) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("verifieState").setValue(!article.verifieState)
+}
 @Composable
 private fun ArticleName(name: String, color: Color, onNameClick: () -> Unit) {
     Box(
@@ -305,11 +342,6 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
     }
 }
 
-// Update Firebase function
-fun updateNonTrouveState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
-}
 
 @Composable
 private fun PriceOverlay(price: Double) {
