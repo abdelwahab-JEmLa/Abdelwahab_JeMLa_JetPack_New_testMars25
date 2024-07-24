@@ -374,7 +374,7 @@ private fun ColumnBenifices(
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
-                        .weight(0.3f)
+                        .weight(0.4f)
                         .height(67.dp)
                 )
 
@@ -388,7 +388,7 @@ private fun ColumnBenifices(
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
-                        .weight(0.7f)
+                        .weight(0.6f)
                         .height(67.dp)
                 )
             }
@@ -403,7 +403,7 @@ private fun ColumnBenifices(
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
-                        .weight(0.3f)
+                        .weight(0.4f)
                         .height(67.dp)
                 )
 
@@ -417,7 +417,7 @@ private fun ColumnBenifices(
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
-                        .weight(0.7f)
+                        .weight(0.6f)
                         .height(67.dp)
                 )
             }
@@ -445,7 +445,7 @@ private fun ColumnPVetPa(
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
-                        .weight(0.3f)
+                        .weight(0.4f)
                         .height(67.dp)
                 )
 
