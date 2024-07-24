@@ -516,6 +516,7 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
             up("monBenificeUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monPrixVentUniterBC", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
             up("monPrixVentBons", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
+            up("benificeClient", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
         }
         "monPrixAchatUniterBC" -> {
             up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
@@ -531,6 +532,7 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
         "monPrixVentBons" -> {
             up("monPrixVentUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monBenificeBC", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("benificeClient", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
         }
     }
 }
