@@ -33,7 +33,6 @@ data class ArticlesAcheteModele(
     var benificeDivise: Double =  0.0,
     var benificeClient: Double =  0.0,
 
-
     ) {
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)

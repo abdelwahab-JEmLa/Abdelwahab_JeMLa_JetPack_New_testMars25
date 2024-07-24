@@ -14,6 +14,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import kotlin.math.round
 
 suspend fun importFromFirebaseToDataBaseDonne(
     refFireBase: String,
@@ -205,26 +206,24 @@ suspend fun transferFirebaseData() {
     }
 }
 
-
 suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context) {
     val refSource = Firebase.database.getReference("ArticlesAcheteModele")
     val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
     try {
-        // Clear existing data in the destination reference
         refDestination.removeValue().await()
-        // Retrieve data from the source reference
+
         val dataSnapshot = refSource.get().await()
         val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
-        // Map the data to ArticlesAcheteModele objects
+
         dataMap.forEach { (_, value) ->
             val article = ArticlesAcheteModele(
                 vid = (value["id"] as? Long) ?: 0,
                 idArticle = (value["idarticle_c"] as? Long) ?: 0,
                 nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
-                monPrixVentBons = (value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0,
-                prixAchat = (value["prixachat_c"] as? Number)?.toDouble() ?: 0.0,
+                monPrixVentBons = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
+                prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
                 nmbrunite = (value["nmbunite_c"] as? Number)?.toInt() ?: 0,
-                clientPrixVentUnite = (value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0,
+                clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
                 nomClient = value["nomclient_c"] as? String ?: "",
                 dateDachate = value["datedachate"] as? String ?: "",
                 nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
@@ -236,24 +235,33 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
                 quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
-                nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0,
-            )
-            // Insert the ArticlesAcheteModele object into the destination reference
-            // Use idArticle as the child key
+                nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
+            ).apply {
+                monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
+                monBenificeUniterBC = roundToOneDecimal(if (nmbrunite != 0) monBenificeBC / nmbrunite else 0.0)
+                monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunite != 0) prixAchat / nmbrunite else 0.0)
+                monPrixVentUniterBC = roundToOneDecimal(if (nmbrunite != 0) monPrixVentBons / nmbrunite else 0.0)
+                benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunite) - prixAchat) / 2)
+                benificeClient = roundToOneDecimal((clientPrixVentUnite * nmbrunite) - monPrixVentBons)
+            }
+
             refDestination.child(article.idArticle.toString()).setValue(article).await()
         }
+
         Log.d("transferFirebaseData", "Data transfer completed successfully")
 
-        // Show toast message on the main thread
         withContext(Dispatchers.Main) {
             Toast.makeText(context, "Transfert terminé avec succès", Toast.LENGTH_SHORT).show()
         }
     } catch (e: Exception) {
         Log.e("transferFirebaseData", "Failed to transfer data", e)
 
-        // Show error toast message on the main thread
         withContext(Dispatchers.Main) {
             Toast.makeText(context, "Échec du transfert: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
+}
+
+fun roundToOneDecimal(value: Double): Double {
+    return round(value * 10) / 10
 }

@@ -46,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -323,14 +324,12 @@ private fun ColumnBenifices(
 ) {
         Column (modifier = modifier.fillMaxWidth()){
             Row {
-                val benificeTotale = (article.clientPrixVentUnite * article.nmbrunite) - article.prixAchat
                 OutlineTextEditeRegle(
                     columnToChange = "benificeDivise",
                     abbreviation = "b/2",
                     calculateOthersRelated = { columnChanged, newValue ->
                         onValueChange(columnChanged)
                     },
-                    labelCalculated = (benificeTotale / 2).toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -345,7 +344,6 @@ private fun ColumnBenifices(
                         onValueChange(columnChanged, )
                         updateRelatedFields(article, columnChanged, newValue)
                     },
-                    labelCalculated = (benificeTotale - article.prixAchat).toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -361,7 +359,6 @@ private fun ColumnBenifices(
                         onValueChange(columnChanged, )
                         updateRelatedFields(article, columnChanged, newValue)
                     },
-                    labelCalculated = (article.monBenificeBC / article.nmbrunite).toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -376,7 +373,6 @@ private fun ColumnBenifices(
                         onValueChange(columnChanged, )
                         updateRelatedFields(article, columnChanged, newValue)
                     },
-                    labelCalculated = article.monBenificeBC.toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -405,7 +401,6 @@ private fun ColumnPVetPa(
                         onValueChange(columnChanged, )
                         updateRelatedFields(article, columnChanged, newValue)
                     },
-                    labelCalculated = (article.prixAchat / article.nmbrunite).toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -435,7 +430,6 @@ private fun ColumnPVetPa(
                         onValueChange(columnChanged, )
                         updateRelatedFields(article, columnChanged, newValue)
                     },
-                    labelCalculated = (article.monPrixVentBons / article.nmbrunite).toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -450,7 +444,6 @@ private fun ColumnPVetPa(
                         onValueChange(columnChanged, )
                         updateRelatedFields(article, columnChanged, newValue)
                     },
-                    labelCalculated = article.monPrixVentBons.toString(),
                     currentChangingField = currentChangingField,
                     article = article,
                     modifier = Modifier
@@ -500,6 +493,7 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
     }
 }
 
+//updateFireBase
 fun up(columnChanged: String, newValue: String, articleId: Long) {
     val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
     val articleUpdate = articleFromFireBase.child(columnChanged)
@@ -544,7 +538,7 @@ fun OutlineTextEditeRegle(
                 calculateOthersRelated(columnToChange, newValue)
             },
             label = {
-                AutoResizedText(
+                AutoResizedTextBC(
                     text = "$abbreviation$roundedValue",
                     color = Color.Red,
                     modifier = Modifier.fillMaxWidth(),
@@ -568,4 +562,47 @@ fun OutlineTextEditeRegle(
         )
     }
 }
+@Composable
+fun AutoResizedTextBC(
+    text: String,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    modifier: Modifier = Modifier,
+    color: Color = style.color,
+    textAlign: TextAlign = TextAlign.Center,
+    bodyLarge: Boolean = false
+) {
+    var resizedTextStyle by remember { mutableStateOf(style) }
+    var readyToDraw by remember { mutableStateOf(false) }
 
+    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
+    val minFontSize = 8.sp // Set a minimum font size to prevent text from becoming too small
+
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = color,
+            modifier = Modifier.drawWithContent {
+                if (readyToDraw) drawContent()
+            },
+            softWrap = false,
+            style = resizedTextStyle,
+            textAlign = textAlign,
+            onTextLayout = { result ->
+                if (result.didOverflowWidth) {
+                    if (resizedTextStyle.fontSize > minFontSize) {
+                        resizedTextStyle = resizedTextStyle.copy(
+                            fontSize = (resizedTextStyle.fontSize.value * 0.95f).sp
+                        )
+                    } else {
+                        readyToDraw = true // Stop resizing if we've reached the minimum font size
+                    }
+                } else {
+                    readyToDraw = true // Text fits, ready to draw
+                }
+            }
+        )
+    }
+}
