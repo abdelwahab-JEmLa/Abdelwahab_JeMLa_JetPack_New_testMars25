@@ -27,7 +27,26 @@ data class ArticlesAcheteModele(
     val verifieState: Boolean = false,
     var changeCaronState: String = "",
     var monBenificeBC: Double =  0.0,
+    var monBenificeUniterBC: Double =  0.0,
+    var monPrixAchatUniterBC: Double =  0.0,
+    var monPrixVentUniterBC: Double =  0.0,
+    var benificeDivise: Double =  0.0,
+    var benificeClient: Double =  0.0,
+
+
     ) {
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
+    fun getColumnValue(columnName: String): Any = when (columnName) {
+        "nmbrunite" -> nmbrunite
+        "monPrixAchatUniterBC" -> monPrixAchatUniterBC
+        "prixAchat" -> prixAchat
+        "monPrixVentUniterBC" -> monPrixVentUniterBC
+        "monPrixVentBons" -> monPrixVentBons
+        "monBenificeUniterBC" -> monBenificeUniterBC
+        "monBenificeBC" -> monBenificeBC
+        "benificeDivise" -> benificeDivise
+        "benificeClient" -> benificeClient
+        else -> ""
+    }
 }

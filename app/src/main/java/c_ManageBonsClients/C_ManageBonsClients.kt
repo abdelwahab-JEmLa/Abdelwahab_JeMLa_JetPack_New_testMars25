@@ -46,7 +46,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -55,7 +54,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.LoadImageFromPath
@@ -279,10 +277,10 @@ fun DisplayDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            OutlinesChangers(
+            InformationsChanger(
                 article = article,
                 currentChangingField = currentChangingField,
-                onValueOutlineChange = onValueOutlineChange
+                onValueChange = onValueOutlineChange
             )
             Box(
                 modifier = Modifier
@@ -302,64 +300,217 @@ fun DisplayDetailleArticle(
 }
 
 @Composable
-fun OutlinesChangers(
+fun InformationsChanger(
     article: ArticlesAcheteModele,
-    onValueOutlineChange: (String) -> Unit,
+    onValueChange: (String, ) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier.fillMaxWidth()) {
-        OutlineTextEditeRegle(
-            columnToChange = "monPrixVentBons",
-            abbreviation = "mpv",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueOutlineChange(columnChanged)
-                val monBenificeBC = newValue.toDoubleOrNull()?.minus(article.getColumnValue("prixAchat") as? Double ?: 0.0) ?: 0.0
-                    updateFirebase("monBenificeBC", monBenificeBC.toString(), article.idArticle.toString())
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp)
-        )
-        OutlineTextEditeRegle(
-            columnToChange = "monBenificeBC",
-            abbreviation = "mB",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueOutlineChange(columnChanged)
-                val monPrixVentBons = newValue.toDoubleOrNull()?.plus(article.getColumnValue("prixAchat") as? Double ?: 0.0) ?: 0.0
-                updateFirebase("monPrixVentBons", monPrixVentBons.toString(), article.idArticle.toString())
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp)
-        )
-
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row {
+            ColumnBenifices(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
+            ColumnPVetPa(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
+        }
     }
 }
 
-fun updateFirebase(columnChanged: String, newValue: String, articleId: String) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId)
+@Composable
+private fun ColumnBenifices(
+    article: ArticlesAcheteModele,
+    onValueChange: (String,) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier
+) {
+        Column (modifier = modifier.fillMaxWidth()){
+            Row {
+                val benificeTotale = (article.clientPrixVentUnite * article.nmbrunite) - article.prixAchat
+                OutlineTextEditeRegle(
+                    columnToChange = "benificeDivise",
+                    abbreviation = "b/2",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                    },
+                    labelCalculated = (benificeTotale / 2).toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .height(67.dp)
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "benificeClient",
+                    abbreviation = "bC",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    labelCalculated = (benificeTotale - article.prixAchat).toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.7f)
+                        .height(67.dp)
+                )
+            }
+            Row {
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeUniterBC",
+                    abbreviation = "/U",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    labelCalculated = (article.monBenificeBC / article.nmbrunite).toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .height(67.dp)
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeBC",
+                    abbreviation = "mB",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    labelCalculated = article.monBenificeBC.toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.7f)
+                        .height(67.dp)
+                )
+            }
+        }
+
+}
+
+@Composable
+private fun ColumnPVetPa(
+    article: ArticlesAcheteModele,
+    onValueChange: (String, ) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier
+
+) {
+    Column (modifier = modifier.fillMaxWidth()){
+            Row {
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixAchatUniterBC",
+                    abbreviation = "/U",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    labelCalculated = (article.prixAchat / article.nmbrunite).toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .height(67.dp)
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "prixAchat",
+                    abbreviation = "mpA",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.71f)
+                        .height(67.dp)
+                )
+            }
+            Row {
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentUniterBC",
+                    abbreviation = "/U",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    labelCalculated = (article.monPrixVentBons / article.nmbrunite).toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .height(67.dp)
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentBons",
+                    abbreviation = "mpV",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged, )
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    labelCalculated = article.monPrixVentBons.toString(),
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .height(67.dp)
+                )
+            }
+        }
+
+}
+
+fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
+    val newValueDouble = newValue.toDoubleOrNull() ?: return
+    when (columnChanged) {
+        "benificeClient" -> {
+            up("benificeDivise", ((newValueDouble / ar.nmbrunite) - (ar.prixAchat / ar.nmbrunite)).toString(), ar.idArticle)
+            up("monBenificeUniterBC", (((ar.clientPrixVentUnite * ar.nmbrunite) - newValueDouble - ar.prixAchat) / ar.nmbrunite).toString(), ar.idArticle)
+            up("monBenificeBC", ((ar.clientPrixVentUnite * ar.nmbrunite) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", ((ar.clientPrixVentUnite * ar.nmbrunite - newValueDouble) / ar.nmbrunite).toString(), ar.idArticle)
+            up("monPrixVentBons", (ar.clientPrixVentUnite * ar.nmbrunite - newValueDouble).toString(), ar.idArticle)
+        }
+        "monBenificeUniterBC" -> {
+            up("monBenificeBC", (newValueDouble * ar.nmbrunite).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", (newValueDouble + (ar.prixAchat / ar.nmbrunite)).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunite + ar.prixAchat).toString(), ar.idArticle)
+        }
+        "monBenificeBC" -> {
+            up("monBenificeUniterBC", (newValueDouble / ar.nmbrunite).toString(), ar.idArticle)
+            up("monPrixVentUniterBC", ((newValueDouble / ar.nmbrunite) + (ar.prixAchat / ar.nmbrunite)).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
+        }
+        "monPrixAchatUniterBC" -> {
+            up("prixAchat", (newValueDouble * ar.nmbrunite).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunite + ar.monBenificeBC).toString(), ar.idArticle)
+        }
+        "prixAchat" -> {
+            up("monPrixVentBons", (newValueDouble + ar.monBenificeBC).toString(), ar.idArticle)
+        }
+        "monPrixVentUniterBC" -> {
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunite).toString(), ar.idArticle)
+            up("monBenificeBC", (newValueDouble * ar.nmbrunite - ar.prixAchat).toString(), ar.idArticle)
+        }
+        "monPrixVentBons" -> {
+            up("monPrixVentUniterBC", (newValueDouble / ar.nmbrunite).toString(), ar.idArticle)
+            up("monBenificeBC", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+        }
+    }
+}
+
+fun up(columnChanged: String, newValue: String, articleId: Long) {
+    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
     val articleUpdate = articleFromFireBase.child(columnChanged)
     articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
-}
-
-fun ArticlesAcheteModele.getColumnValue(columnName: String): Any {
-    return when (columnName) {
-        "monPrixVentBons" -> monPrixVentBons
-        "prixAchat" -> prixAchat
-        "monBenificeBC" -> monBenificeBC
-        else -> ""
-    }
 }
 
 @Composable
 fun OutlineTextEditeRegle(
     columnToChange: String,
     abbreviation: String,
+    labelCalculated: String = "",
     currentChangingField: String,
     article: ArticlesAcheteModele,
     modifier: Modifier = Modifier,
@@ -368,8 +519,18 @@ fun OutlineTextEditeRegle(
     var textFieldValue by remember { mutableStateOf((article.getColumnValue(columnToChange) as? Double)?.toString() ?: "") }
 
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = (article.getColumnValue(columnToChange) as? Double)?.toString() ?: ""
-
+    // Déterminer la valeur de l'étiquette
+    val labelValue = labelCalculated.ifEmpty { (article.getColumnValue(columnToChange) as? Double)?.toString() ?: "" }
+    val roundedValue = try {
+        val doubleValue = labelValue.toDouble()
+        if (doubleValue % 1 == 0.0) {
+            doubleValue.toInt().toString()
+        } else {
+            String.format("%.1f", doubleValue)
+        }
+    } catch (e: NumberFormatException) {
+        labelValue // Retourner la valeur initiale en cas d'exception
+    }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
@@ -380,12 +541,11 @@ fun OutlineTextEditeRegle(
             value = textValue,
             onValueChange = { newValue ->
                 textFieldValue = newValue
-                updateFirebase(columnToChange, newValue, article.idArticle.toString())
                 calculateOthersRelated(columnToChange, newValue)
             },
             label = {
                 AutoResizedText(
-                    text = "$abbreviation$labelValue",
+                    text = "$abbreviation$roundedValue",
                     color = Color.Red,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -407,49 +567,5 @@ fun OutlineTextEditeRegle(
             )
         )
     }
-}
-
-@Composable
-fun AutoResizedText(
-    text: String,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
-    modifier: Modifier = Modifier,
-    color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center,
-    bodyLarge: Boolean = false
-) {
-    var resizedTextStyle by remember { mutableStateOf(style) }
-    var shouldDraw by remember { mutableStateOf(false) }
-
-    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
-
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = color,
-            modifier = Modifier.drawWithContent {
-                if (shouldDraw) drawContent()
-            },
-            softWrap = false,
-            style = resizedTextStyle,
-            textAlign = textAlign,
-            onTextLayout = { result ->
-                if (result.didOverflowWidth) {
-                    if (style.fontSize.isUnspecified) {
-                        resizedTextStyle = resizedTextStyle.copy(fontSize = defaultFontSize)
-                    }
-                    resizedTextStyle = resizedTextStyle.copy(fontSize = resizedTextStyle.fontSize * 0.95)
-                } else {
-                    shouldDraw = true
-                }
-            }
-        )
-    }
-}
-fun capitalizeFirstLetter(text: String): String {
-    return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
 

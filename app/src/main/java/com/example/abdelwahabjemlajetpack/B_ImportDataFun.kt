@@ -2,6 +2,7 @@ package com.example.abdelwahabjemlajetpack
 
 import a_RoomDB.BaseDonne
 import android.util.Log
+import android.widget.Toast
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import c_ManageBonsClients.ArticlesAcheteModele
@@ -13,7 +14,6 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import android.widget.Toast
 
 suspend fun importFromFirebaseToDataBaseDonne(
     refFireBase: String,
@@ -236,7 +236,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
                 quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
-                nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
+                nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0,
             )
             // Insert the ArticlesAcheteModele object into the destination reference
             // Use idArticle as the child key
