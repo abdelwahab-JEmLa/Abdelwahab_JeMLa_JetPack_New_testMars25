@@ -140,8 +140,7 @@ fun DisplayManageBonsClients(
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
-    var filteredClients by remember { mutableStateOf(emptySet<String>()) }
-    var verificationModeClients by remember { mutableStateOf(emptySet<String>()) }
+    var activeClients by remember { mutableStateOf(emptySet<String>()) }
 
     // Group articles by nomClient
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -170,39 +169,26 @@ fun DisplayManageBonsClients(
                             text = nomClient,
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.clickable {
-                                if (verificationModeClients.contains(nomClient)) {
-                                    // Toggle verification mode off
-                                    verificationModeClients = verificationModeClients - nomClient
-                                } else if (filteredClients.contains(nomClient)) {
-                                    // Enter verification mode
-                                    verificationModeClients = verificationModeClients + nomClient
-                                } else {
-                                    // Enter filter mode
-                                    filteredClients = filteredClients + nomClient
-                                }
-                            }
                         )
                         IconButton(
                             onClick = {
-                                if (filteredClients.contains(nomClient)) {
-                                    filteredClients = filteredClients - nomClient
-                                    verificationModeClients = verificationModeClients - nomClient
+                                activeClients = if (activeClients.contains(nomClient)) {
+                                    activeClients - nomClient
                                 } else {
-                                    filteredClients = filteredClients + nomClient
+                                    activeClients + nomClient
                                 }
                             }
                         ) {
                             Icon(
-                                imageVector = if (filteredClients.contains(nomClient)) Icons.Default.Check else Icons.Default.FilterList,
-                                contentDescription = "Filter",
+                                imageVector = if (activeClients.contains(nomClient)) Icons.Default.Check else Icons.Default.FilterList,
+                                contentDescription = "Toggle Verification and Filter",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
                 }
 
-                val filteredArticles = if (filteredClients.contains(nomClient)) {
+                val filteredArticles = if (activeClients.contains(nomClient)) {
                     clientArticles.filter { !it.nonTrouveState }
                 } else {
                     clientArticles
@@ -229,6 +215,9 @@ fun DisplayManageBonsClients(
                                     onClickNonTrouveState = { clickedArticle ->
                                         updateNonTrouveState(clickedArticle)
                                     },
+                                    onClickVerificated = { clickedArticle ->
+                                        updateVerifieState(clickedArticle)
+                                    },
                                     onArticleSelect = { selectedArticle ->
                                         focusManager.clearFocus()
                                         onArticleSelect(selectedArticle.idArticle)
@@ -245,10 +234,7 @@ fun DisplayManageBonsClients(
                                         }
                                         currentChangingField = ""
                                     },
-                                    isVerificationMode = verificationModeClients.contains(article.nomClient),
-                                    onVerificationStateChange = { clickedArticle ->
-                                        updateVerifieState(clickedArticle)
-                                    }
+                                    isVerificationMode = activeClients.contains(article.nomClient),
                                 )
                             }
                         }
@@ -258,21 +244,20 @@ fun DisplayManageBonsClients(
         }
     }
 }
-
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
     onClickNonTrouveState: (ArticlesAcheteModele) -> Unit,
     onArticleSelect: (ArticlesAcheteModele) -> Unit,
     isVerificationMode: Boolean,
-    onVerificationStateChange: (ArticlesAcheteModele) -> Unit
+    onClickVerificated: (ArticlesAcheteModele) -> Unit
 ) {
     val cardColor = when {
-        !article.nonTrouveState -> Color.Red
-        isVerificationMode && article.verifieState -> Color.Yellow
+        article.nonTrouveState -> Color.Red
+        article.verifieState -> Color.Yellow
         else -> Color.White
     }
-    val textColor = if (!article.nonTrouveState) Color.White else Color.Red
+    val textColor = if (!article.nonTrouveState) Color.Black else Color.White
 
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -286,13 +271,7 @@ fun ArticleBoardCard(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .height(230.dp)
-                        .clickable {
-                            if (isVerificationMode) {
-                                onVerificationStateChange(article)
-                            } else {
-                                onArticleSelect(article)
-                            }
-                        }
+                        .clickable { onArticleSelect(article) }
                 ) {
                     if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
                         SingleColorImage(article)
@@ -306,7 +285,9 @@ fun ArticleBoardCard(
                     name = article.nomArticleFinale,
                     color = textColor,
                     onNameClick = {
-                        if (!isVerificationMode) {
+                        if (isVerificationMode) {
+                            onClickVerificated(article)
+                        } else {
                             onClickNonTrouveState(article)
                         }
                     }
@@ -316,16 +297,6 @@ fun ArticleBoardCard(
     }
 }
 
-// Update Firebase functions
-fun updateNonTrouveState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
-}
-
-fun updateVerifieState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("verifieState").setValue(!article.verifieState)
-}
 @Composable
 private fun ArticleName(name: String, color: Color, onNameClick: () -> Unit) {
     Box(
@@ -341,6 +312,18 @@ private fun ArticleName(name: String, color: Color, onNameClick: () -> Unit) {
         )
     }
 }
+
+// Update Firebase functions
+fun updateNonTrouveState(article: ArticlesAcheteModele) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
+}
+
+fun updateVerifieState(article: ArticlesAcheteModele) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("verifieState").setValue(!article.verifieState)
+}
+
 
 @Composable
 private fun SingleColorImage(article: ArticlesAcheteModele) {

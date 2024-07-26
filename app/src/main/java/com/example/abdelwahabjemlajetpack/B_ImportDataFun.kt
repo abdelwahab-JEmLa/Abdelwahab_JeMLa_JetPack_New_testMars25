@@ -235,7 +235,8 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
                 quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
-                nonTrouveState = (value["trouve_c"] as? Number)?.toInt() == 0
+                nonTrouveState = false,
+                verifieState= false,
             ).apply {
                 monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
                 monBenificeUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBC / nmbrunitBC else 0.0)
