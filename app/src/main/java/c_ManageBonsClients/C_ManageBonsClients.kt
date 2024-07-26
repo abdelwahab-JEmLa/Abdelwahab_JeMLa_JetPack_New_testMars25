@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
@@ -43,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +58,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -128,6 +132,33 @@ fun C_ManageBonsClients () {
     }
 }
 
+
+@Composable
+fun KeyboardAwareLayout(content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    val windowInsets = WindowInsets.ime
+
+    val imeHeight by remember {
+        derivedStateOf {
+            windowInsets.getBottom(density)
+        }
+    }
+
+    val imeVisible by remember {
+        derivedStateOf {
+            imeHeight > 0
+        }
+    }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(bottom = with(density) { imeHeight.toDp() })
+    ) {
+        content()
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DisplayManageBonsClients(
@@ -150,7 +181,7 @@ fun DisplayManageBonsClients(
     ) {
         val height = maxHeight
         var selectedItemOffset by remember { mutableFloatStateOf(0f) }
-
+        KeyboardAwareLayout {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize()
@@ -241,16 +272,17 @@ fun DisplayManageBonsClients(
                     }
                 }
             }
-        }
+        }}
     }
 }
+
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
     onClickNonTrouveState: (ArticlesAcheteModele) -> Unit,
     onArticleSelect: (ArticlesAcheteModele) -> Unit,
     isVerificationMode: Boolean,
-    onClickVerificated: (ArticlesAcheteModele) -> Unit
+    onClickVerificated: (ArticlesAcheteModele) -> Unit,
 ) {
     val cardColor = when {
         article.nonTrouveState -> Color.Red
@@ -281,26 +313,48 @@ fun ArticleBoardCard(
 
                     PriceOverlay(article.monPrixVentBons)
                 }
-                ArticleName(
-                    name = article.nomArticleFinale,
-                    color = textColor,
-                    onNameClick = {
-                        if (isVerificationMode) {
-                            onClickVerificated(article)
-                        } else {
-                            onClickNonTrouveState(article)
-                        }
-                    }
-                )
+                Row {
+                    var totalQuantityText by remember { mutableStateOf("") }
+
+                    OutlinedTextField(
+                        value = totalQuantityText,
+                        onValueChange = { newValue ->
+                            totalQuantityText = newValue
+                            val newTotalQuantity = newValue.toIntOrNull() ?: 0
+                            val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+                            val articleUpdate = articleFromFireBase.child("totalQuantity")
+                            articleUpdate.setValue(newTotalQuantity)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        label = { Text(text = "${article.totalQuantity}") },
+                        modifier = Modifier.weight(0.3f)
+                    )
+                    ArticleName(
+                        name = article.nomArticleFinale,
+                        color = textColor,
+                        onNameClick = {
+                            if (isVerificationMode) {
+                                onClickVerificated(article)
+                            } else {
+                                onClickNonTrouveState(article)
+                            }
+                        },
+                        modifier = Modifier.weight(0.7f)
+                    )
+                }
             }
         }
     }
 }
-
 @Composable
-private fun ArticleName(name: String, color: Color, onNameClick: () -> Unit) {
+private fun ArticleName(
+    name: String,
+    color: Color,
+    onNameClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onNameClick)
     ) {
@@ -312,7 +366,6 @@ private fun ArticleName(name: String, color: Color, onNameClick: () -> Unit) {
         )
     }
 }
-
 // Update Firebase functions
 fun updateNonTrouveState(article: ArticlesAcheteModele) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
@@ -386,15 +439,6 @@ private fun PriceOverlay(price: Double) {
     }
 }
 
-@Composable
-private fun ArticleName(name: String) {
-    AutoResizedText(
-        text = capitalizeFirstLetter(name),
-        modifier = Modifier.padding(vertical = 4.dp),
-        textAlign = TextAlign.Center,
-        color = Color.Red
-    )
-}
 
 
 
@@ -807,7 +851,7 @@ fun AutoResizedTextBC(
     var readyToDraw by remember { mutableStateOf(false) }
 
     val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
-    val minFontSize = 8.sp // Set a minimum font size to prevent text from becoming too small
+    val minFontSize = 7.sp
 
     Box(
         modifier = modifier.fillMaxWidth(),
@@ -826,13 +870,13 @@ fun AutoResizedTextBC(
                 if (result.didOverflowWidth) {
                     if (resizedTextStyle.fontSize > minFontSize) {
                         resizedTextStyle = resizedTextStyle.copy(
-                            fontSize = (resizedTextStyle.fontSize.value * 0.95f).sp
+                            fontSize = (resizedTextStyle.fontSize.value * 0.7f).sp
                         )
                     } else {
-                        readyToDraw = true // Stop resizing if we've reached the minimum font size
+                        readyToDraw = true
                     }
                 } else {
-                    readyToDraw = true // Text fits, ready to draw
+                    readyToDraw = true
                 }
             }
         )

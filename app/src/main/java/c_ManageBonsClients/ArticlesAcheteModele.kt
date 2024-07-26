@@ -47,6 +47,7 @@ data class ArticlesAcheteModele(
         "monBenificeBC" -> monBenificeBC
         "benificeDivise" -> benificeDivise
         "benificeClient" -> benificeClient
+        "totalQuantity" -> totalQuantity
 
         else -> ""
     }
