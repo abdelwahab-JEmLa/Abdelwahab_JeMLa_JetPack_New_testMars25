@@ -1,10 +1,6 @@
 package c_ManageBonsClients
 
-import android.content.Context
-import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -15,14 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -30,7 +24,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -58,41 +51,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.capitalizeFirstLetter
-import coil.compose.rememberAsyncImagePainter
-import com.example.abdelwahabjemlajetpack.R
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -303,141 +278,6 @@ fun DisplayManageBonsClients(
     }
 }
 
-
-
-suspend fun processClientData(context: Context, nomClient: String) {
-    val fireStore = Firebase.firestore
-    val articlesRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
-    val date = Date()
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val dateString = dateFormat.format(date)
-    val timeString = timeFormat.format(date)
-
-    try {
-        val clientArticles = articlesRef
-            .orderByChild("nomClient")
-            .equalTo(nomClient)
-            .get()
-            .await()
-
-        val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, timeString, clientArticles)
-
-        exportToFirestore(fireStore, clientArticles, nomClient, dateString, timeString)
-
-        imprimerDonnees(context, texteImprimable.toString(), totaleBon)
-
-        // Log des données imprimées
-        Log.d("ProcessClientData", "Données imprimées:\n$texteImprimable")
-
-    } catch (e: Exception) {
-        Log.e("ProcessClientData", "Erreur lors du traitement des données client", e)
-    }
-}
-
-private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArticles: DataSnapshot): Pair<StringBuilder, Double> {
-    val texteImprimable = StringBuilder()
-    var totaleBon = 0.0
-    var pageCounter = 0
-
-    texteImprimable
-        .append("<BIG><CENTER>Abdelwahab<BR>")
-        .append("<BIG><CENTER>JeMla.Com<BR>")
-        .append("<SMALL><CENTER>0553885037<BR>")
-        .append("<SMALL><CENTER>Facture<BR>")
-        .append("<BR>")
-        .append("<SMALL><CENTER>$nomClient                        $timeString<BR>")
-        .append("<BR>")
-        .append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-        .append("<SMALL><BOLD>    Quantite      Prix         <NORMAL>Subtoale<BR>")
-        .append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-
-    clientArticles.children
-        .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
-        .filter { it.verifieState }
-        .forEachIndexed { index, article ->
-            val subtotal = article.monPrixVentUniterBC * article.totalQuantity
-            if (subtotal != 0.0) {
-                texteImprimable
-                    .append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
-                    .append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
-                    .append("<MEDIUM1><LEFT>${article.monPrixVentUniterBC}Da   ")
-                    .append("<SMALL>$subtotal<BR>")
-                    .append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
-
-                totaleBon += subtotal
-
-                if ((index + 1) % 15 == 0) {
-                    pageCounter++
-                    texteImprimable.append("<BR><CENTER>PAGE $pageCounter<BR><BR><BR>")
-                }
-            }
-        }
-
-    texteImprimable
-        .append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-        .append("<BR><BR>")
-        .append("<MEDIUM1><CENTER>Totale<BR>")
-        .append("<MEDIUM3><CENTER>${totaleBon}Da<BR>")
-        .append("<CENTER>---------------------<BR>")
-        .append("<BR><BR><BR>>")
-
-    return Pair(texteImprimable, totaleBon)
-}
-
-private suspend fun exportToFirestore(
-    fireStore: FirebaseFirestore,
-    clientArticles: DataSnapshot,
-    nomClient: String,
-    dateString: String,
-    timeString: String
-) {
-    withContext(Dispatchers.IO) {
-        // Supprimer les documents existants
-        val existingDocs = fireStore.collection("HistoruqieDesFacturesDao")
-            .whereEqualTo("clientName", nomClient)
-            .whereEqualTo("date", dateString)
-            .get()
-            .await()
-
-        for (document in existingDocs) {
-            fireStore.collection("HistoruqieDesFacturesDao").document(document.id).delete().await()
-        }
-
-        // Insérer les nouveaux documents
-        clientArticles.children
-            .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
-            .filter { it.verifieState }
-            .forEach { article ->
-                val subtotal = article.monPrixVentUniterBC * article.totalQuantity
-                if (subtotal != 0.0) {
-                    val lineData = hashMapOf(
-                        "idArticle" to article.idArticle,
-                        "articleName" to article.nomArticleFinale,
-                        "quantity" to article.totalQuantity,
-                        "price" to article.monPrixVentUniterBC,
-                        "subtotal" to subtotal,
-                        "clientName" to nomClient,
-                        "date" to dateString,
-                        "time" to timeString
-                    )
-
-                    fireStore.collection("HistoruqieDesFacturesDao").add(lineData).await()
-                }
-            }
-    }
-}
-
-private fun imprimerDonnees(context: Context, texteImprimable: String, totaleBon: Double) {
-    val intent = Intent("pe.diegoveloper.printing")
-    intent.type = "text/plain"
-    intent.putExtra(Intent.EXTRA_TEXT, texteImprimable)
-    ContextCompat.startActivity(context, intent, null)
-
-    Log.d("ImprimerDonnees", "Impression lancée. Total: $totaleBon")
-}
-
-
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
@@ -528,16 +368,7 @@ private fun ArticleName(
         )
     }
 }
-// Update Firebase functions
-fun updateNonTrouveState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
-}
 
-fun updateVerifieState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("verifieState").setValue(!article.verifieState)
-}
 
 
 @Composable
@@ -629,418 +460,4 @@ fun ColorNameOverlay(colorName: String) {
     )
 }
 
-@Composable
-fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
-    val defaultDrawable = R.drawable.blanc
-    val imageExist: String? = when {
-        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-        File("$imagePath.webp").exists() -> "$imagePath.webp"
-        else -> null
-    }
 
-    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .wrapContentSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painter,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.wrapContentSize(Alignment.Center)
-        )
-    }
-}
-
-
-@Composable
-fun DisplayDetailleArticle(
-    article: ArticlesAcheteModele,
-    currentChangingField: String,
-    onValueOutlineChange: (String) -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .wrapContentSize()
-            .padding(4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            InformationsChanger(
-                article = article,
-                currentChangingField = currentChangingField,
-                onValueChange = onValueOutlineChange
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(7.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = capitalizeFirstLetter(article.nomArticleFinale),
-                    fontSize = 25.sp,
-                    textAlign = TextAlign.Center,
-                    color = Color.Red
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun InformationsChanger(
-    article: ArticlesAcheteModele,
-    onValueChange: (String, ) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row {
-            ColumnBenifices(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
-            ColumnPVetPa(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
-        }
-        RowAutresInfo(article, onValueChange, currentChangingField,)
-    }
-}
-@Composable
-private fun RowAutresInfo(
-    article: ArticlesAcheteModele,
-    onValueChange: (String,) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier
-) {
-    Row {
-        OutlineTextEditeRegle(
-            columnToChange = "clientPrixVentUnite",
-            abbreviation = "cVU",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp)
-
-        )
-        OutlineTextEditeRegle(
-            columnToChange = "nmbrunitBC",
-            abbreviation = "nu",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp)
-
-        )
-
-    }
-
-}
-
-
-
-@Composable
-private fun ColumnBenifices(
-    article: ArticlesAcheteModele,
-    onValueChange: (String,) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier
-) {
-        Column (modifier = modifier.fillMaxWidth()){
-            Row {
-                OutlineTextEditeRegle(
-                    columnToChange = "benificeDivise",
-                    abbreviation = "b/2",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .height(67.dp)
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "benificeClient",
-                    abbreviation = "bC",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.6f)
-                        .height(67.dp)
-                )
-            }
-            Row {
-                OutlineTextEditeRegle(
-                    columnToChange = "monBenificeUniterBC",
-                    abbreviation = "/U",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .height(67.dp)
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "monBenificeBC",
-                    abbreviation = "mB",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.6f)
-                        .height(67.dp)
-                )
-            }
-        }
-
-}
-
-@Composable
-private fun ColumnPVetPa(
-    article: ArticlesAcheteModele,
-    onValueChange: (String, ) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier
-
-) {
-    Column (modifier = modifier.fillMaxWidth()){
-            Row {
-                OutlineTextEditeRegle(
-                    columnToChange = "monPrixAchatUniterBC",
-                    abbreviation = "/U",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .height(67.dp)
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "prixAchat",
-                    abbreviation = "mpA",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.71f)
-                        .height(67.dp)
-                )
-            }
-            Row {
-                OutlineTextEditeRegle(
-                    columnToChange = "monPrixVentUniterBC",
-                    abbreviation = "/U",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .height(67.dp)
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "monPrixVentBons",
-                    abbreviation = "mpV",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged, )
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.6f)
-                        .height(67.dp)
-                )
-            }
-    }
-
-}
-
-fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
-    val newValueDouble = newValue.toDoubleOrNull() ?: return
-    when (columnChanged) {
-        "benificeClient" -> {
-            up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monBenificeUniterBC", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBC", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBons", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
-        }
-        "monBenificeUniterBC" -> {
-            up("monBenificeBC", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
-        }
-        "monBenificeBC" -> {
-            up("monBenificeUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
-            up("benificeClient", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
-        }
-        "monPrixAchatUniterBC" -> {
-            up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBC).toString(), ar.idArticle)
-        }
-        "prixAchat" -> {
-            up("monPrixVentBons", (newValueDouble + ar.monBenificeBC).toString(), ar.idArticle)
-        }
-        "monPrixVentUniterBC" -> {
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBC", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
-        }
-        "monPrixVentBons" -> {
-            up("monPrixVentUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBC", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("benificeClient", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
-        }
-    }
-}
-
-//updateFireBase
-fun up(columnChanged: String, newValue: String, articleId: Long) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
-    val articleUpdate = articleFromFireBase.child(columnChanged)
-    articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
-}
-
-@Composable
-fun OutlineTextEditeRegle(
-    columnToChange: String,
-    abbreviation: String,
-    labelCalculated: String = "",
-    currentChangingField: String,
-    article: ArticlesAcheteModele,
-    modifier: Modifier = Modifier,
-    calculateOthersRelated: (String, String) -> Unit
-) {
-    var textFieldValue by remember { mutableStateOf((article.getColumnValue(columnToChange) as? Double)?.toString() ?: "") }
-
-    val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    // Déterminer la valeur de l'étiquette
-    val labelValue = labelCalculated.ifEmpty { (article.getColumnValue(columnToChange) as? Double)?.toString() ?: "" }
-    val roundedValue = try {
-        val doubleValue = labelValue.toDouble()
-        if (doubleValue % 1 == 0.0) {
-            doubleValue.toInt().toString()
-        } else {
-            String.format("%.1f", doubleValue)
-        }
-    } catch (e: NumberFormatException) {
-        labelValue // Retourner la valeur initiale en cas d'exception
-    }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(horizontal = 3.dp)
-    ) {
-        OutlinedTextField(
-            value = textValue,
-            onValueChange = { newValue ->
-                textFieldValue = newValue
-                calculateOthersRelated(columnToChange, newValue)
-            },
-            label = {
-                AutoResizedTextBC(
-                    text = "$abbreviation$roundedValue",
-                    color = Color.Red,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            textStyle = TextStyle(
-                color = Color.Blue,
-                textAlign = TextAlign.Center,
-                fontSize = 14.sp
-            ),
-            modifier = modifier
-                .fillMaxWidth()
-                .height(65.dp),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { keyboardController?.hide() }
-            )
-        )
-    }
-}
-
-@Composable
-fun AutoResizedTextBC(
-    text: String,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
-    modifier: Modifier = Modifier,
-    color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center,
-    bodyLarge: Boolean = false
-) {
-    var resizedTextStyle by remember { mutableStateOf(style) }
-    var readyToDraw by remember { mutableStateOf(false) }
-
-    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
-    val minFontSize = 7.sp
-
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = color,
-            modifier = Modifier.drawWithContent {
-                if (readyToDraw) drawContent()
-            },
-            softWrap = false,
-            style = resizedTextStyle,
-            textAlign = textAlign,
-            onTextLayout = { result ->
-                if (result.didOverflowWidth) {
-                    if (resizedTextStyle.fontSize > minFontSize) {
-                        resizedTextStyle = resizedTextStyle.copy(
-                            fontSize = (resizedTextStyle.fontSize.value * 0.7f).sp
-                        )
-                    } else {
-                        readyToDraw = true
-                    }
-                } else {
-                    readyToDraw = true
-                }
-            }
-        )
-    }
-}
