@@ -25,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -47,12 +49,12 @@ fun OutlineTextEditeRegle(
     currentChangingField: String,
     article: ArticlesAcheteModele,
     modifier: Modifier = Modifier,
-    calculateOthersRelated: (String, String) -> Unit
+    calculateOthersRelated: (String, String) -> Unit,
+    focusRequester: FocusRequester? = null
 ) {
     var textFieldValue by remember { mutableStateOf((article.getColumnValue(columnToChange) as? Double)?.toString() ?: "") }
 
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    // Déterminer la valeur de l'étiquette
     val labelValue = labelCalculated.ifEmpty { (article.getColumnValue(columnToChange) as? Double)?.toString() ?: "" }
     val roundedValue = try {
         val doubleValue = labelValue.toDouble()
@@ -62,7 +64,7 @@ fun OutlineTextEditeRegle(
             String.format("%.1f", doubleValue)
         }
     } catch (e: NumberFormatException) {
-        labelValue // Retourner la valeur initiale en cas d'exception
+        labelValue
     }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -90,7 +92,8 @@ fun OutlineTextEditeRegle(
             ),
             modifier = modifier
                 .fillMaxWidth()
-                .height(65.dp),
+                .height(65.dp)
+                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done

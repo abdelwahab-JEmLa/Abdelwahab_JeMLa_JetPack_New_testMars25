@@ -54,9 +54,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -112,14 +112,16 @@ fun C_ManageBonsClients () {
             )
         }
     ) { paddingValues ->
-        DisplayManageBonsClients(
-            articles = articles,
-            selectedArticleId = selectedArticleId,
-            onArticleSelect = { selectedArticleId = it },
-            coroutineScope = coroutineScope,
-            listState = listState,
-            paddingValues = paddingValues
-        )
+        KeyboardAwareLayout {
+            DisplayManageBonsClients(
+                articles = articles,
+                selectedArticleId = selectedArticleId,
+                onArticleSelect = { selectedArticleId = it },
+                coroutineScope = coroutineScope,
+                listState = listState,
+                paddingValues = paddingValues
+            )
+        }
     }
 }
 
@@ -135,9 +137,9 @@ fun DisplayManageBonsClients(
     paddingValues: PaddingValues
 ) {
     var currentChangingField by remember { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
 
     // Group articles by nomClient and then by typeEmballage
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -189,15 +191,6 @@ fun DisplayManageBonsClients(
 
                         items(filteredArticles.chunked(2)) { pairOfArticles ->
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
-                                    DisplayDetailleArticle(
-                                        article = article,
-                                        currentChangingField = currentChangingField,
-                                        onValueOutlineChange = {
-                                            currentChangingField = it
-                                        }
-                                    )
-                                }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -212,7 +205,6 @@ fun DisplayManageBonsClients(
                                                 updateVerifieState(clickedArticle)
                                             },
                                             onArticleSelect = { selectedArticle ->
-                                                focusManager.clearFocus()
                                                 onArticleSelect(selectedArticle.idArticle)
                                                 coroutineScope.launch {
                                                     val layoutInfo = listState.layoutInfo
@@ -229,6 +221,19 @@ fun DisplayManageBonsClients(
                                             },
                                             isVerificationMode = activeClients.contains(article.nomClient),
                                         )
+                                    }
+                                }
+                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                                    DisplayDetailleArticle(
+                                        article = article,
+                                        currentChangingField = currentChangingField,
+                                        onValueOutlineChange = {
+                                            currentChangingField = it
+                                        },
+                                        focusRequester = focusRequester
+                                    )
+                                    LaunchedEffect(selectedArticleId) {
+                                        focusRequester.requestFocus()
                                     }
                                 }
                             }
@@ -426,12 +431,6 @@ fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit
     }
 }
 
-fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("typeEmballage").setValue(newType)
-    val baseDoneRef = Firebase.database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
-    baseDoneRef.child("cartonState").setValue(newType)
-}
 
 @Composable
 private fun ArticleName(

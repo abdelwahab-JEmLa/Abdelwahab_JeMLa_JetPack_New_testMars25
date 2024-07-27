@@ -12,8 +12,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,8 +27,14 @@ import b_Edite_Base_Donne.capitalizeFirstLetter
 fun DisplayDetailleArticle(
     article: ArticlesAcheteModele,
     currentChangingField: String,
-    onValueOutlineChange: (String) -> Unit
+    onValueOutlineChange: (String) -> Unit,
+    focusRequester: FocusRequester
 ) {
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -39,7 +47,8 @@ fun DisplayDetailleArticle(
             InformationsChanger(
                 article = article,
                 currentChangingField = currentChangingField,
-                onValueChange = onValueOutlineChange
+                onValueChange = onValueOutlineChange,
+                focusRequester = focusRequester
             )
             Box(
                 modifier = Modifier
@@ -61,16 +70,88 @@ fun DisplayDetailleArticle(
 @Composable
 fun InformationsChanger(
     article: ArticlesAcheteModele,
-    onValueChange: (String, ) -> Unit,
+    onValueChange: (String) -> Unit,
     currentChangingField: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row {
-            ColumnBenifices(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
-            ColumnPVetPa(article, onValueChange, currentChangingField,modifier = Modifier.weight(1f))
+            ColumnBenifices(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
+            ColumnPVetPa(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f), focusRequester = focusRequester)
         }
-        RowAutresInfo(article, onValueChange, currentChangingField,)
+        RowAutresInfo(article, onValueChange, currentChangingField)
+    }
+}
+
+@Composable
+private fun ColumnPVetPa(
+    article: ArticlesAcheteModele,
+    onValueChange: (String) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row {
+            OutlineTextEditeRegle(
+                columnToChange = "monPrixAchatUniterBC",
+                abbreviation = "/U",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.4f)
+                    .height(67.dp)
+            )
+
+            OutlineTextEditeRegle(
+                columnToChange = "prixAchat",
+                abbreviation = "mpA",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.71f)
+                    .height(67.dp)
+            )
+        }
+        Row {
+            OutlineTextEditeRegle(
+                columnToChange = "monPrixVentUniterBC",
+                abbreviation = "/U",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.4f)
+                    .height(67.dp)
+            )
+
+            OutlineTextEditeRegle(
+                columnToChange = "monPrixVentBons",
+                abbreviation = "mpV",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.6f)
+                    .height(67.dp),
+                focusRequester = focusRequester
+            )
+        }
     }
 }
 @Composable
