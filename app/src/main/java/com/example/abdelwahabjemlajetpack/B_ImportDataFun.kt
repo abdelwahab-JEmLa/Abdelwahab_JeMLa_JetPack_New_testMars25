@@ -206,7 +206,9 @@ suspend fun transferFirebaseData() {
     }
 }
 
-suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context) {
+suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context,
+                                                     articleDao: ArticleDao,
+) {
     val refSource = Firebase.database.getReference("ArticlesAcheteModele")
     val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
     try {
@@ -216,9 +218,12 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
         val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
 
         dataMap.forEach { (_, value) ->
+            val idArticle = (value["idarticle_c"] as? Long) ?: 0
+            val baseDonne = articleDao.getArticleById(idArticle)
+
             val article = ArticlesAcheteModele(
                 vid = (value["id"] as? Long) ?: 0,
-                idArticle = (value["idarticle_c"] as? Long) ?: 0,
+                idArticle = idArticle,
                 nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
                 monPrixVentBons = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
                 prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
@@ -236,7 +241,8 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = false,
-                verifieState= false,
+                verifieState = false,
+                typeEmballage = if (baseDonne?.cartonState == "itsCarton") "Carton" else ""
             ).apply {
                 monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
                 monBenificeUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBC / nmbrunitBC else 0.0)

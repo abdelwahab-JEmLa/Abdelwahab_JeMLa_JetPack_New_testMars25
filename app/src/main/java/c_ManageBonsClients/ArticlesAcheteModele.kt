@@ -32,6 +32,7 @@ data class ArticlesAcheteModele(
     var monPrixVentUniterBC: Double =  0.0,
     var benificeDivise: Double =  0.0,
     var benificeClient: Double =  0.0,
+    var typeEmballage: String = "",
 
     ) {
     // Constructeur sans argument nécessaire pour Firebase

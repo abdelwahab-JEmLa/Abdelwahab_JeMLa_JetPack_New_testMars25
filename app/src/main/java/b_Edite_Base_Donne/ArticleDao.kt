@@ -14,6 +14,9 @@ interface ArticleDao {
     @Query("SELECT * FROM articles ORDER BY idCategorie, classementCate")
     suspend fun getAllArticlesOrder(): List<BaseDonne>
 
+    @Query("SELECT * FROM articles WHERE idArticle = :id")
+    suspend fun getArticleById(id: Long): BaseDonne?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(articles: List<BaseDonne>)
 
