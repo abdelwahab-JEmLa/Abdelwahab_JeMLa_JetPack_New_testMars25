@@ -26,10 +26,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AllInbox
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -277,6 +282,7 @@ fun DisplayManageBonsClients(
     }
 }
 
+
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
@@ -291,6 +297,7 @@ fun ArticleBoardCard(
         else -> Color.White
     }
     val textColor = if (!article.nonTrouveState) Color.Black else Color.White
+    var showPackagingDialog by remember { mutableStateOf(false) }
 
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -315,7 +322,7 @@ fun ArticleBoardCard(
                     PriceOverlay(article.monPrixVentBons)
                 }
                 Row {
-                    var totalQuantityText by remember { mutableStateOf("") }
+                    var totalQuantityText by remember { mutableStateOf(article.totalQuantity.toString()) }
 
                     OutlinedTextField(
                         value = totalQuantityText,
@@ -327,7 +334,7 @@ fun ArticleBoardCard(
                             articleUpdate.setValue(newTotalQuantity)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text(text = "${article.totalQuantity}") },
+                        label = { Text(text = "Total") },
                         modifier = Modifier.weight(0.3f)
                     )
                     ArticleName(
@@ -344,9 +351,73 @@ fun ArticleBoardCard(
                     )
                 }
             }
+            IconButton(
+                onClick = { showPackagingDialog = true },
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AllInbox,
+                    contentDescription = "Packaging Type",
+                    tint = Color.Blue
+                )
+            }
         }
     }
+
+    if (showPackagingDialog) {
+        ShowPackagingDialog(
+            article = article,
+            onDismiss = { showPackagingDialog = false }
+        )
+    }
 }
+
+@Composable
+fun ShowPackagingDialog(
+    article: ArticlesAcheteModele,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Packaging Type") },
+        text = {
+            Column {
+                PackagingToggleButton("Carton", article.typeEmballage == "Carton") {
+                    updateTypeEmballage(article, "Carton")
+                    onDismiss()
+                }
+                PackagingToggleButton("Boit", article.typeEmballage == "Boit") {
+                    updateTypeEmballage(article, "Boit")
+                    onDismiss()
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color.Red else Color.Green
+        ),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+    ) {
+        Text(text)
+    }
+}
+
+fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("typeEmballage").setValue(newType)
+}
+
 @Composable
 private fun ArticleName(
     name: String,
@@ -367,7 +438,6 @@ private fun ArticleName(
         )
     }
 }
-
 
 
 @Composable
