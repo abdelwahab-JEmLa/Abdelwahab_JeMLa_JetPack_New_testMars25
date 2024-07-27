@@ -53,6 +53,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -68,6 +69,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -468,24 +470,53 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize()
     ) {
-        listOf(
-            article.quantityAcheteCouleur1,
-            article.quantityAcheteCouleur2,
-            article.quantityAcheteCouleur3,
-            article.quantityAcheteCouleur4
-        ).forEachIndexed { index, quantity ->
-            item {
-                if (quantity > 0) {
-                    ImageWithColorName(
-                        imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}",
-                        colorQuantity = quantity.toString()
+        val colorData = listOf(
+            article.quantityAcheteCouleur1 to article.nomCouleur1,
+            article.quantityAcheteCouleur2 to article.nomCouleur2,
+            article.quantityAcheteCouleur3 to article.nomCouleur3,
+            article.quantityAcheteCouleur4 to article.nomCouleur4
+        )
+
+        items(colorData.size) { index ->
+            val (quantity, colorName) = colorData[index]
+            if (quantity > 0) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val imagePathWhithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
+                    val imagePathWebp = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}.webp"
+                    val imagePathJpg = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}.jpg"
+                    val webpExists = File(imagePathWebp).exists()
+                    val jpgExists = File(imagePathJpg).exists()
+
+                    if (webpExists || jpgExists) {
+                        LoadImageFromPathBC(imagePath = imagePathWhithoutExt)
+                    } else {
+                        Text(
+                            text = colorName ?: "",
+                            color = Color.Red,
+                            modifier = Modifier
+                                .rotate(45f)
+                                .background(Color.White.copy(alpha = 0.6f))
+                                .padding(4.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Text(
+                        text = quantity.toString(),
+                        color = Color.Red,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.6f))
+                            .padding(4.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
             }
         }
     }
 }
-
 
 @Composable
 private fun PriceOverlay(price: Double) {
@@ -511,27 +542,6 @@ private fun PriceOverlay(price: Double) {
 
 
 
-
-@Composable
-fun ImageWithColorName(imagePath: String, colorQuantity: String?) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        LoadImageFromPathBC(imagePath = imagePath)
-        colorQuantity?.let {
-            Text(
-                text = it,
-                color = Color.Red,
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.6f))
-                    .padding(4.dp),
-                textAlign = TextAlign.Center
-            )
-
-        }
-    }
-}
 
 
 
