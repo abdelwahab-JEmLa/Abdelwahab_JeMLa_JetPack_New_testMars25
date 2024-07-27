@@ -180,7 +180,6 @@ private fun ColumnBenifices(
             )
         }
     }
-
 }
 
 @Composable

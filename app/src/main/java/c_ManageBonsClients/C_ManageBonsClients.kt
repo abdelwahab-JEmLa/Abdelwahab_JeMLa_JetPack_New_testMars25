@@ -51,7 +51,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -379,9 +378,6 @@ private fun SingleColorImage(article: ArticlesAcheteModele) {
     ) {
         val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
         LoadImageFromPathBC(imagePath = imagePath)
-        if (!article.nomCouleur1.contains("stan", ignoreCase = true)) {
-            ColorNameOverlay(colorName = article.nomCouleur1)
-        }
     }
 }
 
@@ -392,16 +388,16 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
         modifier = Modifier.fillMaxSize()
     ) {
         listOf(
-            article.quantityAcheteCouleur1 to article.nomCouleur1,
-            article.quantityAcheteCouleur2 to article.nomCouleur2,
-            article.quantityAcheteCouleur3 to article.nomCouleur3,
-            article.quantityAcheteCouleur4 to article.nomCouleur4
-        ).forEachIndexed { index, (quantity, colorName) ->
+            article.quantityAcheteCouleur1,
+            article.quantityAcheteCouleur2,
+            article.quantityAcheteCouleur3,
+            article.quantityAcheteCouleur4
+        ).forEachIndexed { index, quantity ->
             item {
                 if (quantity > 0) {
                     ImageWithColorName(
                         imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}",
-                        colorName = if (!colorName.contains("stan", ignoreCase = true)) colorName else null
+                        colorQuantity = quantity.toString()
                     )
                 }
             }
@@ -436,28 +432,25 @@ private fun PriceOverlay(price: Double) {
 
 
 @Composable
-fun ImageWithColorName(imagePath: String, colorName: String?) {
+fun ImageWithColorName(imagePath: String, colorQuantity: String?) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         LoadImageFromPathBC(imagePath = imagePath)
-        colorName?.let { ColorNameOverlay(colorName = it) }
+        colorQuantity?.let {
+            Text(
+                text = it,
+                color = Color.Red,
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.6f))
+                    .padding(4.dp),
+                textAlign = TextAlign.Center
+            )
+
+        }
     }
 }
 
-
-@Composable
-fun ColorNameOverlay(colorName: String) {
-    Text(
-        text = colorName,
-        color = Color.Red,
-        modifier = Modifier
-            .rotate(45f)
-            .background(Color.White.copy(alpha = 0.7f))
-            .padding(4.dp),
-        textAlign = TextAlign.Center
-    )
-}
 
 
