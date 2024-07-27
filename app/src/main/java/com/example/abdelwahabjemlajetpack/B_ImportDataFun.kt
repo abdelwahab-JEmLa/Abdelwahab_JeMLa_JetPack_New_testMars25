@@ -242,7 +242,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = false,
                 verifieState = false,
-                typeEmballage = if (baseDonne?.cartonState == "itsCarton") "Carton" else "Boit"
+                typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit"
             ).apply {
                 monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
                 monBenificeUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBC / nmbrunitBC else 0.0)

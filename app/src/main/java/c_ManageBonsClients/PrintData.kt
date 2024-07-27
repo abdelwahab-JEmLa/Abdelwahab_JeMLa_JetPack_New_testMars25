@@ -150,6 +150,7 @@ fun imprimerDonnees(context: Context, texteImprimable: String, totaleBon: Double
 // Update Firebase functions
 fun updateNonTrouveState(article: ArticlesAcheteModele) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+
     articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
 }
 
