@@ -140,6 +140,7 @@ fun DisplayManageBonsClients(
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
+    var isDetailDisplayed by remember { mutableStateOf(false) }
 
     // Group articles by nomClient and then by typeEmballage
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -180,7 +181,7 @@ fun DisplayManageBonsClients(
                                 },
                                 isActive = activeClients.contains(nomClient),
                                 nomClient= nomClient
-                                )
+                            )
                         }
 
                         val filteredArticles = if (activeClients.contains(nomClient)) {
@@ -205,16 +206,22 @@ fun DisplayManageBonsClients(
                                                 updateVerifieState(clickedArticle)
                                             },
                                             onArticleSelect = { selectedArticle ->
-                                                onArticleSelect(selectedArticle.idArticle)
-                                                coroutineScope.launch {
-                                                    val layoutInfo = listState.layoutInfo
-                                                    val visibleItemsInfo = layoutInfo.visibleItemsInfo
-                                                    val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
+                                                if (selectedArticleId == selectedArticle.idArticle && isDetailDisplayed) {
+                                                    onArticleSelect(null)
+                                                    isDetailDisplayed = false
+                                                } else {
+                                                    onArticleSelect(selectedArticle.idArticle)
+                                                    isDetailDisplayed = true
+                                                    coroutineScope.launch {
+                                                        val layoutInfo = listState.layoutInfo
+                                                        val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                                                        val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
 
-                                                    selectedItemInfo?.let {
-                                                        selectedItemOffset = it.offset.toFloat()
-                                                        val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
-                                                        listState.animateScrollBy(scrollOffset)
+                                                        selectedItemInfo?.let {
+                                                            selectedItemOffset = it.offset.toFloat()
+                                                            val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
+                                                            listState.animateScrollBy(scrollOffset)
+                                                        }
                                                     }
                                                 }
                                                 currentChangingField = ""
@@ -223,17 +230,19 @@ fun DisplayManageBonsClients(
                                         )
                                     }
                                 }
-                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
-                                    DisplayDetailleArticle(
-                                        article = article,
-                                        currentChangingField = currentChangingField,
-                                        onValueOutlineChange = {
-                                            currentChangingField = it
-                                        },
-                                        focusRequester = focusRequester
-                                    )
-                                    LaunchedEffect(selectedArticleId) {
-                                        focusRequester.requestFocus()
+                                if (isDetailDisplayed) {
+                                    pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                                        DisplayDetailleArticle(
+                                            article = article,
+                                            currentChangingField = currentChangingField,
+                                            onValueOutlineChange = {
+                                                currentChangingField = it
+                                            },
+                                            focusRequester = focusRequester
+                                        )
+                                        LaunchedEffect(selectedArticleId) {
+                                            focusRequester.requestFocus()
+                                        }
                                     }
                                 }
                             }
