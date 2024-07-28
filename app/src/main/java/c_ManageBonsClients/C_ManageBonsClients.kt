@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,18 +68,20 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun C_ManageBonsClients () {
+fun C_ManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
-    var selectedArticleId by remember { mutableStateOf<Long?>(null) } // Changed from String? to Long?
+    var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    var fireStorHistoriqueDesFactures by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
 
     val articlesAcheteModeleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
 
@@ -92,14 +95,25 @@ fun C_ManageBonsClients () {
                         selectedArticleId = null
                     }
                 }
+
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 // Handle possible errors.
             }
         })
+        val firestore = Firebase.firestore
+        firestore.collection("HistoriqueDesFactures")
+            .get()
+            .addOnSuccessListener { result ->
+                fireStorHistoriqueDesFactures = result.documents.mapNotNull { document ->
+                    document.toObject(ArticlesAcheteModele::class.java)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.w("Firestore", "Error getting documents: ", exception)
+            }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -119,7 +133,8 @@ fun C_ManageBonsClients () {
                 onArticleSelect = { selectedArticleId = it },
                 coroutineScope = coroutineScope,
                 listState = listState,
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                fireStorHistoriqueDesFactures=fireStorHistoriqueDesFactures
             )
         }
     }
@@ -134,13 +149,16 @@ fun DisplayManageBonsClients(
     onArticleSelect: (Long?) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    fireStorHistoriqueDesFactures: List<ArticlesAcheteModele>,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     var isDetailDisplayed by remember { mutableStateOf(false) }
+    var fireStoreRelatedArticle by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
+    val indexError by remember { mutableStateOf<String?>(null) }
 
     // Group articles by nomClient and then by typeEmballage
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -180,7 +198,7 @@ fun DisplayManageBonsClients(
                                     }
                                 },
                                 isActive = activeClients.contains(nomClient),
-                                nomClient= nomClient
+                                nomClient = nomClient
                             )
                         }
 
@@ -222,6 +240,7 @@ fun DisplayManageBonsClients(
                                                             val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
                                                             listState.animateScrollBy(scrollOffset)
                                                         }
+                                                        fireStoreRelatedArticle = fireStorHistoriqueDesFactures.filter { it.idArticle == selectedArticle.idArticle }
                                                     }
                                                 }
                                                 currentChangingField = ""
@@ -238,12 +257,20 @@ fun DisplayManageBonsClients(
                                             onValueOutlineChange = {
                                                 currentChangingField = it
                                             },
-                                            focusRequester = focusRequester
+                                            focusRequester = focusRequester,
+                                            firebaseArticle = fireStoreRelatedArticle.firstOrNull()
                                         )
                                         LaunchedEffect(selectedArticleId) {
                                             focusRequester.requestFocus()
                                         }
                                     }
+                                }
+                                indexError?.let { error ->
+                                    Text(
+                                        text = "Index error: $error",
+                                        color = Color.Red,
+                                        modifier = Modifier.padding(8.dp)
+                                    )
                                 }
                             }
                         }
@@ -310,6 +337,7 @@ fun EmballageHeader(
         }
     }
 }
+
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,

@@ -17,15 +17,27 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// Constants
+const val TAG = "ClientManagement"
+private const val ARTICLES_REF = "ArticlesAcheteModeleAdapted"
+private const val FACTURES_COLLECTION = "HistoriqueDesFactures"
+private const val CLIENTS_COLLECTION = "clientsList"
+private const val DATE_FORMAT = "dd/MM/yyyy"
+private const val TIME_FORMAT = "HH:mm"
+private const val PRINT_INTENT = "pe.diegoveloper.printing"
 
+/**
+ * Processes client data, prepares text for printing, and exports data to Firestore.
+ *
+ * @param context The application context.
+ * @param nomClient The name of the client.
+ */
 suspend fun processClientData(context: Context, nomClient: String) {
     val fireStore = Firebase.firestore
-    val articlesRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
+    val articlesRef = Firebase.database.getReference(ARTICLES_REF)
     val date = Date()
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val dateString = dateFormat.format(date)
-    val timeString = timeFormat.format(date)
+    val dateString = SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(date)
+    val timeString = SimpleDateFormat(TIME_FORMAT, Locale.getDefault()).format(date)
 
     try {
         val clientArticles = articlesRef
@@ -38,13 +50,15 @@ suspend fun processClientData(context: Context, nomClient: String) {
 
         exportToFirestore(fireStore, clientArticles, nomClient, dateString, timeString)
 
+        // Add this line to update the clients list
+        updateClientsList(fireStore, nomClient)
+
         imprimerDonnees(context, texteImprimable.toString(), totaleBon)
 
-        // Log des données imprimées
-        Log.d("ProcessClientData", "Données imprimées:\n$texteImprimable")
+        Log.d(TAG, "Données imprimées:\n$texteImprimable")
 
     } catch (e: Exception) {
-        Log.e("ProcessClientData", "Erreur lors du traitement des données client", e)
+        Log.e(TAG, "Erreur lors du traitement des données client", e)
     }
 }
 
@@ -53,17 +67,18 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
     var totaleBon = 0.0
     var pageCounter = 0
 
-    texteImprimable
-        .append("<BIG><CENTER>Abdelwahab<BR>")
-        .append("<BIG><CENTER>JeMla.Com<BR>")
-        .append("<SMALL><CENTER>0553885037<BR>")
-        .append("<SMALL><CENTER>Facture<BR>")
-        .append("<BR>")
-        .append("<SMALL><CENTER>$nomClient                        $timeString<BR>")
-        .append("<BR>")
-        .append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-        .append("<SMALL><BOLD>    Quantite      Prix         <NORMAL>Subtoale<BR>")
-        .append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+    texteImprimable.apply {
+        append("<BIG><CENTER>Abdelwahab<BR>")
+        append("<BIG><CENTER>JeMla.Com<BR>")
+        append("<SMALL><CENTER>0553885037<BR>")
+        append("<SMALL><CENTER>Facture<BR>")
+        append("<BR>")
+        append("<SMALL><CENTER>$nomClient                        $timeString<BR>")
+        append("<BR>")
+        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+        append("<SMALL><BOLD>    Quantité      Prix         <NORMAL>Sous-total<BR>")
+        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+    }
 
     clientArticles.children
         .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
@@ -71,12 +86,13 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
         .forEachIndexed { index, article ->
             val subtotal = article.monPrixVentUniterBC * article.totalQuantity
             if (subtotal != 0.0) {
-                texteImprimable
-                    .append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
-                    .append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
-                    .append("<MEDIUM1><LEFT>${article.monPrixVentUniterBC}Da   ")
-                    .append("<SMALL>$subtotal<BR>")
-                    .append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
+                texteImprimable.apply {
+                    append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
+                    append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
+                    append("<MEDIUM1><LEFT>${article.monPrixVentUniterBC}Da   ")
+                    append("<SMALL>$subtotal<BR>")
+                    append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
+                }
 
                 totaleBon += subtotal
 
@@ -87,18 +103,21 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
             }
         }
 
-    texteImprimable
-        .append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-        .append("<BR><BR>")
-        .append("<MEDIUM1><CENTER>Totale<BR>")
-        .append("<MEDIUM3><CENTER>${totaleBon}Da<BR>")
-        .append("<CENTER>---------------------<BR>")
-        .append("<BR><BR><BR>>")
+    texteImprimable.apply {
+        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+        append("<BR><BR>")
+        append("<MEDIUM1><CENTER>Total<BR>")
+        append("<MEDIUM3><CENTER>${totaleBon}Da<BR>")
+        append("<CENTER>---------------------<BR>")
+        append("<BR><BR><BR>>")
+    }
 
     return Pair(texteImprimable, totaleBon)
 }
 
-
+/**
+ * Exports client data to Firestore.
+ */
 suspend fun exportToFirestore(
     fireStore: FirebaseFirestore,
     clientArticles: DataSnapshot,
@@ -107,75 +126,103 @@ suspend fun exportToFirestore(
     timeString: String
 ) {
     withContext(Dispatchers.IO) {
-        // Générer l'ID du client (vous devrez implémenter cette fonction)
-        val idClient = getClientId(fireStore, nomClient)
+        try {
+            // Delete existing documents
+            val existingDocs = fireStore.collection(FACTURES_COLLECTION)
+                .whereEqualTo("nomClient", nomClient)
+                .whereEqualTo("dateDachate", dateString)
+                .get()
+                .await()
 
-        // Générer l'ID du document basé sur la date et l'ID du client
-        val currentDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-        val documentId = "${currentDate}${idClient}"
-
-        // Supprimer le document existant s'il existe
-        fireStore.collection("HistoruqieDesFacturesDao").document(documentId).delete().await()
-
-        // Créer un nouveau document avec l'ID généré
-        val facture = mutableMapOf<String, Any>(
-            "clientName" to nomClient,
-            "date" to dateString,
-            "time" to timeString,
-            "lines" to listOf<Map<String, Any>>()
-        )
-
-        clientArticles.children
-            .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
-            .filter { it.verifieState }
-            .forEach { article ->
-                val subtotal = article.monPrixVentUniterBC * article.totalQuantity
-                if (subtotal != 0.0) {
-                    val lineData = mapOf(
-                        "idArticle" to article.idArticle,
-                        "articleName" to article.nomArticleFinale,
-                        "quantity" to article.totalQuantity,
-                        "price" to article.monPrixVentUniterBC,
-                        "subtotal" to subtotal
-                    )
-                    (facture["lines"] as MutableList<Map<String, Any>>).add(lineData)
-                }
+            existingDocs.documents.forEach { document ->
+                fireStore.collection(FACTURES_COLLECTION).document(document.id).delete().await()
             }
 
-        fireStore.collection("HistoruqieDesFacturesDao").document(documentId).set(facture).await()
+            // Insert new documents
+            clientArticles.children
+                .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
+                .filter { it.verifieState }
+                .forEach { article ->
+                    val subtotal = article.monPrixVentUniterBC * article.totalQuantity
+                    if (subtotal != 0.0) {
+                        val lineData = hashMapOf(
+                            "idArticle" to article.idArticle,
+                            "nomArticleFinale" to article.nomArticleFinale,
+                            "totalQuantity" to article.totalQuantity,
+                            "monPrixVentUniterBC" to article.monPrixVentUniterBC,
+                            "subtotal" to subtotal,
+                            "nomClient" to article.nomClient,
+                            "dateDachate" to article.dateDachate,
+                            "monPrixVentBons" to article.monPrixVentBons,
+                            "prixAchat" to article.prixAchat,
+                            "nmbrunitBC" to article.nmbrunitBC,
+                            "clientPrixVentUnite" to article.clientPrixVentUnite,
+                            "monBenificeBC" to article.monBenificeBC,
+                            "monBenificeUniterBC" to article.monBenificeUniterBC,
+                            "monPrixAchatUniterBC" to article.monPrixAchatUniterBC,
+                            "benificeDivise" to article.benificeDivise,
+                            "benificeClient" to article.benificeClient,
+                            "typeEmballage" to article.typeEmballage,
+                            "nomCouleur1" to article.nomCouleur1,
+                            "quantityAcheteCouleur1" to article.quantityAcheteCouleur1,
+                            "nomCouleur2" to article.nomCouleur2,
+                            "quantityAcheteCouleur2" to article.quantityAcheteCouleur2,
+                            "nomCouleur3" to article.nomCouleur3,
+                            "quantityAcheteCouleur3" to article.quantityAcheteCouleur3,
+                            "nomCouleur4" to article.nomCouleur4,
+                            "quantityAcheteCouleur4" to article.quantityAcheteCouleur4,
+                            "time" to timeString
+                        )
+
+                        fireStore.collection(FACTURES_COLLECTION).add(lineData).await()
+                    }
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'exportation vers Firestore", e)
+        }
     }
-    // Corrected order of parameters
-    clientsList(fireStore, nomClient)
 }
 
-// Fonction pour obtenir l'ID du client (vous devrez implémenter cette logique)
+/**
+ * Retrieves the client ID from Firestore.
+ */
 suspend fun getClientId(fireStore: FirebaseFirestore, nomClient: String): String {
-    // Implémentez la logique pour récupérer ou générer l'ID du client
-    // Par exemple :
-    val clientDoc = fireStore.collection("clientsList")
-        .whereEqualTo("nameClient", nomClient)
-        .get()
-        .await()
-        .documents
-        .firstOrNull()
+    return try {
+        val clientDoc = fireStore.collection(CLIENTS_COLLECTION)
+            .whereEqualTo("nameClient", nomClient)
+            .get()
+            .await()
+            .documents
+            .firstOrNull()
 
-    return clientDoc?.get("idClient")?.toString() ?: "0000" // ID par défaut si le client n'est pas trouvé
+        val idClient = clientDoc?.get("idClient")?.toString() ?: "0"
+
+        when {
+            idClient.toIntOrNull() == null -> "00"
+            idClient.toInt() < 10 -> "0$idClient"
+            else -> idClient
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Erreur lors de la récupération de l'ID client", e)
+        "00"
+    }
 }
 
-suspend fun clientsList(fireStore: FirebaseFirestore, nomClient: String) {
-    val clientsCollection = fireStore.collection("clientsList")
+/**
+ * Updates or creates a client in the clients list.
+ */
+suspend fun updateClientsList(fireStore: FirebaseFirestore, nomClient: String) {
+    val clientsCollection = fireStore.collection(CLIENTS_COLLECTION)
     val dateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
     val currentDate = dateFormat.format(Date())
 
     try {
-        // Check if the client already exists
         val existingClient = clientsCollection
             .whereEqualTo("nameClient", nomClient)
             .get()
             .await()
 
         if (existingClient.isEmpty) {
-            // Client doesn't exist, create a new document
             val newClientData = hashMapOf(
                 "idClient" to getNextClientId(clientsCollection),
                 "nameClient" to nomClient,
@@ -183,36 +230,43 @@ suspend fun clientsList(fireStore: FirebaseFirestore, nomClient: String) {
             )
             clientsCollection.add(newClientData).await()
         } else {
-            // Client exists, update the date
             val clientDoc = existingClient.documents.first()
             clientDoc.reference.update("dateDuDernierBon", currentDate).await()
         }
     } catch (e: Exception) {
-        println("Error updating client list: ${e.message}")
+        Log.e(TAG, "Erreur lors de la mise à jour de la liste des clients", e)
     }
 }
-private suspend fun getNextClientId(clientsCollection: CollectionReference): Int {
-    val snapshot = clientsCollection
-        .orderBy("idClient")
-        .limitToLast(1)
-        .get()
-        .await()
 
-    return if (snapshot.isEmpty) {
-        1 // Start with 1 if no clients exist
-    } else {
-        val highestId = snapshot.documents.first().getLong("idClient") ?: 0
-        (highestId + 1).toInt()
+private suspend fun getNextClientId(clientsCollection: CollectionReference): Int {
+    return try {
+        val snapshot = clientsCollection
+            .orderBy("idClient")
+            .limitToLast(1)
+            .get()
+            .await()
+
+        if (snapshot.isEmpty) {
+            1
+        } else {
+            val highestId = snapshot.documents.first().getLong("idClient") ?: 0
+            (highestId + 1).toInt()
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Erreur lors de la récupération du prochain ID client", e)
+        1
     }
 }
+
 
 fun imprimerDonnees(context: Context, texteImprimable: String, totaleBon: Double) {
-    val intent = Intent("pe.diegoveloper.printing")
-    intent.type = "text/plain"
-    intent.putExtra(Intent.EXTRA_TEXT, texteImprimable)
+    val intent = Intent(PRINT_INTENT).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, texteImprimable)
+    }
     ContextCompat.startActivity(context, intent, null)
 
-    Log.d("ImprimerDonnees", "Impression lancée. Total: $totaleBon")
+    Log.d(TAG, "Impression lancée. Total: $totaleBon")
 }
 
 // Update Firebase functions

@@ -33,18 +33,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import b_Edite_Base_Donne.capitalizeFirstLetter
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-
 
 @Composable
 fun DisplayDetailleArticle(
     article: ArticlesAcheteModele,
     currentChangingField: String,
     onValueOutlineChange: (String) -> Unit,
-    focusRequester: FocusRequester
+    focusRequester: FocusRequester,
+    firebaseArticle: ArticlesAcheteModele?,
 ) {
 
     LaunchedEffect(Unit) {
@@ -64,7 +60,8 @@ fun DisplayDetailleArticle(
                 article = article,
                 currentChangingField = currentChangingField,
                 onValueChange = onValueOutlineChange,
-                focusRequester = focusRequester
+                focusRequester = focusRequester,
+                firebaseArticle = firebaseArticle
             )
             Box(
                 modifier = Modifier
@@ -89,12 +86,14 @@ fun InformationsChanger(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester
+    focusRequester: FocusRequester,
+    firebaseArticle: ArticlesAcheteModele?,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row {
             ColumnBenifices(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
-            ColumnPVetPa(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f), focusRequester = focusRequester)
+            ColumnPVetPa(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f), focusRequester = focusRequester,
+                firebaseArticle = firebaseArticle)
         }
         RowAutresInfo(article, onValueChange, currentChangingField)
     }
@@ -106,7 +105,8 @@ private fun ColumnPVetPa(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester
+    focusRequester: FocusRequester,
+    firebaseArticle: ArticlesAcheteModele?,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row {
@@ -124,20 +124,22 @@ private fun ColumnPVetPa(
                     .height(67.dp)
             )
 
-            OutlineTextEditeFromFireStore(
-                columnToChange = "monPrixVentBons",
-                abbreviation = "mpV",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.6f)
-                    .height(67.dp),
-                focusRequester = focusRequester
-            )
+            if (firebaseArticle != null) {
+                OutlineTextEditeFromFireStore(
+                    columnToChange = "monPrixVentBons",
+                    abbreviation = "mpV",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = firebaseArticle,
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .height(67.dp),
+                    focusRequester = focusRequester,
+                )
+            }
         }
         Row {
             OutlineTextEditeRegle(
@@ -199,6 +201,7 @@ private fun ColumnPVetPa(
         }
     }
 }
+
 @Composable
 fun OutlineTextEditeFromFireStore(
     columnToChange: String,
@@ -208,38 +211,14 @@ fun OutlineTextEditeFromFireStore(
     article: ArticlesAcheteModele,
     modifier: Modifier = Modifier,
     calculateOthersRelated: (String, String) -> Unit,
-    focusRequester: FocusRequester? = null
+    focusRequester: FocusRequester? = null,
 ) {
     var textFieldValue by remember { mutableStateOf((article.getColumnValue(columnToChange) as? Double)?.toString() ?: "") }
-    var firebaseArticle by remember { mutableStateOf<ArticlesAcheteModele?>(null) }
 
-    LaunchedEffect(article.idArticle, article.nomClient) {
-        val articlesRef = FirebaseDatabase.getInstance().getReference("ArticlesAcheteModeleAdapted")
-        articlesRef.orderByChild("datedachate")
-            .limitToLast(100)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val articlesList = mutableListOf<ArticlesAcheteModele>()
-                    for (childSnapshot in snapshot.children.reversed()) {
-                        val fetchedArticle = childSnapshot.getValue(ArticlesAcheteModele::class.java)
-                        fetchedArticle?.let {
-                            if (it.idArticle == article.idArticle && it.nomClient == article.nomClient) {
-                                articlesList.add(it)
-                            }
-                        }
-                    }
-                    firebaseArticle = articlesList.firstOrNull()
-                }
-                override fun onCancelled(error: DatabaseError) {
-                    println("Firebase query cancelled: ${error.message}")
-                }
-            })
-    }
 
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
     val labelValue = when {
         labelCalculated.isNotEmpty() -> labelCalculated
-        firebaseArticle != null -> (firebaseArticle?.getColumnValue(columnToChange) as? Double)?.toString() ?: ""
         else -> (article.getColumnValue(columnToChange) as? Double)?.toString() ?: ""
     }
     val roundedValue = try {
