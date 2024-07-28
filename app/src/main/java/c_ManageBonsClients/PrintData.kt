@@ -107,44 +107,60 @@ suspend fun exportToFirestore(
     timeString: String
 ) {
     withContext(Dispatchers.IO) {
-        // Supprimer les documents existants
-        val existingDocs = fireStore.collection("HistoruqieDesFacturesDao")
-            .whereEqualTo("clientName", nomClient)
-            .whereEqualTo("date", dateString)
-            .get()
-            .await()
+        // Générer l'ID du client (vous devrez implémenter cette fonction)
+        val idClient = getClientId(fireStore, nomClient)
 
-        for (document in existingDocs) {
-            fireStore.collection("HistoruqieDesFacturesDao").document(document.id).delete().await()
-        }
+        // Générer l'ID du document basé sur la date et l'ID du client
+        val currentDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+        val documentId = "${currentDate}${idClient}"
 
-        // Insérer les nouveaux documents
+        // Supprimer le document existant s'il existe
+        fireStore.collection("HistoruqieDesFacturesDao").document(documentId).delete().await()
+
+        // Créer un nouveau document avec l'ID généré
+        val facture = mutableMapOf<String, Any>(
+            "clientName" to nomClient,
+            "date" to dateString,
+            "time" to timeString,
+            "lines" to listOf<Map<String, Any>>()
+        )
+
         clientArticles.children
             .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
             .filter { it.verifieState }
             .forEach { article ->
                 val subtotal = article.monPrixVentUniterBC * article.totalQuantity
                 if (subtotal != 0.0) {
-                    val lineData = hashMapOf(
+                    val lineData = mapOf(
                         "idArticle" to article.idArticle,
                         "articleName" to article.nomArticleFinale,
                         "quantity" to article.totalQuantity,
                         "price" to article.monPrixVentUniterBC,
-                        "subtotal" to subtotal,
-                        "clientName" to nomClient,
-                        "date" to dateString,
-                        "time" to timeString
+                        "subtotal" to subtotal
                     )
-
-                    fireStore.collection("HistoruqieDesFacturesDao").add(lineData).await()
+                    (facture["lines"] as MutableList<Map<String, Any>>).add(lineData)
                 }
             }
+
+        fireStore.collection("HistoruqieDesFacturesDao").document(documentId).set(facture).await()
     }
     // Corrected order of parameters
     clientsList(fireStore, nomClient)
 }
 
+// Fonction pour obtenir l'ID du client (vous devrez implémenter cette logique)
+suspend fun getClientId(fireStore: FirebaseFirestore, nomClient: String): String {
+    // Implémentez la logique pour récupérer ou générer l'ID du client
+    // Par exemple :
+    val clientDoc = fireStore.collection("clientsList")
+        .whereEqualTo("nameClient", nomClient)
+        .get()
+        .await()
+        .documents
+        .firstOrNull()
 
+    return clientDoc?.get("idClient")?.toString() ?: "0000" // ID par défaut si le client n'est pas trouvé
+}
 
 suspend fun clientsList(fireStore: FirebaseFirestore, nomClient: String) {
     val clientsCollection = fireStore.collection("clientsList")
