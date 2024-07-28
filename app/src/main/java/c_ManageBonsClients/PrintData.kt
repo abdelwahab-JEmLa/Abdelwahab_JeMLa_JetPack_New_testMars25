@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.database
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
 
 suspend fun processClientData(context: Context, nomClient: String) {
     val fireStore = Firebase.firestore
@@ -95,6 +97,8 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
 
     return Pair(texteImprimable, totaleBon)
 }
+
+
 suspend fun exportToFirestore(
     fireStore: FirebaseFirestore,
     clientArticles: DataSnapshot,
@@ -135,6 +139,54 @@ suspend fun exportToFirestore(
                     fireStore.collection("HistoruqieDesFacturesDao").add(lineData).await()
                 }
             }
+    }
+    // Corrected order of parameters
+    clientsList(fireStore, nomClient)
+}
+
+
+
+suspend fun clientsList(fireStore: FirebaseFirestore, nomClient: String) {
+    val clientsCollection = fireStore.collection("clientsList")
+    val dateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
+    val currentDate = dateFormat.format(Date())
+
+    try {
+        // Check if the client already exists
+        val existingClient = clientsCollection
+            .whereEqualTo("nameClient", nomClient)
+            .get()
+            .await()
+
+        if (existingClient.isEmpty) {
+            // Client doesn't exist, create a new document
+            val newClientData = hashMapOf(
+                "idClient" to getNextClientId(clientsCollection),
+                "nameClient" to nomClient,
+                "dateDuDernierBon" to currentDate
+            )
+            clientsCollection.add(newClientData).await()
+        } else {
+            // Client exists, update the date
+            val clientDoc = existingClient.documents.first()
+            clientDoc.reference.update("dateDuDernierBon", currentDate).await()
+        }
+    } catch (e: Exception) {
+        println("Error updating client list: ${e.message}")
+    }
+}
+private suspend fun getNextClientId(clientsCollection: CollectionReference): Int {
+    val snapshot = clientsCollection
+        .orderBy("idClient")
+        .limitToLast(1)
+        .get()
+        .await()
+
+    return if (snapshot.isEmpty) {
+        1 // Start with 1 if no clients exist
+    } else {
+        val highestId = snapshot.documents.first().getLong("idClient") ?: 0
+        (highestId + 1).toInt()
     }
 }
 
