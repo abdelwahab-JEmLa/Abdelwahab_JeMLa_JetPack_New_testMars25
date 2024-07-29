@@ -29,13 +29,13 @@ data class ArticlesAcheteModele(
     var benificeDivise: Double =  0.0,
     var typeEmballage: String = "",
     //FireBase PrixEditeur
-    val monPrixVentBons: Double = 0.0,
-    var monPrixVentUniterBC: Double =  0.0,
+    val monPrixVentBM: Double = 0.0,
+    var monPrixVentUniterBM: Double =  0.0,
 
-    var monBenificeBC: Double =  0.0,
-    var monBenificeUniterBC: Double =  0.0,
+    var monBenificeBM: Double =  0.0,
+    var monBenificeUniterBM: Double =  0.0,
 
-    var benificeClient: Double =  0.0,
+    var clientBenificeBM: Double =  0.0,
 
     //FireStore
     var monPrixVentFireStoreBM: Double =  0.0,
@@ -55,12 +55,12 @@ data class ArticlesAcheteModele(
         "nmbrunitBC" -> nmbrunitBC
         "monPrixAchatUniterBC" -> monPrixAchatUniterBC
         "prixAchat" -> prixAchat
-        "monPrixVentUniterBC" -> monPrixVentUniterBC
-        "monPrixVentBons" -> monPrixVentBons
-        "monBenificeUniterBC" -> monBenificeUniterBC
-        "monBenificeBC" -> monBenificeBC
+        "monPrixVentUniterBC" -> monPrixVentUniterBM
+        "monPrixVentBons" -> monPrixVentBM
+        "monBenificeUniterBC" -> monBenificeUniterBM
+        "monBenificeBC" -> monBenificeBM
         "benificeDivise" -> benificeDivise
-        "benificeClient" -> benificeClient
+        "benificeClient" -> clientBenificeBM
         "totalQuantity" -> totalQuantity
         "monPrixVentFireStoreBM" -> monPrixVentFireStoreBM
         "monPrixVentUniterFireStoreBM" -> monPrixVentUniterFireStoreBM

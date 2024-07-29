@@ -233,13 +233,12 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
             val baseDonne = articleDao.getArticleById(idArticle)
 
             val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle }
-            val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentBons ?: 0.0
+            val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentBM ?: 0.0
 
             val article = ArticlesAcheteModele(
                 vid = (value["id"] as? Long) ?: 0,
                 idArticle = idArticle,
                 nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
-                monPrixVentBons = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
                 prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
                 nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
                 clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
@@ -256,8 +255,9 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = false,
                 verifieState = false,
-                //baseDonne
                 typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
+                //baseDonne
+                monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
                 //FireStore
                 monPrixVentFireStoreBM = monPrixVentFireStoreBM
             ).apply {
@@ -269,12 +269,12 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 clientBenificeFireStoreBM =  roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentFireStoreBM)
 
                 //FireBAse
-                monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
-                monBenificeUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBC / nmbrunitBC else 0.0)
+                monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
+                monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
                 monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
-                monPrixVentUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBons / nmbrunitBC else 0.0)
+                monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
                 benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
-                benificeClient = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBons)
+                clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
             }
 
             refDestination.child(article.idArticle.toString()).setValue(article).await()

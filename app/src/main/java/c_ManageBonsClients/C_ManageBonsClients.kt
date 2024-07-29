@@ -374,7 +374,7 @@ fun ArticleBoardCard(
                         MultiColorGrid(article)
                     }
 
-                    PriceOverlay(article.monPrixVentBons)
+                    PriceOverlay(article.monPrixVentBM)
                 }
                 Row {
                     var totalQuantityText by remember { mutableStateOf(article.totalQuantity.toString()) }

@@ -65,7 +65,6 @@ fun DisplayDetailleArticle(
                 currentChangingField = currentChangingField,
                 onValueChange = onValueOutlineChange,
                 focusRequester = focusRequester,
-                firebaseArticle = firebaseArticle
             )
             Box(
                 modifier = Modifier
@@ -91,114 +90,29 @@ fun InformationsChanger(
     currentChangingField: String,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester,
-    firebaseArticle: ArticlesAcheteModele?,
 ) {
+    var whatCardIsFocused by remember { mutableStateOf("") }
+
     Column(modifier = modifier.fillMaxWidth()) {
-        Row {
-            ColumnBenifices(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
-            ColumnPVetPa(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f), focusRequester = focusRequester,
-                firebaseArticle = firebaseArticle)
-        }
-        CardFireStor(article, onValueChange, currentChangingField, modifier = Modifier.height(140.dp))
+        CardFireBase(
+            article,
+            onValueChange,
+            currentChangingField,
+            modifier = Modifier.height(140.dp),
+            whatCardIsFocused = whatCardIsFocused,
+            thisCardIsFocused = { whatCardIsFocused = "CardFireBase" }
+        )
+        CardFireStor(
+            article,
+            onValueChange,
+            currentChangingField,
+            modifier = Modifier.height(140.dp),
+            whatCardIsFocused = whatCardIsFocused,
+            thisCardIsFocused = { whatCardIsFocused = "CardFireStor" },
+                    focusRequester=focusRequester,
+        )
 
         RowAutresInfo(article, onValueChange, currentChangingField)
-    }
-}
-
-
-
-@Composable
-private fun CardFireStor(
-    article: ArticlesAcheteModele,
-    onValueChange: (String) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier,
-) {
-    var isAnyChildFocused by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = if (isAnyChildFocused) 2.dp else 0.dp,
-                color = if (isAnyChildFocused) Color.Red else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            )
-    ) {
-        Column(modifier = Modifier.padding(3.dp)) {
-            Row(modifier = Modifier.weight(1f)) {
-                OutlineTextEditeRegle(
-                    columnToChange = "monBenificeUniterFireStoreBM",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "clientBenificeFireStoreBM",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.2f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "monBenificeFireStoreBM",
-                    abbreviation = "mBF",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(3.dp))
-
-            Row(modifier = Modifier.weight(1f)) {
-                OutlineTextEditeRegle(
-                    columnToChange = "monPrixVentUniterFireStoreBM",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
-                )
-
-                OutlineTextEditeRegle(
-                    columnToChange = "monPrixVentFireStoreBM",
-                    abbreviation = "mpVF",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
-                )
-            }
-        }
     }
 }
 
@@ -208,15 +122,112 @@ private fun CardFireBase(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
+    whatCardIsFocused: String,
+    thisCardIsFocused: (String) -> Unit
 ) {
-    var isAnyChildFocused by remember { mutableStateOf(false) }
-
     Card(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = if (isAnyChildFocused) 2.dp else 0.dp,
-                color = if (isAnyChildFocused) Color.Red else Color.Transparent,
+                width = if (whatCardIsFocused == "CardFireBase") 2.dp else 0.dp,
+                color = if (whatCardIsFocused == "CardFireBase") Color.Red else Color.Transparent,
+                shape = MaterialTheme.shapes.medium
+            )
+    ) {
+        Column(modifier = Modifier.padding(3.dp)) {
+            Row(modifier = Modifier.weight(1f)) {
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeUniterBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireBase") }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "clientBenificeBM",
+                    abbreviation = "cB",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.2f)
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireBase") }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeBM",
+                    abbreviation = "mB",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireBase") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Row(modifier = Modifier.weight(1f)) {
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentUniterBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireBase") }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentBM",
+                    abbreviation = "mpV",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireBase") }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CardFireStor(
+    article: ArticlesAcheteModele,
+    onValueChange: (String) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier,
+    whatCardIsFocused: String,
+    thisCardIsFocused: (String) -> Unit,
+    focusRequester: FocusRequester
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (whatCardIsFocused == "CardFireStor") 2.dp else 0.dp,
+                color = if (whatCardIsFocused == "CardFireStor") Color.Red else Color.Transparent,
                 shape = MaterialTheme.shapes.medium
             )
     ) {
@@ -232,11 +243,12 @@ private fun CardFireBase(
                     article = article,
                     modifier = Modifier
                         .weight(0.4f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireStor") }
                 )
 
                 OutlineTextEditeRegle(
                     columnToChange = "clientBenificeFireStoreBM",
+                    abbreviation = "cBF",
                     calculateOthersRelated = { columnChanged, newValue ->
                         onValueChange(columnChanged)
                         updateRelatedFields(article, columnChanged, newValue)
@@ -245,7 +257,7 @@ private fun CardFireBase(
                     article = article,
                     modifier = Modifier
                         .weight(0.2f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireStor") }
                 )
 
                 OutlineTextEditeRegle(
@@ -259,7 +271,7 @@ private fun CardFireBase(
                     article = article,
                     modifier = Modifier
                         .weight(0.4f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireStor") }
                 )
             }
 
@@ -276,7 +288,7 @@ private fun CardFireBase(
                     article = article,
                     modifier = Modifier
                         .weight(0.5f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireStor") }
                 )
 
                 OutlineTextEditeRegle(
@@ -290,7 +302,8 @@ private fun CardFireBase(
                     article = article,
                     modifier = Modifier
                         .weight(0.5f)
-                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                        .onFocusChanged { if (it.isFocused) thisCardIsFocused("CardFireStor") },
+                    focusRequester=focusRequester,
                 )
             }
         }
@@ -298,108 +311,6 @@ private fun CardFireBase(
 }
 
 
-@Composable
-private fun ColumnPVetPa(
-    article: ArticlesAcheteModele,
-    onValueChange: (String) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier,
-    focusRequester: FocusRequester,
-    firebaseArticle: ArticlesAcheteModele?,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixVentUniterBC",
-                abbreviation = "/U",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(67.dp)
-            )
-
-            if (firebaseArticle != null) {
-                OutlineTextEditeFromFireStore(
-                    columnToChange = "monPrixVentBons",
-                    abbreviation = "mpV",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = firebaseArticle,
-                    modifier = Modifier
-                        .weight(0.6f)
-                        .height(67.dp),
-                    focusRequester = focusRequester,
-                )
-            }
-        }
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixVentUniterBC",
-                abbreviation = "/U",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(67.dp)
-            )
-
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixVentBons",
-                abbreviation = "mpV",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.6f)
-                    .height(67.dp)
-            )
-        }
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixAchatUniterBC",
-                abbreviation = "/U",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(67.dp)
-            )
-
-            OutlineTextEditeRegle(
-                columnToChange = "prixAchat",
-                abbreviation = "mpA",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.71f)
-                    .height(67.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun OutlineTextEditeFromFireStore(

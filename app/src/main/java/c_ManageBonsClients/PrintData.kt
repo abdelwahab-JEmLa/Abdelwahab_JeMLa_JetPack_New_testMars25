@@ -84,12 +84,12 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
         .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
         .filter { it.verifieState }
         .forEachIndexed { index, article ->
-            val subtotal = article.monPrixVentUniterBC * article.totalQuantity
+            val subtotal = article.monPrixVentUniterBM * article.totalQuantity
             if (subtotal != 0.0) {
                 texteImprimable.apply {
                     append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
                     append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
-                    append("<MEDIUM1><LEFT>${article.monPrixVentUniterBC}Da   ")
+                    append("<MEDIUM1><LEFT>${article.monPrixVentUniterBM}Da   ")
                     append("<SMALL>$subtotal<BR>")
                     append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
                 }
@@ -143,25 +143,25 @@ suspend fun exportToFirestore(
                 .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
                 .filter { it.verifieState }
                 .forEach { article ->
-                    val subtotal = article.monPrixVentUniterBC * article.totalQuantity
+                    val subtotal = article.monPrixVentUniterBM * article.totalQuantity
                     if (subtotal != 0.0) {
                         val lineData = hashMapOf(
                             "idArticle" to article.idArticle,
                             "nomArticleFinale" to article.nomArticleFinale,
                             "totalQuantity" to article.totalQuantity,
-                            "monPrixVentUniterBC" to article.monPrixVentUniterBC,
+                            "monPrixVentUniterBC" to article.monPrixVentUniterBM,
                             "subtotal" to subtotal,
                             "nomClient" to article.nomClient,
                             "dateDachate" to article.dateDachate,
-                            "monPrixVentBons" to article.monPrixVentBons,
+                            "monPrixVentBons" to article.monPrixVentBM,
                             "prixAchat" to article.prixAchat,
                             "nmbrunitBC" to article.nmbrunitBC,
                             "clientPrixVentUnite" to article.clientPrixVentUnite,
-                            "monBenificeBC" to article.monBenificeBC,
-                            "monBenificeUniterBC" to article.monBenificeUniterBC,
+                            "monBenificeBC" to article.monBenificeBM,
+                            "monBenificeUniterBC" to article.monBenificeUniterBM,
                             "monPrixAchatUniterBC" to article.monPrixAchatUniterBC,
                             "benificeDivise" to article.benificeDivise,
-                            "benificeClient" to article.benificeClient,
+                            "benificeClient" to article.clientBenificeBM,
                             "typeEmballage" to article.typeEmballage,
                             "nomCouleur1" to article.nomCouleur1,
                             "quantityAcheteCouleur1" to article.quantityAcheteCouleur1,
@@ -305,10 +305,10 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
         }
         "monPrixAchatUniterBC" -> {
             up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBC).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBM).toString(), ar.idArticle)
         }
         "prixAchat" -> {
-            up("monPrixVentBons", (newValueDouble + ar.monBenificeBC).toString(), ar.idArticle)
+            up("monPrixVentBons", (newValueDouble + ar.monBenificeBM).toString(), ar.idArticle)
         }
         "monPrixVentUniterBC" -> {
             up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
