@@ -10,12 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,13 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -310,76 +302,6 @@ private fun CardFireStor(
     }
 }
 
-
-
-@Composable
-fun OutlineTextEditeFromFireStore(
-    columnToChange: String,
-    abbreviation: String,
-    labelCalculated: String = "",
-    currentChangingField: String,
-    article: ArticlesAcheteModele,
-    modifier: Modifier = Modifier,
-    calculateOthersRelated: (String, String) -> Unit,
-    focusRequester: FocusRequester? = null,
-) {
-    var textFieldValue by remember { mutableStateOf((article.getColumnValue(columnToChange) as? Double)?.toString() ?: "") }
-
-
-    val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = when {
-        labelCalculated.isNotEmpty() -> labelCalculated
-        else -> (article.getColumnValue(columnToChange) as? Double)?.toString() ?: ""
-    }
-    val roundedValue = try {
-        val doubleValue = labelValue.toDouble()
-        if (doubleValue % 1 == 0.0) {
-            doubleValue.toInt().toString()
-        } else {
-            String.format("%.1f", doubleValue)
-        }
-    } catch (e: NumberFormatException) {
-        labelValue
-    }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(horizontal = 3.dp)
-    ) {
-        OutlinedTextField(
-            value = textValue,
-            onValueChange = { newValue ->
-                textFieldValue = newValue
-                calculateOthersRelated(columnToChange, newValue)
-            },
-            label = {
-                AutoResizedTextBC(
-                    text = "$abbreviation$roundedValue",
-                    color = Color.Red,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            textStyle = TextStyle(
-                color = Color.Blue,
-                textAlign = TextAlign.Center,
-                fontSize = 14.sp
-            ),
-            modifier = modifier
-                .fillMaxWidth()
-                .height(65.dp)
-                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { keyboardController?.hide() }
-            )
-        )
-    }
-}
-
 @Composable
 private fun RowAutresInfo(
     article: ArticlesAcheteModele,
@@ -397,7 +319,7 @@ private fun RowAutresInfo(
             currentChangingField = currentChangingField,
             article = article,
             modifier = Modifier
-                .weight(1f)
+                .weight(0.10f)
                 .height(67.dp)
 
         )
@@ -410,114 +332,40 @@ private fun RowAutresInfo(
             currentChangingField = currentChangingField,
             article = article,
             modifier = Modifier
-                .weight(1f)
+                .weight(0.10f)
                 .height(67.dp)
 
         )
 
-    }
+        OutlineTextEditeRegle(
+            columnToChange = "monPrixAchatUniterBC",
+            abbreviation = "mpVF",
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueChange(columnChanged)
+                updateRelatedFields(article, columnChanged, newValue)
+            },
+            currentChangingField = currentChangingField,
+            article = article,
+            modifier = Modifier
+                .weight(0.15f)
+                .height(67.dp)
 
-}
+        )
+        OutlineTextEditeRegle(
+            columnToChange = "prixAchat",
+            abbreviation = "pA",
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueChange(columnChanged)
+                updateRelatedFields(article, columnChanged, newValue)
+            },
+            currentChangingField = currentChangingField,
+            article = article,
+            modifier = Modifier
+                .weight(0.65f)
+                .height(67.dp)
 
-
-/**
- * contien outlines de benifice
- */
-@Composable
-private fun ColumnBenifices(
-    article: ArticlesAcheteModele,
-    onValueChange: (String,) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier
-) {
-    Column (modifier = modifier.fillMaxWidth()){
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "benificeDivise",
-                abbreviation = "b/2",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(67.dp)
-            )
-
-            OutlineTextEditeRegle(
-                columnToChange = "benificeClient",
-                abbreviation = "bC",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.6f)
-                    .height(67.dp)
-            )
-        }
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "monBenificeUniterBC",
-                abbreviation = "/U",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(67.dp)
-            )
-
-            OutlineTextEditeRegle(
-                columnToChange = "monBenificeBC",
-                abbreviation = "mB",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.6f)
-                    .height(67.dp)
-            )
-        }
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixAchatUniterBC",
-                abbreviation = "/U",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(67.dp)
-            )
-
-            OutlineTextEditeRegle(
-                columnToChange = "prixAchat",
-                abbreviation = "mpA",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.71f)
-                    .height(67.dp)
-            )
-        }
-
+        )
     }
 }
+
 

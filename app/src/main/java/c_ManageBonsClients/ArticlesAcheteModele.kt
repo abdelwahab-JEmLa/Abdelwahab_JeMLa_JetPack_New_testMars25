@@ -28,6 +28,7 @@ data class ArticlesAcheteModele(
     var monPrixAchatUniterBC: Double =  0.0,
     var benificeDivise: Double =  0.0,
     var typeEmballage: String = "",
+
     //FireBase PrixEditeur
     val monPrixVentBM: Double = 0.0,
     var monPrixVentUniterBM: Double =  0.0,
@@ -46,15 +47,14 @@ data class ArticlesAcheteModele(
 
     var clientBenificeFireStoreBM: Double =  0.0,
 
-
     ) {
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
     fun getColumnValue(columnName: String): Any = when (columnName) {
         "clientPrixVentUnite" -> clientPrixVentUnite
         "nmbrunitBC" -> nmbrunitBC
-        "monPrixAchatUniterBC" -> monPrixAchatUniterBC
         "prixAchat" -> prixAchat
+        "monPrixAchatUniterBC" -> monPrixAchatUniterBC
 
         "benificeDivise" -> benificeDivise
         "totalQuantity" -> totalQuantity
