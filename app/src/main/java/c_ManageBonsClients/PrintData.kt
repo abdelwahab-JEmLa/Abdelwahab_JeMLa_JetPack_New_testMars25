@@ -146,23 +146,14 @@ suspend fun exportToFirestore(
                     val subtotal = article.monPrixVentUniterBM * article.totalQuantity
                     if (subtotal != 0.0) {
                         val lineData = hashMapOf(
+                            "vid" to article.vid,
                             "idArticle" to article.idArticle,
                             "nomArticleFinale" to article.nomArticleFinale,
-                            "totalQuantity" to article.totalQuantity,
-                            "monPrixVentUniterBC" to article.monPrixVentUniterBM,
-                            "subtotal" to subtotal,
-                            "nomClient" to article.nomClient,
-                            "dateDachate" to article.dateDachate,
-                            "monPrixVentBons" to article.monPrixVentBM,
                             "prixAchat" to article.prixAchat,
                             "nmbrunitBC" to article.nmbrunitBC,
                             "clientPrixVentUnite" to article.clientPrixVentUnite,
-                            "monBenificeBC" to article.monBenificeBM,
-                            "monBenificeUniterBC" to article.monBenificeUniterBM,
-                            "monPrixAchatUniterBC" to article.monPrixAchatUniterBC,
-                            "benificeDivise" to article.benificeDivise,
-                            "benificeClient" to article.clientBenificeBM,
-                            "typeEmballage" to article.typeEmballage,
+                            "nomClient" to article.nomClient,
+                            "dateDachate" to article.dateDachate,
                             "nomCouleur1" to article.nomCouleur1,
                             "quantityAcheteCouleur1" to article.quantityAcheteCouleur1,
                             "nomCouleur2" to article.nomCouleur2,
@@ -171,6 +162,24 @@ suspend fun exportToFirestore(
                             "quantityAcheteCouleur3" to article.quantityAcheteCouleur3,
                             "nomCouleur4" to article.nomCouleur4,
                             "quantityAcheteCouleur4" to article.quantityAcheteCouleur4,
+                            "totalQuantity" to article.totalQuantity,
+                            "nonTrouveState" to article.nonTrouveState,
+                            "verifieState" to article.verifieState,
+                            "changeCaronState" to article.changeCaronState,
+                            "monPrixAchatUniterBC" to article.monPrixAchatUniterBC,
+                            "benificeDivise" to article.benificeDivise,
+                            "typeEmballage" to article.typeEmballage,
+                            "monPrixVentBM" to article.monPrixVentBM,
+                            "monPrixVentUniterBM" to article.monPrixVentUniterBM,
+                            "monBenificeBM" to article.monBenificeBM,
+                            "monBenificeUniterBM" to article.monBenificeUniterBM,
+                            "clientBenificeBM" to article.clientBenificeBM,
+                            "monPrixVentFireStoreBM" to article.monPrixVentFireStoreBM,
+                            "monPrixVentUniterFireStoreBM" to article.monPrixVentUniterFireStoreBM,
+                            "monBenificeFireStoreBM" to article.monBenificeFireStoreBM,
+                            "monBenificeUniterFireStoreBM" to article.monBenificeUniterFireStoreBM,
+                            "clientBenificeFireStoreBM" to article.clientBenificeFireStoreBM,
+                            "subtotal" to subtotal,
                             "time" to timeString
                         )
 
@@ -182,7 +191,6 @@ suspend fun exportToFirestore(
         }
     }
 }
-
 /**
  * Retrieves the client ID from Firestore.
  */
