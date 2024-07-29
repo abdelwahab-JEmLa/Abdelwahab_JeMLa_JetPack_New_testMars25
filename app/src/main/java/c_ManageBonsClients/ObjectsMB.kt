@@ -44,7 +44,7 @@ import java.io.File
 @Composable
 fun OutlineTextEditeRegle(
     columnToChange: String,
-    abbreviation: String,
+    abbreviation: String? = "",
     labelCalculated: String = "",
     currentChangingField: String,
     article: ArticlesAcheteModele,

@@ -33,6 +33,15 @@ data class ArticlesAcheteModele(
     var benificeDivise: Double =  0.0,
     var benificeClient: Double =  0.0,
     var typeEmballage: String = "",
+    //FireStore
+    var monPrixVentFireStoreBM: Double =  0.0,
+    var monPrixVentUniterFireStoreBM: Double =  0.0,
+
+    var monBenificeFireStoreBM: Double =  0.0,
+    var monBenificeUniterFireStoreBM: Double =  0.0,
+
+    var clientBenificeFireStoreBM: Double =  0.0,
+
 
     ) {
     // Constructeur sans argument nécessaire pour Firebase
@@ -49,6 +58,11 @@ data class ArticlesAcheteModele(
         "benificeDivise" -> benificeDivise
         "benificeClient" -> benificeClient
         "totalQuantity" -> totalQuantity
+        "monPrixVentFireStoreBM" -> monPrixVentFireStoreBM
+        "monPrixVentUniterFireStoreBM" -> monPrixVentUniterFireStoreBM
+        "monBenificeFireStoreBM" -> monBenificeFireStoreBM
+        "monBenificeUniterFireStoreBM" -> monBenificeUniterFireStoreBM
+        "clientBenificeFireStoreBM" -> clientBenificeFireStoreBM
 
         else -> ""
     }

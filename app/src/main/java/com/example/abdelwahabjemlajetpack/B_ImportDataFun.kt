@@ -10,6 +10,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
@@ -207,8 +208,18 @@ suspend fun transferFirebaseData() {
 }
 
 suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context,
-                                                     articleDao: ArticleDao,
-) {
+                                                     articleDao: ArticleDao) {
+    var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
+
+    try {
+        val firestore = Firebase.firestore
+        val querySnapshot = firestore.collection("HistoriqueDesFactures").get().await()
+        fireStorHistoriqueDesFactures = querySnapshot.documents.mapNotNull { document ->
+            document.toObject(ArticlesAcheteModele::class.java)
+        }
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error getting documents: ", e)
+    }
     val refSource = Firebase.database.getReference("ArticlesAcheteModele")
     val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
     try {
@@ -220,6 +231,9 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
         dataMap.forEach { (_, value) ->
             val idArticle = (value["idarticle_c"] as? Long) ?: 0
             val baseDonne = articleDao.getArticleById(idArticle)
+
+            val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle }
+            val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentBons ?: 0.0
 
             val article = ArticlesAcheteModele(
                 vid = (value["id"] as? Long) ?: 0,
@@ -242,8 +256,19 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = false,
                 verifieState = false,
-                typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit"
+                //baseDonne
+                typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
+                //FireStore
+                monPrixVentFireStoreBM = monPrixVentFireStoreBM
             ).apply {
+                monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
+
+                monBenificeFireStoreBM =   roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
+                monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
+
+                clientBenificeFireStoreBM =  roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentFireStoreBM)
+
+                //FireBAse
                 monBenificeBC = roundToOneDecimal(monPrixVentBons - prixAchat)
                 monBenificeUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBC / nmbrunitBC else 0.0)
                 monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)

@@ -90,14 +90,87 @@ fun InformationsChanger(
     firebaseArticle: ArticlesAcheteModele?,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        RowPVetPaFireStor(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
         Row {
             ColumnBenifices(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
             ColumnPVetPa(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f), focusRequester = focusRequester,
                 firebaseArticle = firebaseArticle)
         }
+
         RowAutresInfo(article, onValueChange, currentChangingField)
     }
 }
+
+/**
+ * DARIJA>TARTIB 3LA HSSAB F STOR WELA BASE
+ * @param OutlineTextEditeRegle
+ */
+
+@Composable
+private fun RowPVetPaFireStor(
+    article: ArticlesAcheteModele,
+    onValueChange: (String) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier,
+) {
+        Row {
+            OutlineTextEditeRegle(
+                columnToChange = "monBenificeUniterFireStoreBM",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.15f)
+                    .height(67.dp)
+            )
+
+            OutlineTextEditeRegle(
+                columnToChange = "monBenificeFireStoreBM",
+                abbreviation = "mBF",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.35f)
+                    .height(67.dp)
+            )
+
+            OutlineTextEditeRegle(
+                columnToChange = "monPrixVentUniterFireStoreBM",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.15f)
+                    .height(67.dp)
+            )
+            OutlineTextEditeRegle(
+                columnToChange = "monPrixVentFireStoreBM",
+                abbreviation = "mpVF",
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged, )
+                    updateRelatedFields(article, columnChanged, newValue)
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(0.35f)
+                    .height(67.dp)
+            )
+        }
+
+}
+
+
 
 @Composable
 private fun ColumnPVetPa(
@@ -310,7 +383,9 @@ private fun RowAutresInfo(
 }
 
 
-
+/**
+ * contien outlines de benifice
+ */
 @Composable
 private fun ColumnBenifices(
     article: ArticlesAcheteModele,
