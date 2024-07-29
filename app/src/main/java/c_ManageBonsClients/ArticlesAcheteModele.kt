@@ -8,7 +8,6 @@ data class ArticlesAcheteModele(
     @PrimaryKey(autoGenerate = true) val vid: Long = 0,
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
-    val monPrixVentBons: Double = 0.0,
     val prixAchat: Double = 0.0,
     val nmbrunitBC: Double = 0.0,
     val clientPrixVentUnite: Double = 0.0,
@@ -26,13 +25,18 @@ data class ArticlesAcheteModele(
     val nonTrouveState: Boolean = false,
     val verifieState: Boolean = false,
     var changeCaronState: String = "",
+    var monPrixAchatUniterBC: Double =  0.0,
+    var benificeDivise: Double =  0.0,
+    var typeEmballage: String = "",
+    //FireBase PrixEditeur
+    val monPrixVentBons: Double = 0.0,
+    var monPrixVentUniterBC: Double =  0.0,
+
     var monBenificeBC: Double =  0.0,
     var monBenificeUniterBC: Double =  0.0,
-    var monPrixAchatUniterBC: Double =  0.0,
-    var monPrixVentUniterBC: Double =  0.0,
-    var benificeDivise: Double =  0.0,
+
     var benificeClient: Double =  0.0,
-    var typeEmballage: String = "",
+
     //FireStore
     var monPrixVentFireStoreBM: Double =  0.0,
     var monPrixVentUniterFireStoreBM: Double =  0.0,

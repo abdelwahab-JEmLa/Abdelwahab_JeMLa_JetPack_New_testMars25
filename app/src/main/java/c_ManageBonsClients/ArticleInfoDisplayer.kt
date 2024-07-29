@@ -1,8 +1,10 @@
 package c_ManageBonsClients
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -12,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -90,86 +94,208 @@ fun InformationsChanger(
     firebaseArticle: ArticlesAcheteModele?,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        RowPVetPaFireStor(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
         Row {
             ColumnBenifices(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f))
             ColumnPVetPa(article, onValueChange, currentChangingField, modifier = Modifier.weight(1f), focusRequester = focusRequester,
                 firebaseArticle = firebaseArticle)
         }
+        CardFireStor(article, onValueChange, currentChangingField, modifier = Modifier.height(140.dp))
 
         RowAutresInfo(article, onValueChange, currentChangingField)
     }
 }
 
-/**
- * DARIJA>TARTIB 3LA HSSAB F STOR WELA BASE
- * @param OutlineTextEditeRegle
- */
+
 
 @Composable
-private fun RowPVetPaFireStor(
+private fun CardFireStor(
     article: ArticlesAcheteModele,
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
 ) {
-        Row {
-            OutlineTextEditeRegle(
-                columnToChange = "monBenificeUniterFireStoreBM",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.15f)
-                    .height(67.dp)
-            )
+    var isAnyChildFocused by remember { mutableStateOf(false) }
 
-            OutlineTextEditeRegle(
-                columnToChange = "monBenificeFireStoreBM",
-                abbreviation = "mBF",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.35f)
-                    .height(67.dp)
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isAnyChildFocused) 2.dp else 0.dp,
+                color = if (isAnyChildFocused) Color.Red else Color.Transparent,
+                shape = MaterialTheme.shapes.medium
             )
+    ) {
+        Column(modifier = Modifier.padding(3.dp)) {
+            Row(modifier = Modifier.weight(1f)) {
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeUniterFireStoreBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
 
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixVentUniterFireStoreBM",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.15f)
-                    .height(67.dp)
-            )
-            OutlineTextEditeRegle(
-                columnToChange = "monPrixVentFireStoreBM",
-                abbreviation = "mpVF",
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged, )
-                    updateRelatedFields(article, columnChanged, newValue)
-                },
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(0.35f)
-                    .height(67.dp)
-            )
+                OutlineTextEditeRegle(
+                    columnToChange = "clientBenificeFireStoreBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.2f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeFireStoreBM",
+                    abbreviation = "mBF",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Row(modifier = Modifier.weight(1f)) {
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentUniterFireStoreBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentFireStoreBM",
+                    abbreviation = "mpVF",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+            }
         }
-
+    }
 }
 
+@Composable
+private fun CardFireBase(
+    article: ArticlesAcheteModele,
+    onValueChange: (String) -> Unit,
+    currentChangingField: String,
+    modifier: Modifier = Modifier,
+) {
+    var isAnyChildFocused by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isAnyChildFocused) 2.dp else 0.dp,
+                color = if (isAnyChildFocused) Color.Red else Color.Transparent,
+                shape = MaterialTheme.shapes.medium
+            )
+    ) {
+        Column(modifier = Modifier.padding(3.dp)) {
+            Row(modifier = Modifier.weight(1f)) {
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeUniterFireStoreBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "clientBenificeFireStoreBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.2f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monBenificeFireStoreBM",
+                    abbreviation = "mBF",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Row(modifier = Modifier.weight(1f)) {
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentUniterFireStoreBM",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+
+                OutlineTextEditeRegle(
+                    columnToChange = "monPrixVentFireStoreBM",
+                    abbreviation = "mpVF",
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        updateRelatedFields(article, columnChanged, newValue)
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .onFocusChanged { isAnyChildFocused = it.isFocused }
+                )
+            }
+        }
+    }
+}
 
 
 @Composable
