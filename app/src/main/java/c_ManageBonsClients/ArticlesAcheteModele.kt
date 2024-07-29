@@ -55,17 +55,26 @@ data class ArticlesAcheteModele(
         "nmbrunitBC" -> nmbrunitBC
         "monPrixAchatUniterBC" -> monPrixAchatUniterBC
         "prixAchat" -> prixAchat
-        "monPrixVentUniterBC" -> monPrixVentUniterBM
-        "monPrixVentBons" -> monPrixVentBM
-        "monBenificeUniterBC" -> monBenificeUniterBM
-        "monBenificeBC" -> monBenificeBM
+
         "benificeDivise" -> benificeDivise
-        "benificeClient" -> clientBenificeBM
         "totalQuantity" -> totalQuantity
+
+        //FireBase PrixEditeur
+        "monPrixVentBM" -> monPrixVentBM
+        "monPrixVentUniterBM" -> monPrixVentUniterBM
+
+        "monBenificeBM" -> monBenificeBM
+        "monBenificeUniterBM" -> monBenificeUniterBM
+
+        "clientBenificeBM" -> clientBenificeBM
+
+        //FireStore
         "monPrixVentFireStoreBM" -> monPrixVentFireStoreBM
         "monPrixVentUniterFireStoreBM" -> monPrixVentUniterFireStoreBM
+
         "monBenificeFireStoreBM" -> monBenificeFireStoreBM
         "monBenificeUniterFireStoreBM" -> monBenificeUniterFireStoreBM
+
         "clientBenificeFireStoreBM" -> clientBenificeFireStoreBM
 
         else -> ""

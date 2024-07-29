@@ -233,7 +233,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
             val baseDonne = articleDao.getArticleById(idArticle)
 
             val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle }
-            val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentBM ?: 0.0
+            val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
 
             val article = ArticlesAcheteModele(
                 vid = (value["id"] as? Long) ?: 0,
