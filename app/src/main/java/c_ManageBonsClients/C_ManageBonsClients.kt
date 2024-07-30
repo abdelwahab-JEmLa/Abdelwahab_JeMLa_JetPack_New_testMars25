@@ -358,7 +358,7 @@ fun ArticleBoardCard(
                     PriceOverlay(article.monPrixVentBM)
                 }
                 Row {
-                    var totalQuantityText by remember { mutableStateOf(article.totalQuantity.toString()) }
+                    var totalQuantityText by remember { mutableStateOf("") }
 
                     OutlinedTextField(
                         value = totalQuantityText,
@@ -370,7 +370,7 @@ fun ArticleBoardCard(
                             articleUpdate.setValue(newTotalQuantity)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text(text = "Total") },
+                        label = { Text(text = article.totalQuantity.toString()) },
                         modifier = Modifier.weight(0.3f)
                     )
                     ArticleName(

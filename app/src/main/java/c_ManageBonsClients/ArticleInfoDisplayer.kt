@@ -175,6 +175,7 @@ fun CombinedCard(
                             columnToChange = field.columnToChange,
                             abbreviation = field.abbreviation,
                             calculateOthersRelated = { columnChanged, newValue ->
+                                onCardFocused()
                                 onValueChange(columnChanged)
                                 updateRelatedFields(article, columnChanged, newValue)
                             },

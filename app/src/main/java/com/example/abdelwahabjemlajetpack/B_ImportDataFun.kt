@@ -230,9 +230,11 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
 
         dataMap.forEach { (_, value) ->
             val idArticle = (value["idarticle_c"] as? Long) ?: 0
+            val nomClient = value["nomclient_c"] as? String ?: ""
+
             val baseDonne = articleDao.getArticleById(idArticle)
 
-            val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle }
+            val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient  }
             val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
 
             val article = ArticlesAcheteModele(
@@ -242,7 +244,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
                 nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
                 clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
-                nomClient = value["nomclient_c"] as? String ?: "",
+                nomClient = nomClient,
                 dateDachate = value["datedachate"] as? String ?: "",
                 nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
                 quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
@@ -257,7 +259,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 verifieState = false,
                 //Stats
                 typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
-                choisirePrixDepuitFireStoreOuBaseBM = "CardFireStor",
+                choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
                 //baseDonne
                 monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
                 //FireStore
