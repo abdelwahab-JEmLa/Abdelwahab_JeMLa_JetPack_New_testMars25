@@ -149,6 +149,7 @@ fun AutoResizedTextBC(
         )
     }
 }
+
 @Composable
 fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
     val defaultDrawable = R.drawable.blanc

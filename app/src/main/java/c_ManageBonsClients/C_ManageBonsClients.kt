@@ -288,7 +288,7 @@ fun EmballageHeader(
     onPrintClick: () -> Unit,
     onToggleActive: () -> Unit,
     isActive: Boolean,
-    nomClient: String
+    nomClient: String,
 ) {
     Row(
         modifier = Modifier
@@ -584,7 +584,6 @@ private fun PriceOverlay(price: Double) {
         }
     }
 }
-
 
 
 
