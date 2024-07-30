@@ -84,19 +84,14 @@ fun InformationsChanger(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester,
 ) {
-    var isInitialFocusSet by remember { mutableStateOf(false) }
-
     Column(modifier = modifier.fillMaxWidth()) {
         CardFireBase(
             article,
             onValueChange,
             currentChangingField,
             modifier = Modifier.height(140.dp),
-            thisCardIsFocused = {
-                if (isInitialFocusSet) {
-                    updateChoisirePrixDepuitFireStoreOuBaseBM(article, it)
-                }
-                isInitialFocusSet = true
+            onCardFocused = {
+                updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireBase")
             }
         )
         CardFireStor(
@@ -104,11 +99,8 @@ fun InformationsChanger(
             onValueChange,
             currentChangingField,
             modifier = Modifier.height(140.dp),
-            thisCardIsFocused = {
-                if (isInitialFocusSet) {
-                    updateChoisirePrixDepuitFireStoreOuBaseBM(article, it)
-                }
-                isInitialFocusSet = true
+            onCardFocused = {
+                updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireStor")
             },
             focusRequester = focusRequester,
         )
@@ -129,8 +121,9 @@ private fun CardFireBase(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    thisCardIsFocused: (String) -> Unit
+    onCardFocused: () -> Unit
 ) {
+
     data class FieldInfo(
         val columnToChange: String,
         val abbreviation: String? = null,
@@ -174,9 +167,7 @@ private fun CardFireBase(
                             modifier = Modifier
                                 .weight(field.weight)
                                 .onFocusChanged {
-                                    if (it.isFocused) {
-                                        thisCardIsFocused("CardFireBase")
-                                    }
+                                            onCardFocused()
                                 }
                         )
                     }
@@ -192,9 +183,12 @@ private fun CardFireStor(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    thisCardIsFocused: (String) -> Unit,
+    onCardFocused: () -> Unit,
     focusRequester: FocusRequester
 ) {
+    var isCardFocused by remember { mutableStateOf(false) }
+    var wasEverFocused by remember { mutableStateOf(false) }
+
     data class FieldInfo(
         val columnToChange: String,
         val abbreviation: String? = null,
@@ -238,9 +232,15 @@ private fun CardFireStor(
                             article = article,
                             modifier = Modifier
                                 .weight(field.weight)
-                                .onFocusChanged {
-                                    if (it.isFocused) {
-                                        thisCardIsFocused("CardFireStor")
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused && !isCardFocused) {
+                                        isCardFocused = true
+                                        if (wasEverFocused) {
+                                            onCardFocused()
+                                        }
+                                        wasEverFocused = true
+                                    } else if (!focusState.isFocused && isCardFocused) {
+                                        isCardFocused = false
                                     }
                                 },
                             focusRequester = if (field.useFocusRequester) focusRequester else null
