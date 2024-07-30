@@ -46,6 +46,7 @@ suspend fun processClientData(context: Context, nomClient: String) {
             .get()
             .await()
 
+
         val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, timeString, clientArticles)
 
         exportToFirestore(fireStore, clientArticles, nomClient, dateString, timeString)
@@ -79,17 +80,17 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
         append("<SMALL><BOLD>    Quantité      Prix         <NORMAL>Sous-total<BR>")
         append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
     }
-
     clientArticles.children
         .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
         .filter { it.verifieState }
         .forEachIndexed { index, article ->
-            val subtotal = article.monPrixVentUniterBM * article.totalQuantity
+            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")  article.monPrixVentBM else article.monPrixVentFireStoreBM
+            val subtotal = monPrixVentDetermineBM * article.totalQuantity
             if (subtotal != 0.0) {
                 texteImprimable.apply {
                     append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
                     append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
-                    append("<MEDIUM1><LEFT>${article.monPrixVentUniterBM}Da   ")
+                    append("<MEDIUM1><LEFT>${monPrixVentDetermineBM}Da   ")
                     append("<SMALL>$subtotal<BR>")
                     append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
                 }
@@ -153,6 +154,7 @@ suspend fun exportToFirestore(
                             "nmbrunitBC" to article.nmbrunitBC,
                             "clientPrixVentUnite" to article.clientPrixVentUnite,
                             "nomClient" to article.nomClient,
+                            "idClient" to getClientId(fireStore,nomClient),
                             "dateDachate" to article.dateDachate,
                             "nomCouleur1" to article.nomCouleur1,
                             "quantityAcheteCouleur1" to article.quantityAcheteCouleur1,
@@ -169,6 +171,7 @@ suspend fun exportToFirestore(
                             "monPrixAchatUniterBC" to article.monPrixAchatUniterBC,
                             "benificeDivise" to article.benificeDivise,
                             "typeEmballage" to article.typeEmballage,
+                            "choisirePrixDepuitFireStoreOuBaseBM" to article.choisirePrixDepuitFireStoreOuBaseBM,
                             "monPrixVentBM" to article.monPrixVentBM,
                             "monPrixVentUniterBM" to article.monPrixVentUniterBM,
                             "monBenificeBM" to article.monBenificeBM,

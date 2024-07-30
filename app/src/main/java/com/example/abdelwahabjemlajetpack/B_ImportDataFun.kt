@@ -255,7 +255,9 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
                 totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
                 nonTrouveState = false,
                 verifieState = false,
+                //Stats
                 typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
+                choisirePrixDepuitFireStoreOuBaseBM = "CardFireStor",
                 //baseDonne
                 monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
                 //FireStore

@@ -16,10 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -29,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import b_Edite_Base_Donne.capitalizeFirstLetter
+import com.google.firebase.Firebase
+import com.google.firebase.database.database
 
 @Composable
 fun DisplayDetailleArticle(
@@ -83,7 +81,6 @@ fun InformationsChanger(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester,
 ) {
-    var whatCardIsFocused by remember { mutableStateOf("") }
 
     Column(modifier = modifier.fillMaxWidth()) {
         CardFireBase(
@@ -91,38 +88,39 @@ fun InformationsChanger(
             onValueChange,
             currentChangingField,
             modifier = Modifier.height(140.dp),
-            whatCardIsFocused = whatCardIsFocused,
-            thisCardIsFocused = { whatCardIsFocused = "CardFireBase" }
+            thisCardIsFocused = { updateChoisirePrixDepuitFireStoreOuBaseBM(article,it) }
         )
         CardFireStor(
             article,
             onValueChange,
             currentChangingField,
             modifier = Modifier.height(140.dp),
-            whatCardIsFocused = whatCardIsFocused,
-            thisCardIsFocused = { whatCardIsFocused = "CardFireStor" },
+            thisCardIsFocused = {updateChoisirePrixDepuitFireStoreOuBaseBM(article,it) },
                     focusRequester=focusRequester,
         )
 
         RowAutresInfo(article, onValueChange, currentChangingField)
     }
 }
+fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, newType: String) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child("choisirePrixDepuitFireStoreOuBaseBM").setValue(newType)
 
+}
 @Composable
 private fun CardFireBase(
     article: ArticlesAcheteModele,
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    whatCardIsFocused: String,
     thisCardIsFocused: (String) -> Unit
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = if (whatCardIsFocused == "CardFireBase") 2.dp else 0.dp,
-                color = if (whatCardIsFocused == "CardFireBase") Color.Red else Color.Transparent,
+                width = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase") 2.dp else 0.dp,
+                color = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase") Color.Red else Color.Transparent,
                 shape = MaterialTheme.shapes.medium
             )
     ) {
@@ -210,7 +208,6 @@ private fun CardFireStor(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    whatCardIsFocused: String,
     thisCardIsFocused: (String) -> Unit,
     focusRequester: FocusRequester
 ) {
@@ -218,8 +215,8 @@ private fun CardFireStor(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = if (whatCardIsFocused == "CardFireStor") 2.dp else 0.dp,
-                color = if (whatCardIsFocused == "CardFireStor") Color.Red else Color.Transparent,
+                width = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor") 2.dp else 0.dp,
+                color = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor") Color.Red else Color.Transparent,
                 shape = MaterialTheme.shapes.medium
             )
     ) {

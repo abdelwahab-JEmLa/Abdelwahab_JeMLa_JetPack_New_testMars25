@@ -27,7 +27,10 @@ data class ArticlesAcheteModele(
     var changeCaronState: String = "",
     var monPrixAchatUniterBC: Double =  0.0,
     var benificeDivise: Double =  0.0,
+
+    //Stats
     var typeEmballage: String = "",
+    var choisirePrixDepuitFireStoreOuBaseBM: String = "",
 
     //FireBase PrixEditeur
     val monPrixVentBM: Double = 0.0,
@@ -58,6 +61,7 @@ data class ArticlesAcheteModele(
 
         "benificeDivise" -> benificeDivise
         "totalQuantity" -> totalQuantity
+
 
         //FireBase PrixEditeur
         "monPrixVentBM" -> monPrixVentBM
