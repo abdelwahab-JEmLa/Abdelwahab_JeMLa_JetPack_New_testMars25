@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -343,19 +345,22 @@ fun ArticleBoardCard(
     ) {
         Box(modifier = Modifier.padding(2.dp)) {
             Column {
-                Box(
-                    contentAlignment = Alignment.Center,
+                Card(
                     modifier = Modifier
-                        .height(230.dp)
+                        .height(190.dp)
                         .clickable { onArticleSelect(article) }
                 ) {
-                    if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
-                        SingleColorImage(article)
-                    } else {
-                        MultiColorGrid(article)
-                    }
+                    Column {
 
-                    PriceOverlay(article.monPrixVentBM)
+                        PriceOverlay(article.monPrixVentBM)
+
+                        if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
+                            SingleColorImage(article)
+                        } else {
+                            MultiColorGrid(article)
+                        }
+
+                    }
                 }
                 Row {
                     var totalQuantityText by remember { mutableStateOf("") }
@@ -387,15 +392,22 @@ fun ArticleBoardCard(
                     )
                 }
             }
-            IconButton(
-                onClick = { showPackagingDialog = true },
-                modifier = Modifier.align(Alignment.BottomEnd)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .align(Alignment.BottomEnd)
+                    .background(Color.Blue, CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.Default.AllInbox,
-                    contentDescription = "Packaging Type",
-                    tint = Color.Blue
-                )
+                IconButton(
+                    onClick = { showPackagingDialog = true },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AllInbox,
+                        contentDescription = "Packaging Type",
+                        tint = Color.White.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
@@ -407,7 +419,6 @@ fun ArticleBoardCard(
         )
     }
 }
-
 @Composable
 fun ShowPackagingDialog(
     article: ArticlesAcheteModele,
@@ -443,7 +454,9 @@ fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) Color.Red else Color.Green
         ),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
     ) {
         Text(text)
     }
@@ -471,12 +484,9 @@ private fun ArticleName(
     }
 }
 
-
 @Composable
 private fun SingleColorImage(article: ArticlesAcheteModele) {
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
     ) {
         val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
         LoadImageFromPathBC(imagePath = imagePath)
@@ -499,38 +509,54 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
         items(colorData.size) { index ->
             val (quantity, colorName) = colorData[index]
             if (quantity > 0) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                Card(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .fillMaxSize(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF40E0D0) // Bleu turquoise
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 6.dp
+                    )
                 ) {
-                    val imagePathWhithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
-                    val imagePathWebp = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}.webp"
-                    val imagePathJpg = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}.jpg"
-                    val webpExists = File(imagePathWebp).exists()
-                    val jpgExists = File(imagePathJpg).exists()
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
+                        val imagePathWebp = "$imagePathWithoutExt.webp"
+                        val imagePathJpg = "$imagePathWithoutExt.jpg"
+                        val webpExists = File(imagePathWebp).exists()
+                        val jpgExists = File(imagePathJpg).exists()
 
-                    if (webpExists || jpgExists) {
-                        LoadImageFromPathBC(imagePath = imagePathWhithoutExt)
-                    } else {
+                        if (webpExists || jpgExists) {
+                            LoadImageFromPathBC(
+                                imagePath = imagePathWithoutExt,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = colorName ?: "",
+                                color = Color.Red,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .rotate(45f)
+                                    .background(Color.White.copy(alpha = 0.6f))
+                                    .padding(4.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
                         Text(
-                            text = colorName ?: "",
+                            text = quantity.toString(),
                             color = Color.Red,
                             modifier = Modifier
-                                .rotate(45f)
+                                .align(Alignment.TopStart)
                                 .background(Color.White.copy(alpha = 0.6f))
                                 .padding(4.dp),
                             textAlign = TextAlign.Center
                         )
                     }
-
-                    Text(
-                        text = quantity.toString(),
-                        color = Color.Red,
-                        modifier = Modifier
-                            .background(Color.White.copy(alpha = 0.6f))
-                            .padding(4.dp),
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }
@@ -541,9 +567,7 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
 private fun PriceOverlay(price: Double) {
     Box(
         modifier = Modifier
-            .fillMaxSize()
             .padding(4.dp),
-        contentAlignment = Alignment.TopCenter
     ) {
         Box(
             modifier = Modifier
