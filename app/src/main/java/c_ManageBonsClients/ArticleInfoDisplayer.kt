@@ -260,14 +260,12 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
             up("monBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
             up("monPrixVentUniterBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monPrixVentBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
-
         }
 
         "monBenificeUniterBM" -> {
             up("monBenificeBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
             up("monPrixVentUniterBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
             up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
-
         }
 
         "monBenificeBM" -> {
@@ -275,75 +273,67 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
             up("monPrixVentUniterBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
             up("monPrixVentBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
             up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
-
-
         }
 
         "monPrixAchatUniterBC" -> {
             up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
             up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBM).toString(), ar.idArticle)
-
-            // FireStore calculations
             up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeFireStoreBM).toString(), ar.idArticle)
         }
 
         "prixAchat" -> {
             up("monPrixVentBM", (newValueDouble + ar.monBenificeBM).toString(), ar.idArticle)
-
-            // FireStore calculations
             up("monPrixVentFireStoreBM", (newValueDouble + ar.monBenificeFireStoreBM).toString(), ar.idArticle)
         }
+
         "nmbrunitBC" -> {
-            // Update related fields when the number of units changes
             up("monPrixVentBM", (ar.monPrixVentUniterBM * newValueDouble).toString(), ar.idArticle)
             up("monBenificeBM", ((ar.monPrixVentUniterBM * newValueDouble) - ar.prixAchat).toString(), ar.idArticle)
             up("clientBenificeBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterBM * newValueDouble)).toString(), ar.idArticle)
+            up("monBenificeUniterBM", ((ar.monPrixVentUniterBM * newValueDouble - ar.prixAchat) / newValueDouble).toString(), ar.idArticle)
 
-            // Update FireStore-specific fields
             up("monPrixVentFireStoreBM", (ar.monPrixVentUniterFireStoreBM * newValueDouble).toString(), ar.idArticle)
             up("monBenificeFireStoreBM", ((ar.monPrixVentUniterFireStoreBM * newValueDouble) - ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", ((ar.monPrixVentUniterFireStoreBM * newValueDouble - ar.prixAchat) / newValueDouble).toString(), ar.idArticle)
             up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterFireStoreBM * newValueDouble)).toString(), ar.idArticle)
         }
 
         "clientPrixVentUnite" -> {
-            // Update related fields when the client sale price per unit changes
             up("clientBenificeBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentBM).toString(), ar.idArticle)
-
-            // Update FireStore-specific fields
             up("clientBenificeFireStoreBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentFireStoreBM).toString(), ar.idArticle)
-
-         }
+        }
 
         "monPrixVentUniterBM" -> {
             up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
             up("monBenificeBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
-
+            up("monBenificeUniterBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
         }
 
         "monPrixVentBM" -> {
             up("monPrixVentUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monBenificeBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
             up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
-
+            up("monBenificeUniterBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
         }
 
-        // Add new cases for FireStore-specific fields
         "monPrixVentFireStoreBM" -> {
             up("monPrixVentUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monBenificeFireStoreBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
             up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
         }
 
         "monPrixVentUniterFireStoreBM" -> {
             up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
             up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
         }
 
         "monBenificeFireStoreBM" -> {
             up("monBenificeUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
             up("monPrixVentUniterFireStoreBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
             up("monPrixVentFireStoreBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
-            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - (newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
         }
 
         "monBenificeUniterFireStoreBM" -> {
