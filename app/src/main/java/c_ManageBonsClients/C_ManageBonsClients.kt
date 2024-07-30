@@ -512,7 +512,9 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
                 Card(
                     modifier = Modifier
                         .padding(4.dp)
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .height(60.dp)
+                    ,
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFF40E0D0) // Bleu turquoise
                     ),
