@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -85,26 +84,27 @@ fun InformationsChanger(
     focusRequester: FocusRequester,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        CardFireBase(
-            article,
-            onValueChange,
-            currentChangingField,
-            modifier = Modifier.height(140.dp),
+        CombinedCard(
+            article = article,
+            onValueChange = onValueChange,
+            currentChangingField = currentChangingField,
+            cardType = "CardFireBase",
             onCardFocused = {
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireBase")
-            }
+            },
+            modifier = Modifier.height(140.dp)
         )
-        CardFireStor(
-            article,
-            onValueChange,
-            currentChangingField,
-            modifier = Modifier.height(140.dp),
+        CombinedCard(
+            article = article,
+            onValueChange = onValueChange,
+            currentChangingField = currentChangingField,
+            cardType = "CardFireStor",
             onCardFocused = {
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireStor")
             },
             focusRequester = focusRequester,
+            modifier = Modifier.height(140.dp)
         )
-
         RowAutresInfo(article, onValueChange, currentChangingField)
     }
 }
@@ -116,102 +116,52 @@ fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, new
 
 
 @Composable
-private fun CardFireBase(
+fun CombinedCard(
     article: ArticlesAcheteModele,
     onValueChange: (String) -> Unit,
     currentChangingField: String,
-    modifier: Modifier = Modifier,
-    onCardFocused: () -> Unit
-) {
-
-    data class FieldInfo(
-        val columnToChange: String,
-        val abbreviation: String? = null,
-        val weight: Float
-    )
-
-    val fields = listOf(
-        FieldInfo("monBenificeUniterBM", weight = 0.4f),
-        FieldInfo("clientBenificeBM", "cB", 0.2f),
-        FieldInfo("monBenificeBM", "mB", 0.4f),
-        FieldInfo("monPrixVentUniterBM", weight = 0.5f),
-        FieldInfo("monPrixVentBM", "mpV", 0.5f)
-    )
-
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase") 2.dp else 0.dp,
-                color = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase") Color.Red else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            )
-    ) {
-        Column(modifier = Modifier.padding(3.dp)) {
-            fields.chunked(3).forEachIndexed { rowIndex, rowFields ->
-                if (rowIndex > 0) {
-                    Spacer(modifier = Modifier.height(3.dp))
-                }
-                Row(modifier = Modifier.weight(1f)) {
-                    rowFields.forEach { field ->
-                        OutlineTextEditeRegle(
-                            columnToChange = field.columnToChange,
-                            abbreviation = field.abbreviation,
-                            calculateOthersRelated = { columnChanged, newValue ->
-                                onValueChange(columnChanged)
-                                updateRelatedFields(article, columnChanged, newValue)
-                            },
-                            currentChangingField = currentChangingField,
-                            article = article,
-                            modifier = Modifier
-                                .weight(field.weight)
-                                .onFocusChanged {
-                                            onCardFocused()
-                                }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CardFireStor(
-    article: ArticlesAcheteModele,
-    onValueChange: (String) -> Unit,
-    currentChangingField: String,
-    modifier: Modifier = Modifier,
+    cardType: String,
     onCardFocused: () -> Unit,
-    focusRequester: FocusRequester
+    focusRequester: FocusRequester? = null,
+    modifier: Modifier = Modifier
 ) {
+    val isFireStor = cardType == "CardFireStor"
     var isCardFocused by remember { mutableStateOf(false) }
     var wasEverFocused by remember { mutableStateOf(false) }
 
     data class FieldInfo(
         val columnToChange: String,
-        val abbreviation: String? = null,
+        val abbreviation: String? = "",
         val weight: Float,
         val useFocusRequester: Boolean = false
     )
 
-    val fields = listOf(
-        FieldInfo("monBenificeUniterFireStoreBM", weight = 0.4f),
-        FieldInfo("clientBenificeFireStoreBM", "cBF", 0.2f),
-        FieldInfo("monBenificeFireStoreBM", "mBF", 0.4f),
-        FieldInfo("monPrixVentUniterFireStoreBM", weight = 0.5f),
-        FieldInfo("monPrixVentFireStoreBM", "mpVF", 0.5f, true)
-    )
+    val fields = when (cardType) {
+        "CardFireBase" -> listOf(
+            FieldInfo("clientBenificeBM", "cB", 0.4f),
+            FieldInfo("monBenificeUniterBM", weight = 0.2f),
+            FieldInfo("monBenificeBM", "mB", 0.4f),
+            FieldInfo("monPrixVentUniterBM", weight = 0.5f),
+            FieldInfo("monPrixVentBM", "mpV", 0.5f)
+        )
+        "CardFireStor" -> listOf(
+            FieldInfo("clientBenificeFireStoreBM", "cBF", 0.4f),
+            FieldInfo("monBenificeUniterFireStoreBM", weight = 0.2f),
+            FieldInfo("monBenificeFireStoreBM", "mBF", 0.4f),
+            FieldInfo("monPrixVentUniterFireStoreBM", weight = 0.5f),
+            FieldInfo("monPrixVentFireStoreBM", "mpVF", 0.5f, true)
+        )
+        else -> emptyList()
+    }
 
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor") 2.dp else 0.dp,
-                color = if (article.choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor") Color.Red else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
+                width = if (article.choisirePrixDepuitFireStoreOuBaseBM == cardType) 2.dp else 0.dp,
+                color = if (article.choisirePrixDepuitFireStoreOuBaseBM == cardType) Color.Red else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
             )
     ) {
         Column(modifier = Modifier.padding(3.dp)) {
@@ -233,14 +183,20 @@ private fun CardFireStor(
                             modifier = Modifier
                                 .weight(field.weight)
                                 .onFocusChanged { focusState ->
-                                    if (focusState.isFocused && !isCardFocused) {
-                                        isCardFocused = true
-                                        if (wasEverFocused) {
+                                    if (isFireStor) {
+                                        if (focusState.isFocused && !isCardFocused) {
+                                            isCardFocused = true
+                                            if (wasEverFocused) {
+                                                onCardFocused()
+                                            }
+                                            wasEverFocused = true
+                                        } else if (!focusState.isFocused && isCardFocused) {
+                                            isCardFocused = false
+                                        }
+                                    } else {
+                                        if (focusState.isFocused) {
                                             onCardFocused()
                                         }
-                                        wasEverFocused = true
-                                    } else if (!focusState.isFocused && isCardFocused) {
-                                        isCardFocused = false
                                     }
                                 },
                             focusRequester = if (field.useFocusRequester) focusRequester else null
