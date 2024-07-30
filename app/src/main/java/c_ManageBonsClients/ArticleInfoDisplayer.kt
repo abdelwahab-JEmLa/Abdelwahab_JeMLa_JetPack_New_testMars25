@@ -38,7 +38,6 @@ fun DisplayDetailleArticle(
     currentChangingField: String,
     onValueOutlineChange: (String) -> Unit,
     focusRequester: FocusRequester,
-    firebaseArticle: ArticlesAcheteModele?,
 ) {
 
     LaunchedEffect(Unit) {
