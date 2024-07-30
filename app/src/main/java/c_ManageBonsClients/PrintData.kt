@@ -46,7 +46,6 @@ suspend fun processClientData(context: Context, nomClient: String) {
             .get()
             .await()
 
-
         val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, timeString, clientArticles)
 
         exportToFirestore(fireStore, clientArticles, nomClient, dateString, timeString)
@@ -194,6 +193,7 @@ suspend fun exportToFirestore(
         }
     }
 }
+
 /**
  * Retrieves the client ID from Firestore.
  */
@@ -280,69 +280,4 @@ fun imprimerDonnees(context: Context, texteImprimable: String, totaleBon: Double
     Log.d(TAG, "Impression lancée. Total: $totaleBon")
 }
 
-// Update Firebase functions
-fun updateNonTrouveState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
 
-    articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
-}
-
-fun updateVerifieState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("verifieState").setValue(!article.verifieState)
-}
-
-
-fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
-    val newValueDouble = newValue.toDoubleOrNull() ?: return
-    when (columnChanged) {
-        "benificeClient" -> {
-            up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monBenificeUniterBC", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBC", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBons", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
-        }
-        "monBenificeUniterBC" -> {
-            up("monBenificeBC", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
-        }
-        "monBenificeBC" -> {
-            up("monBenificeUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterBC", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
-            up("benificeClient", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
-        }
-        "monPrixAchatUniterBC" -> {
-            up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBM).toString(), ar.idArticle)
-        }
-        "prixAchat" -> {
-            up("monPrixVentBons", (newValueDouble + ar.monBenificeBM).toString(), ar.idArticle)
-        }
-        "monPrixVentUniterBC" -> {
-            up("monPrixVentBons", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBC", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
-        }
-        "monPrixVentBons" -> {
-            up("monPrixVentUniterBC", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBC", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("benificeClient", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
-        }
-    }
-}
-
-//updateFireBase
-fun up(columnChanged: String, newValue: String, articleId: Long) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
-    val articleUpdate = articleFromFireBase.child(columnChanged)
-    articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
-}
-
-fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("typeEmballage").setValue(newType)
-    val baseDoneRef = Firebase.database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
-    baseDoneRef.child("cartonState").setValue(newType)
-}
