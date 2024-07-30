@@ -141,15 +141,15 @@ fun CombinedCard(
             FieldInfo("clientBenificeBM", "cB", 0.4f),
             FieldInfo("monBenificeUniterBM", weight = 0.2f),
             FieldInfo("monBenificeBM", "mB", 0.4f),
-            FieldInfo("monPrixVentUniterBM", weight = 0.5f),
-            FieldInfo("monPrixVentBM", "mpV", 0.5f)
+            FieldInfo("monPrixVentUniterBM", weight = 0.4f),
+            FieldInfo("monPrixVentBM", "mpV", 0.6f)
         )
         "CardFireStor" -> listOf(
             FieldInfo("clientBenificeFireStoreBM", "cBF", 0.4f),
             FieldInfo("monBenificeUniterFireStoreBM", weight = 0.2f),
             FieldInfo("monBenificeFireStoreBM", "mBF", 0.4f),
-            FieldInfo("monPrixVentUniterFireStoreBM", weight = 0.5f),
-            FieldInfo("monPrixVentFireStoreBM", "mpVF", 0.5f, true)
+            FieldInfo("monPrixVentUniterFireStoreBM", weight = 0.4f),
+            FieldInfo("monPrixVentFireStoreBM", "mpVF", 0.6f, true)
         )
         else -> emptyList()
     }
@@ -210,66 +210,42 @@ fun CombinedCard(
 @Composable
 private fun RowAutresInfo(
     article: ArticlesAcheteModele,
-    onValueChange: (String,) -> Unit,
+    onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier
 ) {
-    Row {
-        OutlineTextEditeRegle(
-            columnToChange = "clientPrixVentUnite",
-            abbreviation = "cVU",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(0.10f)
-                .height(67.dp)
+    data class FieldInfo(
+        val columnToChange: String,
+        val abbreviation: String,
+        val weight: Float,
+        val updateRelated: Boolean
+    )
 
-        )
-        OutlineTextEditeRegle(
-            columnToChange = "nmbrunitBC",
-            abbreviation = "nu",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(0.10f)
-                .height(67.dp)
+    val fields = listOf(
+        FieldInfo("clientPrixVentUnite", "cVU", 0.20f, false),
+        FieldInfo("nmbrunitBC", "nu", 0.20f, false),
+        FieldInfo("monPrixAchatUniterBC", "", 0.20f, true),
+        FieldInfo("prixAchat", "pA", 0.40f, true)
+    )
 
-        )
-
-        OutlineTextEditeRegle(
-            columnToChange = "monPrixAchatUniterBC",
-            abbreviation = "mpVF",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-                updateRelatedFields(article, columnChanged, newValue)
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(0.15f)
-                .height(67.dp)
-
-        )
-        OutlineTextEditeRegle(
-            columnToChange = "prixAchat",
-            abbreviation = "pA",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-                updateRelatedFields(article, columnChanged, newValue)
-            },
-            currentChangingField = currentChangingField,
-            article = article,
-            modifier = Modifier
-                .weight(0.65f)
-                .height(67.dp)
-
-        )
+    Row(modifier = modifier) {
+        fields.forEach { field ->
+            OutlineTextEditeRegle(
+                columnToChange = field.columnToChange,
+                abbreviation = field.abbreviation,
+                calculateOthersRelated = { columnChanged, newValue ->
+                    onValueChange(columnChanged)
+                    if (field.updateRelated) {
+                        updateRelatedFields(article, columnChanged, newValue)
+                    }
+                },
+                currentChangingField = currentChangingField,
+                article = article,
+                modifier = Modifier
+                    .weight(field.weight)
+                    .height(67.dp)
+            )
+        }
     }
 }
 
