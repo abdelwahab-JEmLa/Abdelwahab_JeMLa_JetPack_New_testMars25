@@ -178,9 +178,13 @@ fun DisplayManageBonsClients(
                                     activeClients + nomClient
                                 }
                             },
-                            isActive = activeClients.contains(nomClient)
+                            isActive = activeClients.contains(nomClient),
+                            articles = clientArticles
                         )
                     }
+
+
+
 
                     val filteredArticles = if (activeClients.contains(nomClient)) {
                         clientArticles.filter { !it.nonTrouveState &&
@@ -254,13 +258,40 @@ fun DisplayManageBonsClients(
 }
 
 @Composable
+fun PrintConfirmationDialog(
+    verifiedCount: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Printing") },
+        text = { Text("There are $verifiedCount verified articles. Do you want to proceed with printing?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
     typeEmballage: String,
     onPrintClick: () -> Unit,
     onToggleActive: () -> Unit,
     isActive: Boolean,
+    articles: List<ArticlesAcheteModele>
 ) {
+    var showPrintDialog by remember { mutableStateOf(false) }
+    val verifiedCount = articles.count { it.verifieState }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -275,7 +306,7 @@ fun ClientAndEmballageHeader(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = onPrintClick) {
+        IconButton(onClick = { showPrintDialog = true }) {
             Icon(
                 imageVector = Icons.Default.Print,
                 contentDescription = "Print",
@@ -291,7 +322,18 @@ fun ClientAndEmballageHeader(
         }
     }
 
+    if (showPrintDialog) {
+        PrintConfirmationDialog(
+            verifiedCount = verifiedCount,
+            onConfirm = {
+                onPrintClick()
+                showPrintDialog = false
+            },
+            onDismiss = { showPrintDialog = false }
+        )
+    }
 }
+
 
 @Composable
 fun ArticleBoardCard(
