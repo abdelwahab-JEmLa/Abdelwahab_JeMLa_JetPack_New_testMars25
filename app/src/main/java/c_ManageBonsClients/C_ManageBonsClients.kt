@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -79,8 +80,10 @@ fun C_ManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var showClientDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val density = LocalDensity.current
 
     val articlesAcheteModeleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
 
@@ -94,7 +97,6 @@ fun C_ManageBonsClients() {
                         selectedArticleId = null
                     }
                 }
-
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -102,6 +104,7 @@ fun C_ManageBonsClients() {
             }
         })
     }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,6 +112,9 @@ fun C_ManageBonsClients() {
                 actions = {
                     IconButton(onClick = { showDialog = true }) {
                         Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
+                    }
+                    IconButton(onClick = { showClientDialog = true }) {
+                        Icon(imageVector = Icons.Default.AllInbox, contentDescription = "Select Client")
                     }
                 }
             )
@@ -124,7 +130,69 @@ fun C_ManageBonsClients() {
                 paddingValues = paddingValues,
             )
         }
+
+        if (showClientDialog) {
+            val distinctClients = articles.map { it.nomClient }.distinct().sorted()
+            val numberedClients = distinctClients.mapIndexed { index, client ->
+                "${index + 1}. $client" to client
+            }
+
+            ClientSelectionDialog(
+                numberedClients = numberedClients,
+                onClientSelected = { selectedClientIndex ->
+                    coroutineScope.launch {
+                        val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
+                        val selectedClient = distinctClients[selectedClientIndex+ 3]
+                        val targetIndex = sortedArticles.indexOfFirst { it.nomClient == selectedClient }
+                        if (targetIndex != -1) {
+                            val scrollToIndex = (selectedClientIndex ).coerceAtLeast(0)
+                            val previousClient = distinctClients[scrollToIndex]
+                            val scrollTargetIndex = sortedArticles.indexOfFirst { it.nomClient == previousClient }
+
+                            val appBarHeightInputPx = 128.0
+
+                            listState.animateScrollToItem(
+                                index = scrollTargetIndex.coerceAtLeast(0),
+                                scrollOffset = -appBarHeightInputPx.toInt()
+                            )
+                        }
+                    }
+                    showClientDialog = false
+                },
+                onDismiss = { showClientDialog = false }
+            )
+        }
     }
+}
+
+@Composable
+fun ClientSelectionDialog(
+    numberedClients: List<Pair<String, String>>,
+    onClientSelected: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Client") },
+        text = {
+            LazyColumn {
+                items(numberedClients.size) { index ->
+                    val (numberedClient, _) = numberedClients[index]
+                    TextButton(
+                        onClick = { onClientSelected(index) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(numberedClient)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
