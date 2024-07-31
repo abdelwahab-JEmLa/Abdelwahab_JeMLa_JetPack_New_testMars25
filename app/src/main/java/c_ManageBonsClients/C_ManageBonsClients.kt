@@ -144,14 +144,11 @@ fun DisplayManageBonsClients(
     var isDetailDisplayed by remember { mutableStateOf(false) }
     val indexError by remember { mutableStateOf<String?>(null) }
 
-    // New state to track the current client
-    var currentClient by remember { mutableStateOf("") }
+    // Sort articles by typeEmballage and then by nomClient
+    val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
 
-    // Group articles by nomClient and then by typeEmballage
-    val groupedArticles = articles.groupBy { it.nomClient }
-        .mapValues { (_, clientArticles) ->
-            clientArticles.groupBy { it.typeEmballage }
-        }
+    // Group sorted articles by typeEmballage and nomClient
+    val groupedArticles = sortedArticles.groupBy { it.typeEmballage to it.nomClient }
 
     BoxWithConstraints(
         modifier = Modifier.padding(paddingValues)
@@ -163,101 +160,89 @@ fun DisplayManageBonsClients(
                 state = listState,
                 modifier = Modifier.fillMaxSize()
             ) {
-                groupedArticles.forEach { (nomClient, typeEmballageGroups) ->
+                groupedArticles.forEach { (groupKey, clientArticles) ->
+                    val (typeEmballage, nomClient) = groupKey
                     stickyHeader {
-                        ClientHeader(nomClient = nomClient)
-                        // Update current client when a new client header is shown
-                        currentClient = nomClient
+                        ClientAndEmballageHeader(
+                            nomClient = nomClient,
+                            typeEmballage = typeEmballage,
+                            onPrintClick = {
+                                coroutineScope.launch {
+                                    processClientData(context, nomClient)
+                                }
+                            },
+                            onToggleActive = {
+                                activeClients = if (activeClients.contains(nomClient)) {
+                                    activeClients - nomClient
+                                } else {
+                                    activeClients + nomClient
+                                }
+                            },
+                            isActive = activeClients.contains(nomClient)
+                        )
                     }
 
-                    typeEmballageGroups.forEach { (typeEmballage, emballageArticles) ->
-                        stickyHeader {
-                            EmballageHeader(
-                                typeEmballage = typeEmballage,
-                                onPrintClick = {
-                                    coroutineScope.launch {
-                                        processClientData(context, currentClient)
-                                    }
-                                },
-                                onToggleActive = {
-                                    activeClients = if (activeClients.contains(currentClient)) {
-                                        activeClients - currentClient
-                                    } else {
-                                        activeClients + currentClient
-                                    }
-                                },
-                                isActive = activeClients.contains(currentClient),
-                                nomClient = currentClient
-                            )
+                    val filteredArticles = if (activeClients.contains(nomClient)) {
+                        clientArticles.filter { !it.nonTrouveState &&
+                                (it.monPrixVentFireStoreBM * it.totalQuantity != 0.0 || it.monPrixVentBM * it.totalQuantity != 0.0)
                         }
+                    } else {
+                        clientArticles
+                    }
 
-                        val filteredArticles = if (activeClients.contains(nomClient)) {
-                            emballageArticles.filter { !it.nonTrouveState && it.totalQuantity >0 }
-                        } else {
-                            emballageArticles
-                        }
+                    items(filteredArticles.chunked(2)) { pairOfArticles ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                pairOfArticles.forEach { article ->
+                                    ArticleBoardCard(
+                                        article = article,
+                                        onClickNonTrouveState = { clickedArticle ->
+                                            updateNonTrouveState(clickedArticle)
+                                        },
+                                        onClickVerificated = { clickedArticle ->
+                                            updateVerifieState(clickedArticle)
+                                        },
+                                        onArticleSelect = { selectedArticle ->
+                                            if (selectedArticleId == selectedArticle.idArticle && isDetailDisplayed) {
+                                                onArticleSelect(null)
+                                                isDetailDisplayed = false
+                                            } else {
+                                                onArticleSelect(selectedArticle.idArticle)
+                                                isDetailDisplayed = true
+                                                coroutineScope.launch {
+                                                    val layoutInfo = listState.layoutInfo
+                                                    val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                                                    val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
 
-                        items(filteredArticles.chunked(2)) { pairOfArticles ->
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    pairOfArticles.forEach { article ->
-                                        ArticleBoardCard(
-                                            article = article,
-                                            onClickNonTrouveState = { clickedArticle ->
-                                                updateNonTrouveState(clickedArticle)
-                                            },
-                                            onClickVerificated = { clickedArticle ->
-                                                updateVerifieState(clickedArticle)
-                                            },
-                                            onArticleSelect = { selectedArticle ->
-                                                if (selectedArticleId == selectedArticle.idArticle && isDetailDisplayed) {
-                                                    onArticleSelect(null)
-                                                    isDetailDisplayed = false
-                                                } else {
-                                                    onArticleSelect(selectedArticle.idArticle)
-                                                    isDetailDisplayed = true
-                                                    coroutineScope.launch {
-                                                        val layoutInfo = listState.layoutInfo
-                                                        val visibleItemsInfo = layoutInfo.visibleItemsInfo
-                                                        val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
-
-                                                        selectedItemInfo?.let {
-                                                            selectedItemOffset = it.offset.toFloat()
-                                                            val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
-                                                            listState.animateScrollBy(scrollOffset)
-                                                        }
+                                                    selectedItemInfo?.let {
+                                                        selectedItemOffset = it.offset.toFloat()
+                                                        val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
+                                                        listState.animateScrollBy(scrollOffset)
                                                     }
                                                 }
-                                                currentChangingField = ""
-                                            },
-                                            isVerificationMode = activeClients.contains(article.nomClient),
-                                        )
-                                    }
-                                }
-                                if (isDetailDisplayed) {
-                                    pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
-                                        DisplayDetailleArticle(
-                                            article = article,
-                                            currentChangingField = currentChangingField,
-                                            onValueOutlineChange = {
-                                                currentChangingField = it
-                                            },
-                                            focusRequester = focusRequester,
-                                        )
-                                        LaunchedEffect(selectedArticleId) {
-                                            focusRequester.requestFocus()
-                                        }
-                                    }
-                                }
-                                indexError?.let { error ->
-                                    Text(
-                                        text = "Index error: $error",
-                                        color = Color.Red,
-                                        modifier = Modifier.padding(8.dp)
+                                            }
+                                            currentChangingField = ""
+                                        },
+                                        isVerificationMode = activeClients.contains(article.nomClient),
                                     )
+                                }
+                            }
+                            if (isDetailDisplayed) {
+                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                                    DisplayDetailleArticle(
+                                        article = article,
+                                        currentChangingField = currentChangingField,
+                                        onValueOutlineChange = {
+                                            currentChangingField = it
+                                        },
+                                        focusRequester = focusRequester,
+                                    )
+                                    LaunchedEffect(selectedArticleId) {
+                                        focusRequester.requestFocus()
+                                    }
                                 }
                             }
                         }
@@ -269,30 +254,12 @@ fun DisplayManageBonsClients(
 }
 
 @Composable
-fun ClientHeader(nomClient: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = nomClient,
-            color = MaterialTheme.colorScheme.onPrimary,
-            style = MaterialTheme.typography.titleMedium,
-        )
-    }
-}
-
-@Composable
-fun EmballageHeader(
+fun ClientAndEmballageHeader(
+    nomClient: String,
     typeEmballage: String,
     onPrintClick: () -> Unit,
     onToggleActive: () -> Unit,
     isActive: Boolean,
-    nomClient: String,
 ) {
     Row(
         modifier = Modifier
@@ -323,6 +290,7 @@ fun EmballageHeader(
             )
         }
     }
+
 }
 
 @Composable
