@@ -54,6 +54,8 @@ data class ArticlesAcheteModele(
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
     fun getColumnValue(columnName: String): Any = when (columnName) {
+        "nomArticleFinale" -> nomArticleFinale
+
         "clientPrixVentUnite" -> clientPrixVentUnite
         "nmbrunitBC" -> nmbrunitBC
         "prixAchat" -> prixAchat

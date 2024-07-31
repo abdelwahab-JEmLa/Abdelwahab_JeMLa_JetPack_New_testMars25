@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,13 +25,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import b_Edite_Base_Donne.capitalizeFirstLetter
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 
@@ -58,19 +67,7 @@ fun DisplayDetailleArticle(
                 onValueChange = onValueOutlineChange,
                 focusRequester = focusRequester,
             )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(7.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = capitalizeFirstLetter(article.nomArticleFinale),
-                    fontSize = 25.sp,
-                    textAlign = TextAlign.Center,
-                    color = Color.Red
-                )
-            }
+
         }
     }
 }
@@ -106,6 +103,7 @@ fun InformationsChanger(
             modifier = Modifier.height(140.dp)
         )
         RowAutresInfo(article, onValueChange, currentChangingField)
+
     }
 }
 fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, newType: String) {
@@ -229,26 +227,49 @@ private fun RowAutresInfo(
         FieldInfo("prixAchat", "pA", 0.40f, true)
     )
 
-    Row(modifier = modifier) {
-        fields.forEach { field ->
-            OutlineTextEditeRegle(
-                columnToChange = field.columnToChange,
-                abbreviation = field.abbreviation,
-                calculateOthersRelated = { columnChanged, newValue ->
-                    onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue)
-                    }
-                ,
-                currentChangingField = currentChangingField,
-                article = article,
-                modifier = Modifier
-                    .weight(field.weight)
-                    .height(67.dp)
-            )
+    Column(modifier = modifier) {
+        Row {
+            fields.forEach { field ->
+                OutlineTextEditeRegle(
+                    columnToChange = field.columnToChange,
+                    abbreviation = field.abbreviation,
+                    calculateOthersRelated = { columnChanged, newValue ->
+                        onValueChange(columnChanged)
+                        if (field.updateRelated) {
+                            updateRelatedFields(article, columnChanged, newValue)
+                        }
+                    },
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(field.weight)
+                        .height(67.dp)
+                )
+            }
         }
+
+        OutlineTextEditeRegle(
+            columnToChange = "nomArticleFinale",
+            abbreviation = "",
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueChange(columnChanged)
+                updateNomArticleFinale(article, columnChanged, newValue)
+            },
+            currentChangingField = currentChangingField,
+            article = article,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(67.dp),
+            colore = Color.Red ,
+            isText = true,
+        )
     }
 }
 
+fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String, newValue: String) {
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    articleRef.child(columnChanged).setValue(newValue)
+}
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
 
@@ -371,4 +392,137 @@ fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
     articleRef.child("typeEmballage").setValue(newType)
     val baseDoneRef = Firebase.database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
     baseDoneRef.child("cartonState").setValue(newType)
+}
+@Composable
+fun OutlineTextEditeRegle(
+    columnToChange: String,
+    abbreviation: String? = "",
+    labelCalculated: String = "",
+    currentChangingField: String,
+    article: ArticlesAcheteModele,
+    modifier: Modifier = Modifier,
+    calculateOthersRelated: (String, String) -> Unit,
+    focusRequester: FocusRequester? = null,
+    colore: Color? = null,
+    isText: Boolean = false  // New parameter to determine if the field is numeric
+) {
+
+    val initialValue = article.getColumnValue(columnToChange)
+    var textFieldValue by remember {
+        mutableStateOf(
+            when {
+                !isText && initialValue is Number -> initialValue.toString()
+                isText && initialValue is String -> initialValue
+                else -> ""
+            }
+        )
+    }
+
+    val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
+    val labelValue = labelCalculated.ifEmpty {
+        when {
+            !isText && initialValue is Number -> initialValue.toString()
+            isText && initialValue is String -> initialValue
+            else -> ""
+        }
+    }
+
+    val displayValue = if (!isText) {
+        labelValue.toDoubleOrNull()?.let { doubleValue ->
+            if (doubleValue % 1 == 0.0) {
+                doubleValue.toInt().toString()
+            } else {
+                String.format("%.1f", doubleValue)
+            }
+        } ?: labelValue
+    } else {
+        labelValue
+    }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(horizontal = 3.dp)
+    ) {
+        OutlinedTextField(
+            value = textValue,
+            onValueChange = { newValue ->
+                val validatedValue = if (!isText) {
+                    newValue.filter { it.isDigit() || it == '.' || it == '-' }
+                } else {
+                    newValue
+                }
+                textFieldValue = validatedValue
+                calculateOthersRelated(columnToChange, validatedValue)
+            },
+            label = {
+                AutoResizedTextBC(
+                    text = "$abbreviation$displayValue",
+                    color = colore ?: Color.Red,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            textStyle = TextStyle(
+                color = Color.Blue,
+                textAlign = TextAlign.Center,
+                fontSize = 14.sp
+            ),
+            modifier = modifier
+                .fillMaxWidth()
+                .height(65.dp)
+                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = if (!isText) KeyboardType.Number else KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { keyboardController?.hide() }
+            )
+        )
+    }
+}
+@Composable
+fun AutoResizedTextBC(
+    text: String,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    modifier: Modifier = Modifier,
+    color: Color = style.color,
+    textAlign: TextAlign = TextAlign.Center,
+    bodyLarge: Boolean = false
+) {
+    var resizedTextStyle by remember { mutableStateOf(style) }
+    var readyToDraw by remember { mutableStateOf(false) }
+
+    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
+    val minFontSize = 7.sp
+
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = color,
+            modifier = Modifier.drawWithContent {
+                if (readyToDraw) drawContent()
+            },
+            softWrap = false,
+            style = resizedTextStyle,
+            textAlign = textAlign,
+            onTextLayout = { result ->
+                if (result.didOverflowWidth) {
+                    if (resizedTextStyle.fontSize > minFontSize) {
+                        resizedTextStyle = resizedTextStyle.copy(
+                            fontSize = (resizedTextStyle.fontSize.value * 0.7f).sp
+                        )
+                    } else {
+                        readyToDraw = true
+                    }
+                } else {
+                    readyToDraw = true
+                }
+            }
+        )
+    }
 }
