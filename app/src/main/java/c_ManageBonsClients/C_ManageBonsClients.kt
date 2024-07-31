@@ -188,7 +188,7 @@ fun DisplayManageBonsClients(
                         }
 
                         val filteredArticles = if (activeClients.contains(nomClient)) {
-                            emballageArticles.filter { !it.nonTrouveState }
+                            emballageArticles.filter { !it.nonTrouveState && it.totalQuantity >0 }
                         } else {
                             emballageArticles
                         }

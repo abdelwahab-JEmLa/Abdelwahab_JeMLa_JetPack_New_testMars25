@@ -288,19 +288,14 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
         }
 
         "nmbrunitBC" -> {
-            up("monPrixVentBM", (ar.monPrixVentUniterBM * newValueDouble).toString(), ar.idArticle)
-            up("monBenificeBM", ((ar.monPrixVentUniterBM * newValueDouble) - ar.prixAchat).toString(), ar.idArticle)
             up("clientBenificeBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterBM * newValueDouble)).toString(), ar.idArticle)
-            up("monBenificeUniterBM", ((ar.monPrixVentUniterBM * newValueDouble - ar.prixAchat) / newValueDouble).toString(), ar.idArticle)
 
-            up("monPrixVentFireStoreBM", (ar.monPrixVentUniterFireStoreBM * newValueDouble).toString(), ar.idArticle)
-            up("monBenificeFireStoreBM", ((ar.monPrixVentUniterFireStoreBM * newValueDouble) - ar.prixAchat).toString(), ar.idArticle)
-            up("monBenificeUniterFireStoreBM", ((ar.monPrixVentUniterFireStoreBM * newValueDouble - ar.prixAchat) / newValueDouble).toString(), ar.idArticle)
             up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterFireStoreBM * newValueDouble)).toString(), ar.idArticle)
         }
 
         "clientPrixVentUnite" -> {
             up("clientBenificeBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentBM).toString(), ar.idArticle)
+
             up("clientBenificeFireStoreBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentFireStoreBM).toString(), ar.idArticle)
         }
 
