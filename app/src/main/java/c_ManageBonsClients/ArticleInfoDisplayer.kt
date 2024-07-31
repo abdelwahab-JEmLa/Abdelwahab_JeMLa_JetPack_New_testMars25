@@ -236,10 +236,9 @@ private fun RowAutresInfo(
                 abbreviation = field.abbreviation,
                 calculateOthersRelated = { columnChanged, newValue ->
                     onValueChange(columnChanged)
-                    if (field.updateRelated) {
                         updateRelatedFields(article, columnChanged, newValue)
                     }
-                },
+                ,
                 currentChangingField = currentChangingField,
                 article = article,
                 modifier = Modifier
@@ -252,6 +251,8 @@ private fun RowAutresInfo(
 
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
+
+    up(columnChanged, newValueDouble.toString(), ar.idArticle)
 
     when (columnChanged) {
         "clientBenificeBM" -> {
@@ -351,6 +352,12 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
     }
 }
 
+//updateFireBase
+fun up(columnChanged: String, newValue: String, articleId: Long) {
+    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
+    val articleUpdate = articleFromFireBase.child(columnChanged)
+    articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
+}
 
 // Update Firebase functions
 fun updateNonTrouveState(article: ArticlesAcheteModele) {
@@ -362,13 +369,6 @@ fun updateNonTrouveState(article: ArticlesAcheteModele) {
 fun updateVerifieState(article: ArticlesAcheteModele) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
     articleRef.child("verifieState").setValue(!article.verifieState)
-}
-
-//updateFireBase
-fun up(columnChanged: String, newValue: String, articleId: Long) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
-    val articleUpdate = articleFromFireBase.child(columnChanged)
-    articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
 }
 
 fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
