@@ -175,8 +175,10 @@ private fun Dialog(
                         tint2 = Color.Black,
                         onClick = {
                             coroutineScope.launch {
-                                transferFirebaseDataArticlesAcheteModele(context,
-                                        articleDao)
+                                transferFirebaseDataArticlesAcheteModele(
+                                    context,
+                                    articleDao
+                                )
                             }
                             onDismiss()
                         }

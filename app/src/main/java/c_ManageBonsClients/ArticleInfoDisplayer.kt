@@ -112,7 +112,6 @@ fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, new
 
 }
 
-
 @Composable
 fun CombinedCard(
     article: ArticlesAcheteModele,
@@ -206,6 +205,7 @@ fun CombinedCard(
         }
     }
 }
+
 @Composable
 private fun RowAutresInfo(
     article: ArticlesAcheteModele,
@@ -270,6 +270,7 @@ fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String,
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
     articleRef.child(columnChanged).setValue(newValue)
 }
+
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
 

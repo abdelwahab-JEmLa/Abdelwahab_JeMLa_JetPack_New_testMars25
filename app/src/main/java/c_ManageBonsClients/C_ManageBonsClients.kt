@@ -127,7 +127,6 @@ fun C_ManageBonsClients() {
     }
 }
 
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DisplayManageBonsClients(
@@ -144,6 +143,9 @@ fun DisplayManageBonsClients(
     val focusRequester = remember { FocusRequester() }
     var isDetailDisplayed by remember { mutableStateOf(false) }
     val indexError by remember { mutableStateOf<String?>(null) }
+
+    // New state to track the current client
+    var currentClient by remember { mutableStateOf("") }
 
     // Group articles by nomClient and then by typeEmballage
     val groupedArticles = articles.groupBy { it.nomClient }
@@ -164,6 +166,8 @@ fun DisplayManageBonsClients(
                 groupedArticles.forEach { (nomClient, typeEmballageGroups) ->
                     stickyHeader {
                         ClientHeader(nomClient = nomClient)
+                        // Update current client when a new client header is shown
+                        currentClient = nomClient
                     }
 
                     typeEmballageGroups.forEach { (typeEmballage, emballageArticles) ->
@@ -172,18 +176,18 @@ fun DisplayManageBonsClients(
                                 typeEmballage = typeEmballage,
                                 onPrintClick = {
                                     coroutineScope.launch {
-                                        processClientData(context, nomClient)
+                                        processClientData(context, currentClient)
                                     }
                                 },
                                 onToggleActive = {
-                                    activeClients = if (activeClients.contains(nomClient)) {
-                                        activeClients - nomClient
+                                    activeClients = if (activeClients.contains(currentClient)) {
+                                        activeClients - currentClient
                                     } else {
-                                        activeClients + nomClient
+                                        activeClients + currentClient
                                     }
                                 },
-                                isActive = activeClients.contains(nomClient),
-                                nomClient = nomClient
+                                isActive = activeClients.contains(currentClient),
+                                nomClient = currentClient
                             )
                         }
 

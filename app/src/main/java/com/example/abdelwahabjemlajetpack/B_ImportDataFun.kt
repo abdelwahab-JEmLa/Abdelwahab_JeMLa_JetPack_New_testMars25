@@ -208,7 +208,8 @@ suspend fun transferFirebaseData() {
 }
 
 suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context,
-                                                     articleDao: ArticleDao) {
+                                                     articleDao: ArticleDao)
+{
     var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
 
     try {
