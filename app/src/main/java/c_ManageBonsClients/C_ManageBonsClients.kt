@@ -81,6 +81,7 @@ fun C_ManageBonsClients() {
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     var showClientDialog by remember { mutableStateOf(false) }
+    var selectedClientFilter by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val density = LocalDensity.current
@@ -122,7 +123,7 @@ fun C_ManageBonsClients() {
     ) { paddingValues ->
         KeyboardAwareLayout {
             DisplayManageBonsClients(
-                articles = articles,
+                articles = articles.filter { selectedClientFilter == null || it.nomClient == selectedClientFilter },
                 selectedArticleId = selectedArticleId,
                 onArticleSelect = { selectedArticleId = it },
                 coroutineScope = coroutineScope,
@@ -139,27 +140,15 @@ fun C_ManageBonsClients() {
 
             ClientSelectionDialog(
                 numberedClients = numberedClients,
-                onClientSelected = { selectedClientIndex ->
-                    coroutineScope.launch {
-                        val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
-                        val selectedClient = distinctClients[selectedClientIndex+ 3]
-                        val targetIndex = sortedArticles.indexOfFirst { it.nomClient == selectedClient }
-                        if (targetIndex != -1) {
-                            val scrollToIndex = (selectedClientIndex ).coerceAtLeast(0)
-                            val previousClient = distinctClients[scrollToIndex]
-                            val scrollTargetIndex = sortedArticles.indexOfFirst { it.nomClient == previousClient }
-
-                            val appBarHeightInputPx = 128.0
-
-                            listState.animateScrollToItem(
-                                index = scrollTargetIndex.coerceAtLeast(0),
-                                scrollOffset = -appBarHeightInputPx.toInt()
-                            )
-                        }
-                    }
+                onClientSelected = { selectedClientName ->
+                    selectedClientFilter = selectedClientName
                     showClientDialog = false
                 },
-                onDismiss = { showClientDialog = false }
+                onDismiss = { showClientDialog = false },
+                onClearFilter = {
+                    selectedClientFilter = null
+                    showClientDialog = false
+                }
             )
         }
     }
@@ -168,18 +157,27 @@ fun C_ManageBonsClients() {
 @Composable
 fun ClientSelectionDialog(
     numberedClients: List<Pair<String, String>>,
-    onClientSelected: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onClientSelected: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onClearFilter: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Client") },
         text = {
             LazyColumn {
-                items(numberedClients.size) { index ->
-                    val (numberedClient, _) = numberedClients[index]
+                item {
                     TextButton(
-                        onClick = { onClientSelected(index) },
+                        onClick = onClearFilter,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Clear Filter")
+                    }
+                }
+                items(numberedClients.size) { index ->
+                    val (numberedClient, clientName) = numberedClients[index]
+                    TextButton(
+                        onClick = { onClientSelected(clientName) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(numberedClient)
@@ -194,7 +192,6 @@ fun ClientSelectionDialog(
         }
     )
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DisplayManageBonsClients(
