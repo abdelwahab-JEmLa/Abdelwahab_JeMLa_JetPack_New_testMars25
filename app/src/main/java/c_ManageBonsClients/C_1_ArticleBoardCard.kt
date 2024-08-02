@@ -141,14 +141,14 @@ fun ArticleBoardCard(
     ) {
         Box(modifier = Modifier.padding(2.dp)) {
             Column {
-                // Price overlay at the top of the column
                 PriceOverlay(
                     price = roundToOneDecimal(article.monPrixVentBM),
                     monPrixVentFireStoreBM = roundToOneDecimal(article.monPrixVentFireStoreBM),
                     choisirePrixDepuitFireStoreOuBaseBM = article.choisirePrixDepuitFireStoreOuBaseBM,
-                    roundToOneDecimal(article.monBenificeBM),
-                    roundToOneDecimal(article.monBenificeFireStoreBM ),
+                    monBenificeBM=roundToOneDecimal(article.monBenificeBM),
+                    monBenificeFireStoreBM = roundToOneDecimal(article.monBenificeFireStoreBM ),
                     totalQuantity = article.totalQuantity,
+                    achat = article.prixAchat,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -228,10 +228,11 @@ fun PriceOverlay(
     price: Double,
     monPrixVentFireStoreBM: Double,
     choisirePrixDepuitFireStoreOuBaseBM: String,
-    clientBenificeBM: Double,
-    clientBenificeFireStoreBM: Double,
+    monBenificeBM: Double,
+    monBenificeFireStoreBM: Double,
     totalQuantity: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    achat: Double
 ) {
     Column(
         modifier = modifier
@@ -246,9 +247,10 @@ fun PriceOverlay(
             PriceWithProfit(
                 label = "App",
                 price = price,
-                profit = clientBenificeBM,
+                profit = monBenificeBM,
                 totalQuantity = totalQuantity,
                 isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase",
+                achat=achat,
                 modifier = Modifier.weight(1f)
             )
 
@@ -256,10 +258,11 @@ fun PriceOverlay(
                 PriceWithProfit(
                     label = "Hes",
                     price = monPrixVentFireStoreBM,
-                    profit = clientBenificeFireStoreBM,
+                    profit = monBenificeFireStoreBM,
                     totalQuantity = totalQuantity,
                     isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    achat = achat
                 )
             }
         }
@@ -273,10 +276,12 @@ fun PriceWithProfit(
     profit: Double,
     totalQuantity: Int,
     isSelected: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    achat: Double
 ) {
     val textColor = if (isSelected) Color.Red else Color.Black
     val backgroundColor = if (isSelected) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
+    val achatno = achat ==0.0
     val totalProfit = profit * totalQuantity
 
     Column(
@@ -297,6 +302,7 @@ fun PriceWithProfit(
             color = textColor,
             modifier = Modifier.fillMaxWidth()
         )
+        if (!achatno) {
         AutoResizedText(
             text = "%.1f".format(profit),
             textAlign = TextAlign.Start,
@@ -310,6 +316,7 @@ fun PriceWithProfit(
                 color = textColor,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
         }
     }
 }

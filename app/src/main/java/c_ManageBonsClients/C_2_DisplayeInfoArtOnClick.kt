@@ -270,10 +270,6 @@ fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String,
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
     articleRef.child(columnChanged).setValue(newValue)
 
-    // Check if totalQuantity is 0 and update it to 1 if so
-    if (article.totalQuantity == 0) {
-        articleRef.child("totalQuantity").setValue(1)
-    }
 }
 
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
