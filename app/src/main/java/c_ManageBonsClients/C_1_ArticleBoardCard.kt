@@ -2,6 +2,7 @@ package c_ManageBonsClients
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,12 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.AutoResizedText
-import b_Edite_Base_Donne.capitalizeFirstLetter
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -53,11 +54,11 @@ import com.example.abdelwahabjemlajetpack.R
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import java.io.File
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
     val defaultDrawable = R.drawable.blanc
 
     val imageExist: String? = when {
@@ -91,6 +92,31 @@ fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
     }
 }
 
+
+
+
+@Composable
+fun ArticleName(
+    name: String,
+    color: Color,
+    onNameClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onNameClick)
+    ) {
+        AutoResizedText(
+            text = name.capitalize(Locale.current),
+            modifier = Modifier.padding(vertical = 4.dp),
+            textAlign = TextAlign.Center,
+            color = Color.Red
+        )
+    }
+}
+
+
 @Composable
 fun ArticleBoardCard(
     article: ArticlesAcheteModele,
@@ -115,21 +141,29 @@ fun ArticleBoardCard(
     ) {
         Box(modifier = Modifier.padding(2.dp)) {
             Column {
-                Card(
+                // Price overlay at the top of the column
+                PriceOverlay(
+                    price = roundToOneDecimal(article.monPrixVentBM),
+                    monPrixVentFireStoreBM = roundToOneDecimal(article.monPrixVentFireStoreBM),
+                    choisirePrixDepuitFireStoreOuBaseBM = article.choisirePrixDepuitFireStoreOuBaseBM,
+                    clientBenificeBM = roundToOneDecimal(article.monBenificeBM),
+                    clientBenificeFireStoreBM = roundToOneDecimal(article.monBenificeUniterFireStoreBM),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Image content
+                Box(
                     modifier = Modifier
-                        .height(190.dp)
+                        .height(250.dp)
                         .clickable { onArticleSelect(article) }
                 ) {
-                    Column {
-                        PriceOverlay(article.monPrixVentBM)
-
-                        if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
-                            SingleColorImage(article,)
-                        } else {
-                            MultiColorGrid(article)
-                        }
+                    if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
+                        SingleColorImage(article)
+                    } else {
+                        MultiColorGrid(article)
                     }
                 }
+
                 Row {
                     var totalQuantityText by remember { mutableStateOf("") }
 
@@ -189,10 +223,110 @@ fun ArticleBoardCard(
 }
 
 @Composable
+fun PriceOverlay(
+    price: Double,
+    monPrixVentFireStoreBM: Double,
+    choisirePrixDepuitFireStoreOuBaseBM: String,
+    clientBenificeBM: Double,
+    clientBenificeFireStoreBM: Double,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.7f))
+            .padding(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            PriceWithProfit(
+                label = "App",
+                price = price,
+                profit = clientBenificeBM,
+                isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase",
+                modifier = Modifier.weight(1f)
+            )
+
+            if (monPrixVentFireStoreBM > 0) {
+                PriceWithProfit(
+                    label = "Hes",
+                    price = monPrixVentFireStoreBM,
+                    profit = clientBenificeFireStoreBM,
+                    isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PriceWithProfit(
+    label: String,
+    price: Double,
+    profit: Double,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val textColor = if (isSelected) Color.Red else Color.Black
+    val backgroundColor = if (isSelected) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
+
+    Column(
+        modifier = modifier
+            .background(backgroundColor)
+            .padding(2.dp)
+    ) {
+        AutoResizedText(
+            text = label,
+            textAlign = TextAlign.Start,
+            color = textColor,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        AutoResizedText(
+            text = "%.1f".format(price),
+            textAlign = TextAlign.Start,
+            color = textColor,
+            modifier = Modifier.fillMaxWidth()
+        )
+        AutoResizedText(
+            text = "%.1f".format(profit),
+            textAlign = TextAlign.Start,
+            color = textColor,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+fun roundToOneDecimal(value: Double): Double {
+    return (value * 10.0).roundToInt() / 10.0
+}
+
+@Composable
 private fun SingleColorImage(article: ArticlesAcheteModele) {
     Box(modifier = Modifier.fillMaxSize()) {
         val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
         LoadImageFromPathBC(imagePath = imagePath, modifier = Modifier.fillMaxSize())
+
+        if (!article.nomCouleur1.contains("Sta", ignoreCase = true)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 8.dp), // Add some padding at the bottom
+                contentAlignment = Alignment.BottomCenter // Align content to bottom center
+            ) {
+                Text(
+                    text = article.nomCouleur1,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.6f))
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
 
@@ -286,26 +420,6 @@ private fun PriceOverlay(price: Double) {
     }
 }
 
-@Composable
-private fun ArticleName(
-    name: String,
-    color: Color,
-    onNameClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onNameClick)
-    ) {
-        AutoResizedText(
-            text = capitalizeFirstLetter(name),
-            modifier = Modifier.padding(vertical = 4.dp),
-            textAlign = TextAlign.Center,
-            color = color
-        )
-    }
-}
 
 // The ShowPackagingDialog and updateTypeEmballage functions remain the same
 @Composable

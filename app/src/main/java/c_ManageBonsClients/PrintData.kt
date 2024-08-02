@@ -97,7 +97,6 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
                 }
 
                 totaleBon += subtotal
-
                 if ((index + 1) % 15 == 0) {
                     pageCounter++
                     texteImprimable.append("<BR><CENTER>PAGE $pageCounter<BR><BR><BR>")

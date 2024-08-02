@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
@@ -50,6 +51,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.round
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -184,13 +187,22 @@ fun DisplayManageBonsClients(
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     var isDetailDisplayed by remember { mutableStateOf(false) }
-    val indexError by remember { mutableStateOf<String?>(null) }
 
     // Sort articles by typeEmballage and then by nomClient
     val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
 
     // Group sorted articles by typeEmballage and nomClient
     val groupedArticles = sortedArticles.groupBy { it.typeEmballage to it.nomClient }
+//TODO ajoute au gauche du totale un affiche du benifice totale noublie pas le calcule et ddu prix utilise avec choisirePrixDepuitFireStoreOuBaseBM
+    // Calculate total for each client (only for non-missing articles)
+    val clientTotals = articles.groupBy { it.nomClient }.mapValues { (_, clientArticles) ->
+        clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
+            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
+                article.monPrixVentBM else article.monPrixVentFireStoreBM
+            val arrondi = round(monPrixVentDetermineBM * 10) / 10
+            arrondi * article.totalQuantity
+        }
+    }
 
     BoxWithConstraints(
         modifier = Modifier.padding(paddingValues)
@@ -221,7 +233,9 @@ fun DisplayManageBonsClients(
                                 }
                             },
                             isActive = activeClients.contains(nomClient),
-                            articles = clientArticles
+                            articles = clientArticles,
+                            allArticles = articles,
+                            clientTotal = clientTotals[nomClient] ?: 0.0 // Pass the calculated total for non-missing articles
                         )
                     }
 
@@ -240,7 +254,6 @@ fun DisplayManageBonsClients(
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 pairOfArticles.forEach { article ->
-                                    val scrollProgress = listState.firstVisibleItemIndex.toFloat() / listState.layoutInfo.totalItemsCount.toFloat()
                                     ArticleBoardCard(
                                         article = article,
                                         onClickNonTrouveState = { clickedArticle ->
@@ -319,6 +332,14 @@ fun PrintConfirmationDialog(
     )
 }
 
+fun generateClientColor(clientName: String): Color {
+    val hash = abs(clientName.hashCode())
+    val hue = (hash % 360).toFloat()
+    return Color.hsl(hue, 0.4f, 0.6f)
+}
+
+
+
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
@@ -326,37 +347,76 @@ fun ClientAndEmballageHeader(
     onPrintClick: () -> Unit,
     onToggleActive: () -> Unit,
     isActive: Boolean,
-    articles: List<ArticlesAcheteModele>
+    articles: List<ArticlesAcheteModele>,
+    allArticles: List<ArticlesAcheteModele>,
+    clientTotal: Double
 ) {
     var showPrintDialog by remember { mutableStateOf(false) }
-    val verifiedCount = articles.count { it.verifieState }
 
-    Row(
+    // Count verified articles for the entire client
+    val verifiedCount = allArticles.count { it.nomClient == nomClient && it.verifieState }
+
+    // Generate a consistent color for this client
+    val clientColor = remember(nomClient) { generateClientColor(nomClient) }
+
+    // Calculate total profit for the client
+    val clientProfit = allArticles
+        .filter { it.nomClient == nomClient && !it.nonTrouveState }
+        .sumOf { article ->
+            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
+                article.monPrixVentBM else article.monPrixVentFireStoreBM
+            val prixVente = round(monPrixVentDetermineBM * 10) / 10
+            val profit = prixVente - article.prixAchat
+            profit * article.totalQuantity
+        }
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.secondary)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .background(clientColor)
+            .padding(4.dp)
     ) {
-        Text(
-            text = "$nomClient: $typeEmballage",
-            color = MaterialTheme.colorScheme.onSecondary,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
-        )
-        IconButton(onClick = { showPrintDialog = true }) {
-            Icon(
-                imageVector = Icons.Default.Print,
-                contentDescription = "Print",
-                tint = MaterialTheme.colorScheme.onSecondary
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "$nomClient: $typeEmballage",
+                color = Color.Black,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = { showPrintDialog = true }) {
+                Icon(
+                    imageVector = Icons.Default.Print,
+                    contentDescription = "Print",
+                    tint = Color.Black
+                )
+            }
+            IconButton(onClick = onToggleActive) {
+                Icon(
+                    imageVector = if (isActive) Icons.Default.Check else Icons.Default.FilterList,
+                    contentDescription = "Toggle Verification and Filter",
+                    tint = Color.Black
+                )
+            }
         }
-        IconButton(onClick = onToggleActive) {
-            Icon(
-                imageVector = if (isActive) Icons.Default.Check else Icons.Default.FilterList,
-                contentDescription = "Toggle Verification and Filter",
-                tint = MaterialTheme.colorScheme.onSecondary
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Display the total profit for this client
+            Text(
+                text = "${String.format("%.2f", clientProfit)}Da",
+                color = Color.Black,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            // Display the total for this client (non-missing articles)
+            Text(
+                text = "Total: ${String.format("%.2f", clientTotal)}Da",
+                color = Color.Black,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
@@ -372,9 +432,3 @@ fun ClientAndEmballageHeader(
         )
     }
 }
-
-
-
-
-
-

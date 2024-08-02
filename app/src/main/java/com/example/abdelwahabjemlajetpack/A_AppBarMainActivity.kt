@@ -179,6 +179,12 @@ private fun Dialog(
                                     context,
                                     articleDao
                                 )
+                                importFromFirebaseToDataBaseDonne(
+                                        refFireBase = "e_DBJetPackExport",
+                                        editeBaseDonneViewModel
+                                )
+
+
                             }
                             onDismiss()
                         }

@@ -221,8 +221,8 @@ private fun RowAutresInfo(
     )
 
     val fields = listOf(
-        FieldInfo("clientPrixVentUnite", "cVU", 0.20f, false),
-        FieldInfo("nmbrunitBC", "nu", 0.20f, false),
+        FieldInfo("clientPrixVentUnite", "cVU", 0.20f, true),
+        FieldInfo("nmbrunitBC", "nu", 0.20f, true),
         FieldInfo("monPrixAchatUniterBC", "", 0.20f, true),
         FieldInfo("prixAchat", "pA", 0.40f, true)
     )
@@ -269,6 +269,11 @@ private fun RowAutresInfo(
 fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
     articleRef.child(columnChanged).setValue(newValue)
+
+    // Check if totalQuantity is 0 and update it to 1 if so
+    if (article.totalQuantity == 0) {
+        articleRef.child("totalQuantity").setValue(1)
+    }
 }
 
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
