@@ -5,12 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -37,14 +39,57 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.capitalizeFirstLetter
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.example.abdelwahabjemlajetpack.R
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import java.io.File
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val defaultDrawable = R.drawable.blanc
+
+    val imageExist: String? = when {
+        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
+        File("$imagePath.webp").exists() -> "$imagePath.webp"
+        else -> null
+    }
+
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .wrapContentSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        GlideImage(
+            model = imageExist ?: defaultDrawable,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .wrapContentSize(Alignment.Center),
+        ) {
+            it
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .override(1000) // Set a larger size
+                .thumbnail(0.25f) // Start with 25% quality
+                .fitCenter() // Ensure the image fits within the bounds
+                .transition(DrawableTransitionOptions.withCrossFade()) // Smooth transition as quality improves
+        }
+    }
+}
 
 @Composable
 fun ArticleBoardCard(
@@ -76,15 +121,13 @@ fun ArticleBoardCard(
                         .clickable { onArticleSelect(article) }
                 ) {
                     Column {
-
                         PriceOverlay(article.monPrixVentBM)
 
                         if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
-                            SingleColorImage(article)
+                            SingleColorImage(article,)
                         } else {
                             MultiColorGrid(article)
                         }
-
                     }
                 }
                 Row {
@@ -144,77 +187,12 @@ fun ArticleBoardCard(
         )
     }
 }
-@Composable
-fun ShowPackagingDialog(
-    article: ArticlesAcheteModele,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Select Packaging Type") },
-        text = {
-            Column {
-                PackagingToggleButton("Carton", article.typeEmballage == "Carton") {
-                    updateTypeEmballage(article, "Carton")
-                    onDismiss()
-                }
-                PackagingToggleButton("Boit", article.typeEmballage == "Boit") {
-                    updateTypeEmballage(article, "Boit")
-                    onDismiss()
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Color.Red else Color.Green
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Text(text)
-    }
-}
-
-
-@Composable
-private fun ArticleName(
-    name: String,
-    color: Color,
-    onNameClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onNameClick)
-    ) {
-        AutoResizedText(
-            text = capitalizeFirstLetter(name),
-            modifier = Modifier.padding(vertical = 4.dp),
-            textAlign = TextAlign.Center,
-            color = color
-        )
-    }
-}
 
 @Composable
 private fun SingleColorImage(article: ArticlesAcheteModele) {
-    Box(
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-        LoadImageFromPathBC(imagePath = imagePath)
+        LoadImageFromPathBC(imagePath = imagePath, modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -238,8 +216,7 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
                     modifier = Modifier
                         .padding(4.dp)
                         .fillMaxSize()
-                        .height(60.dp)
-                    ,
+                        .aspectRatio(1f),
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFF40E0D0) // Bleu turquoise
                     ),
@@ -293,8 +270,7 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
 @Composable
 private fun PriceOverlay(price: Double) {
     Box(
-        modifier = Modifier
-            .padding(4.dp),
+        modifier = Modifier.padding(4.dp),
     ) {
         Box(
             modifier = Modifier
@@ -310,3 +286,73 @@ private fun PriceOverlay(price: Double) {
     }
 }
 
+@Composable
+private fun ArticleName(
+    name: String,
+    color: Color,
+    onNameClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onNameClick)
+    ) {
+        AutoResizedText(
+            text = capitalizeFirstLetter(name),
+            modifier = Modifier.padding(vertical = 4.dp),
+            textAlign = TextAlign.Center,
+            color = color
+        )
+    }
+}
+
+// The ShowPackagingDialog and updateTypeEmballage functions remain the same
+@Composable
+fun ShowPackagingDialog(
+    article: ArticlesAcheteModele,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Packaging Type") },
+        text = {
+            Column {
+                PackagingToggleButton("Carton", article.typeEmballage == "Carton") {
+                    updateTypeEmballage(article, "Carton")
+                    onDismiss()
+                }
+                PackagingToggleButton("Boit", article.typeEmballage == "Boit") {
+                    updateTypeEmballage(article, "Boit")
+                    onDismiss()
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color.Red else Color.Green
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(text)
+    }
+}
+
+fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
+    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    val articleUpdate = articleFromFireBase.child("typeEmballage")
+    articleUpdate.setValue(newType)
+}

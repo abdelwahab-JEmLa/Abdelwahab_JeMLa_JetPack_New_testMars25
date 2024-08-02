@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.round
 
 // Constants
 const val TAG = "ClientManagement"
@@ -84,12 +85,13 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
         .filter { it.verifieState }
         .forEachIndexed { index, article ->
             val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")  article.monPrixVentBM else article.monPrixVentFireStoreBM
-            val subtotal = monPrixVentDetermineBM * article.totalQuantity
+            val arrondi = round(monPrixVentDetermineBM * 10) / 10
+            val subtotal = arrondi * article.totalQuantity
             if (subtotal != 0.0) {
                 texteImprimable.apply {
                     append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
                     append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
-                    append("<MEDIUM1><LEFT>${monPrixVentDetermineBM}Da   ")
+                    append("<MEDIUM1><LEFT>${arrondi}Da   ")
                     append("<SMALL>$subtotal<BR>")
                     append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
                 }
@@ -107,7 +109,7 @@ private fun prepareTexteToPrint(nomClient: String, timeString: String, clientArt
         append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
         append("<BR><BR>")
         append("<MEDIUM1><CENTER>Total<BR>")
-        append("<MEDIUM3><CENTER>${totaleBon}Da<BR>")
+        append("<MEDIUM3><CENTER>${round(totaleBon * 10) / 10}Da<BR>")
         append("<CENTER>---------------------<BR>")
         append("<BR><BR><BR>>")
     }

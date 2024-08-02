@@ -43,32 +43,7 @@ import java.io.File
 
 
 
-@Composable
-fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
-    val defaultDrawable = R.drawable.blanc
-    val imageExist: String? = when {
-        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-        File("$imagePath.webp").exists() -> "$imagePath.webp"
-        else -> null
-    }
 
-    val painter = rememberAsyncImagePainter(imageExist ?: defaultDrawable)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .wrapContentSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painter,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.wrapContentSize(Alignment.Center)
-        )
-    }
-}
 @Composable
 fun KeyboardAwareLayout(content: @Composable () -> Unit) {
     val density = LocalDensity.current

@@ -89,6 +89,8 @@ dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.androidx.material.icons.extended)
 
+    implementation (libs.compose)
+
 }
 
 apply(plugin = "com.google.gms.google-services")

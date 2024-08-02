@@ -395,13 +395,7 @@ fun updateVerifieState(article: ArticlesAcheteModele) {
     articleRef.child("verifieState").setValue(!article.verifieState)
 }
 
-fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
-    articleRef.child("typeEmballage").setValue(newType)
-    val baseDoneRef = Firebase.database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
-    baseDoneRef.child("cartonState").setValue(newType)
 
-}
 @Composable
 fun OutlineTextEditeRegle(
     columnToChange: String,

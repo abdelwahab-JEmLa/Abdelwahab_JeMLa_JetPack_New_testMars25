@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
@@ -62,7 +61,6 @@ fun C_ManageBonsClients() {
     var selectedClientFilter by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
 
     val articlesAcheteModeleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
 
@@ -227,9 +225,6 @@ fun DisplayManageBonsClients(
                         )
                     }
 
-
-
-
                     val filteredArticles = if (activeClients.contains(nomClient)) {
                         clientArticles.filter { !it.nonTrouveState &&
                                 (it.monPrixVentFireStoreBM * it.totalQuantity != 0.0 || it.monPrixVentBM * it.totalQuantity != 0.0)
@@ -245,6 +240,7 @@ fun DisplayManageBonsClients(
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 pairOfArticles.forEach { article ->
+                                    val scrollProgress = listState.firstVisibleItemIndex.toFloat() / listState.layoutInfo.totalItemsCount.toFloat()
                                     ArticleBoardCard(
                                         article = article,
                                         onClickNonTrouveState = { clickedArticle ->
@@ -300,7 +296,6 @@ fun DisplayManageBonsClients(
         }
     }
 }
-
 @Composable
 fun PrintConfirmationDialog(
     verifiedCount: Int,
