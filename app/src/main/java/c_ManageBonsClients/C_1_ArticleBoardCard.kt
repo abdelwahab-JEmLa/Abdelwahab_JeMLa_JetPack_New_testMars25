@@ -146,8 +146,9 @@ fun ArticleBoardCard(
                     price = roundToOneDecimal(article.monPrixVentBM),
                     monPrixVentFireStoreBM = roundToOneDecimal(article.monPrixVentFireStoreBM),
                     choisirePrixDepuitFireStoreOuBaseBM = article.choisirePrixDepuitFireStoreOuBaseBM,
-                    clientBenificeBM = roundToOneDecimal(article.monBenificeBM),
-                    clientBenificeFireStoreBM = roundToOneDecimal(article.monBenificeUniterFireStoreBM),
+                    roundToOneDecimal(article.monBenificeBM),
+                    roundToOneDecimal(article.monBenificeFireStoreBM ),
+                    totalQuantity = article.totalQuantity,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -229,6 +230,7 @@ fun PriceOverlay(
     choisirePrixDepuitFireStoreOuBaseBM: String,
     clientBenificeBM: Double,
     clientBenificeFireStoreBM: Double,
+    totalQuantity: Int,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -245,6 +247,7 @@ fun PriceOverlay(
                 label = "App",
                 price = price,
                 profit = clientBenificeBM,
+                totalQuantity = totalQuantity,
                 isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireBase",
                 modifier = Modifier.weight(1f)
             )
@@ -254,6 +257,7 @@ fun PriceOverlay(
                     label = "Hes",
                     price = monPrixVentFireStoreBM,
                     profit = clientBenificeFireStoreBM,
+                    totalQuantity = totalQuantity,
                     isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor",
                     modifier = Modifier.weight(1f)
                 )
@@ -267,11 +271,13 @@ fun PriceWithProfit(
     label: String,
     price: Double,
     profit: Double,
+    totalQuantity: Int,
     isSelected: Boolean,
     modifier: Modifier = Modifier
 ) {
     val textColor = if (isSelected) Color.Red else Color.Black
     val backgroundColor = if (isSelected) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
+    val totalProfit = profit * totalQuantity
 
     Column(
         modifier = modifier
@@ -297,6 +303,14 @@ fun PriceWithProfit(
             color = textColor,
             modifier = Modifier.fillMaxWidth()
         )
+        if (totalProfit != profit) {
+            AutoResizedText(
+                text = "Total: %.1f".format(totalProfit),
+                textAlign = TextAlign.Start,
+                color = textColor,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
@@ -306,25 +320,30 @@ fun roundToOneDecimal(value: Double): Double {
 
 @Composable
 private fun SingleColorImage(article: ArticlesAcheteModele) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-        LoadImageFromPathBC(imagePath = imagePath, modifier = Modifier.fillMaxSize())
+    Card(
+        modifier = Modifier.fillMaxSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+            LoadImageFromPathBC(imagePath = imagePath, modifier = Modifier.fillMaxSize())
 
-        if (!article.nomCouleur1.contains("Sta", ignoreCase = true)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 8.dp), // Add some padding at the bottom
-                contentAlignment = Alignment.BottomCenter // Align content to bottom center
-            ) {
-                Text(
-                    text = article.nomCouleur1,
-                    color = Color.Red,
+            if (!article.nomCouleur1.contains("Sta", ignoreCase = true)) {
+                Box(
                     modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.6f))
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                    textAlign = TextAlign.Center
-                )
+                        .fillMaxSize()
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Text(
+                        text = article.nomCouleur1,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.6f))
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -346,81 +365,65 @@ private fun MultiColorGrid(article: ArticlesAcheteModele) {
         items(colorData.size) { index ->
             val (quantity, colorName) = colorData[index]
             if (quantity > 0) {
-                Card(
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .fillMaxSize()
-                        .aspectRatio(1f),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF40E0D0) // Bleu turquoise
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 6.dp
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
-                        val imagePathWebp = "$imagePathWithoutExt.webp"
-                        val imagePathJpg = "$imagePathWithoutExt.jpg"
-                        val webpExists = File(imagePathWebp).exists()
-                        val jpgExists = File(imagePathJpg).exists()
-
-                        if (webpExists || jpgExists) {
-                            LoadImageFromPathBC(
-                                imagePath = imagePathWithoutExt,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Text(
-                                text = colorName ?: "",
-                                color = Color.Red,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .rotate(45f)
-                                    .background(Color.White.copy(alpha = 0.6f))
-                                    .padding(4.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        Text(
-                            text = quantity.toString(),
-                            color = Color.Red,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .background(Color.White.copy(alpha = 0.6f))
-                                .padding(4.dp),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                ColorItemCard(article, index, quantity, colorName)
             }
         }
     }
 }
 
 @Composable
-private fun PriceOverlay(price: Double) {
-    Box(
-        modifier = Modifier.padding(4.dp),
+private fun ColorItemCard(article: ArticlesAcheteModele, index: Int, quantity: Int, colorName: String?) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxSize()
+            .aspectRatio(1f),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF40E0D0) // Bleu turquoise
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        )
     ) {
         Box(
-            modifier = Modifier
-                .background(Color.White.copy(alpha = 0.7f))
-                .padding(4.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
-            AutoResizedText(
-                text = "Pv>$price",
-                textAlign = TextAlign.Center,
+            val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
+            val imagePathWebp = "$imagePathWithoutExt.webp"
+            val imagePathJpg = "$imagePathWithoutExt.jpg"
+            val webpExists = File(imagePathWebp).exists()
+            val jpgExists = File(imagePathJpg).exists()
+
+            if (webpExists || jpgExists) {
+                LoadImageFromPathBC(
+                    imagePath = imagePathWithoutExt,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = colorName ?: "",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .rotate(45f)
+                        .background(Color.White.copy(alpha = 0.6f))
+                        .padding(4.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Text(
+                text = quantity.toString(),
                 color = Color.Red,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .background(Color.White.copy(alpha = 0.6f))
+                    .padding(4.dp),
+                textAlign = TextAlign.Center
             )
         }
     }
 }
-
-
 // The ShowPackagingDialog and updateTypeEmballage functions remain the same
 @Composable
 fun ShowPackagingDialog(

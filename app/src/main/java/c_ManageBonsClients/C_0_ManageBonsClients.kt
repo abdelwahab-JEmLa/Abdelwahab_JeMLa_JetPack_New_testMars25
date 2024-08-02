@@ -193,7 +193,6 @@ fun DisplayManageBonsClients(
 
     // Group sorted articles by typeEmballage and nomClient
     val groupedArticles = sortedArticles.groupBy { it.typeEmballage to it.nomClient }
-//TODO ajoute au gauche du totale un affiche du benifice totale noublie pas le calcule et ddu prix utilise avec choisirePrixDepuitFireStoreOuBaseBM
     // Calculate total for each client (only for non-missing articles)
     val clientTotals = articles.groupBy { it.nomClient }.mapValues { (_, clientArticles) ->
         clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
@@ -255,6 +254,8 @@ fun DisplayManageBonsClients(
                             ) {
                                 pairOfArticles.forEach { article ->
                                     ArticleBoardCard(
+                                        //TODO ajoute un petit espace entre chaque card d article
+
                                         article = article,
                                         onClickNonTrouveState = { clickedArticle ->
                                             updateNonTrouveState(clickedArticle)
@@ -366,7 +367,8 @@ fun ClientAndEmballageHeader(
             val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
                 article.monPrixVentBM else article.monPrixVentFireStoreBM
             val prixVente = round(monPrixVentDetermineBM * 10) / 10
-            val profit = prixVente - article.prixAchat
+            val prixAchatC = if (article.prixAchat ==0.0 ) prixVente else article.prixAchat
+            val profit = prixVente - prixAchatC
             profit * article.totalQuantity
         }
 
