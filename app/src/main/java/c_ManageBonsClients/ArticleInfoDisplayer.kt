@@ -369,11 +369,18 @@ fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValu
     }
 }
 
-//updateFireBase
 fun up(columnChanged: String, newValue: String, articleId: Long) {
     val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
     val articleUpdate = articleFromFireBase.child(columnChanged)
-    articleUpdate.setValue(newValue.toDoubleOrNull() ?: 0.0)
+
+    val doubleValue = newValue.toDoubleOrNull()
+    if (doubleValue != null && doubleValue.isFinite()) {
+        articleUpdate.setValue(doubleValue)
+    } else {
+        // Handle invalid value (e.g., set to 0 or log an error)
+        articleUpdate.setValue(0.0)
+        println("Warning: Attempted to write invalid value ($newValue) to Firebase for column $columnChanged")
+    }
 }
 
 // Update Firebase functions
@@ -393,6 +400,7 @@ fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
     articleRef.child("typeEmballage").setValue(newType)
     val baseDoneRef = Firebase.database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
     baseDoneRef.child("cartonState").setValue(newType)
+
 }
 @Composable
 fun OutlineTextEditeRegle(
