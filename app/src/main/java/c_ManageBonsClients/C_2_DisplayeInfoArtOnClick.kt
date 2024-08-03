@@ -164,36 +164,39 @@ fun CombinedCard(
 
     val textColor = if (isChosenCard) Color.Black else Color.Blue
 
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .width(30.dp)
-                .fillMaxHeight()
-                .padding(end = 8.dp)
-        ) {
-            Text(
-                text = if (isFireStor) "Historique" else "App",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black,
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isChosenCard) 2.dp else 0.dp,
+                color = if (isChosenCard) Color.Red else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            ),
+        colors = CardDefaults.cardColors(containerColor = cardColor)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Rotated text inside the Card
+            Box(
                 modifier = Modifier
-                    .rotate(-90f)
-                    .align(Alignment.Center),
-                maxLines = 1,
-                fontSize = 12.sp
-            )
-        }
-        Card(
-            shape = RoundedCornerShape(8.dp),
-            modifier = modifier
-                .fillMaxWidth()
-                .border(
-                    width = if (isChosenCard) 2.dp else 0.dp,
-                    color = if (isChosenCard) Color.Red else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            colors = CardDefaults.cardColors(containerColor = cardColor)
-        ) {
-            Column(modifier = Modifier.padding(3.dp)) {
+                    .width(20.dp)
+                    .fillMaxHeight()
+                    .padding(end = 8.dp)
+            ) {
+                Text(
+                    text = if (isFireStor) "Historique" else "App",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    modifier = Modifier
+                        .rotate(-90f)
+                        .align(Alignment.Center),
+                    maxLines = 1,
+                    fontSize = 12.sp
+                )
+            }
+
+            // Content column
+            Column(modifier = Modifier.weight(1f).padding(3.dp)) {
                 // Calculate total profit
                 val totalProfit = if (isFireStor) {
                     article.monBenificeFireStoreBM * article.totalQuantity
