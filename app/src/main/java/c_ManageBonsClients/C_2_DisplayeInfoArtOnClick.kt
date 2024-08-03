@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -26,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -80,6 +83,7 @@ fun InformationsChanger(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester,
 ) {
+
     Column(modifier = modifier.fillMaxWidth()) {
         CombinedCard(
             article = article,
@@ -111,7 +115,6 @@ fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, new
     articleRef.child("choisirePrixDepuitFireStoreOuBaseBM").setValue(newType)
 
 }
-
 @Composable
 fun CombinedCard(
     article: ArticlesAcheteModele,
@@ -159,60 +162,105 @@ fun CombinedCard(
         else -> Color.White
     }
 
-    // Définir la couleur du texte en fonction de la couleur de la carte
     val textColor = if (isChosenCard) Color.Black else Color.Blue
 
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = if (isChosenCard) 2.dp else 0.dp,
-                color = if (isChosenCard) Color.Red else Color.Transparent,
-                shape = RoundedCornerShape(8.dp)
-            ),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
-    ) {
-        Column(modifier = Modifier.padding(3.dp)) {
-            fields.chunked(3).forEachIndexed { rowIndex, rowFields ->
-                if (rowIndex > 0) {
-                    Spacer(modifier = Modifier.height(3.dp))
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .width(30.dp)
+                .fillMaxHeight()
+                .padding(end = 8.dp)
+        ) {
+            Text(
+                text = if (isFireStor) "Historique" else "App",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black,
+                modifier = Modifier
+                    .rotate(-90f)
+                    .align(Alignment.Center),
+                maxLines = 1,
+                fontSize = 12.sp
+            )
+        }
+        Card(
+            shape = RoundedCornerShape(8.dp),
+            modifier = modifier
+                .fillMaxWidth()
+                .border(
+                    width = if (isChosenCard) 2.dp else 0.dp,
+                    color = if (isChosenCard) Color.Red else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp)
+                ),
+            colors = CardDefaults.cardColors(containerColor = cardColor)
+        ) {
+            Column(modifier = Modifier.padding(3.dp)) {
+                // Calculate total profit
+                val totalProfit = if (isFireStor) {
+                    article.monBenificeFireStoreBM * article.totalQuantity
+                } else {
+                    article.monBenificeBM * article.totalQuantity
                 }
-                Row(modifier = Modifier.weight(1f)) {
-                    rowFields.forEach { field ->
-                        OutlineTextEditeRegle(
-                            columnToChange = field.columnToChange,
-                            abbreviation = field.abbreviation,
-                            calculateOthersRelated = { columnChanged, newValue ->
-                                onCardFocused()
-                                onValueChange(columnChanged)
-                                updateRelatedFields(article, columnChanged, newValue)
-                            },
-                            currentChangingField = currentChangingField,
-                            article = article,
-                            modifier = Modifier
-                                .weight(field.weight)
-                                .onFocusChanged { focusState ->
-                                    if (isFireStor) {
-                                        if (focusState.isFocused && !isCardFocused) {
-                                            isCardFocused = true
-                                            if (wasEverFocused) {
+
+                // Check if monBenificeBM is not equal to total benefit
+                val shouldDisplayTotalProfit = if (isFireStor) {
+                    article.monBenificeFireStoreBM != totalProfit
+                } else {
+                    article.monBenificeBM != totalProfit
+                }
+
+                // Display total profit only if the condition is met
+                if (shouldDisplayTotalProfit) {
+                    Text(
+                        text = "Total Profit: ${String.format("%.2f", totalProfit)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                fields.chunked(3).forEachIndexed { rowIndex, rowFields ->
+                    if (rowIndex > 0) {
+                        Spacer(modifier = Modifier.height(3.dp))
+                    }
+                    Row(modifier = Modifier.weight(1f)) {
+                        rowFields.forEach { field ->
+                            OutlineTextEditeRegle(
+                                columnToChange = field.columnToChange,
+                                abbreviation = field.abbreviation,
+                                calculateOthersRelated = { columnChanged, newValue ->
+                                    onCardFocused()
+                                    onValueChange(columnChanged)
+                                    updateRelatedFields(article, columnChanged, newValue)
+                                },
+                                currentChangingField = currentChangingField,
+                                article = article,
+                                modifier = Modifier
+                                    .weight(field.weight)
+                                    .onFocusChanged { focusState ->
+                                        if (isFireStor) {
+                                            if (focusState.isFocused && !isCardFocused) {
+                                                isCardFocused = true
+                                                if (wasEverFocused) {
+                                                    onCardFocused()
+                                                }
+                                                wasEverFocused = true
+                                            } else if (!focusState.isFocused && isCardFocused) {
+                                                isCardFocused = false
+                                            }
+                                        } else {
+                                            if (focusState.isFocused) {
                                                 onCardFocused()
                                             }
-                                            wasEverFocused = true
-                                        } else if (!focusState.isFocused && isCardFocused) {
-                                            isCardFocused = false
                                         }
-                                    } else {
-                                        if (focusState.isFocused) {
-                                            onCardFocused()
-                                        }
-                                    }
-                                },
-                            focusRequester = if (field.useFocusRequester) focusRequester else null,
-                            textColor = textColor,
-                            isChosenCard = isChosenCard
-                        )
+                                    },
+                                focusRequester = if (field.useFocusRequester) focusRequester else null,
+                                textColor = textColor,
+                                isChosenCard = isChosenCard
+                            )
+                        }
                     }
                 }
             }

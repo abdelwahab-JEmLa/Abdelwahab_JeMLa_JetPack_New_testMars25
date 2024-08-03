@@ -87,7 +87,7 @@ fun C_ManageBonsClients() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            TopAppBar(//TODO ajout un totale benifice de tout les stickers et fait qui soit set value au fire store avec colleciton name "Benifice Du Joure" chaque refe contie date du joure et le benifice
                 title = { Text("ManageBonsClients") },
                 actions = {
                     IconButton(onClick = { showDialog = true }) {

@@ -269,6 +269,7 @@ fun PriceOverlay(
     }
 }
 
+
 @Composable
 fun PriceWithProfit(
     label: String,
@@ -280,8 +281,13 @@ fun PriceWithProfit(
     achat: Double
 ) {
     val textColor = if (isSelected) Color.Red else Color.Black
-    val backgroundColor = if (isSelected) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
-    val achatno = achat ==0.0
+    val customPink = Color(0xFFFFC0CB) // Light pink color
+    val backgroundColor = when {
+        isSelected && profit < 0 -> customPink.copy(alpha = 0.3f)
+        isSelected -> Color.Yellow.copy(alpha = 0.3f)
+        else -> Color.Transparent
+    }
+    val achatno = achat == 0.0
     val totalProfit = profit * totalQuantity
 
     Column(
@@ -303,25 +309,23 @@ fun PriceWithProfit(
             modifier = Modifier.fillMaxWidth()
         )
         if (!achatno) {
-        AutoResizedText(
-            text = "%.1f".format(profit),
-            textAlign = TextAlign.Start,
-            color = textColor,
-            modifier = Modifier.fillMaxWidth()
-        )
-            //TODO fait que le card du price soit on rose si le benifice du choisi est on -0
-        if (totalProfit != profit) {
             AutoResizedText(
-                text = "Total: %.1f".format(totalProfit),
+                text = "%.1f".format(profit),
                 textAlign = TextAlign.Start,
-                color = textColor,
+                color = if (profit < 0) Color.Red else textColor,
                 modifier = Modifier.fillMaxWidth()
             )
-        }
+            if (totalProfit != profit) {
+                AutoResizedText(
+                    text = "Total: %.1f".format(totalProfit),
+                    textAlign = TextAlign.Start,
+                    color = if (totalProfit < 0) Color.Red else textColor,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
-
 fun roundToOneDecimal(value: Double): Double {
     return (value * 10.0).roundToInt() / 10.0
 }

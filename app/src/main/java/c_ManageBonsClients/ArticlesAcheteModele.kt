@@ -38,6 +38,8 @@ data class ArticlesAcheteModele(
 
     var monBenificeBM: Double =  0.0,
     var monBenificeUniterBM: Double =  0.0,
+    var totalProfitBM: Double =  0.0,
+
 
     var clientBenificeBM: Double =  0.0,
 
@@ -47,6 +49,7 @@ data class ArticlesAcheteModele(
 
     var monBenificeFireStoreBM: Double =  0.0,
     var monBenificeUniterFireStoreBM: Double =  0.0,
+    var totalProfitFireStoreBM: Double =  0.0,
 
     var clientBenificeFireStoreBM: Double =  0.0,
 
@@ -71,6 +74,7 @@ data class ArticlesAcheteModele(
 
         "monBenificeBM" -> monBenificeBM
         "monBenificeUniterBM" -> monBenificeUniterBM
+        "totalProfitBM" -> totalProfitBM
 
         "clientBenificeBM" -> clientBenificeBM
 
@@ -80,6 +84,7 @@ data class ArticlesAcheteModele(
 
         "monBenificeFireStoreBM" -> monBenificeFireStoreBM
         "monBenificeUniterFireStoreBM" -> monBenificeUniterFireStoreBM
+        "totalProfitFireStoreBM" -> totalProfitFireStoreBM
 
         "clientBenificeFireStoreBM" -> clientBenificeFireStoreBM
 

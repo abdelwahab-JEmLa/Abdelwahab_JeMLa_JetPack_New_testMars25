@@ -270,12 +270,13 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
 
                 monBenificeFireStoreBM =   roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
                 monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
-
-                clientBenificeFireStoreBM =  roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentFireStoreBM)
+                totalProfitFireStoreBM =  roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
 
                 //FireBAse
                 monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
                 monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
+                totalProfitBM = roundToOneDecimal(totalQuantity*monBenificeBM)
+
                 monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
                 monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
                 benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
