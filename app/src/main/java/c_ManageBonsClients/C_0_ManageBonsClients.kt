@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,8 +50,11 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.round
 
@@ -62,6 +66,7 @@ fun C_ManageBonsClients() {
     var showDialog by remember { mutableStateOf(false) }
     var showClientDialog by remember { mutableStateOf(false) }
     var selectedClientFilter by remember { mutableStateOf<String?>(null) }
+    var totalProfit by remember { mutableStateOf(0.0) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -77,6 +82,8 @@ fun C_ManageBonsClients() {
                         selectedArticleId = null
                     }
                 }
+                totalProfit = calculateTotalProfit(newArticles)
+                updateTotalProfitInFirestore(totalProfit)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -87,8 +94,16 @@ fun C_ManageBonsClients() {
 
     Scaffold(
         topBar = {
-            TopAppBar(//TODO ajout un totale benifice de tout les stickers et fait qui soit set value au fire store avec colleciton name "Benifice Du Joure" chaque refe contie date du joure et le benifice
-                title = { Text("ManageBonsClients") },
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("ManageBonsClients")
+                        Text(
+                            "Bénéfice Total: ${String.format("%.2f", totalProfit)}Da",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showDialog = true }) {
                         Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
@@ -100,7 +115,7 @@ fun C_ManageBonsClients() {
             )
         }
     ) { paddingValues ->
-        KeyboardAwareLayout {
+        Box(modifier = Modifier.padding(paddingValues)) {
             DisplayManageBonsClients(
                 articles = articles.filter { selectedClientFilter == null || it.nomClient == selectedClientFilter },
                 selectedArticleId = selectedArticleId,
@@ -132,7 +147,25 @@ fun C_ManageBonsClients() {
         }
     }
 }
+fun calculateTotalProfit(articles: List<ArticlesAcheteModele>): Double {
+    return articles.sumOf { article ->
+        val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
+            article.monPrixVentBM else article.monPrixVentFireStoreBM
+        val prixVente = round(monPrixVentDetermineBM * 10) / 10
+        val prixAchatC = if (article.prixAchat == 0.0) prixVente else article.prixAchat
+        val profit = prixVente - prixAchatC
+        profit * article.totalQuantity
+    }
+}
 
+fun updateTotalProfitInFirestore(totalProfit: Double) {
+    val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+    val db = Firebase.firestore
+    db.collection("Benifice Du Jour").document(currentDate)
+        .set(mapOf("benifice" to totalProfit))
+        .addOnSuccessListener { println("Bénéfice mis à jour avec succès") }
+        .addOnFailureListener { e -> println("Erreur lors de la mise à jour du bénéfice: $e") }
+}
 @Composable
 fun ClientSelectionDialog(
     numberedClients: List<Pair<String, String>>,
@@ -188,12 +221,8 @@ fun DisplayManageBonsClients(
     val focusRequester = remember { FocusRequester() }
     var isDetailDisplayed by remember { mutableStateOf(false) }
 
-    // Sort articles by typeEmballage and then by nomClient
     val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
-
-    // Group sorted articles by typeEmballage and nomClient
     val groupedArticles = sortedArticles.groupBy { it.typeEmballage to it.nomClient }
-    // Calculate total for each client (only for non-missing articles)
     val clientTotals = articles.groupBy { it.nomClient }.mapValues { (_, clientArticles) ->
         clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
             val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
@@ -208,11 +237,12 @@ fun DisplayManageBonsClients(
     ) {
         val height = maxHeight
         var selectedItemOffset by remember { mutableFloatStateOf(0f) }
-        KeyboardAwareLayout {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize()
-            ) {
+
+        // Remove KeyboardAwareLayout here as well
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize()
+        ) {
                 groupedArticles.forEach { (groupKey, clientArticles) ->
                     val (typeEmballage, nomClient) = groupKey
                     stickyHeader {
@@ -234,7 +264,7 @@ fun DisplayManageBonsClients(
                             isActive = activeClients.contains(nomClient),
                             articles = clientArticles,
                             allArticles = articles,
-                            clientTotal = clientTotals[nomClient] ?: 0.0 // Pass the calculated total for non-missing articles
+                            clientTotal = clientTotals[nomClient] ?: 0.0
                         )
                     }
 
@@ -248,14 +278,28 @@ fun DisplayManageBonsClients(
 
                     items(filteredArticles.chunked(2)) { pairOfArticles ->
                         Column(modifier = Modifier.fillMaxWidth()) {
+                            if (isDetailDisplayed) {
+                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                                    DisplayDetailleArticle(
+                                        article = article,
+                                        currentChangingField = currentChangingField,
+                                        onValueOutlineChange = {
+                                            currentChangingField = it
+                                        },
+                                        focusRequester = focusRequester,
+                                    )
+                                    LaunchedEffect(selectedArticleId) {
+                                        focusRequester.requestFocus()
+                                    }
+                                }
+                            }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 pairOfArticles.forEach { article ->
                                     ArticleBoardCard(
-                                        //TODO ajoute un petit espace entre chaque card d article
-
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                         article = article,
                                         onClickNonTrouveState = { clickedArticle ->
                                             updateNonTrouveState(clickedArticle)
@@ -288,28 +332,14 @@ fun DisplayManageBonsClients(
                                     )
                                 }
                             }
-                            if (isDetailDisplayed) {
-                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
-                                    DisplayDetailleArticle(
-                                        article = article,
-                                        currentChangingField = currentChangingField,
-                                        onValueOutlineChange = {
-                                            currentChangingField = it
-                                        },
-                                        focusRequester = focusRequester,
-                                    )
-                                    LaunchedEffect(selectedArticleId) {
-                                        focusRequester.requestFocus()
-                                    }
-                                }
-                            }
+
                         }
                     }
                 }
             }
         }
     }
-}
+
 @Composable
 fun PrintConfirmationDialog(
     verifiedCount: Int,

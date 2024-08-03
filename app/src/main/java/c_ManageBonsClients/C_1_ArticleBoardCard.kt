@@ -124,6 +124,7 @@ fun ArticleBoardCard(
     onArticleSelect: (ArticlesAcheteModele) -> Unit,
     isVerificationMode: Boolean,
     onClickVerificated: (ArticlesAcheteModele) -> Unit,
+    modifier: Modifier = Modifier, // Add this line
 ) {
     val cardColor = when {
         article.nonTrouveState -> Color.Red
@@ -135,11 +136,11 @@ fun ArticleBoardCard(
 
     Card(
         shape = RoundedCornerShape(8.dp),
-        modifier = Modifier.width(170.dp),
+        modifier = modifier.width(170.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
-        Box(modifier = Modifier.padding(2.dp)) {
+        Box(modifier = modifier.padding(2.dp)) {
             Column {
                 PriceOverlay(
                     price = roundToOneDecimal(article.monPrixVentBM),
@@ -149,12 +150,12 @@ fun ArticleBoardCard(
                     monBenificeFireStoreBM = roundToOneDecimal(article.monBenificeFireStoreBM ),
                     totalQuantity = article.totalQuantity,
                     achat = article.prixAchat,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = modifier.fillMaxWidth()
                 )
 
                 // Image content
                 Box(
-                    modifier = Modifier
+                    modifier = modifier
                         .height(250.dp)
                         .clickable { onArticleSelect(article) }
                 ) {
@@ -179,7 +180,7 @@ fun ArticleBoardCard(
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text(text = article.totalQuantity.toString()) },
-                        modifier = Modifier.weight(0.3f)
+                        modifier = modifier.weight(0.3f)
                     )
                     ArticleName(
                         name = article.nomArticleFinale,
@@ -191,19 +192,19 @@ fun ArticleBoardCard(
                                 onClickNonTrouveState(article)
                             }
                         },
-                        modifier = Modifier.weight(0.7f)
+                        modifier = modifier.weight(0.7f)
                     )
                 }
             }
             Box(
-                modifier = Modifier
+                modifier = modifier
                     .size(40.dp)
                     .align(Alignment.BottomEnd)
                     .background(Color.Blue, CircleShape)
             ) {
                 IconButton(
                     onClick = { showPackagingDialog = true },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = modifier.fillMaxSize()
                 ) {
                     Icon(
                         imageVector = Icons.Default.AllInbox,
