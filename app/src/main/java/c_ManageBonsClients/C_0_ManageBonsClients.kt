@@ -140,7 +140,8 @@ fun C_ManageBonsClients() {
                     selectedClientFilter = null
                     showClientDialog = false
                 },
-                calculateClientProfit = { clientName -> calculateClientProfit(articles, clientName) }
+                calculateClientProfit = { clientName -> calculateClientProfit(articles, clientName) },
+                articles = articles  // Ajout de ce paramètre
             )
         }
     }
@@ -173,14 +174,15 @@ fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: Stri
         }
 }
 
-// Titre: Fonction ClientSelectionDialog améliorée
+// Titre: Correction de la fonction ClientSelectionDialog pour inclure la liste des articles
 @Composable
 fun ClientSelectionDialog(
     numberedClients: List<Pair<String, String>>,
     onClientSelected: (String) -> Unit,
     onDismiss: () -> Unit,
     onClearFilter: () -> Unit,
-    calculateClientProfit: (String) -> Double
+    calculateClientProfit: (String) -> Double,
+    articles: List<ArticlesAcheteModele>  // Ajout de ce paramètre
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -219,6 +221,13 @@ fun ClientSelectionDialog(
                                     color = Color.Black,
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                                // Titre: Calcul et affichage du total client
+                                val clientTotal = calculateClientTotal(articles.filter { it.nomClient == clientName })
+                                Text(
+                                    "Total: ${String.format("%.2f", clientTotal)}Da",
+                                    color = Color.Black,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }
@@ -232,7 +241,14 @@ fun ClientSelectionDialog(
         }
     )
 }
-
+// Titre: Fonction pour calculer le total du client
+fun calculateClientTotal(clientArticles: List<ArticlesAcheteModele>): Double {
+    return clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
+        val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
+            article.monPrixVentBM else article.monPrixVentFireStoreBM
+        round(monPrixVentDetermineBM * 10) / 10 * article.totalQuantity
+    }
+}
 fun updateTotalProfitInFirestore(totalProfit: Double) {
     val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
     val db = Firebase.firestore
