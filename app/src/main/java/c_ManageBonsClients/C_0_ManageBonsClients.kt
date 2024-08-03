@@ -21,8 +21,9 @@ import androidx.compose.material.icons.filled.AllInbox
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,7 +64,6 @@ import kotlin.math.round
 fun C_ManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
     var showClientDialog by remember { mutableStateOf(false) }
     var selectedClientFilter by remember { mutableStateOf<String?>(null) }
     var totalProfit by remember { mutableStateOf(0.0) }
@@ -105,9 +105,6 @@ fun C_ManageBonsClients() {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDialog = true }) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
-                    }
                     IconButton(onClick = { showClientDialog = true }) {
                         Icon(imageVector = Icons.Default.AllInbox, contentDescription = "Select Client")
                     }
@@ -142,11 +139,15 @@ fun C_ManageBonsClients() {
                 onClearFilter = {
                     selectedClientFilter = null
                     showClientDialog = false
-                }
+                },
+                calculateClientProfit = { clientName -> calculateClientProfit(articles, clientName) }
             )
         }
     }
 }
+
+// Title: Calculate Total Profit
+// Cette fonction calcule le bénéfice total pour tous les articles
 fun calculateTotalProfit(articles: List<ArticlesAcheteModele>): Double {
     return articles.sumOf { article ->
         val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
@@ -158,20 +159,28 @@ fun calculateTotalProfit(articles: List<ArticlesAcheteModele>): Double {
     }
 }
 
-fun updateTotalProfitInFirestore(totalProfit: Double) {
-    val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-    val db = Firebase.firestore
-    db.collection("Benifice Du Jour").document(currentDate)
-        .set(mapOf("benifice" to totalProfit))
-        .addOnSuccessListener { println("Bénéfice mis à jour avec succès") }
-        .addOnFailureListener { e -> println("Erreur lors de la mise à jour du bénéfice: $e") }
+// Title: Calculate Client Profit
+// Cette fonction calcule le bénéfice total pour un client donné
+fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: String): Double {
+    return articles.filter { it.nomClient == clientName && !it.nonTrouveState }
+        .sumOf { article ->
+            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
+                article.monPrixVentBM else article.monPrixVentFireStoreBM
+            val prixVente = round(monPrixVentDetermineBM * 10) / 10
+            val prixAchatC = if (article.prixAchat == 0.0) prixVente else article.prixAchat
+            val profit = prixVente - prixAchatC
+            profit * article.totalQuantity
+        }
 }
+
+// Titre: Fonction ClientSelectionDialog améliorée
 @Composable
 fun ClientSelectionDialog(
     numberedClients: List<Pair<String, String>>,
     onClientSelected: (String) -> Unit,
     onDismiss: () -> Unit,
-    onClearFilter: () -> Unit
+    onClearFilter: () -> Unit,
+    calculateClientProfit: (String) -> Double
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -188,11 +197,30 @@ fun ClientSelectionDialog(
                 }
                 items(numberedClients.size) { index ->
                     val (numberedClient, clientName) = numberedClients[index]
-                    TextButton(
-                        onClick = { onClientSelected(clientName) },
-                        modifier = Modifier.fillMaxWidth()
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = generateClientColor(clientName)
+                        )
                     ) {
-                        Text(numberedClient)
+                        TextButton(
+                            onClick = { onClientSelected(clientName) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(numberedClient, color = Color.Black)
+                                Text(
+                                    "Bénéfice: ${String.format("%.2f", calculateClientProfit(clientName))}Da",
+                                    color = Color.Black,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -204,6 +232,16 @@ fun ClientSelectionDialog(
         }
     )
 }
+
+fun updateTotalProfitInFirestore(totalProfit: Double) {
+    val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+    val db = Firebase.firestore
+    db.collection("Benifice Du Jour").document(currentDate)
+        .set(mapOf("benifice" to totalProfit))
+        .addOnSuccessListener { println("Bénéfice mis à jour avec succès") }
+        .addOnFailureListener { e -> println("Erreur lors de la mise à jour du bénéfice: $e") }
+}
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
