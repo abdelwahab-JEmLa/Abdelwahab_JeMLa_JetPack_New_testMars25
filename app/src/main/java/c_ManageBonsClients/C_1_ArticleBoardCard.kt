@@ -309,6 +309,7 @@ fun PriceWithProfit(
             color = textColor,
             modifier = Modifier.fillMaxWidth()
         )
+            //TODO fait que le card du price soit on rose si le benifice du choisi est on -0
         if (totalProfit != profit) {
             AutoResizedText(
                 text = "Total: %.1f".format(totalProfit),

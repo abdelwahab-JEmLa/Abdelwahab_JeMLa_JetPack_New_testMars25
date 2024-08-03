@@ -151,15 +151,27 @@ fun CombinedCard(
         else -> emptyList()
     }
 
+    val chosenBenefit = if (isFireStor) article.monBenificeFireStoreBM else article.monBenificeBM
+    val isChosenCard = article.choisirePrixDepuitFireStoreOuBaseBM == cardType
+    val cardColor = when {
+        isChosenCard -> Color.Red
+        chosenBenefit < 0 -> Color(0xFFFFB6C1) // Light Pink
+        else -> Color.White
+    }
+
+    // Définir la couleur du texte en fonction de la couleur de la carte
+    val textColor = if (isChosenCard) Color.Black else Color.Blue
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = if (article.choisirePrixDepuitFireStoreOuBaseBM == cardType) 2.dp else 0.dp,
-                color = if (article.choisirePrixDepuitFireStoreOuBaseBM == cardType) Color.Red else Color.Transparent,
+                width = if (isChosenCard) 2.dp else 0.dp,
+                color = if (isChosenCard) Color.Red else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
-            )
+            ),
+        colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
         Column(modifier = Modifier.padding(3.dp)) {
             fields.chunked(3).forEachIndexed { rowIndex, rowFields ->
@@ -197,7 +209,9 @@ fun CombinedCard(
                                         }
                                     }
                                 },
-                            focusRequester = if (field.useFocusRequester) focusRequester else null
+                            focusRequester = if (field.useFocusRequester) focusRequester else null,
+                            textColor = textColor,
+                            isChosenCard = isChosenCard
                         )
                     }
                 }
@@ -205,7 +219,6 @@ fun CombinedCard(
         }
     }
 }
-
 @Composable
 private fun RowAutresInfo(
     article: ArticlesAcheteModele,
@@ -270,6 +283,10 @@ fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String,
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
     articleRef.child(columnChanged).setValue(newValue)
 
+    // Check if total quantity is 0 and update verifieState accordingly
+    if (article.totalQuantity == 0) {
+        articleRef.child("verifieState").setValue(true)
+    }
 }
 
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
@@ -408,7 +425,9 @@ fun OutlineTextEditeRegle(
     calculateOthersRelated: (String, String) -> Unit,
     focusRequester: FocusRequester? = null,
     colore: Color? = null,
-    isText: Boolean = false  // New parameter to determine if the field is numeric
+    isText: Boolean = false,
+    textColor: Color = Color.Unspecified,
+    isChosenCard: Boolean = false
 ) {
 
     val initialValue = article.getColumnValue(columnToChange)
@@ -463,12 +482,12 @@ fun OutlineTextEditeRegle(
             label = {
                 AutoResizedTextBC(
                     text = "$abbreviation$displayValue",
-                    color = colore ?: Color.Red,
+                    color = if (isChosenCard) Color.Black else (colore ?: Color.Red),
                     modifier = Modifier.fillMaxWidth(),
                 )
             },
             textStyle = TextStyle(
-                color = Color.Blue,
+                color = textColor,
                 textAlign = TextAlign.Center,
                 fontSize = 14.sp
             ),
@@ -507,12 +526,12 @@ fun AutoResizedTextBC(
     ) {
         Text(
             text = text,
-            color = color,
+            color = color,  // Utiliser la couleur passée en paramètre
             modifier = Modifier.drawWithContent {
                 if (readyToDraw) drawContent()
             },
             softWrap = false,
-            style = resizedTextStyle,
+            style = resizedTextStyle.copy(color = color),  // Appliquer la couleur au style
             textAlign = textAlign,
             onTextLayout = { result ->
                 if (result.didOverflowWidth) {
