@@ -154,11 +154,9 @@ fun CombinedCard(
         else -> emptyList()
     }
 
-    val chosenBenefit = if (isFireStor) article.monBenificeFireStoreBM else article.monBenificeBM
     val isChosenCard = article.choisirePrixDepuitFireStoreOuBaseBM == cardType
     val cardColor = when {
         isChosenCard -> Color.Red
-        chosenBenefit < 0 -> Color(0xFFFFB6C1) // Light Pink
         else -> Color.White
     }
 
@@ -179,9 +177,8 @@ fun CombinedCard(
             // Rotated text inside the Card
             Box(
                 modifier = Modifier
-                    .width(20.dp)
+                    .width(35.dp)
                     .fillMaxHeight()
-                    .padding(end = 8.dp)
             ) {
                 Text(
                     text = if (isFireStor) "Historique" else "App",
@@ -544,7 +541,7 @@ fun OutlineTextEditeRegle(
             ),
             modifier = modifier
                 .fillMaxWidth()
-                .height(65.dp)
+                .height(68.dp)
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
             keyboardOptions = KeyboardOptions(
                 keyboardType = if (!isText) KeyboardType.Number else KeyboardType.Text,
