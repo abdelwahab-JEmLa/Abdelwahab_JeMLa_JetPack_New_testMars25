@@ -338,8 +338,32 @@ private fun SingleColorImage(article: ArticlesAcheteModele) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-            LoadImageFromPathBC(imagePath = imagePath, modifier = Modifier.fillMaxSize())
+            val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+            val imagePathWebp = "$imagePathWithoutExt.webp"
+            val imagePathJpg = "$imagePathWithoutExt.jpg"
+            val webpExists = File(imagePathWebp).exists()
+            val jpgExists = File(imagePathJpg).exists()
+
+            if (webpExists || jpgExists) {
+                LoadImageFromPathBC(imagePath = imagePathWithoutExt, modifier = Modifier.fillMaxSize())
+            } else {
+                // Display rotated article name for empty articles
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.6f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = article.nomArticleFinale,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .rotate(45f)
+                            .padding(4.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
 
             if (!article.nomCouleur1.contains("Sta", ignoreCase = true)) {
                 Box(

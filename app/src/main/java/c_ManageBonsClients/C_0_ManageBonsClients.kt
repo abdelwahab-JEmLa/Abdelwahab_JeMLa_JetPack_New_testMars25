@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AllInbox
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.firestore.firestore
@@ -292,7 +294,6 @@ fun DisplayManageBonsClients(
         val height = maxHeight
         var selectedItemOffset by remember { mutableFloatStateOf(0f) }
 
-        // Remove KeyboardAwareLayout here as well
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize()
@@ -437,24 +438,9 @@ fun ClientAndEmballageHeader(
     clientTotal: Double
 ) {
     var showPrintDialog by remember { mutableStateOf(false) }
-
-    // Count verified articles for the entire client
     val verifiedCount = allArticles.count { it.nomClient == nomClient && it.verifieState }
-
-    // Generate a consistent color for this client
     val clientColor = remember(nomClient) { generateClientColor(nomClient) }
-
-    // Calculate total profit for the client
-    val clientProfit = allArticles
-        .filter { it.nomClient == nomClient && !it.nonTrouveState }
-        .sumOf { article ->
-            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
-                article.monPrixVentBM else article.monPrixVentFireStoreBM
-            val prixVente = round(monPrixVentDetermineBM * 10) / 10
-            val prixAchatC = if (article.prixAchat ==0.0 ) prixVente else article.prixAchat
-            val profit = prixVente - prixAchatC
-            profit * article.totalQuantity
-        }
+    val clientProfit = calculateClientProfit(allArticles, nomClient)
 
     Column(
         modifier = Modifier
@@ -467,12 +453,6 @@ fun ClientAndEmballageHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "$nomClient: $typeEmballage",
-                color = Color.Black,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f)
-            )
             IconButton(onClick = { showPrintDialog = true }) {
                 Icon(
                     imageVector = Icons.Default.Print,
@@ -487,18 +467,24 @@ fun ClientAndEmballageHeader(
                     tint = Color.Black
                 )
             }
+            // New IconButton for creating an empty article
+            IconButton(onClick = { createEmptyArticle(nomClient) }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Empty Article",
+                    tint = Color.Black
+                )
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Display the total profit for this client
             Text(
                 text = "${String.format("%.2f", clientProfit)}Da",
                 color = Color.Black,
                 style = MaterialTheme.typography.bodyMedium
             )
-            // Display the total for this client (non-missing articles)
             Text(
                 text = "Total: ${String.format("%.2f", clientTotal)}Da",
                 color = Color.Black,
@@ -518,3 +504,26 @@ fun ClientAndEmballageHeader(
         )
     }
 }
+fun createEmptyArticle(nomClient: String) {
+    val database = FirebaseDatabase.getInstance()
+    val articleRef = database.getReference("ArticlesAcheteModeleAdapted")
+
+    articleRef.get().addOnSuccessListener { dataSnapshot ->
+        val maxId = dataSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
+        val newId = maxId + 1
+
+        val emptyArticle = ArticlesAcheteModele(
+            idArticle = newId,
+            nomArticleFinale = "New Empty Article",
+            nomClient = nomClient,
+            typeEmballage = "Boit", // Default value
+            choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
+        )
+
+        articleRef.child(newId.toString()).setValue(emptyArticle)
+    }.addOnFailureListener { exception ->
+        // Handle any errors here
+        println("Error creating empty article: ${exception.message}")
+    }
+}
+
