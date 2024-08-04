@@ -39,6 +39,7 @@ import c_ManageBonsClients.C_ManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import d_EntreBonsGro.FragmentEntreBonsGro
 
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
@@ -99,6 +100,8 @@ fun MyApp(
         composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
         composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao) }
         composable("C_ManageBonsClients") { C_ManageBonsClients() }
+        composable("FragmentEntreBonsGro") { FragmentEntreBonsGro() }
+
     }
 }
 
@@ -157,6 +160,25 @@ fun MainScreen(
                         Text("C_ManageBonsClients", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Click to navigate to C_ManageBonsClients", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                Spacer(modifier = Modifier.height(15.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clickable {
+                            navController.navigate("FragmentEntreBonsGro")
+                        },
+                    elevation = CardDefaults.cardElevation(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                    ) {
+                        Text("FragmentEntreBonsGro", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Click to navigate to FragmentEntreBonsGro", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }

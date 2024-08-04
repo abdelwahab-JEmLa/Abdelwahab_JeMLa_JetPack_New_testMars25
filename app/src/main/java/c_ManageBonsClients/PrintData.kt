@@ -18,7 +18,6 @@ import kotlin.math.round
 
 // Constants
 const val TAG = "ClientManagement"
-private const val ARTICLES_REF = "ArticlesAcheteModeleAdapted"
 private const val FACTURES_COLLECTION = "HistoriqueDesFactures"
 private const val CLIENTS_COLLECTION = "clientsList"
 private const val DATE_FORMAT = "dd/MM/yyyy"
