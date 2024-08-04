@@ -20,7 +20,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +35,6 @@ import com.google.firebase.database.database
 fun FragmentEntreBonsGro() {
     var articlesEntreBonsGro by remember { mutableStateOf<List<ArticlesBonsGrosTabele>>(emptyList()) }
     val articlesEntreBonsGroModeleRef = Firebase.database.getReference("ArticlesBonsGrosTabele")
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         // Set up Firebase listener
@@ -47,7 +45,6 @@ fun FragmentEntreBonsGro() {
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
-                // Handle possible errors.
                 println("Firebase data fetch cancelled: ${databaseError.message}")
             }
         })
