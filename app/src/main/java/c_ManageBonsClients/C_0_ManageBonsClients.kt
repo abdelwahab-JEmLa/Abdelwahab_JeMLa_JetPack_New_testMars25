@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import android.provider.Settings.System.DATE_FORMAT
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -25,7 +26,6 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +59,6 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.round
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun C_ManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
@@ -304,9 +303,9 @@ fun DisplayManageBonsClients(
                     ClientAndEmballageHeader(
                         nomClient = nomClient,
                         typeEmballage = typeEmballage,
-                        onPrintClick = {
+                        onPrintClick = { verifiedClientArticles ->
                             coroutineScope.launch {
-                                processClientData(context, nomClient)
+                                processClientData(context, nomClient, verifiedClientArticles)
                             }
                         },
                         onToggleActive = {
@@ -429,7 +428,7 @@ fun generateClientColor(clientName: String): Color {
 fun ClientAndEmballageHeader(
     nomClient: String,
     typeEmballage: String,
-    onPrintClick: () -> Unit,
+    onPrintClick: (List<ArticlesAcheteModele>) -> Unit,
     onToggleActive: () -> Unit,
     isActive: Boolean,
     articles: List<ArticlesAcheteModele>,
@@ -503,34 +502,42 @@ fun ClientAndEmballageHeader(
         PrintConfirmationDialog(
             verifiedCount = verifiedCount,
             onConfirm = {
-                onPrintClick()
+                val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
+                onPrintClick(verifiedClientArticles)
                 showPrintDialog = false
             },
             onDismiss = { showPrintDialog = false }
         )
     }
 }
+
+
 fun createEmptyArticle(nomClient: String) {
     val database = FirebaseDatabase.getInstance()
     val articleRef = database.getReference("ArticlesAcheteModeleAdapted")
 
-    articleRef.get().addOnSuccessListener { dataSnapshot ->
-        val maxId = dataSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
-        val newId = maxId + 1
+    articleRef.orderByChild("nomClient").equalTo(nomClient).limitToFirst(1).get().addOnSuccessListener { clientSnapshot ->
+        val firstClientArticle = clientSnapshot.children.firstOrNull()?.getValue(ArticlesAcheteModele::class.java)
+        val clientDate = firstClientArticle?.dateDachate ?: LocalDate.now().format(DateTimeFormatter.ofPattern(DATE_FORMAT))
 
-        val emptyArticle = ArticlesAcheteModele(
-            idArticle = newId,
-            nomArticleFinale = "New Empty Article",
-            nomClient = nomClient,
-            totalQuantity = 1,
-            typeEmballage = "Boit", // Default value
-            choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
-        )
+        articleRef.get().addOnSuccessListener { allArticlesSnapshot ->
+            val maxId = allArticlesSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
+            val newId = maxId + 1
 
-        articleRef.child(newId.toString()).setValue(emptyArticle)
+            val emptyArticle = ArticlesAcheteModele(
+                idArticle = newId,
+                nomArticleFinale = "New Empty Article",
+                nomClient = nomClient,
+                totalQuantity = 1,
+                dateDachate = clientDate,
+                typeEmballage = "Boit", // Default value
+                choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
+            )
+
+            articleRef.child(newId.toString()).setValue(emptyArticle)
+        }
     }.addOnFailureListener { exception ->
         // Handle any errors here
         println("Error creating empty article: ${exception.message}")
     }
 }
-
