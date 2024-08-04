@@ -27,18 +27,9 @@ private const val DATE_FORMAT = "dd/MM/yyyy"
 private const val TIME_FORMAT = "HH:mm"
 private const val PRINT_INTENT = "pe.diegoveloper.printing"
 
-/**
- * Processes client data, prepares text for printing, and exports data to Firestore.
- *
- * @param context The application context.
- * @param nomClient The name of the client.
- */
 suspend fun processClientData(context: Context, nomClient: String) {
     val fireStore = Firebase.firestore
     val articlesRef = Firebase.database.getReference(ARTICLES_REF)
-    val date = Date()
-    val dateString = SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(date)
-    val timeString = SimpleDateFormat(TIME_FORMAT, Locale.getDefault()).format(date)
 
     try {
         val clientArticles = articlesRef
@@ -47,11 +38,15 @@ suspend fun processClientData(context: Context, nomClient: String) {
             .get()
             .await()
 
+        // Get the date from the first article (assuming all articles have the same date)
+        val firstArticle = clientArticles.children.firstOrNull()?.getValue(ArticlesAcheteModele::class.java)
+        val dateString = firstArticle?.dateDachate ?: SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(Date())
+        val timeString = SimpleDateFormat(TIME_FORMAT, Locale.getDefault()).format(Date())
+
         val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, timeString, clientArticles)
 
         exportToFirestore(fireStore, clientArticles, nomClient, dateString, timeString)
 
-        // Add this line to update the clients list
         updateClientsList(fireStore, nomClient)
 
         imprimerDonnees(context, texteImprimable.toString(), totaleBon)
@@ -154,7 +149,7 @@ suspend fun exportToFirestore(
                             "nmbrunitBC" to article.nmbrunitBC,
                             "clientPrixVentUnite" to article.clientPrixVentUnite,
                             "nomClient" to article.nomClient,
-                            "idClient" to getClientId(fireStore,nomClient),
+                            "idClient" to getClientId(fireStore, nomClient),
                             "dateDachate" to article.dateDachate,
                             "nomCouleur1" to article.nomCouleur1,
                             "quantityAcheteCouleur1" to article.quantityAcheteCouleur1,
@@ -194,7 +189,6 @@ suspend fun exportToFirestore(
         }
     }
 }
-
 /**
  * Retrieves the client ID from Firestore.
  */
