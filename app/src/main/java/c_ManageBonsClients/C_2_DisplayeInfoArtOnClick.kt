@@ -83,8 +83,13 @@ fun InformationsChanger(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester,
 ) {
-
     Column(modifier = modifier.fillMaxWidth()) {
+        val cardHeight = remember(article) {
+            val shouldDisplayTotalProfitFireBase = article.monBenificeBM != article.monBenificeBM * article.totalQuantity
+            val shouldDisplayTotalProfitFireStor = article.monBenificeFireStoreBM != article.monBenificeFireStoreBM * article.totalQuantity
+            if (shouldDisplayTotalProfitFireBase || shouldDisplayTotalProfitFireStor) 180.dp else 160.dp
+        }
+
         CombinedCard(
             article = article,
             onValueChange = onValueChange,
@@ -93,7 +98,7 @@ fun InformationsChanger(
             onCardFocused = {
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireBase")
             },
-            modifier = Modifier.height(140.dp)
+            modifier = Modifier.height(cardHeight)
         )
         CombinedCard(
             article = article,
@@ -104,10 +109,9 @@ fun InformationsChanger(
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireStor")
             },
             focusRequester = focusRequester,
-            modifier = Modifier.height(140.dp)
+            modifier = Modifier.height(cardHeight)
         )
         RowAutresInfo(article, onValueChange, currentChangingField)
-
     }
 }
 fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, newType: String) {
@@ -208,7 +212,6 @@ fun CombinedCard(
                     article.monBenificeBM != totalProfit
                 }
 
-                // Display total profit only if the condition is met
                 if (shouldDisplayTotalProfit) {
                     Text(
                         text = "Total Profit: ${String.format("%.2f", totalProfit)}",
