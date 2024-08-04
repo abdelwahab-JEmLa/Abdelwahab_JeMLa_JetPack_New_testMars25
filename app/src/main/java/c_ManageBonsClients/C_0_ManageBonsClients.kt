@@ -298,102 +298,101 @@ fun DisplayManageBonsClients(
             state = listState,
             modifier = Modifier.fillMaxSize()
         ) {
-                groupedArticles.forEach { (groupKey, clientArticles) ->
-                    val (typeEmballage, nomClient) = groupKey
-                    stickyHeader {
-                        ClientAndEmballageHeader(
-                            nomClient = nomClient,
-                            typeEmballage = typeEmballage,
-                            onPrintClick = {
-                                coroutineScope.launch {
-                                    processClientData(context, nomClient)
-                                }
-                            },
-                            onToggleActive = {
-                                activeClients = if (activeClients.contains(nomClient)) {
-                                    activeClients - nomClient
-                                } else {
-                                    activeClients + nomClient
-                                }
-                            },
-                            isActive = activeClients.contains(nomClient),
-                            articles = clientArticles,
-                            allArticles = articles,
-                            clientTotal = clientTotals[nomClient] ?: 0.0
-                        )
-                    }
+            groupedArticles.forEach { (groupKey, clientArticles) ->
+                val (typeEmballage, nomClient) = groupKey
+                stickyHeader(key = "${nomClient}_${typeEmballage}") {
+                    ClientAndEmballageHeader(
+                        nomClient = nomClient,
+                        typeEmballage = typeEmballage,
+                        onPrintClick = {
+                            coroutineScope.launch {
+                                processClientData(context, nomClient)
+                            }
+                        },
+                        onToggleActive = {
+                            activeClients = if (activeClients.contains(nomClient)) {
+                                activeClients - nomClient
+                            } else {
+                                activeClients + nomClient
+                            }
+                        },
+                        isActive = activeClients.contains(nomClient),
+                        articles = clientArticles,
+                        allArticles = articles,
+                        clientTotal = clientTotals[nomClient] ?: 0.0
+                    )
+                }
 
-                    val filteredArticles = if (activeClients.contains(nomClient)) {
-                        clientArticles.filter { !it.nonTrouveState &&
-                                (it.monPrixVentFireStoreBM * it.totalQuantity != 0.0 || it.monPrixVentBM * it.totalQuantity != 0.0)
-                        }
-                    } else {
-                        clientArticles
+                val filteredArticles = if (activeClients.contains(nomClient)) {
+                    clientArticles.filter { !it.nonTrouveState &&
+                            (it.monPrixVentFireStoreBM * it.totalQuantity != 0.0 || it.monPrixVentBM * it.totalQuantity != 0.0)
                     }
+                } else {
+                    clientArticles
+                }
 
-                    items(filteredArticles.chunked(2)) { pairOfArticles ->
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            if (isDetailDisplayed) {
-                                pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
-                                    DisplayDetailleArticle(
-                                        article = article,
-                                        currentChangingField = currentChangingField,
-                                        onValueOutlineChange = {
-                                            currentChangingField = it
-                                        },
-                                        focusRequester = focusRequester,
-                                    )
-                                    LaunchedEffect(selectedArticleId) {
-                                        focusRequester.requestFocus()
-                                    }
+                items(filteredArticles.chunked(2), key = { it.map { article -> article.idArticle } }) { pairOfArticles ->
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (isDetailDisplayed) {
+                            pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
+                                DisplayDetailleArticle(
+                                    article = article,
+                                    currentChangingField = currentChangingField,
+                                    onValueOutlineChange = {
+                                        currentChangingField = it
+                                    },
+                                    focusRequester = focusRequester,
+                                )
+                                LaunchedEffect(selectedArticleId) {
+                                    focusRequester.requestFocus()
                                 }
                             }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                pairOfArticles.forEach { article ->
-                                    ArticleBoardCard(
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                        article = article,
-                                        onClickNonTrouveState = { clickedArticle ->
-                                            updateNonTrouveState(clickedArticle)
-                                        },
-                                        onClickVerificated = { clickedArticle ->
-                                            updateVerifieState(clickedArticle)
-                                        },
-                                        onArticleSelect = { selectedArticle ->
-                                            if (selectedArticleId == selectedArticle.idArticle && isDetailDisplayed) {
-                                                onArticleSelect(null)
-                                                isDetailDisplayed = false
-                                            } else {
-                                                onArticleSelect(selectedArticle.idArticle)
-                                                isDetailDisplayed = true
-                                                coroutineScope.launch {
-                                                    val layoutInfo = listState.layoutInfo
-                                                    val visibleItemsInfo = layoutInfo.visibleItemsInfo
-                                                    val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            pairOfArticles.forEach { article ->
+                                ArticleBoardCard(
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                    article = article,
+                                    onClickNonTrouveState = { clickedArticle ->
+                                        updateNonTrouveState(clickedArticle)
+                                    },
+                                    onClickVerificated = { clickedArticle ->
+                                        updateVerifieState(clickedArticle)
+                                    },
+                                    onArticleSelect = { selectedArticle ->
+                                        if (selectedArticleId == selectedArticle.idArticle && isDetailDisplayed) {
+                                            onArticleSelect(null)
+                                            isDetailDisplayed = false
+                                        } else {
+                                            onArticleSelect(selectedArticle.idArticle)
+                                            isDetailDisplayed = true
+                                            coroutineScope.launch {
+                                                val layoutInfo = listState.layoutInfo
+                                                val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                                                val selectedItemInfo = visibleItemsInfo.find { it.key == selectedArticle.idArticle }
 
-                                                    selectedItemInfo?.let {
-                                                        selectedItemOffset = it.offset.toFloat()
-                                                        val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
-                                                        listState.animateScrollBy(scrollOffset)
-                                                    }
+                                                selectedItemInfo?.let {
+                                                    selectedItemOffset = it.offset.toFloat()
+                                                    val scrollOffset = selectedItemOffset - paddingValues.calculateTopPadding().value
+                                                    listState.animateScrollBy(scrollOffset)
                                                 }
                                             }
-                                            currentChangingField = ""
-                                        },
-                                        isVerificationMode = activeClients.contains(article.nomClient),
-                                    )
-                                }
+                                        }
+                                        currentChangingField = ""
+                                    },
+                                    isVerificationMode = activeClients.contains(article.nomClient),
+                                )
                             }
-
                         }
                     }
                 }
             }
         }
     }
+}
 
 @Composable
 fun PrintConfirmationDialog(
@@ -448,6 +447,14 @@ fun ClientAndEmballageHeader(
             .background(clientColor)
             .padding(4.dp)
     ) {
+        // Add client name and emballage type
+        Text(
+            text = "$nomClient - $typeEmballage",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -467,7 +474,6 @@ fun ClientAndEmballageHeader(
                     tint = Color.Black
                 )
             }
-            // New IconButton for creating an empty article
             IconButton(onClick = { createEmptyArticle(nomClient) }) {
                 Icon(
                     imageVector = Icons.Default.Add,
