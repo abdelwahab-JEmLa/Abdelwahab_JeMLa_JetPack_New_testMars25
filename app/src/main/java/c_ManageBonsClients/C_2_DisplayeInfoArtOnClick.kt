@@ -181,7 +181,7 @@ fun CombinedCard(
             // Rotated text inside the Card
             Box(
                 modifier = Modifier
-                    .width(35.dp)
+                    .width(45.dp)
                     .fillMaxHeight()
             ) {
                 Text(
@@ -544,7 +544,7 @@ fun OutlineTextEditeRegle(
             ),
             modifier = modifier
                 .fillMaxWidth()
-                .height(68.dp)
+                .height(65.dp)
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
             keyboardOptions = KeyboardOptions(
                 keyboardType = if (!isText) KeyboardType.Number else KeyboardType.Text,

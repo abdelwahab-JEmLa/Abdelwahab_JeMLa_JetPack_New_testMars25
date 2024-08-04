@@ -19,6 +19,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,49 +49,68 @@ fun TopAppBar(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var dialogOpen by remember { mutableStateOf(false) }
+    var showProgressBar by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0f) }
     val context = LocalContext.current
 
-    androidx.compose.material3.TopAppBar(
-        title = { Text("d_db_jetPack") },
-        actions = {
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Default.Menu, contentDescription = "App Menu")
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Transfer Firebase Data") },
-                    onClick = {
-                        coroutineScope.launch {
-                            transferFirebaseData()
+    Column {
+        androidx.compose.material3.TopAppBar(
+            title = { Text("d_db_jetPack") },
+            actions = {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(Icons.Default.Menu, contentDescription = "App Menu")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Transfer Firebase Data") },
+                        onClick = {
+                            coroutineScope.launch {
+                                transferFirebaseData()
+                            }
+                            menuExpanded = false
                         }
-                        menuExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Import Firebase Data") },
-                    onClick = {
-                        dialogOpen = true
-                        menuExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Export Firebase Data") },
-                    onClick = {
-                        coroutineScope.launch {
-                            exportToFireBase(articleDao)
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Import Firebase Data") },
+                        onClick = {
+                            dialogOpen = true
+                            menuExpanded = false
                         }
-                        menuExpanded = false
-                    }
-                )
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Export Firebase Data") },
+                        onClick = {
+                            coroutineScope.launch {
+                                exportToFireBase(articleDao)
+                            }
+                            menuExpanded = false
+                        }
+                    )
+                }
             }
+        )
+        if (showProgressBar) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+    }
+    Dialog(
+        context,
+        dialogOpen,
+        coroutineScope,
+        editeBaseDonneViewModel,
+        articleDao,
+        onDismiss = { dialogOpen = false },
+        onStartImport = { showProgressBar = true },
+        onProgressUpdate = { newProgress -> progress = newProgress },
+        onFinishImport = { showProgressBar = false }
     )
-    Dialog(context,dialogOpen, coroutineScope, editeBaseDonneViewModel, articleDao) { dialogOpen = false }
 }
-
 
 
 @Composable
@@ -100,9 +120,11 @@ private fun Dialog(
     coroutineScope: CoroutineScope,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onStartImport: () -> Unit,
+    onProgressUpdate: (Float) -> Unit,
+    onFinishImport: () -> Unit
 ) {
-
     if (dialogOpen) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
@@ -175,16 +197,17 @@ private fun Dialog(
                         tint2 = Color.Black,
                         onClick = {
                             coroutineScope.launch {
+                                onStartImport()
                                 transferFirebaseDataArticlesAcheteModele(
                                     context,
-                                    articleDao
+                                    articleDao,
+                                    onProgressUpdate
                                 )
                                 importFromFirebaseToDataBaseDonne(
-                                        refFireBase = "e_DBJetPackExport",
-                                        editeBaseDonneViewModel
+                                    refFireBase = "e_DBJetPackExport",
+                                    editeBaseDonneViewModel
                                 )
-
-
+                                onFinishImport()
                             }
                             onDismiss()
                         }

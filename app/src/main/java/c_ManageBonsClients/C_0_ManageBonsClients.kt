@@ -116,7 +116,6 @@ fun C_ManageBonsClients() {
                 }
             }
 
-            // Main content
             Box(modifier = Modifier.weight(1f)) {
                 DisplayManageBonsClients(
                     articles = articles.filter { selectedClientFilter == null || it.nomClient == selectedClientFilter },
@@ -153,8 +152,7 @@ fun C_ManageBonsClients() {
     }
 
 
-// Title: Calculate Total Profit
-// Cette fonction calcule le bénéfice total pour tous les articles
+
 fun calculateTotalProfit(articles: List<ArticlesAcheteModele>): Double {
     return articles.sumOf { article ->
         val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
@@ -166,8 +164,7 @@ fun calculateTotalProfit(articles: List<ArticlesAcheteModele>): Double {
     }
 }
 
-// Title: Calculate Client Profit
-// Cette fonction calcule le bénéfice total pour un client donné
+
 fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: String): Double {
     return articles.filter { it.nomClient == clientName && !it.nonTrouveState }
         .sumOf { article ->
@@ -247,7 +244,6 @@ fun ClientSelectionDialog(
         }
     )
 }
-// Titre: Fonction pour calculer le total du client
 fun calculateClientTotal(clientArticles: List<ArticlesAcheteModele>): Double {
     return clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
         val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
@@ -520,6 +516,7 @@ fun createEmptyArticle(nomClient: String) {
             idArticle = newId,
             nomArticleFinale = "New Empty Article",
             nomClient = nomClient,
+            totalQuantity = 1,
             typeEmballage = "Boit", // Default value
             choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
         )

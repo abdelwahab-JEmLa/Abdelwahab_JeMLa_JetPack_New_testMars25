@@ -6,6 +6,7 @@ import android.widget.Toast
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import c_ManageBonsClients.ArticlesAcheteModele
+import c_ManageBonsClients.roundToOneDecimal
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.FirebaseDatabase
@@ -15,7 +16,6 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import kotlin.math.round
 
 suspend fun importFromFirebaseToDataBaseDonne(
     refFireBase: String,
@@ -207,9 +207,11 @@ suspend fun transferFirebaseData() {
     }
 }
 
-suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Context,
-                                                     articleDao: ArticleDao)
-{
+suspend fun transferFirebaseDataArticlesAcheteModele(
+    context: android.content.Context,
+    articleDao: ArticleDao,
+    onProgressUpdate: (Float) -> Unit
+) {
     var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
 
     try {
@@ -221,6 +223,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
     } catch (e: Exception) {
         Log.e("Firestore", "Error getting documents: ", e)
     }
+
     val refSource = Firebase.database.getReference("ArticlesAcheteModele")
     val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
     try {
@@ -228,6 +231,9 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
 
         val dataSnapshot = refSource.get().await()
         val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+
+        val totalItems = dataMap.size
+        var processedItems = 0
 
         dataMap.forEach { (_, value) ->
             val idArticle = (value["idarticle_c"] as? Long) ?: 0
@@ -238,52 +244,59 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
             val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient  }
             val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
 
-            val article = ArticlesAcheteModele(
-                vid = (value["id"] as? Long) ?: 0,
-                idArticle = idArticle,
-                nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
-                prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
-                nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
-                clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
-                nomClient = nomClient,
-                dateDachate = value["datedachate"] as? String ?: "",
-                nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
-                quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
-                nomCouleur2 = value["nomarticlefinale_c_2"] as? String ?: "",
-                quantityAcheteCouleur2 = (value["quantityachete_c_2"] as? Number)?.toInt() ?: 0,
-                nomCouleur3 = value["nomarticlefinale_c_3"] as? String ?: "",
-                quantityAcheteCouleur3 = (value["quantityachete_c_3"] as? Number)?.toInt() ?: 0,
-                nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
-                quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
-                totalQuantity = (value["totalquantity"] as? Number)?.toInt() ?: 0,
-                nonTrouveState = false,
-                verifieState = false,
-                //Stats
-                typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
-                choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
-                //baseDonne
-                monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
-                //FireStore
-                monPrixVentFireStoreBM = monPrixVentFireStoreBM
-            ).apply {
-                monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
+            // Filtre les entrées où totalquantity est vide ou null
+            val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
+            if (totalQuantity != null && totalQuantity > 0) {
+                val article = ArticlesAcheteModele(
+                    vid = (value["id"] as? Long) ?: 0,
+                    idArticle = idArticle,
+                    nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
+                    prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
+                    nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
+                    clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
+                    nomClient = nomClient,
+                    dateDachate = value["datedachate"] as? String ?: "",
+                    nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
+                    quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
+                    nomCouleur2 = value["nomarticlefinale_c_2"] as? String ?: "",
+                    quantityAcheteCouleur2 = (value["quantityachete_c_2"] as? Number)?.toInt() ?: 0,
+                    nomCouleur3 = value["nomarticlefinale_c_3"] as? String ?: "",
+                    quantityAcheteCouleur3 = (value["quantityachete_c_3"] as? Number)?.toInt() ?: 0,
+                    nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
+                    quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
+                    totalQuantity = totalQuantity,
+                    nonTrouveState = false,
+                    verifieState = false,
+                    //Stats
+                    typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
+                    choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
+                    //baseDonne
+                    monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
+                    //FireStore
+                    monPrixVentFireStoreBM = monPrixVentFireStoreBM
+                ).apply {
+                    monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
 
-                monBenificeFireStoreBM =   roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
-                monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
-                totalProfitFireStoreBM =  roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
+                    monBenificeFireStoreBM =   roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
+                    monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
+                    totalProfitFireStoreBM =  roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
 
-                //FireBAse
-                monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
-                monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
-                totalProfitBM = roundToOneDecimal(totalQuantity*monBenificeBM)
+                    //FireBAse
+                    monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
+                    monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
+                    totalProfitBM = roundToOneDecimal(totalQuantity*monBenificeBM)
 
-                monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
-                monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
-                benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
-                clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
+                    monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
+                    monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
+                    benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
+                    clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
+                }
+
+                refDestination.child(article.idArticle.toString()).setValue(article).await()
             }
 
-            refDestination.child(article.idArticle.toString()).setValue(article).await()
+            processedItems++
+            onProgressUpdate(processedItems.toFloat() / totalItems)
         }
 
         Log.d("transferFirebaseData", "Data transfer completed successfully")
@@ -298,8 +311,4 @@ suspend fun transferFirebaseDataArticlesAcheteModele(context: android.content.Co
             Toast.makeText(context, "Échec du transfert: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
-}
-
-fun roundToOneDecimal(value: Double): Double {
-    return round(value * 10) / 10
 }
