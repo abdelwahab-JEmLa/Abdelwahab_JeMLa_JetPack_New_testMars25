@@ -65,6 +65,8 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
+                // Process the speech input immediately
+                insertDataIntoEntreBonsGrosTable(it, articlesList, articlesRef)
             }
         }
     }
@@ -114,10 +116,10 @@ fun FragmentEntreBonsGro() {
         ) {
             OutlinedTextField(
                 value = inputText,
-                onValueChange = {
-                    inputText = it
-                    if (it.contains("+")) {
-                        insertDataIntoEntreBonsGrosTable(it, articlesList, articlesRef)
+                onValueChange = { newValue ->
+                    inputText = newValue
+                    if (newValue.contains("+")) {
+                        insertDataIntoEntreBonsGrosTable(newValue, articlesList, articlesRef)
                     }
                 },
                 label = { Text("Entrer quantité et prix") },
