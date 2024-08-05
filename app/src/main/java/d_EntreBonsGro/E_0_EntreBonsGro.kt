@@ -72,6 +72,7 @@ fun FragmentEntreBonsGro() {
         }
     }
 }
+
 @Composable
 fun AfficheEntreBonsGro(articlesEntreBonsGro: List<ArticlesBonsGrosTabele>) {
     LazyColumn {
