@@ -1,85 +1,151 @@
 package d_EntreBonsGro
 
-import android.content.ActivityNotFoundException
+import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
-import android.widget.Toast
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat.startActivityForResult
-import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FragmentEntreBonsGro() {
-    var articlesEntreBonsGro by remember { mutableStateOf<List<ArticlesBonsGrosTabele>>(emptyList()) }
-    val articlesEntreBonsGroModeleRef = Firebase.database.getReference("ArticlesBonsGrosTabele")
+    var articlesList by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
+    var inputText by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val database = Firebase.database
+    val articlesRef = database.getReference("ArticlesBonsGrosTabele")
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText: String? =
+                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            spokenText?.let {
+                inputText = it
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
-        // Set up Firebase listener
-        articlesEntreBonsGroModeleRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val newArticles = dataSnapshot.children.mapNotNull { it.getValue(ArticlesBonsGrosTabele::class.java) }
-                articlesEntreBonsGro = newArticles
+        articlesRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+                articlesList = newArticles
             }
 
-            override fun onCancelled(databaseError: DatabaseError) {
-                println("Firebase data fetch cancelled: ${databaseError.message}")
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
             }
         })
     }
 
-    Column {
-        // Custom app bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "EntreBonsGro",
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.titleMedium
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("EntreBonsGro") },
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+                    }
+                    speechRecognizerLauncher.launch(intent)
+                }
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+            }
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = {
+                    inputText = it
+                    if (it.contains("+")) {
+                        insertDataIntoEntreBonsGrosTable(it, articlesList, articlesRef)
+                    }
+                },
+                label = { Text("Entrer quantité et prix") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
 
-        Box(modifier = Modifier.weight(1f)) {
-            AfficheEntreBonsGro(articlesEntreBonsGro)
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        insertDataIntoEntreBonsGrosTable(inputText, articlesList, articlesRef)
+                        inputText = ""
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(end = 16.dp)
+            ) {
+                Text("Ajouter")
+            }
+
+            AfficheEntreBonsGro(articlesList)
         }
     }
 }
-
 @Composable
-fun AfficheEntreBonsGro(articlesEntreBonsGro: List<ArticlesBonsGrosTabele>) {
+fun AfficheEntreBonsGro(articlesEntreBonsGro: List<EntreBonsGrosTabele>) {
     LazyColumn {
         items(articlesEntreBonsGro) { article ->
             ArticleItem(article)
@@ -88,7 +154,7 @@ fun AfficheEntreBonsGro(articlesEntreBonsGro: List<ArticlesBonsGrosTabele>) {
 }
 
 @Composable
-fun ArticleItem(article: ArticlesBonsGrosTabele) {
+fun ArticleItem(article: EntreBonsGrosTabele) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -128,88 +194,34 @@ fun ArticleItem(article: ArticlesBonsGrosTabele) {
                     color = MaterialTheme.colorScheme.error
                 )
             }
-            //TODO ajout un floting button qui lence startVoiceInput
-        }
-    }
-}
-private val REQUEST_CODE_SPEECH_INPUT = 100
-
-private fun startVoiceInput() {
-    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-    intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
-    try {
-        startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT)
-    } catch (e: ActivityNotFoundException) {
-        Toast.makeText(this, "Votre appareil ne supporte pas la reconnaissance vocale.", Toast.LENGTH_SHORT).show()
-    }
-}
-
-override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    super.onActivityResult(requestCode, resultCode, data)
-    if (requestCode == REQUEST_CODE_SPEECH_INPUT && resultCode == RESULT_OK && data != null) {
-        val result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-        result?.let {
-            entreQantityEtPrix.setText(it[0])
         }
     }
 }
 
-
-// Fonction pour insérer des données dans la table EntreBonsGros
-suspend fun insertDataIntoEntreBonsGrosTable(idArticle: Int? = null) {
-
-
-    val text = entreQantityEtPrix.text.toString()
-    // Expression régulière pour capturer la quantité et le prix
+fun insertDataIntoEntreBonsGrosTable(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference) {
     val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
-    val matchResult = regex.find(text)
+    val matchResult = regex.find(input)
 
-    // Extraction des quantités et prix à partir du texte
-    val (quantity, prix) = matchResult?.destructured?.let {
+    val (quantity, price) = matchResult?.destructured?.let {
         Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
     } ?: Pair(null, null)
 
-    // Trouver l'article correspondant dans la liste
-    val articleIndex = articlesList.indexOfFirst {
-        it.quantityAchete_C == 0 && it.grossisstBonN == spChoisirBon.selectedItemPosition
-    }
-
-    if (articleIndex != -1) {
-        // Mise à jour de l'article existant
-        val article = articlesList[articleIndex]
-        article.quantityAchete_C = quantity!!
-        article.new_prix_d_achat_c = prix!!
-        article.subTotale =(quantity*prix).toDouble()
-        database.EntreBonsGrosTabeleDao().update(article)
-        addToAfficheAdapter(article)
-    } else if (quantity != null && prix != null) {
-        // Création d'un nouvel article
+    if (quantity != null && price != null) {
+        // Create new article
         val newVid = (articlesList.maxByOrNull { it.vid }?.vid ?: 0) + 1
-
         val newArticle = EntreBonsGrosTabele(
             vid = newVid,
             idArticle = newVid,
-            a_d_nomarticlefinale_c = "",
-            ancienPrix = 0.0,
-            new_prix_d_achat_c = prix,
-            quantityAchete_C = quantity,
-            quantity_uniter_c = 1,
-            subTotale = prix * quantity,
-            grossisstBonN = spChoisirBon.selectedItemPosition,
-            uniter_c_le_plus_utilise = false,
-            erreur_commentaire = ""
+            nomArticleBG = "",
+            ancienPrixBG = 0.0,
+            newPrixAchatBG = price,
+            quantityAcheteBG = quantity,
+            quantityUniterBG = 1,
+            subTotaleBG = price * quantity,
+            grossisstBonN = 0,
+            uniterCLePlusUtilise = false,
+            erreurCommentaireBG = ""
         )
-
-        articlesList.add(newArticle)
-        database.EntreBonsGrosTabeleDao().insert(newArticle)
-        addToAfficheAdapter(newArticle)
-    } else {
-        println("Erreur: Impossible d'extraire la quantité ou le prix de vente.")
+        articlesRef.child(newVid.toString()).setValue(newArticle)
     }
-
-    // Réinitialisation du texte d'entrée
-    entreQantityEtPrix.setText("")
-    updateTotalAchats()
 }

@@ -1,24 +1,31 @@
 package d_EntreBonsGro
 
-data class ArticlesBonsGrosTabele(
+data class EntreBonsGrosTabele(
     val vid: Long = 0,
-    var idArticleBG: Long = 0,
+    var idArticle: Long = 0,
     var nomArticleBG: String = "",
     var ancienPrixBG: Double = 0.0,
     var newPrixAchatBG: Double = 0.0,
-    var quantityAcheteBG: Double = 0.0,
-    var quantityUniterBG: Double = 0.0,
+    var quantityAcheteBG: Int = 0,
+    var quantityUniterBG: Int = 0,
     var subTotaleBG: Double = 0.0,
-    var grossisstBonNumBG: Int = 0,
-    var uniterLePlusUtiliseStateBG: Boolean = false,
+    var grossisstBonN: Int = 0,
+    var uniterCLePlusUtilise: Boolean = false,
     var erreurCommentaireBG: String = ""
 ) {
-    // Constructeur sans argument nécessaire pour Firebase
+    // No-argument constructor for Firebase
     constructor() : this(0)
 
     fun getColumnValue(columnName: String): Any = when (columnName) {
         "nomArticleBG" -> nomArticleBG
-        // ajoute les autres colonnes ici
+        "ancienPrixBG" -> ancienPrixBG
+        "newPrixAchatBG" -> newPrixAchatBG
+        "quantityAcheteBG" -> quantityAcheteBG
+        "quantityUniterBG" -> quantityUniterBG
+        "subTotaleBG" -> subTotaleBG
+        "grossisstBonN" -> grossisstBonN
+        "uniterCLePlusUtilise" -> uniterCLePlusUtilise
+        "erreurCommentaireBG" -> erreurCommentaireBG
         else -> ""
     }
 }
