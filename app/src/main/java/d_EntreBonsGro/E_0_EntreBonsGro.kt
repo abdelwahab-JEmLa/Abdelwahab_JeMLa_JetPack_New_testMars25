@@ -185,7 +185,8 @@ fun FragmentEntreBonsGro() {
                         }
                     }
                 },
-                itsQuantityAndPrix = nowItsNameInputeTime,
+                nowItsNameInputeTime = nowItsNameInputeTime,
+                onNameInputComplete = { nowItsNameInputeTime = false },
                 focusRequester = focusRequester,
                 articlesList = articlesEntreBonsGrosTabele,
                 suggestionsList = suggestionsList,
@@ -208,7 +209,8 @@ fun FragmentEntreBonsGro() {
 fun OutlineInput(
     inputText: String,
     onInputChange: (String) -> Unit,
-    itsQuantityAndPrix: Boolean,
+    nowItsNameInputeTime: Boolean,
+    onNameInputComplete: () -> Unit,
     focusRequester: FocusRequester,
     articlesList: List<EntreBonsGrosTabele>,
     suggestionsList: List<String>,
@@ -240,8 +242,14 @@ fun OutlineInput(
             label = {
                 Text(
                     when {
-                        inputText.isEmpty() && itsQuantityAndPrix && lastArticle != null ->
-                            "Dernière saisie: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
+                        inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null ->
+                            "Quantity: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
+                        inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
+                            val lastInputtedArticle = articlesList.find { it.vid == vidOfLastQuantityInputted }
+                            lastInputtedArticle?.let {
+                                "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"
+                            } ?: "Entrer quantité et prix"
+                        }
                         inputText.isEmpty() -> "Entrer quantité et prix"
                         else -> inputText
                     }
@@ -266,7 +274,8 @@ fun OutlineInput(
                             vidOfLastQuantityInputted,
                             articlesRef,
                             articlesArticlesAcheteModele,
-                            articlesBaseDonne
+                            articlesBaseDonne,
+                            onNameInputComplete
                         )
                         onInputChange("")
                         showDropdown = false
@@ -368,7 +377,8 @@ fun updateArticleIdFromSuggestion(
     vidOfLastQuantityInputted: Long?,
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    articlesBaseDonne: List<BaseDonne>
+    articlesBaseDonne: List<BaseDonne>,
+    onNameInputComplete: () -> Unit
 ) {
     val idArticleRegex = """\((\d+)\)$""".toRegex()
     val matchResult = idArticleRegex.find(suggestion)
@@ -383,8 +393,6 @@ fun updateArticleIdFromSuggestion(
 
         // Find corresponding ArticlesAcheteModele
         val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
-
-        // Update nomArticleBG and ancienPrixBG if found
         correspondingArticle?.let { article ->
             articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
             articleToUpdate.child("ancienPrixBG").setValue(article.prixAchat)
@@ -395,9 +403,11 @@ fun updateArticleIdFromSuggestion(
         correspondingBaseDonne?.let { baseDonne ->
             articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite)
         }
+
+        // Call the callback to set nowItsNameInputeTime to false
+        onNameInputComplete()
     }
 }
-
 data class EntreBonsGrosTabele(
     val vid: Long = 0,
     var idArticle: Long = 0,
