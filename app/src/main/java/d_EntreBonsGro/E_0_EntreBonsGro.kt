@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -30,7 +31,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -41,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -71,7 +75,8 @@ fun FragmentEntreBonsGro() {
     val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
     val baseDonneRef = database.getReference("e_DBJetPackExport")
     val focusRequester = remember { FocusRequester() }
-    var editiontPassedMode by rememberSaveable { mutableStateOf(false) }
+    var editionPassedMode by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -131,6 +136,7 @@ fun FragmentEntreBonsGro() {
         })
     }
 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -140,20 +146,18 @@ fun FragmentEntreBonsGro() {
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
                 actions = {
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            articlesRef.removeValue()
-                        }
-                    }) {
+                    IconButton(onClick = { showDeleteConfirmDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Delete all data"
                         )
                     }
+                    Switch(
+                        checked = editionPassedMode,
+                        onCheckedChange = { editionPassedMode = it },
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                 }
-                //TODO ajoute un buton au active il affiche un dialoge
-            // ajoute un toggle buton au dialoge suive editiontPassedMode et au click le change
-                //au editiontPassedMode il filre les articles ou passeToEndState
             )
         },
         floatingActionButton = {
@@ -199,14 +203,49 @@ fun FragmentEntreBonsGro() {
                 articlesRef = articlesRef,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                 articlesBaseDonne = articlesBaseDonne,
+                editionPassedMode = editionPassedMode,
                 modifier = Modifier.fillMaxWidth()
             )
 
             AfficheEntreBonsGro(
-                articlesEntreBonsGro = articlesEntreBonsGrosTabele,
+                articlesEntreBonsGro = if (editionPassedMode) {
+                    articlesEntreBonsGrosTabele.filter { it.passeToEndState }
+                } else {
+                    articlesEntreBonsGrosTabele
+                },
+                onDeleteArticle = { article ->
+                    coroutineScope.launch {
+                        articlesRef.child(article.vid.toString()).removeValue()
+                    }
+                },
                 modifier = Modifier.weight(1f)
             )
         }
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Confirm Deletion") },
+            text = { Text("Are you sure you want to delete all data?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            articlesRef.removeValue()
+                        }
+                        showDeleteConfirmDialog = false
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -223,9 +262,14 @@ fun OutlineInput(
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     articlesBaseDonne: List<BaseDonne>,
+    editionPassedMode: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val lastArticle = articlesList.maxByOrNull { it.vid }//TODO au editiontPassedMode vid soit le firste article ou passeToEndState = true
+    val lastArticle = if (editionPassedMode) {
+        articlesList.filter { it.passeToEndState }.maxByOrNull { it.vid }
+    } else {
+        articlesList.maxByOrNull { it.vid }
+    }
     var showDropdown by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
@@ -281,7 +325,9 @@ fun OutlineInput(
                             articlesRef,
                             articlesArticlesAcheteModele,
                             articlesBaseDonne,
-                            onNameInputComplete
+                            onNameInputComplete,
+                            editionPassedMode,
+                            articlesList
                         )
                         onInputChange("")
                         showDropdown = false
@@ -295,17 +341,19 @@ fun OutlineInput(
 @Composable
 fun AfficheEntreBonsGro(
     articlesEntreBonsGro: List<EntreBonsGrosTabele>,
+    onDeleteArticle: (EntreBonsGrosTabele) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
-            ArticleItem(article)
+            ArticleItem(article, onDeleteArticle)
         }
     }
 }
 
+
 @Composable
-fun ArticleItem(article: EntreBonsGrosTabele) {
+fun ArticleItem(article: EntreBonsGrosTabele, onDelete: (EntreBonsGrosTabele) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -317,7 +365,26 @@ fun ArticleItem(article: EntreBonsGrosTabele) {
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            //TODO ajout un buton icon de suppresion du l article on rouge qui sup la ref
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = article.nomArticleBG,
+                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { onDelete(article) }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete article",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
             Text(
                 text = article.nomArticleBG,
                 style = MaterialTheme.typography.headlineSmall,
@@ -386,11 +453,24 @@ fun updateArticleIdFromSuggestion(
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     articlesBaseDonne: List<BaseDonne>,
-    onNameInputComplete: () -> Unit
+    onNameInputComplete: () -> Unit,
+    editionPassedMode: Boolean,
+    articlesList: List<EntreBonsGrosTabele>
 ) {
-    //TODO fait que si "passe" chnage passeToEndState a true
-    if (suggestion == "supp" && vidOfLastQuantityInputted != null) {
-        val articleToUpdate = articlesRef.child(vidOfLastQuantityInputted.toString())
+    val effectiveVid = if (editionPassedMode) {
+        articlesList.firstOrNull { it.passeToEndState }?.vid ?: vidOfLastQuantityInputted
+    } else {
+        vidOfLastQuantityInputted
+    }
+
+    if (suggestion == "passe" && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        articleToUpdate.child("passeToEndState").setValue(true)
+        onNameInputComplete()
+        return
+    }
+    if (suggestion == "supp" && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("nomArticleBG").setValue("New Article")
         onNameInputComplete()
         return
@@ -401,10 +481,10 @@ fun updateArticleIdFromSuggestion(
 
     val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
 
-    if (idArticle != null && vidOfLastQuantityInputted != null) {
-        val articleToUpdate = articlesRef.child(vidOfLastQuantityInputted.toString())
-       //TODO au editiontPassedMode vidOfLastQuantityInputted soit le firste article ou passeToEndState = true
-                // Update idArticle
+    if (idArticle != null && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+
+        // Update idArticle
         articleToUpdate.child("idArticle").setValue(idArticle)
 
         // Find corresponding ArticlesAcheteModele
@@ -436,7 +516,7 @@ data class EntreBonsGrosTabele(
     var grossisstBonN: Int = 0,
     var uniterCLePlusUtilise: Boolean = false,
     var erreurCommentaireBG: String = "",
-    var passeToEndState: Boolean = false,
+    var passeToEndState: Boolean = false
     ) {
     // No-argument constructor for Firebase
     constructor() : this(0)
