@@ -3,7 +3,9 @@ package d_EntreBonsGro
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +39,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -50,17 +50,19 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FragmentEntreBonsGro() {
     var articlesList by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var inputText by remember { mutableStateOf("") }
+    var nowItsNameInputeTime by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
     val focusRequester = remember { FocusRequester() }
+
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -73,6 +75,7 @@ fun FragmentEntreBonsGro() {
                 if (processInputAndInsertData(it, articlesList, articlesRef)) {
                     inputText = "" // Clear the input after successful insertion
                     focusRequester.requestFocus() // Request focus after clearing input
+                    nowItsNameInputeTime = true
                 }
             }
         }
@@ -91,41 +94,13 @@ fun FragmentEntreBonsGro() {
         })
     }
 
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("EntreBonsGro") },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-                actions = {
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            articlesRef.removeValue()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete all data"
-                        )
-                    }
-                }
-            )
+            TopAppBar(coroutineScope, articlesRef)
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
-                    }
-                    speechRecognizerLauncher.launch(intent)
-                }
-            ) {
-                Icon(Icons.Default.Mic, contentDescription = "Voice Input")
-            }
+            SpeechRecognizerLauncher(speechRecognizerLauncher)
         }
     ) { innerPadding ->
         Column(
@@ -133,42 +108,58 @@ fun FragmentEntreBonsGro() {
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            OutlinedTextField(
-                value = inputText,
-                onValueChange = { newValue ->
+            OutlineInput(
+                inputText = inputText,
+                onInputChange = { newValue ->
                     inputText = newValue
                     if (newValue.contains("+")) {
                         if (processInputAndInsertData(newValue, articlesList, articlesRef)) {
                             inputText = "" // Clear the input after successful insertion
                             focusRequester.requestFocus() // Request focus after clearing input
+                            nowItsNameInputeTime = true
                         }
                     }
                 },
-                label = { Text(if (inputText.isEmpty()) "Entrer quantité et prix" else inputText) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .focusRequester(focusRequester)
+                itsQuantityAndPrix = nowItsNameInputeTime,
+                focusRequester = focusRequester,
+                articlesList = articlesList
             )
-
-            Button(
-                onClick = {
-                    if (processInputAndInsertData(inputText, articlesList, articlesRef)) {
-                        inputText = ""
-                        focusRequester.requestFocus() // Request focus after clearing input
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(end = 16.dp)
-            ) {
-                Text("Ajouter")
-            }
 
             AfficheEntreBonsGro(articlesList)
         }
     }
 }
+
+@Composable
+private fun OutlineInput(
+    inputText: String,
+    onInputChange: (String) -> Unit,
+    itsQuantityAndPrix: Boolean,
+    focusRequester: FocusRequester,
+    articlesList: List<EntreBonsGrosTabele>
+) {
+    val lastArticle = articlesList.maxByOrNull { it.vid }
+
+    OutlinedTextField(
+        value = inputText,
+        onValueChange = onInputChange,
+        label = {
+            Text(
+                when {
+                    inputText.isEmpty() && itsQuantityAndPrix && lastArticle != null ->
+                        "Dernière saisie: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
+                    inputText.isEmpty() -> "Entrer quantité et prix"
+                    else -> inputText
+                }
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .focusRequester(focusRequester)
+    )
+}
+
 
 // This function should be defined outside the composable
 fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Boolean {
@@ -200,6 +191,54 @@ fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTab
     }
     return false
 }
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TopAppBar(
+    coroutineScope: CoroutineScope,
+    articlesRef: DatabaseReference
+) {
+    TopAppBar(
+        title = { Text("EntreBonsGro") },
+        colors = TopAppBarDefaults.smallTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        actions = {
+            IconButton(onClick = {
+                coroutineScope.launch {
+                    articlesRef.removeValue()
+                }
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete all data"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun SpeechRecognizerLauncher(speechRecognizerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>) {
+    FloatingActionButton(
+        onClick = {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+            }
+            speechRecognizerLauncher.launch(intent)
+        }
+    ) {
+        Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+    }
+}
+
+
 
 @Composable
 fun AfficheEntreBonsGro(articlesEntreBonsGro: List<EntreBonsGrosTabele>) {
