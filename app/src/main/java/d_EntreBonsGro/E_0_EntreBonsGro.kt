@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -23,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -38,6 +40,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.firebase.database.DataSnapshot
@@ -56,6 +60,7 @@ fun FragmentEntreBonsGro() {
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
+    val focusRequester = remember { FocusRequester() }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -65,8 +70,10 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                // Process the speech input immediately
-                insertDataIntoEntreBonsGrosTable(it, articlesList, articlesRef)
+                if (processInputAndInsertData(it, articlesList, articlesRef)) {
+                    inputText = "" // Clear the input after successful insertion
+                    focusRequester.requestFocus() // Request focus after clearing input
+                }
             }
         }
     }
@@ -91,7 +98,19 @@ fun FragmentEntreBonsGro() {
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                )
+                ),
+                actions = {
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            articlesRef.removeValue()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete all data"
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -119,20 +138,24 @@ fun FragmentEntreBonsGro() {
                 onValueChange = { newValue ->
                     inputText = newValue
                     if (newValue.contains("+")) {
-                        insertDataIntoEntreBonsGrosTable(newValue, articlesList, articlesRef)
+                        if (processInputAndInsertData(newValue, articlesList, articlesRef)) {
+                            inputText = "" // Clear the input after successful insertion
+                            focusRequester.requestFocus() // Request focus after clearing input
+                        }
                     }
                 },
-                label = { Text("Entrer quantité et prix") },
+                label = { Text(if (inputText.isEmpty()) "Entrer quantité et prix" else inputText) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
+                    .focusRequester(focusRequester)
             )
 
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        insertDataIntoEntreBonsGrosTable(inputText, articlesList, articlesRef)
+                    if (processInputAndInsertData(inputText, articlesList, articlesRef)) {
                         inputText = ""
+                        focusRequester.requestFocus() // Request focus after clearing input
                     }
                 },
                 modifier = Modifier
@@ -146,6 +169,38 @@ fun FragmentEntreBonsGro() {
         }
     }
 }
+
+// This function should be defined outside the composable
+fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Boolean {
+    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    val matchResult = regex.find(input)
+
+    val (quantity, price) = matchResult?.destructured?.let {
+        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
+    } ?: Pair(null, null)
+
+    if (quantity != null && price != null) {
+        // Create new article
+        val newVid = (articlesList.maxByOrNull { it.vid }?.vid ?: 0) + 1
+        val newArticle = EntreBonsGrosTabele(
+            vid = newVid,
+            idArticle = newVid,
+            nomArticleBG = "",
+            ancienPrixBG = 0.0,
+            newPrixAchatBG = price,
+            quantityAcheteBG = quantity,
+            quantityUniterBG = 1,
+            subTotaleBG = price * quantity,
+            grossisstBonN = 0,
+            uniterCLePlusUtilise = false,
+            erreurCommentaireBG = ""
+        )
+        articlesRef.child(newVid.toString()).setValue(newArticle)
+        return true
+    }
+    return false
+}
+
 @Composable
 fun AfficheEntreBonsGro(articlesEntreBonsGro: List<EntreBonsGrosTabele>) {
     LazyColumn {
@@ -200,30 +255,4 @@ fun ArticleItem(article: EntreBonsGrosTabele) {
     }
 }
 
-fun insertDataIntoEntreBonsGrosTable(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference) {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
-    val matchResult = regex.find(input)
 
-    val (quantity, price) = matchResult?.destructured?.let {
-        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
-    } ?: Pair(null, null)
-
-    if (quantity != null && price != null) {
-        // Create new article
-        val newVid = (articlesList.maxByOrNull { it.vid }?.vid ?: 0) + 1
-        val newArticle = EntreBonsGrosTabele(
-            vid = newVid,
-            idArticle = newVid,
-            nomArticleBG = "",
-            ancienPrixBG = 0.0,
-            newPrixAchatBG = price,
-            quantityAcheteBG = quantity,
-            quantityUniterBG = 1,
-            subTotaleBG = price * quantity,
-            grossisstBonN = 0,
-            uniterCLePlusUtilise = false,
-            erreurCommentaireBG = ""
-        )
-        articlesRef.child(newVid.toString()).setValue(newArticle)
-    }
-}
