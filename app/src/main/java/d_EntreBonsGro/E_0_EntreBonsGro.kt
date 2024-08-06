@@ -61,6 +61,7 @@ fun FragmentEntreBonsGro() {
     var inputText by remember { mutableStateOf("") }
     var nowItsNameInputeTime by remember { mutableStateOf(false) }
     var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var vidOfLastQuantityInputted by remember { mutableStateOf<Long?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
@@ -76,10 +77,12 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                if (processInputAndInsertData(it, articlesList, articlesRef)) {
+                val newVid = processInputAndInsertData(it, articlesList, articlesRef)
+                if (newVid != null) {
                     inputText = ""
                     focusRequester.requestFocus()
                     nowItsNameInputeTime = true
+                    vidOfLastQuantityInputted = newVid
                 }
             }
         }
@@ -160,10 +163,12 @@ fun FragmentEntreBonsGro() {
                 onInputChange = { newValue ->
                     inputText = newValue
                     if (newValue.contains("+")) {
-                        if (processInputAndInsertData(newValue, articlesList, articlesRef)) {
+                        val newVid = processInputAndInsertData(newValue, articlesList, articlesRef)
+                        if (newVid != null) {
                             inputText = ""
                             focusRequester.requestFocus()
                             nowItsNameInputeTime = true
+                            vidOfLastQuantityInputted = newVid
                         }
                     }
                 },
@@ -171,6 +176,8 @@ fun FragmentEntreBonsGro() {
                 focusRequester = focusRequester,
                 articlesList = articlesList,
                 suggestionsList = suggestionsList,
+                vidOfLastQuantityInputted = vidOfLastQuantityInputted,
+                articlesRef = articlesRef,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -190,6 +197,8 @@ fun OutlineInput(
     focusRequester: FocusRequester,
     articlesList: List<EntreBonsGrosTabele>,
     suggestionsList: List<String>,
+    vidOfLastQuantityInputted: Long?,
+    articlesRef: DatabaseReference,
     modifier: Modifier = Modifier
 ) {
     val lastArticle = articlesList.maxByOrNull { it.vid }
@@ -235,7 +244,8 @@ fun OutlineInput(
                 DropdownMenuItem(
                     text = { Text(suggestion) },
                     onClick = {
-                        onInputChange(suggestion)
+                        updateArticleIdFromSuggestion(suggestion, vidOfLastQuantityInputted, articlesRef)
+                        onInputChange("")
                         showDropdown = false
                     }
                 )
@@ -300,8 +310,8 @@ fun ArticleItem(article: EntreBonsGrosTabele) {
         }
     }
 }
-// This function should be defined outside the composable
-fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Boolean {
+
+fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Long? {
     val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
     val matchResult = regex.find(input)
 
@@ -326,10 +336,18 @@ fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTab
             erreurCommentaireBG = ""
         )
         articlesRef.child(newVid.toString()).setValue(newArticle)
-        return true
+        return newVid
     }
-    return false
+    return null
 }
 
+fun updateArticleIdFromSuggestion(suggestion: String, vidOfLastQuantityInputted: Long?, articlesRef: DatabaseReference) {
+    val idArticleRegex = """\((\d+)\)$""".toRegex()
+    val matchResult = idArticleRegex.find(suggestion)
 
+    val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
 
+    if (idArticle != null && vidOfLastQuantityInputted != null) {
+        articlesRef.child(vidOfLastQuantityInputted.toString()).child("idArticle").setValue(idArticle)
+    }
+}
