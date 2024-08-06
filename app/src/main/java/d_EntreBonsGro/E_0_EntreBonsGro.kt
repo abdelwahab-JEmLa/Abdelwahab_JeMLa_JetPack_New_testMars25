@@ -48,8 +48,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
@@ -76,7 +74,6 @@ fun FragmentEntreBonsGro() {
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
     val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
     val baseDonneRef = database.getReference("e_DBJetPackExport")
-    val focusRequester = remember { FocusRequester() }
     var editionPassedMode by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showActionsDialog by remember { mutableStateOf(false) }
@@ -92,7 +89,6 @@ fun FragmentEntreBonsGro() {
                 val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef)
                 if (newVid != null) {
                     inputText = ""
-                    focusRequester.requestFocus()
                     nowItsNameInputeTime = true
                     vidOfLastQuantityInputted = newVid
                 }
@@ -138,7 +134,6 @@ fun FragmentEntreBonsGro() {
             }
         })
     }
-
 
     Scaffold(
         topBar = {
@@ -186,7 +181,6 @@ fun FragmentEntreBonsGro() {
                         val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef)
                         if (newVid != null) {
                             inputText = ""
-                            focusRequester.requestFocus()
                             nowItsNameInputeTime = true
                             vidOfLastQuantityInputted = newVid
                         }
@@ -194,7 +188,6 @@ fun FragmentEntreBonsGro() {
                 },
                 nowItsNameInputeTime = nowItsNameInputeTime,
                 onNameInputComplete = { nowItsNameInputeTime = false },
-                focusRequester = focusRequester,
                 articlesList = articlesEntreBonsGrosTabele,
                 suggestionsList = suggestionsList,
                 vidOfLastQuantityInputted = vidOfLastQuantityInputted,
@@ -290,7 +283,6 @@ fun OutlineInput(
     onInputChange: (String) -> Unit,
     nowItsNameInputeTime: Boolean,
     onNameInputComplete: () -> Unit,
-    focusRequester: FocusRequester,
     articlesList: List<EntreBonsGrosTabele>,
     suggestionsList: List<String>,
     vidOfLastQuantityInputted: Long?,
@@ -341,7 +333,6 @@ fun OutlineInput(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(focusRequester)
         )
 
         DropdownMenu(
@@ -353,7 +344,6 @@ fun OutlineInput(
                 DropdownMenuItem(
                     text = { Text(suggestion) },
                     onClick = {
-
                         updateArticleIdFromSuggestion(
                             suggestion,
                             vidOfLastQuantityInputted,
@@ -372,6 +362,7 @@ fun OutlineInput(
         }
     }
 }
+
 
 @Composable
 fun AfficheEntreBonsGro(
