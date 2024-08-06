@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -70,6 +71,7 @@ fun FragmentEntreBonsGro() {
     val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
     val baseDonneRef = database.getReference("e_DBJetPackExport")
     val focusRequester = remember { FocusRequester() }
+    var editiontPassedMode by rememberSaveable { mutableStateOf(false) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -109,7 +111,7 @@ fun FragmentEntreBonsGro() {
                 suggestionsList = newArticlesAcheteModele.map { articleAchete ->
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
-                }
+                } + "supp" + "passe"
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -149,6 +151,9 @@ fun FragmentEntreBonsGro() {
                         )
                     }
                 }
+                //TODO ajoute un buton au active il affiche un dialoge
+            // ajoute un toggle buton au dialoge suive editiontPassedMode et au click le change
+                //au editiontPassedMode il filre les articles ou passeToEndState
             )
         },
         floatingActionButton = {
@@ -220,7 +225,7 @@ fun OutlineInput(
     articlesBaseDonne: List<BaseDonne>,
     modifier: Modifier = Modifier
 ) {
-    val lastArticle = articlesList.maxByOrNull { it.vid }
+    val lastArticle = articlesList.maxByOrNull { it.vid }//TODO au editiontPassedMode vid soit le firste article ou passeToEndState = true
     var showDropdown by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
@@ -269,6 +274,7 @@ fun OutlineInput(
                 DropdownMenuItem(
                     text = { Text(suggestion) },
                     onClick = {
+
                         updateArticleIdFromSuggestion(
                             suggestion,
                             vidOfLastQuantityInputted,
@@ -285,6 +291,7 @@ fun OutlineInput(
         }
     }
 }
+
 @Composable
 fun AfficheEntreBonsGro(
     articlesEntreBonsGro: List<EntreBonsGrosTabele>,
@@ -310,6 +317,7 @@ fun ArticleItem(article: EntreBonsGrosTabele) {
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
+            //TODO ajout un buton icon de suppresion du l article on rouge qui sup la ref
             Text(
                 text = article.nomArticleBG,
                 style = MaterialTheme.typography.headlineSmall,
@@ -380,6 +388,14 @@ fun updateArticleIdFromSuggestion(
     articlesBaseDonne: List<BaseDonne>,
     onNameInputComplete: () -> Unit
 ) {
+    //TODO fait que si "passe" chnage passeToEndState a true
+    if (suggestion == "supp" && vidOfLastQuantityInputted != null) {
+        val articleToUpdate = articlesRef.child(vidOfLastQuantityInputted.toString())
+        articleToUpdate.child("nomArticleBG").setValue("New Article")
+        onNameInputComplete()
+        return
+    }
+
     val idArticleRegex = """\((\d+)\)$""".toRegex()
     val matchResult = idArticleRegex.find(suggestion)
 
@@ -387,8 +403,8 @@ fun updateArticleIdFromSuggestion(
 
     if (idArticle != null && vidOfLastQuantityInputted != null) {
         val articleToUpdate = articlesRef.child(vidOfLastQuantityInputted.toString())
-
-        // Update idArticle
+       //TODO au editiontPassedMode vidOfLastQuantityInputted soit le firste article ou passeToEndState = true
+                // Update idArticle
         articleToUpdate.child("idArticle").setValue(idArticle)
 
         // Find corresponding ArticlesAcheteModele
@@ -419,8 +435,9 @@ data class EntreBonsGrosTabele(
     var subTotaleBG: Double = 0.0,
     var grossisstBonN: Int = 0,
     var uniterCLePlusUtilise: Boolean = false,
-    var erreurCommentaireBG: String = ""
-) {
+    var erreurCommentaireBG: String = "",
+    var passeToEndState: Boolean = false,
+    ) {
     // No-argument constructor for Firebase
     constructor() : this(0)
 
