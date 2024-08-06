@@ -4,8 +4,11 @@ import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -209,6 +212,10 @@ fun FragmentEntreBonsGro() {
                         articlesRef.child(article.vid.toString()).removeValue()
                     }
                 },
+                speechRecognizerLauncher = speechRecognizerLauncher,
+                onInputChange = { newValue -> inputText = newValue },
+                processInputAndInsertData = ::processInputAndInsertData,
+                articlesRef = articlesRef,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -368,22 +375,71 @@ fun OutlineInput(
 fun AfficheEntreBonsGro(
     articlesEntreBonsGro: List<EntreBonsGrosTabele>,
     onDeleteArticle: (EntreBonsGrosTabele) -> Unit,
+    speechRecognizerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
+    onInputChange: (String) -> Unit,
+    processInputAndInsertData: (String, List<EntreBonsGrosTabele>, DatabaseReference) -> Long?,
+    articlesRef: DatabaseReference,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
-            ArticleItem(article, onDeleteArticle)
+            ArticleItem(
+                article = article,
+                onDelete = onDeleteArticle,
+                onInputChange = onInputChange,
+                processInputAndInsertData = processInputAndInsertData,
+                articlesEntreBonsGrosTabele = articlesEntreBonsGro,
+                articlesRef = articlesRef
+            )
         }
     }
 }
 
 
 @Composable
-fun ArticleItem(article: EntreBonsGrosTabele, onDelete: (EntreBonsGrosTabele) -> Unit) {
+fun ArticleItem(
+    article: EntreBonsGrosTabele,
+    onDelete: (EntreBonsGrosTabele) -> Unit,
+    onInputChange: (String) -> Unit,
+    processInputAndInsertData: (String, List<EntreBonsGrosTabele>, DatabaseReference) -> Long?,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
+    articlesRef: DatabaseReference
+) {
+    var lastLaunchTime by remember { mutableStateOf(0L) }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText: String? =
+                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            spokenText?.let {
+                onInputChange(it)
+                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef)
+                if (newVid != null) {
+                    onInputChange("")
+                    // You might want to handle nowItsNameInputeTime and vidOfLastQuantityInputted here
+                }
+            }
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastLaunchTime > 1000) { // Prevent multiple rapid launches
+                    lastLaunchTime = currentTime
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+                    }
+                    speechRecognizerLauncher.launch(intent)
+                }
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -437,7 +493,6 @@ fun ArticleItem(article: EntreBonsGrosTabele, onDelete: (EntreBonsGrosTabele) ->
         }
     }
 }
-
 fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Long? {
     val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
     val matchResult = regex.find(input)
