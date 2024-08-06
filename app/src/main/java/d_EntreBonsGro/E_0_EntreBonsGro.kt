@@ -3,9 +3,7 @@ package d_EntreBonsGro
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +20,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -44,25 +44,29 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FragmentEntreBonsGro() {
     var articlesList by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
+    var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var inputText by remember { mutableStateOf("") }
     var nowItsNameInputeTime by remember { mutableStateOf(false) }
+    var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
-    val focusRequester = remember { FocusRequester() }
+    val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
 
+    val focusRequester = remember { FocusRequester() }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -73,8 +77,8 @@ fun FragmentEntreBonsGro() {
             spokenText?.let {
                 inputText = it
                 if (processInputAndInsertData(it, articlesList, articlesRef)) {
-                    inputText = "" // Clear the input after successful insertion
-                    focusRequester.requestFocus() // Request focus after clearing input
+                    inputText = ""
+                    focusRequester.requestFocus()
                     nowItsNameInputeTime = true
                 }
             }
@@ -92,15 +96,58 @@ fun FragmentEntreBonsGro() {
                 // Handle error
             }
         })
-    }
 
+        articlesAcheteModeleRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newArticlesAcheteModele = snapshot.children.mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
+                articlesArticlesAcheteModele = newArticlesAcheteModele
+                suggestionsList = newArticlesAcheteModele.map { articleAchete ->
+                    val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
+                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(coroutineScope, articlesRef)
+            TopAppBar(
+                title = { Text("EntreBonsGro") },
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                actions = {
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            articlesRef.removeValue()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete all data"
+                        )
+                    }
+                }
+            )
         },
         floatingActionButton = {
-            SpeechRecognizerLauncher(speechRecognizerLauncher)
+            FloatingActionButton(
+                onClick = {
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+                    }
+                    speechRecognizerLauncher.launch(intent)
+                }
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+            }
         }
     ) { innerPadding ->
         Column(
@@ -114,135 +161,95 @@ fun FragmentEntreBonsGro() {
                     inputText = newValue
                     if (newValue.contains("+")) {
                         if (processInputAndInsertData(newValue, articlesList, articlesRef)) {
-                            inputText = "" // Clear the input after successful insertion
-                            focusRequester.requestFocus() // Request focus after clearing input
+                            inputText = ""
+                            focusRequester.requestFocus()
                             nowItsNameInputeTime = true
                         }
                     }
                 },
                 itsQuantityAndPrix = nowItsNameInputeTime,
                 focusRequester = focusRequester,
-                articlesList = articlesList
+                articlesList = articlesList,
+                suggestionsList = suggestionsList,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            AfficheEntreBonsGro(articlesList)
+            AfficheEntreBonsGro(
+                articlesEntreBonsGro = articlesList,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
 
 @Composable
-private fun OutlineInput(
+fun OutlineInput(
     inputText: String,
     onInputChange: (String) -> Unit,
     itsQuantityAndPrix: Boolean,
     focusRequester: FocusRequester,
-    articlesList: List<EntreBonsGrosTabele>
+    articlesList: List<EntreBonsGrosTabele>,
+    suggestionsList: List<String>,
+    modifier: Modifier = Modifier
 ) {
     val lastArticle = articlesList.maxByOrNull { it.vid }
+    var showDropdown by remember { mutableStateOf(false) }
+    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
-    OutlinedTextField(
-        value = inputText,
-        onValueChange = onInputChange,
-        label = {
-            Text(
-                when {
-                    inputText.isEmpty() && itsQuantityAndPrix && lastArticle != null ->
-                        "Dernière saisie: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
-                    inputText.isEmpty() -> "Entrer quantité et prix"
-                    else -> inputText
+    Column(modifier = modifier) {
+        OutlinedTextField(
+            value = inputText,
+            onValueChange = { newValue ->
+                onInputChange(newValue)
+                val cleanInput = newValue.replace(".", "").toLowerCase()
+                filteredSuggestions = if (cleanInput.length >= 3) {
+                    suggestionsList.filter {
+                        it.replace(".", "").toLowerCase().contains(cleanInput)
+                    }
+                } else {
+                    emptyList()
                 }
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .focusRequester(focusRequester)
-    )
-}
-
-
-// This function should be defined outside the composable
-fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Boolean {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
-    val matchResult = regex.find(input)
-
-    val (quantity, price) = matchResult?.destructured?.let {
-        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
-    } ?: Pair(null, null)
-
-    if (quantity != null && price != null) {
-        // Create new article
-        val newVid = (articlesList.maxByOrNull { it.vid }?.vid ?: 0) + 1
-        val newArticle = EntreBonsGrosTabele(
-            vid = newVid,
-            idArticle = newVid,
-            nomArticleBG = "",
-            ancienPrixBG = 0.0,
-            newPrixAchatBG = price,
-            quantityAcheteBG = quantity,
-            quantityUniterBG = 1,
-            subTotaleBG = price * quantity,
-            grossisstBonN = 0,
-            uniterCLePlusUtilise = false,
-            erreurCommentaireBG = ""
+                showDropdown = filteredSuggestions.isNotEmpty() && newValue.isNotEmpty()
+            },
+            label = {
+                Text(
+                    when {
+                        inputText.isEmpty() && itsQuantityAndPrix && lastArticle != null ->
+                            "Dernière saisie: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
+                        inputText.isEmpty() -> "Entrer quantité et prix"
+                        else -> inputText
+                    }
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
         )
-        articlesRef.child(newVid.toString()).setValue(newArticle)
-        return true
+
+        DropdownMenu(
+            expanded = showDropdown,
+            onDismissRequest = { showDropdown = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            filteredSuggestions.forEach { suggestion ->
+                DropdownMenuItem(
+                    text = { Text(suggestion) },
+                    onClick = {
+                        onInputChange(suggestion)
+                        showDropdown = false
+                    }
+                )
+            }
+        }
     }
-    return false
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun TopAppBar(
-    coroutineScope: CoroutineScope,
-    articlesRef: DatabaseReference
+fun AfficheEntreBonsGro(
+    articlesEntreBonsGro: List<EntreBonsGrosTabele>,
+    modifier: Modifier = Modifier
 ) {
-    TopAppBar(
-        title = { Text("EntreBonsGro") },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        actions = {
-            IconButton(onClick = {
-                coroutineScope.launch {
-                    articlesRef.removeValue()
-                }
-            }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete all data"
-                )
-            }
-        }
-    )
-}
-
-@Composable
-private fun SpeechRecognizerLauncher(speechRecognizerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>) {
-    FloatingActionButton(
-        onClick = {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(
-                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                )
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
-            }
-            speechRecognizerLauncher.launch(intent)
-        }
-    ) {
-        Icon(Icons.Default.Mic, contentDescription = "Voice Input")
-    }
-}
-
-
-
-@Composable
-fun AfficheEntreBonsGro(articlesEntreBonsGro: List<EntreBonsGrosTabele>) {
-    LazyColumn {
+    LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
             ArticleItem(article)
         }
@@ -293,5 +300,36 @@ fun ArticleItem(article: EntreBonsGrosTabele) {
         }
     }
 }
+// This function should be defined outside the composable
+fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Boolean {
+    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    val matchResult = regex.find(input)
+
+    val (quantity, price) = matchResult?.destructured?.let {
+        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
+    } ?: Pair(null, null)
+
+    if (quantity != null && price != null) {
+        // Create new article
+        val newVid = (articlesList.maxByOrNull { it.vid }?.vid ?: 0) + 1
+        val newArticle = EntreBonsGrosTabele(
+            vid = newVid,
+            idArticle = newVid,
+            nomArticleBG = "",
+            ancienPrixBG = 0.0,
+            newPrixAchatBG = price,
+            quantityAcheteBG = quantity,
+            quantityUniterBG = 1,
+            subTotaleBG = price * quantity,
+            grossisstBonN = 0,
+            uniterCLePlusUtilise = false,
+            erreurCommentaireBG = ""
+        )
+        articlesRef.child(newVid.toString()).setValue(newArticle)
+        return true
+    }
+    return false
+}
+
 
 
