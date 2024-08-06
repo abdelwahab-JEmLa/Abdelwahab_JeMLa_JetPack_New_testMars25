@@ -460,7 +460,9 @@ fun updateArticleIdFromSuggestion(
 
     if (suggestion == "passe" && effectiveVid != null) {
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
+
         articleToUpdate.child("passeToEndState").setValue(true)
+        articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
         onNameInputComplete()
         return
     }
