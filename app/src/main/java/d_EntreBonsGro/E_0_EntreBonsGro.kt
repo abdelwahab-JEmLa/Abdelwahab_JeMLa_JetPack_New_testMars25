@@ -385,12 +385,7 @@ fun ArticleItem(article: EntreBonsGrosTabele, onDelete: (EntreBonsGrosTabele) ->
                     )
                 }
             }
-            Text(
-                text = article.nomArticleBG,
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
