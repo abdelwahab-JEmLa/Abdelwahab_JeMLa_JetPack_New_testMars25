@@ -1,5 +1,6 @@
 package d_EntreBonsGro
 
+import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
@@ -56,8 +57,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FragmentEntreBonsGro() {
-    var articlesList by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
+    var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
+    var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var inputText by remember { mutableStateOf("") }
     var nowItsNameInputeTime by remember { mutableStateOf(false) }
     var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -66,7 +68,7 @@ fun FragmentEntreBonsGro() {
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
     val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
-
+    val baseDonneRef = database.getReference("e_DBJetPackExport")
     val focusRequester = remember { FocusRequester() }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
@@ -77,7 +79,7 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                val newVid = processInputAndInsertData(it, articlesList, articlesRef)
+                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef)
                 if (newVid != null) {
                     inputText = ""
                     focusRequester.requestFocus()
@@ -92,7 +94,7 @@ fun FragmentEntreBonsGro() {
         articlesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val newArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
-                articlesList = newArticles
+                articlesEntreBonsGrosTabele = newArticles
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -108,6 +110,17 @@ fun FragmentEntreBonsGro() {
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
                 }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+
+        baseDonneRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newBaseDonne = snapshot.children.mapNotNull { it.getValue(BaseDonne::class.java) }
+                articlesBaseDonne = newBaseDonne
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -163,7 +176,7 @@ fun FragmentEntreBonsGro() {
                 onInputChange = { newValue ->
                     inputText = newValue
                     if (newValue.contains("+")) {
-                        val newVid = processInputAndInsertData(newValue, articlesList, articlesRef)
+                        val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef)
                         if (newVid != null) {
                             inputText = ""
                             focusRequester.requestFocus()
@@ -174,15 +187,17 @@ fun FragmentEntreBonsGro() {
                 },
                 itsQuantityAndPrix = nowItsNameInputeTime,
                 focusRequester = focusRequester,
-                articlesList = articlesList,
+                articlesList = articlesEntreBonsGrosTabele,
                 suggestionsList = suggestionsList,
                 vidOfLastQuantityInputted = vidOfLastQuantityInputted,
                 articlesRef = articlesRef,
+                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                articlesBaseDonne = articlesBaseDonne,
                 modifier = Modifier.fillMaxWidth()
             )
 
             AfficheEntreBonsGro(
-                articlesEntreBonsGro = articlesList,
+                articlesEntreBonsGro = articlesEntreBonsGrosTabele,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -199,6 +214,8 @@ fun OutlineInput(
     suggestionsList: List<String>,
     vidOfLastQuantityInputted: Long?,
     articlesRef: DatabaseReference,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
     modifier: Modifier = Modifier
 ) {
     val lastArticle = articlesList.maxByOrNull { it.vid }
@@ -244,7 +261,13 @@ fun OutlineInput(
                 DropdownMenuItem(
                     text = { Text(suggestion) },
                     onClick = {
-                        updateArticleIdFromSuggestion(suggestion, vidOfLastQuantityInputted, articlesRef)
+                        updateArticleIdFromSuggestion(
+                            suggestion,
+                            vidOfLastQuantityInputted,
+                            articlesRef,
+                            articlesArticlesAcheteModele,
+                            articlesBaseDonne
+                        )
                         onInputChange("")
                         showDropdown = false
                     }
@@ -253,7 +276,6 @@ fun OutlineInput(
         }
     }
 }
-
 @Composable
 fun AfficheEntreBonsGro(
     articlesEntreBonsGro: List<EntreBonsGrosTabele>,
@@ -341,13 +363,67 @@ fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTab
     return null
 }
 
-fun updateArticleIdFromSuggestion(suggestion: String, vidOfLastQuantityInputted: Long?, articlesRef: DatabaseReference) {
+fun updateArticleIdFromSuggestion(
+    suggestion: String,
+    vidOfLastQuantityInputted: Long?,
+    articlesRef: DatabaseReference,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>
+) {
     val idArticleRegex = """\((\d+)\)$""".toRegex()
     val matchResult = idArticleRegex.find(suggestion)
 
     val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
 
     if (idArticle != null && vidOfLastQuantityInputted != null) {
-        articlesRef.child(vidOfLastQuantityInputted.toString()).child("idArticle").setValue(idArticle)
+        val articleToUpdate = articlesRef.child(vidOfLastQuantityInputted.toString())
+
+        // Update idArticle
+        articleToUpdate.child("idArticle").setValue(idArticle)
+
+        // Find corresponding ArticlesAcheteModele
+        val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
+
+        // Update nomArticleBG and ancienPrixBG if found
+        correspondingArticle?.let { article ->
+            articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
+            articleToUpdate.child("ancienPrixBG").setValue(article.prixAchat)
+        }
+
+        // Find corresponding BaseDonne and update quantityUniterBG
+        val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
+        correspondingBaseDonne?.let { baseDonne ->
+            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite)
+        }
+    }
+}
+
+data class EntreBonsGrosTabele(
+    val vid: Long = 0,
+    var idArticle: Long = 0,
+    var nomArticleBG: String = "",
+    var ancienPrixBG: Double = 0.0,
+    var newPrixAchatBG: Double = 0.0,
+    var quantityAcheteBG: Int = 0,
+    var quantityUniterBG: Int = 0,
+    var subTotaleBG: Double = 0.0,
+    var grossisstBonN: Int = 0,
+    var uniterCLePlusUtilise: Boolean = false,
+    var erreurCommentaireBG: String = ""
+) {
+    // No-argument constructor for Firebase
+    constructor() : this(0)
+
+    fun getColumnValue(columnName: String): Any = when (columnName) {
+        "nomArticleBG" -> nomArticleBG
+        "ancienPrixBG" -> ancienPrixBG
+        "newPrixAchatBG" -> newPrixAchatBG
+        "quantityAcheteBG" -> quantityAcheteBG
+        "quantityUniterBG" -> quantityUniterBG
+        "subTotaleBG" -> subTotaleBG
+        "grossisstBonN" -> grossisstBonN
+        "uniterCLePlusUtilise" -> uniterCLePlusUtilise
+        "erreurCommentaireBG" -> erreurCommentaireBG
+        else -> ""
     }
 }
