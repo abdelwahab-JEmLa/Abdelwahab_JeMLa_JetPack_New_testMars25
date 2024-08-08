@@ -44,10 +44,4 @@ data class BaseDonne(
 ) {
     // Constructeur sans argument nécessaire pour Firebase
     constructor() : this(0)
-    fun getColumnValue(columnName: String): Any = when (columnName) {
-        "nmbrUnite" -> nmbrUnite
-
-        else -> ""
-
-    }
 }

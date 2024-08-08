@@ -1,6 +1,5 @@
 package c_ManageBonsClients
 
-import a_RoomDB.BaseDonne
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,21 +42,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun DisplayDetailleArticle(
     article: ArticlesAcheteModele,
     currentChangingField: String,
     onValueOutlineChange: (String) -> Unit,
-    focusRequester: FocusRequester, articlesBaseDonne: List<BaseDonne>,
+    focusRequester: FocusRequester,
 ) {
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
-    val findRelatedBaseDonne =articlesBaseDonne.find { it.idArticle.toLong() == article.idArticle }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -71,7 +68,7 @@ fun DisplayDetailleArticle(
                 article = article,
                 currentChangingField = currentChangingField,
                 onValueChange = onValueOutlineChange,
-                focusRequester = focusRequester, articlesBaseDonne = findRelatedBaseDonne,
+                focusRequester = focusRequester,
             )
 
         }
@@ -84,7 +81,7 @@ fun InformationsChanger(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester, articlesBaseDonne: BaseDonne?,
+    focusRequester: FocusRequester,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         val cardHeight = remember(article) {
@@ -101,9 +98,7 @@ fun InformationsChanger(
             onCardFocused = {
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireBase")
             },
-            modifier = Modifier.height(cardHeight),
-            articlesBaseDonne = articlesBaseDonne,
-
+            modifier = Modifier.height(cardHeight)
         )
         CombinedCard(
             article = article,
@@ -114,12 +109,9 @@ fun InformationsChanger(
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireStor")
             },
             focusRequester = focusRequester,
-            modifier = Modifier.height(cardHeight),
-            articlesBaseDonne = articlesBaseDonne
+            modifier = Modifier.height(cardHeight)
         )
-        RowAutresInfo(article, onValueChange, currentChangingField,
-            articlesBaseDonne = articlesBaseDonne,
-        )
+        RowAutresInfo(article, onValueChange, currentChangingField)
     }
 }
 fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, newType: String) {
@@ -135,8 +127,7 @@ fun CombinedCard(
     cardType: String,
     onCardFocused: () -> Unit,
     focusRequester: FocusRequester? = null,
-    modifier: Modifier = Modifier,
-    articlesBaseDonne: BaseDonne?
+    modifier: Modifier = Modifier
 ) {
     val isFireStor = cardType == "CardFireStor"
     var isCardFocused by remember { mutableStateOf(false) }
@@ -245,7 +236,7 @@ fun CombinedCard(
                                 calculateOthersRelated = { columnChanged, newValue ->
                                     onCardFocused()
                                     onValueChange(columnChanged)
-                                    updateRelatedFields(article, columnChanged, newValue,articlesBaseDonne)
+                                    updateRelatedFields(article, columnChanged, newValue)
                                 },
                                 currentChangingField = currentChangingField,
                                 article = article,
@@ -284,8 +275,7 @@ private fun RowAutresInfo(
     article: ArticlesAcheteModele,
     onValueChange: (String) -> Unit,
     currentChangingField: String,
-    modifier: Modifier = Modifier,
-    articlesBaseDonne: BaseDonne?
+    modifier: Modifier = Modifier
 ) {
     data class FieldInfo(
         val columnToChange: String,
@@ -296,31 +286,13 @@ private fun RowAutresInfo(
 
     val fields = listOf(
         FieldInfo("clientPrixVentUnite", "cVU", 0.20f, true),
+        FieldInfo("nmbrunitBC", "nu", 0.20f, true),
         FieldInfo("monPrixAchatUniterBC", "", 0.20f, true),
         FieldInfo("prixAchat", "pA", 0.40f, true)
     )
 
     Column(modifier = modifier) {
         Row {
-            if (articlesBaseDonne != null) {
-                OutlineTextEditeBaseDonne(
-                    columnToChange = "nmbrUnite",
-                    abbreviation = "nu",
-                    calculateOthersRelated = { columnChanged, newValue ->
-                        onValueChange(columnChanged)
-                        updateRelatedFields(article, columnChanged, newValue, baseDonne = articlesBaseDonne)
-                    },
-                    currentChangingField = currentChangingField,
-                    article = articlesBaseDonne,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(67.dp)
-                        .weight(0.20f),
-                    colore = Color.Red,
-                )
-            }
-
-
             fields.forEach { field ->
                 OutlineTextEditeRegle(
                     columnToChange = field.columnToChange,
@@ -328,8 +300,7 @@ private fun RowAutresInfo(
                     calculateOthersRelated = { columnChanged, newValue ->
                         onValueChange(columnChanged)
                         if (field.updateRelated) {
-
-                            updateRelatedFields(article, columnChanged, newValue, articlesBaseDonne)
+                            updateRelatedFields(article, columnChanged, newValue)
                         }
                     },
                     currentChangingField = currentChangingField,
@@ -343,7 +314,7 @@ private fun RowAutresInfo(
 
         OutlineTextEditeRegle(
             columnToChange = "nomArticleFinale",
-            abbreviation = "nu",
+            abbreviation = "",
             calculateOthersRelated = { columnChanged, newValue ->
                 onValueChange(columnChanged)
                 updateNomArticleFinale(article, columnChanged, newValue)
@@ -359,8 +330,6 @@ private fun RowAutresInfo(
     }
 }
 
-
-
 fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
     articleRef.child(columnChanged).setValue(newValue)
@@ -371,244 +340,106 @@ fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String,
     }
 }
 
-fun updateRelatedFields(
-    ar: ArticlesAcheteModele,
-    columnChanged: String,
-    newValue: String,
-    baseDonne: BaseDonne? = null
-) {
+fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
-    up(columnChanged, newValueDouble.toString(), ar.idArticle, toBaseDonne = baseDonneUpdate )
+
+    up(columnChanged, newValueDouble.toString(), ar.idArticle)
 
     when (columnChanged) {
-        "clientBenificeBM" -> updateClientBenefitFields(ar, newValueDouble, baseDonne)
-        "monBenificeUniterBM" -> updateMyUnitBenefitFields(ar, newValueDouble, baseDonne)
-        "monBenificeBM" -> updateMyBenefitFields(ar, newValueDouble, baseDonne)
-        "nmbrUnite" -> updateNumberOfUnitsFields(ar, newValueDouble, baseDonne)
-        "monPrixVentFireStoreBM" -> updateMyFireStoreSellingPriceFields(ar, newValueDouble, baseDonne)
-        "monPrixVentUniterFireStoreBM" -> updateMyFireStoreUnitSellingPriceFields(ar, newValueDouble, baseDonne)
-        "monBenificeFireStoreBM" -> updateMyFireStoreBenefitFields(ar, newValueDouble, baseDonne)
-        "monBenificeUniterFireStoreBM" -> updateMyFireStoreUnitBenefitFields(ar, newValueDouble, baseDonne)
-        "clientBenificeFireStoreBM" -> updateClientFireStoreBenefitFields(ar, newValueDouble, baseDonne)
+        "clientBenificeBM" -> {
+            up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monBenificeUniterBM", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("monPrixVentUniterBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
+        }
+
+        "monBenificeUniterBM" -> {
+            up("monBenificeBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
+        }
+
+        "monBenificeBM" -> {
+            up("monBenificeUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
+            up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
+        }
+
+        "monPrixAchatUniterBC" -> {
+            up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBM).toString(), ar.idArticle)
+            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeFireStoreBM).toString(), ar.idArticle)
+        }
+
+        "prixAchat" -> {
+            up("monPrixVentBM", (newValueDouble + ar.monBenificeBM).toString(), ar.idArticle)
+            up("monPrixVentFireStoreBM", (newValueDouble + ar.monBenificeFireStoreBM).toString(), ar.idArticle)
+        }
+
+        "nmbrunitBC" -> {
+            up("clientBenificeBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterBM * newValueDouble)).toString(), ar.idArticle)
+
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterFireStoreBM * newValueDouble)).toString(), ar.idArticle)
+        }
+
+        "clientPrixVentUnite" -> {
+            up("clientBenificeBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentBM).toString(), ar.idArticle)
+
+            up("clientBenificeFireStoreBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentFireStoreBM).toString(), ar.idArticle)
+        }
+
+        "monPrixVentUniterBM" -> {
+            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeUniterBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+        }
+
+        "monPrixVentBM" -> {
+            up("monPrixVentUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
+            up("monBenificeUniterBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
+        }
+
+        "monPrixVentFireStoreBM" -> {
+            up("monPrixVentUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeFireStoreBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
+        }
+
+        "monPrixVentUniterFireStoreBM" -> {
+            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+        }
+
+        "monBenificeFireStoreBM" -> {
+            up("monBenificeUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterFireStoreBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentFireStoreBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - (newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
+        }
+
+        "monBenificeUniterFireStoreBM" -> {
+            up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterFireStoreBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
+        }
+
+        "clientBenificeFireStoreBM" -> {
+            up("monBenificeUniterFireStoreBM", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
+            up("monPrixVentUniterFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentFireStoreBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
+        }
     }
 }
 
-private fun updateClientBenefitFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up(
-        "benificeDivise",
-        ((((newValueDouble / nmbrUnite))
-                - ((ar.prixAchat / nmbrUnite)))
-                ).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monBenificeUniterBM",
-        ((((((ar.clientPrixVentUnite * nmbrUnite))
-                - newValueDouble
-                - ar.prixAchat)
-                / nmbrUnite)
-                )).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monBenificeBM",
-        ((((ar.clientPrixVentUnite * nmbrUnite))
-                - newValueDouble
-                - ar.prixAchat)).toString(),
-        ar.idArticle,
-        false,
-    )
-    up(
-        "monPrixVentUniterBM",
-        (((((ar.clientPrixVentUnite * nmbrUnite)) / nmbrUnite))).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentBM",
-        (((ar.clientPrixVentUnite * nmbrUnite))).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateMyUnitBenefitFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up(
-        "monBenificeBM",
-        (((newValueDouble * nmbrUnite))).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentUniterBM",
-        ((newValueDouble + ((ar.prixAchat / nmbrUnite) ))).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentBM",
-        (((newValueDouble * nmbrUnite))).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateMyBenefitFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up(
-        "monBenificeUniterBM",
-        (((newValueDouble / nmbrUnite))).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentUniterBM",
-        ((((newValueDouble / nmbrUnite)) + ((ar.prixAchat / nmbrUnite)))).toString(),
-        ar.idArticle,
-        false,
-    )
-    up(
-        "monPrixVentBM",
-        (newValueDouble + ar.prixAchat).toString(),
-        ar.idArticle,
-        false,
-    )
-    up(
-        "clientBenificeBM",
-        ((((ar.clientPrixVentUnite * nmbrUnite)) - (newValueDouble + ar.prixAchat))).toString(),
-        ar.idArticle,
-        false,
-    )
-}
-
-private fun updateNumberOfUnitsFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    up(
-        "clientBenificeBM",
-        ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterBM * newValueDouble)).toString(),
-        ar.idArticle,
-        false
-    )
-
-    up(
-        "clientBenificeFireStoreBM",
-        ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterFireStoreBM * newValueDouble)).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateMyFireStoreSellingPriceFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up("monPrixVentUniterFireStoreBM", (newValueDouble / nmbrUnite).toString(), ar.idArticle, false)
-    up("monBenificeFireStoreBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle, false)
-    up(
-        "monBenificeUniterFireStoreBM",
-        ((newValueDouble - ar.prixAchat) / nmbrUnite).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "clientBenificeFireStoreBM",
-        ((ar.clientPrixVentUnite * nmbrUnite) - newValueDouble).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateMyFireStoreUnitSellingPriceFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up("monPrixVentFireStoreBM", (newValueDouble * nmbrUnite).toString(), ar.idArticle, false)
-    up(
-        "monBenificeFireStoreBM",
-        (newValueDouble * nmbrUnite - ar.prixAchat).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monBenificeUniterFireStoreBM",
-        (newValueDouble - (ar.prixAchat / nmbrUnite)).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateMyFireStoreBenefitFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up("monBenificeUniterFireStoreBM", (newValueDouble / nmbrUnite).toString(), ar.idArticle, false)
-    up(
-        "monPrixVentUniterFireStoreBM",
-        ((newValueDouble / nmbrUnite) + (ar.prixAchat / nmbrUnite)).toString(),
-        ar.idArticle,
-        false
-    )
-    up("monPrixVentFireStoreBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle, false)
-    up(
-        "clientBenificeFireStoreBM",
-        ((ar.clientPrixVentUnite * nmbrUnite) - (newValueDouble + ar.prixAchat)).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateMyFireStoreUnitBenefitFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up("monBenificeFireStoreBM", (newValueDouble * nmbrUnite).toString(), ar.idArticle, false)
-    up(
-        "monPrixVentUniterFireStoreBM",
-        (newValueDouble + (ar.prixAchat / nmbrUnite)).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentFireStoreBM",
-        (newValueDouble * nmbrUnite + ar.prixAchat).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-private fun updateClientFireStoreBenefitFields(ar: ArticlesAcheteModele, newValueDouble: Double, baseDonne: BaseDonne?) {
-    val nmbrUnite = baseDonne?.nmbrUnite ?: return
-    up(
-        "monBenificeUniterFireStoreBM",
-        (((ar.clientPrixVentUnite * nmbrUnite) - newValueDouble - ar.prixAchat) / nmbrUnite).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monBenificeFireStoreBM",
-        ((ar.clientPrixVentUnite * nmbrUnite) - newValueDouble - ar.prixAchat).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentUniterFireStoreBM",
-        ((ar.clientPrixVentUnite * nmbrUnite - newValueDouble) / nmbrUnite).toString(),
-        ar.idArticle,
-        false
-    )
-    up(
-        "monPrixVentFireStoreBM",
-        (ar.clientPrixVentUnite * nmbrUnite - newValueDouble).toString(),
-        ar.idArticle,
-        false
-    )
-}
-
-fun up(columnChanged: String, newValue: String, articleId: Long, toBaseDonne: Boolean) {
-    val
-    val articleFromFireBase = if (!toBaseDonne) {
-        val articleRef = Firebase.database.getReference("e_DBJetPackExport")
-        articleRef.child(columnChanged).setValue(newValue)
-        articleRef.child("lastUpdateState").setValue(getCurrentDate())
-        articleRef
-    } else {
-        Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
-    }
+fun up(columnChanged: String, newValue: String, articleId: Long) {
+    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(articleId.toString())
     val articleUpdate = articleFromFireBase.child(columnChanged)
 
     val doubleValue = newValue.toDoubleOrNull()
@@ -619,11 +450,6 @@ fun up(columnChanged: String, newValue: String, articleId: Long, toBaseDonne: Bo
         articleUpdate.setValue(0.0)
         println("Warning: Attempted to write invalid value ($newValue) to Firebase for column $columnChanged")
     }
-}
-
-private fun getCurrentDate(): String {
-    val currentDate = LocalDate.now()
-    return currentDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))
 }
 
 // Update Firebase functions
@@ -638,97 +464,7 @@ fun updateVerifieState(article: ArticlesAcheteModele) {
     articleRef.child("verifieState").setValue(!article.verifieState)
 }
 
-@Composable
-fun OutlineTextEditeBaseDonne(
-    columnToChange: String,
-    abbreviation: String? = "",
-    labelCalculated: String = "",
-    currentChangingField: String,
-    article: BaseDonne,
-    modifier: Modifier = Modifier,
-    calculateOthersRelated: (String, String) -> Unit,
-    focusRequester: FocusRequester? = null,
-    colore: Color? = null,
-    isText: Boolean = false,
-    textColor: Color = Color.Unspecified,
-    isChosenCard: Boolean = false
-) {
 
-    val initialValue = article.getColumnValue(columnToChange)
-    var textFieldValue by remember {
-        mutableStateOf(
-            when {
-                !isText && initialValue is Number -> initialValue.toString()
-                isText && initialValue is String -> initialValue
-                else -> ""
-            }
-        )
-    }
-
-    val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = labelCalculated.ifEmpty {
-        when {
-            !isText && initialValue is Number -> initialValue.toString()
-            isText && initialValue is String -> initialValue
-            else -> ""
-        }
-    }
-
-    val displayValue = if (!isText) {
-        labelValue.toDoubleOrNull()?.let { doubleValue ->
-            if (doubleValue % 1 == 0.0) {
-                doubleValue.toInt().toString()
-            } else {
-                String.format("%.1f", doubleValue)
-            }
-        } ?: labelValue
-    } else {
-        labelValue
-    }
-
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(horizontal = 3.dp)
-    ) {
-        OutlinedTextField(
-            value = textValue,
-            onValueChange = { newValue ->
-                val validatedValue = if (!isText) {
-                    newValue.filter { it.isDigit() || it == '.' || it == '-' }
-                } else {
-                    newValue
-                }
-                textFieldValue = validatedValue
-                calculateOthersRelated(columnToChange, validatedValue)
-            },
-            label = {
-                AutoResizedTextBC(
-                    text = "$abbreviation$displayValue",
-                    color = if (isChosenCard) Color.Black else (colore ?: Color.Red),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            textStyle = TextStyle(
-                color = textColor,
-                textAlign = TextAlign.Center,
-                fontSize = 14.sp
-            ),
-            modifier = modifier
-                .fillMaxWidth()
-                .height(65.dp)
-                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = if (!isText) KeyboardType.Number else KeyboardType.Text,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { keyboardController?.hide() }
-            )
-        )
-    }
-}
 @Composable
 fun OutlineTextEditeRegle(
     columnToChange: String,

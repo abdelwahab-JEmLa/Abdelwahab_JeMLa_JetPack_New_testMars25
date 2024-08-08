@@ -1,6 +1,5 @@
 package c_ManageBonsClients
 
-import a_RoomDB.BaseDonne
 import android.provider.Settings.System.DATE_FORMAT
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -63,9 +62,6 @@ import kotlin.math.round
 @Composable
 fun FragmentManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
-    var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
-    val database = Firebase.database
-    val baseDonneRef = database.getReference("e_DBJetPackExport")
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showClientDialog by remember { mutableStateOf(false) }
     var selectedClientFilter by remember { mutableStateOf<String?>(null) }
@@ -93,25 +89,6 @@ fun FragmentManageBonsClients() {
                 // Handle possible errors.
             }
         })
-        baseDonneRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val newBaseDonne = snapshot.children.mapNotNull { dataSnapshot ->
-                    try {
-                        dataSnapshot.getValue(BaseDonne::class.java)
-                    } catch (e: Exception) {
-                        // Handle the conversion error
-                        null
-                    }
-                }
-                articlesBaseDonne = newBaseDonne
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error
-            }
-        })
-
-
     }
 
         Column {
@@ -145,7 +122,7 @@ fun FragmentManageBonsClients() {
                     onArticleSelect = { selectedArticleId = it },
                     coroutineScope = coroutineScope,
                     listState = listState,
-                    paddingValues = PaddingValues(0.dp), articlesBaseDonne = articlesBaseDonne,
+                    paddingValues = PaddingValues(0.dp),
                 )
             }
         }
@@ -291,7 +268,7 @@ fun DisplayManageBonsClients(
     onArticleSelect: (Long?) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
-    paddingValues: PaddingValues, articlesBaseDonne: List<BaseDonne>,
+    paddingValues: PaddingValues,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
@@ -364,7 +341,6 @@ fun DisplayManageBonsClients(
                                         currentChangingField = it
                                     },
                                     focusRequester = focusRequester,
-                                    articlesBaseDonne = articlesBaseDonne,
                                 )
                                 LaunchedEffect(selectedArticleId) {
                                     focusRequester.requestFocus()
