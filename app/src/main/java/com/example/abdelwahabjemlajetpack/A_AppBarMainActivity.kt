@@ -198,15 +198,16 @@ private fun Dialog(
                         onClick = {
                             coroutineScope.launch {
                                 onStartImport()
+                                importFromFirebaseToDataBaseDonne(
+                                    refFireBase = "e_DBJetPackExport",
+                                    editeBaseDonneViewModel
+                                )
                                 transferFirebaseDataArticlesAcheteModele(
                                     context,
                                     articleDao,
                                     onProgressUpdate
                                 )
-                                importFromFirebaseToDataBaseDonne(
-                                    refFireBase = "e_DBJetPackExport",
-                                    editeBaseDonneViewModel
-                                )
+
                                 onFinishImport()
                             }
                             onDismiss()
