@@ -223,6 +223,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
     } catch (e: Exception) {
         Log.e("Firestore", "Error getting documents: ", e)
     }
+    val refFirebase = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
 
     val refSource = Firebase.database.getReference("ArticlesAcheteModele")
     val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
@@ -248,7 +249,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
             val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
             if (totalQuantity != null && totalQuantity > 0) {
                 val article = ArticlesAcheteModele(
-                    vid = (value["id"] as? Long) ?: 0,
+                    vid = processedItems.toLong(), // Use a sequential ID based on the number of processed items
                     idArticle = idArticle,
                     nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
                     prixAchat = roundToOneDecimal((value["prixachat_c"] as? Number)?.toDouble() ?: 0.0),
