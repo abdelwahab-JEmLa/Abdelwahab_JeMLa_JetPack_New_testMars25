@@ -115,7 +115,7 @@ fun InformationsChanger(
     }
 }
 fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, newType: String) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
     articleRef.child("choisirePrixDepuitFireStoreOuBaseBM").setValue(newType)
 
 }
@@ -331,7 +331,7 @@ private fun RowAutresInfo(
 }
 
 fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String, newValue: String) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
     articleRef.child(columnChanged).setValue(newValue)
 
     // Check if total quantity is 0 and update verifieState accordingly
@@ -343,97 +343,97 @@ fun updateNomArticleFinale(article: ArticlesAcheteModele, columnChanged: String,
 fun updateRelatedFields(ar: ArticlesAcheteModele, columnChanged: String, newValue: String) {
     val newValueDouble = newValue.toDoubleOrNull() ?: return
 
-    up(columnChanged, newValueDouble.toString(), ar.idArticle)
+    up(columnChanged, newValueDouble.toString(), ar.vid)
 
     when (columnChanged) {
         "clientBenificeBM" -> {
-            up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monBenificeUniterBM", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("monPrixVentUniterBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
+            up("benificeDivise", ((newValueDouble / ar.nmbrunitBC) - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
+            up("monBenificeUniterBM", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.vid)
+            up("monBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.vid)
+            up("monPrixVentUniterBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.vid)
         }
 
         "monBenificeUniterBM" -> {
-            up("monBenificeBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentUniterBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
+            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.vid)
         }
 
         "monBenificeBM" -> {
-            up("monBenificeUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
-            up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
+            up("monBenificeUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentUniterBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
+            up("monPrixVentBM", (newValueDouble + ar.prixAchat).toString(), ar.vid)
+            up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC)-(newValueDouble + ar.prixAchat)).toString(), ar.vid)
         }
 
         "monPrixAchatUniterBC" -> {
-            up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBM).toString(), ar.idArticle)
-            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeFireStoreBM).toString(), ar.idArticle)
+            up("prixAchat", (newValueDouble * ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeBM).toString(), ar.vid)
+            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.monBenificeFireStoreBM).toString(), ar.vid)
         }
 
         "prixAchat" -> {
-            up("monPrixVentBM", (newValueDouble + ar.monBenificeBM).toString(), ar.idArticle)
-            up("monPrixVentFireStoreBM", (newValueDouble + ar.monBenificeFireStoreBM).toString(), ar.idArticle)
+            up("monPrixVentBM", (newValueDouble + ar.monBenificeBM).toString(), ar.vid)
+            up("monPrixVentFireStoreBM", (newValueDouble + ar.monBenificeFireStoreBM).toString(), ar.vid)
         }
 
         "nmbrunitBC" -> {
-            up("clientBenificeBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterBM * newValueDouble)).toString(), ar.idArticle)
+            up("clientBenificeBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterBM * newValueDouble)).toString(), ar.vid)
 
-            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterFireStoreBM * newValueDouble)).toString(), ar.idArticle)
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * newValueDouble) - (ar.monPrixVentUniterFireStoreBM * newValueDouble)).toString(), ar.vid)
         }
 
         "clientPrixVentUnite" -> {
-            up("clientBenificeBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentBM).toString(), ar.idArticle)
+            up("clientBenificeBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentBM).toString(), ar.vid)
 
-            up("clientBenificeFireStoreBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentFireStoreBM).toString(), ar.idArticle)
+            up("clientBenificeFireStoreBM", ((newValueDouble * ar.nmbrunitBC) - ar.monPrixVentFireStoreBM).toString(), ar.vid)
         }
 
         "monPrixVentUniterBM" -> {
-            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
-            up("monBenificeUniterBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.vid)
+            up("monBenificeBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.vid)
+            up("monBenificeUniterBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
         }
 
         "monPrixVentBM" -> {
-            up("monPrixVentUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
-            up("monBenificeUniterBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
+            up("monPrixVentUniterBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.vid)
+            up("monBenificeBM", (newValueDouble - ar.prixAchat).toString(), ar.vid)
+            up("clientBenificeBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.vid)
+            up("monBenificeUniterBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.vid)
         }
 
         "monPrixVentFireStoreBM" -> {
-            up("monPrixVentUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeFireStoreBM", (newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("monBenificeUniterFireStoreBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.idArticle)
+            up("monPrixVentUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.vid)
+            up("monBenificeFireStoreBM", (newValueDouble - ar.prixAchat).toString(), ar.vid)
+            up("monBenificeUniterFireStoreBM", ((newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.vid)
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble).toString(), ar.vid)
         }
 
         "monPrixVentUniterFireStoreBM" -> {
-            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.idArticle)
-            up("monBenificeUniterFireStoreBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
+            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.vid)
+            up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC - ar.prixAchat).toString(), ar.vid)
+            up("monBenificeUniterFireStoreBM", (newValueDouble - (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
         }
 
         "monBenificeFireStoreBM" -> {
-            up("monBenificeUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterFireStoreBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentFireStoreBM", (newValueDouble + ar.prixAchat).toString(), ar.idArticle)
-            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - (newValueDouble + ar.prixAchat)).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", (newValueDouble / ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentUniterFireStoreBM", ((newValueDouble / ar.nmbrunitBC) + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
+            up("monPrixVentFireStoreBM", (newValueDouble + ar.prixAchat).toString(), ar.vid)
+            up("clientBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - (newValueDouble + ar.prixAchat)).toString(), ar.vid)
         }
 
         "monBenificeUniterFireStoreBM" -> {
-            up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentUniterFireStoreBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.idArticle)
-            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.idArticle)
+            up("monBenificeFireStoreBM", (newValueDouble * ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentUniterFireStoreBM", (newValueDouble + (ar.prixAchat / ar.nmbrunitBC)).toString(), ar.vid)
+            up("monPrixVentFireStoreBM", (newValueDouble * ar.nmbrunitBC + ar.prixAchat).toString(), ar.vid)
         }
 
         "clientBenificeFireStoreBM" -> {
-            up("monBenificeUniterFireStoreBM", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.idArticle)
-            up("monPrixVentUniterFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.idArticle)
-            up("monPrixVentFireStoreBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.idArticle)
+            up("monBenificeUniterFireStoreBM", (((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat) / ar.nmbrunitBC).toString(), ar.vid)
+            up("monBenificeFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC) - newValueDouble - ar.prixAchat).toString(), ar.vid)
+            up("monPrixVentUniterFireStoreBM", ((ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble) / ar.nmbrunitBC).toString(), ar.vid)
+            up("monPrixVentFireStoreBM", (ar.clientPrixVentUnite * ar.nmbrunitBC - newValueDouble).toString(), ar.vid)
         }
     }
 }
@@ -454,13 +454,13 @@ fun up(columnChanged: String, newValue: String, articleId: Long) {
 
 // Update Firebase functions
 fun updateNonTrouveState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
 
     articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
 }
 
 fun updateVerifieState(article: ArticlesAcheteModele) {
-    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
     articleRef.child("verifieState").setValue(!article.verifieState)
 }
 

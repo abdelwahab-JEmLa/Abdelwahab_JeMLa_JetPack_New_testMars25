@@ -157,10 +157,16 @@ fun ArticleBoardCard(
                 Box(
                     modifier = modifier
                         .height(250.dp)
-                        .clickable { onArticleSelect(article) }
-                ) {
+                        .clickable {
+                            if (isVerificationMode) {
+                                onClickVerificated(article)
+                            } else {
+                                onClickNonTrouveState(article)
+                            }
+                        }
+                ){
                     if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
-                        SingleColorImage(article)
+                        SingleColorImage(article)//TODO trove pk quand c un new article il n affiche pas le
                     } else {
                         MultiColorGrid(article)
                     }
@@ -185,13 +191,7 @@ fun ArticleBoardCard(
                     ArticleName(
                         name = article.nomArticleFinale,
                         color = textColor,
-                        onNameClick = {
-                            if (isVerificationMode) {
-                                onClickVerificated(article)
-                            } else {
-                                onClickNonTrouveState(article)
-                            }
-                        },
+                        onNameClick =  { onArticleSelect(article) },
                         modifier = modifier.weight(0.7f)
                     )
                 }
@@ -381,6 +381,20 @@ private fun SingleColorImage(article: ArticlesAcheteModele) {
                         textAlign = TextAlign.Center
                     )
                 }
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .background(Color.White.copy(alpha = 0.6f))
+            ) {
+                Text(
+                    text = "Q>${article.totalQuantity}",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.6f))
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

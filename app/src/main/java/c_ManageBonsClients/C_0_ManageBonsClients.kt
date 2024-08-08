@@ -330,7 +330,7 @@ fun DisplayManageBonsClients(
                     clientArticles
                 }
 
-                items(filteredArticles.chunked(2), key = { it.map { article -> article.idArticle } }) { pairOfArticles ->
+                items(filteredArticles.chunked(2), key = { it.map { article -> article.vid } }) { pairOfArticles ->
                     Column(modifier = Modifier.fillMaxWidth()) {
                         if (isDetailDisplayed) {
                             pairOfArticles.find { it.idArticle == selectedArticleId }?.let { article ->
