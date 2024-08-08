@@ -60,7 +60,7 @@ import kotlin.math.abs
 import kotlin.math.round
 
 @Composable
-fun C_ManageBonsClients() {
+fun FragmentManageBonsClients() {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showClientDialog by remember { mutableStateOf(false) }

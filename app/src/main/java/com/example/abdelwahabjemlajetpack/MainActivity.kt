@@ -35,7 +35,7 @@ import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.MainAppViewModelFactory
 import c_ManageBonsClients.ArticlesAcheteModeleDao
-import c_ManageBonsClients.C_ManageBonsClients
+import c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -99,7 +99,7 @@ fun MyApp(
     NavHost(navController = navController, startDestination = "main_screen") {
         composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
         composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao) }
-        composable("C_ManageBonsClients") { C_ManageBonsClients() }
+        composable("C_ManageBonsClients") { FragmentManageBonsClients() }
         composable("FragmentEntreBonsGro") { FragmentEntreBonsGro() }
 
     }

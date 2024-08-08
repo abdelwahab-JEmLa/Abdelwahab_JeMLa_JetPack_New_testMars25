@@ -244,7 +244,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
             val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient  }
             val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
 
-            // Filtre les entrées où totalquantity est vide ou null
+            // Filter entries where totalquantity is empty or null
             val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
             if (totalQuantity != null && totalQuantity > 0) {
                 val article = ArticlesAcheteModele(
@@ -292,23 +292,27 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
                     clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
                 }
 
-                refDestination.child(article.idArticle.toString()).setValue(article).await()
+                refDestination.child(article.vid.toString()).setValue(article).await()
             }
 
             processedItems++
             onProgressUpdate(processedItems.toFloat() / totalItems)
         }
 
-        Log.d("transferFirebaseData", "Data transfer completed successfully")
-
+        // Display success message when data transfer is completed
         withContext(Dispatchers.Main) {
-            Toast.makeText(context, "Transfert terminé avec succès", Toast.LENGTH_SHORT).show()
+            if (processedItems == totalItems) {
+                Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Data transfer failed", Toast.LENGTH_LONG).show()
+            }
         }
     } catch (e: Exception) {
         Log.e("transferFirebaseData", "Failed to transfer data", e)
 
+        // Display failure message with error details
         withContext(Dispatchers.Main) {
-            Toast.makeText(context, "Échec du transfert: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 }
