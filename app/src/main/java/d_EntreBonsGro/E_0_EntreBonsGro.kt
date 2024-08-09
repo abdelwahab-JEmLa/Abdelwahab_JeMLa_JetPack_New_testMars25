@@ -3,9 +3,13 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -39,6 +45,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
@@ -48,6 +59,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +79,9 @@ fun FragmentEntreBonsGro() {
     var editionPassedMode by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showActionsDialog by remember { mutableStateOf(false) }
+    var showImage by rememberSaveable { mutableStateOf(false) }
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -85,7 +100,6 @@ fun FragmentEntreBonsGro() {
             }
         }
     }
-
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -147,6 +161,15 @@ fun FragmentEntreBonsGro() {
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
                 actions = {
+                    IconButton(
+                        onClick = { showImage = !showImage }//TODO fait que la desactivation du show fait que ca soit un demi image demi AfficheEntreBonsGro
+                    ) {
+                        Icon(
+                            imageVector = if (showImage) Icons.Default.List else Icons.Default.Image,
+                            contentDescription = if (showImage) "Show List" else "Show Image",
+                            tint = if (showImage) Color.Red else MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                     IconButton(onClick = { showActionsDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -201,20 +224,31 @@ fun FragmentEntreBonsGro() {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            AfficheEntreBonsGro(
-                articlesEntreBonsGro = if (editionPassedMode) {
-                    articlesEntreBonsGrosTabele.filter { it.passeToEndState }
-                } else {
-                    articlesEntreBonsGrosTabele
-                },
-                onDeleteArticle = { article ->
-                    coroutineScope.launch {
-                        articlesRef.child(article.vid.toString()).removeValue()
-                    }
-                },
-                articlesRef = articlesRef,
-                modifier = Modifier.weight(1f)
-            )
+            if (showImage) {
+                ZoomableImage(
+                    imagePath = "storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(1).jpg",
+                    scale = scale,
+                    offset = offset,
+                    onScaleChange = { newScale -> scale = newScale },
+                    onOffsetChange = { newOffset -> offset = newOffset },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                AfficheEntreBonsGro(
+                    articlesEntreBonsGro = if (editionPassedMode) {
+                        articlesEntreBonsGrosTabele.filter { it.passeToEndState }
+                    } else {
+                        articlesEntreBonsGrosTabele
+                    },
+                    onDeleteArticle = { article ->
+                        coroutineScope.launch {
+                            articlesRef.child(article.vid.toString()).removeValue()
+                        }
+                    },
+                    articlesRef = articlesRef,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
     if (showActionsDialog) {
@@ -277,6 +311,39 @@ fun FragmentEntreBonsGro() {
                     Text("Cancel")
                 }
             }
+        )
+    }
+}
+@Composable
+fun ZoomableImage(
+    imagePath: String,
+    scale: Float,
+    offset: Offset,
+    onScaleChange: (Float) -> Unit,
+    onOffsetChange: (Offset) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val imageFile = remember { File(imagePath) }
+    val imageBitmap = remember { BitmapFactory.decodeFile(imageFile.absolutePath) }
+
+    Box(modifier = modifier) {
+        Image(
+            bitmap = imageBitmap.asImageBitmap(),
+            contentDescription = "Zoomable image",
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        onScaleChange(scale * zoom)
+                        onOffsetChange(offset + pan)
+                    }
+                }
         )
     }
 }
