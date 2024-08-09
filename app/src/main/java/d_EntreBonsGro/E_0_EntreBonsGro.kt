@@ -212,9 +212,6 @@ fun FragmentEntreBonsGro() {
                         articlesRef.child(article.vid.toString()).removeValue()
                     }
                 },
-                speechRecognizerLauncher = speechRecognizerLauncher,
-                onInputChange = { newValue -> inputText = newValue },
-                processInputAndInsertData = ::processInputAndInsertData,
                 articlesRef = articlesRef,
                 modifier = Modifier.weight(1f)
             )
@@ -283,8 +280,55 @@ fun FragmentEntreBonsGro() {
         )
     }
 }
+fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesRef: DatabaseReference): Boolean {
+    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    val matchResult = regex.find(input)
 
+    val (quantity, price) = matchResult?.destructured?.let {
+        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
+    } ?: Pair(null, null)
 
+    if (quantity != null && price != null) {
+        val updatedArticle = article.copy(
+            quantityAcheteBG = quantity,
+            newPrixAchatBG = price,
+            subTotaleBG = price * quantity
+        )
+        articlesRef.child(article.vid.toString()).setValue(updatedArticle)
+        return true
+    }
+    return false
+}
+fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Long? {
+    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    val matchResult = regex.find(input)
+
+    val (quantity, price) = matchResult?.destructured?.let {
+        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
+    } ?: Pair(null, null)
+
+    if (quantity != null && price != null) {
+        // Find the maximum vid in the existing list and increment it
+        val newVid = (articlesList.maxOfOrNull { it.vid } ?: 0) + 1
+
+        val newArticle = EntreBonsGrosTabele(
+            vid = newVid,
+            idArticle = newVid,
+            nomArticleBG = "",
+            ancienPrixBG = 0.0,
+            newPrixAchatBG = price,
+            quantityAcheteBG = quantity,
+            quantityUniterBG = 1,
+            subTotaleBG = price * quantity,
+            grossisstBonN = 0,
+            uniterCLePlusUtilise = false,
+            erreurCommentaireBG = ""
+        )
+        articlesRef.child(newVid.toString()).setValue(newArticle)
+        return newVid
+    }
+    return null
+}
 fun updateArticleIdFromSuggestion(
     suggestion: String,
     vidOfLastQuantityInputted: Long?,

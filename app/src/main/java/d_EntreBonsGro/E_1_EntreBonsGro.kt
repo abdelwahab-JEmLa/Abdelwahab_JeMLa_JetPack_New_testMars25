@@ -4,9 +4,7 @@ import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -132,9 +130,6 @@ fun OutlineInput(
 fun AfficheEntreBonsGro(
     articlesEntreBonsGro: List<EntreBonsGrosTabele>,
     onDeleteArticle: (EntreBonsGrosTabele) -> Unit,
-    speechRecognizerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
-    onInputChange: (String) -> Unit,
-    processInputAndInsertData: (String, List<EntreBonsGrosTabele>, DatabaseReference) -> Long?,
     articlesRef: DatabaseReference,
     modifier: Modifier = Modifier
 ) {
@@ -143,23 +138,16 @@ fun AfficheEntreBonsGro(
             ArticleItem(
                 article = article,
                 onDelete = onDeleteArticle,
-                onInputChange = onInputChange,
-                processInputAndInsertData = processInputAndInsertData,
-                articlesEntreBonsGrosTabele = articlesEntreBonsGro,
                 articlesRef = articlesRef
             )
         }
     }
 }
 
-
 @Composable
 fun ArticleItem(
     article: EntreBonsGrosTabele,
     onDelete: (EntreBonsGrosTabele) -> Unit,
-    onInputChange: (String) -> Unit,
-    processInputAndInsertData: (String, List<EntreBonsGrosTabele>, DatabaseReference) -> Long?,
-    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     articlesRef: DatabaseReference
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
@@ -171,12 +159,7 @@ fun ArticleItem(
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
-                onInputChange(it)
-                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef)
-                if (newVid != null) {
-                    onInputChange("")
-                    // You might want to handle nowItsNameInputeTime and vidOfLastQuantityInputted here
-                }
+                updateSpecificArticle(it, article, articlesRef)
             }
         }
     }
@@ -187,12 +170,12 @@ fun ArticleItem(
             .padding(8.dp)
             .clickable {
                 val currentTime = System.currentTimeMillis()
-                if (currentTime - lastLaunchTime > 1000) { // Prevent multiple rapid launches
+                if (currentTime - lastLaunchTime > 1000) { // Empêcher plusieurs lancements rapides
                     lastLaunchTime = currentTime
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
                     }
                     speechRecognizerLauncher.launch(intent)
                 }
@@ -250,32 +233,4 @@ fun ArticleItem(
         }
     }
 }
-fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Long? {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
-    val matchResult = regex.find(input)
 
-    val (quantity, price) = matchResult?.destructured?.let {
-        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
-    } ?: Pair(null, null)
-
-    if (quantity != null && price != null) {
-        // Create new article
-        val newVid = (articlesList.maxByOrNull { it.vid }?.vid ?: 0) + 1
-        val newArticle = EntreBonsGrosTabele(
-            vid = newVid,
-            idArticle = newVid,
-            nomArticleBG = "",
-            ancienPrixBG = 0.0,
-            newPrixAchatBG = price,
-            quantityAcheteBG = quantity,
-            quantityUniterBG = 1,
-            subTotaleBG = price * quantity,
-            grossisstBonN = 0,
-            uniterCLePlusUtilise = false,
-            erreurCommentaireBG = ""
-        )
-        articlesRef.child(newVid.toString()).setValue(newArticle)
-        return newVid
-    }
-    return null
-}
