@@ -166,7 +166,7 @@ fun ArticleBoardCard(
                         }
                 ){
                     if (article.quantityAcheteCouleur2 + article.quantityAcheteCouleur3 + article.quantityAcheteCouleur4 == 0) {
-                        SingleColorImage(article)//TODO trove pk quand c un new article il n affiche pas le
+                        SingleColorImage(article)
                     } else {
                         MultiColorGrid(article)
                     }
@@ -180,7 +180,7 @@ fun ArticleBoardCard(
                         onValueChange = { newValue ->
                             totalQuantityText = newValue
                             val newTotalQuantity = newValue.toIntOrNull() ?: 0
-                            val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+                            val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
                             val articleUpdate = articleFromFireBase.child("totalQuantity")
                             articleUpdate.setValue(newTotalQuantity)
                         },
@@ -383,12 +383,12 @@ private fun SingleColorImage(article: ArticlesAcheteModele) {
                 }
             }
             Box(
-                modifier = Modifier
+                modifier = Modifier//TODO augment le size du box et text
                     .align(Alignment.TopStart)
                     .background(Color.White.copy(alpha = 0.6f))
             ) {
                 Text(
-                    text = "Q>${article.totalQuantity}",
+                    text = "${article.totalQuantity}",
                     color = Color.Red,
                     modifier = Modifier
                         .background(Color.White.copy(alpha = 0.6f))
