@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -84,6 +83,7 @@ fun FragmentEntreBonsGro() {
     var showActionsDialog by remember { mutableStateOf(false) }
     var showSupplierDialog by remember { mutableStateOf(false) }
     var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(null) }
+    var modeFilterChangesDB by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
@@ -112,6 +112,7 @@ fun FragmentEntreBonsGro() {
             }
         }
     }
+
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -170,7 +171,8 @@ fun FragmentEntreBonsGro() {
     }
 
     Scaffold(
-        topBar = {
+        topBar = {//TODO fait que la couleur au selection de suppplier du appbar soit difini depuit
+            //         //            couleurSu = generateRandomTropicalColor()
             TopAppBar(
                 title = {
                     val totalSum = articlesEntreBonsGrosTabele
@@ -178,7 +180,7 @@ fun FragmentEntreBonsGro() {
                         .sumOf { it.subTotaleBG }
                     val supplierName = when (founisseurNowIs) {
                         null -> "All Suppliers"
-                        else -> "Supplier $founisseurNowIs"
+                        else -> suppliersList.find { it.bonDuSupplierSu == founisseurNowIs.toString() }?.nomSupplierSu ?: "Supplier $founisseurNowIs"
                     }
                     Text("$supplierName: %.2f".format(totalSum))
                 },
@@ -189,7 +191,7 @@ fun FragmentEntreBonsGro() {
                 actions = {
                     IconButton(
                         onClick = {
-                            if (showFullImage) {
+                            if (showFullImage) {//TODO pk ce mode ne s active pas au modeFilterChangesDB
                                 showFullImage = false
                                 showSplitView = true
                             } else if (showSplitView) {
@@ -219,7 +221,7 @@ fun FragmentEntreBonsGro() {
                     }
                     IconButton(onClick = { showSupplierDialog = true }) {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            imageVector = Icons.AutoMirrored.Filled.List,
                             contentDescription = "Select Supplier"
                         )
                     }
@@ -293,7 +295,9 @@ fun FragmentEntreBonsGro() {
                             modifier = Modifier.weight(0.4f)
                         )
                         AfficheEntreBonsGro(
-                            articlesEntreBonsGro = if (editionPassedMode) {
+                            articlesEntreBonsGro = if (modeFilterChangesDB) {
+                                articlesEntreBonsGrosTabele.filter { it.newPrixAchatBG - it.ancienPrixBG != 0.0 }
+                            } else if (editionPassedMode) {
                                 articlesEntreBonsGrosTabele.filter { it.passeToEndState }
                             } else {
                                 articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
@@ -311,7 +315,9 @@ fun FragmentEntreBonsGro() {
                 }
                 else -> {
                     AfficheEntreBonsGro(
-                        articlesEntreBonsGro = if (editionPassedMode) {
+                        articlesEntreBonsGro = if (modeFilterChangesDB) {
+                            articlesEntreBonsGrosTabele.filter { it.newPrixAchatBG - it.ancienPrixBG != 0.0 }
+                        } else if (editionPassedMode) {
                             articlesEntreBonsGrosTabele.filter { it.passeToEndState }
                         } else {
                             articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
@@ -324,7 +330,7 @@ fun FragmentEntreBonsGro() {
                         articlesRef = articlesRef,
                         modifier = Modifier.weight(1f),
                         articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                        )
+                    )
                 }
             }
         }
@@ -355,6 +361,25 @@ fun FragmentEntreBonsGro() {
                             checked = editionPassedMode,
                             onCheckedChange = {
                                 editionPassedMode = it
+                                modeFilterChangesDB = false
+                                founisseurNowIs = null
+                                showFullImage = false
+                                showActionsDialog = false
+                            }
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Filter Changed Prices")
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = modeFilterChangesDB,
+                            onCheckedChange = {
+                                modeFilterChangesDB = it
+                                editionPassedMode = false
+                                founisseurNowIs = null
+                                showFullImage = false
                                 showActionsDialog = false
                             }
                         )
@@ -399,6 +424,8 @@ fun FragmentEntreBonsGro() {
         onDismiss = { showSupplierDialog = false },
         onSupplierSelected = { selected ->
             founisseurNowIs = selected
+            editionPassedMode = false
+            modeFilterChangesDB = false
         },
         suppliersList = suppliersList
     )
