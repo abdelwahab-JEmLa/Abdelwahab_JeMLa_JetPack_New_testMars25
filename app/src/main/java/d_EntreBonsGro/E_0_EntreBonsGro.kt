@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -74,14 +75,20 @@ fun FragmentEntreBonsGro() {
     var nowItsNameInputeTime by remember { mutableStateOf(false) }
     var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
     var vidOfLastQuantityInputted by remember { mutableStateOf<Long?>(null) }
+    var editionPassedMode by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showActionsDialog by remember { mutableStateOf(false) }
+    var showSupplierDialog by remember { mutableStateOf(false) }
+    var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(null) }
+
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
     val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
     val baseDonneRef = database.getReference("e_DBJetPackExport")
-    var editionPassedMode by rememberSaveable { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showActionsDialog by remember { mutableStateOf(false) }
+
+    var showFullImage by rememberSaveable { mutableStateOf(true) }
+    var showSplitView by rememberSaveable { mutableStateOf(false) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -91,7 +98,7 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef)
+                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs)
                 if (newVid != null) {
                     inputText = ""
                     nowItsNameInputeTime = true
@@ -100,6 +107,7 @@ fun FragmentEntreBonsGro() {
             }
         }
     }
+
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -152,13 +160,6 @@ fun FragmentEntreBonsGro() {
         })
     }
 
-    var showFullImage by rememberSaveable { mutableStateOf(true) }
-    var showSplitView by rememberSaveable { mutableStateOf(false) }
-
-    var scale by remember { mutableStateOf(1f) }
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -198,6 +199,12 @@ fun FragmentEntreBonsGro() {
                             }
                         )
                     }
+                    IconButton(onClick = { showSupplierDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "Select Supplier"
+                        )
+                    }
                     IconButton(onClick = { showActionsDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -232,7 +239,7 @@ fun FragmentEntreBonsGro() {
                 onInputChange = { newValue ->
                     inputText = newValue
                     if (newValue.contains("+")) {
-                        val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef)
+                        val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs)
                         if (newVid != null) {
                             inputText = ""
                             nowItsNameInputeTime = true
@@ -255,21 +262,21 @@ fun FragmentEntreBonsGro() {
             when {
                 showFullImage -> {
                     ZoomableImage(
-                        imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(1).jpg",
+                        imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
                         modifier = Modifier.weight(1f)
                     )
                 }
                 showSplitView -> {
                     Column(modifier = Modifier.weight(1f)) {
                         ZoomableImage(
-                            imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(1).jpg",
+                            imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
                             modifier = Modifier.weight(0.5f)
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = if (editionPassedMode) {
                                 articlesEntreBonsGrosTabele.filter { it.passeToEndState }
                             } else {
-                                articlesEntreBonsGrosTabele
+                                articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
                             },
                             onDeleteArticle = { article ->
                                 coroutineScope.launch {
@@ -281,13 +288,12 @@ fun FragmentEntreBonsGro() {
                         )
                     }
                 }
-
                 else -> {
                     AfficheEntreBonsGro(
                         articlesEntreBonsGro = if (editionPassedMode) {
                             articlesEntreBonsGrosTabele.filter { it.passeToEndState }
                         } else {
-                            articlesEntreBonsGrosTabele
+                            articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
                         },
                         onDeleteArticle = { article ->
                             coroutineScope.launch {
@@ -301,6 +307,7 @@ fun FragmentEntreBonsGro() {
             }
         }
     }
+
     if (showActionsDialog) {
         AlertDialog(
             onDismissRequest = { showActionsDialog = false },
@@ -339,6 +346,7 @@ fun FragmentEntreBonsGro() {
             }
         )
     }
+
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
@@ -358,6 +366,46 @@ fun FragmentEntreBonsGro() {
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    SupplierSelectionDialog(
+        showDialog = showSupplierDialog,
+        onDismiss = { showSupplierDialog = false },
+        onSupplierSelected = { selected ->
+            founisseurNowIs = selected
+        }
+    )
+}
+@Composable
+fun SupplierSelectionDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onSupplierSelected: (Int) -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Select Supplier") },
+            text = {
+                Column {
+                    for (i in 1..10) {
+                        TextButton(
+                            onClick = {
+                                onSupplierSelected(i)
+                                onDismiss()
+                            }
+                        ) {
+                            Text("Supplier $i")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
                     Text("Cancel")
                 }
             }
@@ -448,7 +496,15 @@ fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesR
     }
     return false
 }
-fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTabele>, articlesRef: DatabaseReference): Long? {
+
+
+fun processInputAndInsertData(
+    input: String,
+    articlesList: List<EntreBonsGrosTabele>,
+    articlesRef: DatabaseReference,
+    founisseurNowIs: Int?
+): Long? {
+    // Regular expression to match quantity and price
     val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
     val matchResult = regex.find(input)
 
@@ -469,13 +525,26 @@ fun processInputAndInsertData(input: String, articlesList: List<EntreBonsGrosTab
             quantityAcheteBG = quantity,
             quantityUniterBG = 1,
             subTotaleBG = price * quantity,
-            grossisstBonN = 0,
+            grossisstBonN = founisseurNowIs ?: 0,
             uniterCLePlusUtilise = false,
             erreurCommentaireBG = ""
         )
+
+        // Insert the new article into Firebase
         articlesRef.child(newVid.toString()).setValue(newArticle)
+            .addOnSuccessListener {
+                // Optionally handle successful insertion
+                println("New article inserted successfully")
+            }
+            .addOnFailureListener { e ->
+                // Handle any errors
+                println("Error inserting new article: ${e.message}")
+            }
+
         return newVid
     }
+
+    // If the input doesn't match the expected format, return null
     return null
 }
 fun updateArticleIdFromSuggestion(
