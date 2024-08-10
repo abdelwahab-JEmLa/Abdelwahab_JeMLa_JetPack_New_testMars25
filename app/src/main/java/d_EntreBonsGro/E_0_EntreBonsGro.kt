@@ -100,7 +100,7 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs)
+                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne)
                 if (newVid != null) {
                     inputText = ""
                     nowItsNameInputeTime = true
@@ -122,6 +122,24 @@ fun FragmentEntreBonsGro() {
             }
         })
 
+        baseDonneRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newBaseDonne = snapshot.children.mapNotNull { childSnapshot ->
+                    try {
+                        childSnapshot.getValue(BaseDonne::class.java)
+                    } catch (e: Exception) {
+                        println("Error parsing BaseDonne: ${e.message}")
+                        null
+                    }
+                }
+                articlesBaseDonne = newBaseDonne
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                println("Firebase read failed: ${error.message}")
+            }
+        })
+
         articlesAcheteModeleRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val newArticlesAcheteModele = snapshot.children.mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
@@ -130,30 +148,6 @@ fun FragmentEntreBonsGro() {
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
                 } + "supp" + "passe"
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error
-            }
-        })
-
-        baseDonneRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val newBaseDonne = snapshot.children.mapNotNull { childSnapshot ->
-                    try {
-                        val idArticle = childSnapshot.child("idArticle").getValue(Int::class.java)
-                        val nmbrUnite = childSnapshot.child("nmbrUnite").getValue(Int::class.java)
-                        if (idArticle != null && nmbrUnite != null) {
-                            BaseDonne(idArticle, nmbrUnite.toString())
-                        } else {
-                            null
-                        }
-                    } catch (e: Exception) {
-                        println("Error deserializing: ${e.message}")
-                        null
-                    }
-                }
-                articlesBaseDonne = newBaseDonne
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -251,7 +245,7 @@ fun FragmentEntreBonsGro() {
                 onInputChange = { newValue ->
                     inputText = newValue
                     if (newValue.contains("+")) {
-                        val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs)
+                        val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne)
                         if (newVid != null) {
                             inputText = ""
                             nowItsNameInputeTime = true
@@ -536,7 +530,8 @@ fun processInputAndInsertData(
     input: String,
     articlesList: List<EntreBonsGrosTabele>,
     articlesRef: DatabaseReference,
-    founisseurNowIs: Int?
+    founisseurNowIs: Int?,
+    articlesBaseDonne: List<BaseDonne>
 ): Long? {
     // Regular expression to match quantity and price
     val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
@@ -550,6 +545,15 @@ fun processInputAndInsertData(
         // Find the maximum vid in the existing list and increment it
         val newVid = (articlesList.maxOfOrNull { it.vid } ?: 0) + 1
 
+        // Default quantityUniterBG to 1
+        var quantityUniterBG = 1
+
+        // If newVid exists in articlesBaseDonne, update quantityUniterBG
+        val baseDonneEntry = articlesBaseDonne.find { it.idArticle.toLong() == newVid }
+        if (baseDonneEntry != null) {
+            quantityUniterBG = baseDonneEntry.nmbrUnite.toInt()
+        }
+
         val newArticle = EntreBonsGrosTabele(
             vid = newVid,
             idArticle = newVid,
@@ -557,7 +561,7 @@ fun processInputAndInsertData(
             ancienPrixBG = 0.0,
             newPrixAchatBG = price,
             quantityAcheteBG = quantity,
-            quantityUniterBG = 1,
+            quantityUniterBG = quantityUniterBG,
             subTotaleBG = price * quantity,
             grossisstBonN = founisseurNowIs ?: 0,
             uniterCLePlusUtilise = false,
@@ -633,7 +637,7 @@ fun updateArticleIdFromSuggestion(
         // Find corresponding BaseDonne and update quantityUniterBG
         val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
         correspondingBaseDonne?.let { baseDonne ->
-            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite)
+            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
         }
 
         // Call the callback to set nowItsNameInputeTime to false

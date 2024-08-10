@@ -40,8 +40,8 @@ data class BaseDonne(
     var monPrixAchatUniter: Double = 0.0,
     var monPrixVentUniter: Double = 0.0,
     var benificeClient: Double = 0.0,
-    var monBeneficeUniter: Double = 0.0,
+    var monBeneficeUniter: Double = 0.0
 ) {
-    // Constructeur sans argument nécessaire pour Firebase
+    // No-argument constructor for Firebase
     constructor() : this(0)
 }
