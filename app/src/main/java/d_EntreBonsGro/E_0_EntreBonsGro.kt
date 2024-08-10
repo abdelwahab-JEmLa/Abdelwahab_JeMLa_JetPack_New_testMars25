@@ -160,10 +160,16 @@ fun FragmentEntreBonsGro() {
         })
     }
 
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("EntreBonsGro") },
+                title = {
+                    val totalSum = articlesEntreBonsGrosTabele
+                        .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+                        .sumOf { it.subTotaleBG }
+                    Text("Total: %.2f".format(totalSum))
+                },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
