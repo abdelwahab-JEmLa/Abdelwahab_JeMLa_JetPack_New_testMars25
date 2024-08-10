@@ -8,12 +8,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +43,8 @@ import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import d_EntreBonsGro.FragmentEntreBonsGro
+import f_credits.CreditsViewModel
+import f_credits.FragmentCredits
 
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
@@ -47,6 +52,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: EditeBaseDonneViewModel by viewModels {
         MainAppViewModelFactory(database.articleDao())
     }
+    private val creditsViewModel: CreditsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +62,12 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                MyApp(viewModel,database.articleDao(),database.articlesAcheteModeleDao() )
+                MyApp(
+                    viewModel,
+                    database.articleDao(),
+                    database.articlesAcheteModeleDao(),
+                    creditsViewModel
+                )
             }
         }
     }
@@ -93,27 +104,41 @@ class MainActivity : ComponentActivity() {
 fun MyApp(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
-    articlesAcheteModeleDao: ArticlesAcheteModeleDao
+    articlesAcheteModeleDao: ArticlesAcheteModeleDao,
+    creditsViewModel: CreditsViewModel
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
-        composable("main_screen") { MainScreen(navController, editeBaseDonneViewModel, articleDao) }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel,articleDao) }
+        composable("main_screen") {
+            MainScreen(
+                navController = navController,
+                editeBaseDonneViewModel = editeBaseDonneViewModel,
+                articleDao = articleDao
+            )
+        }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, articleDao) }
         composable("C_ManageBonsClients") { FragmentManageBonsClients() }
         composable("FragmentEntreBonsGro") { FragmentEntreBonsGro() }
-
+        composable("FragmentCredits") { FragmentCredits(creditsViewModel) }
     }
 }
 
 @Composable
 fun MainScreen(
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao
 ) {
     val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
-        topBar = { TopAppBar(coroutineScope, editeBaseDonneViewModel, articleDao) }
+        topBar = {
+            TopAppBar(
+                coroutineScope = coroutineScope,
+                editeBaseDonneViewModel = editeBaseDonneViewModel,
+                articleDao = articleDao
+            )
+        }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
@@ -121,69 +146,44 @@ fun MainScreen(
                 .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
+            LazyVerticalGrid(//DOnne a chaque element couleur et text blanche et centre le
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .clickable {
-                            navController.navigate("A_Edite_Base_Screen")
-                        },
-                    elevation = CardDefaults.cardElevation(8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                    ) {
-                        Text("Edit Base Screen", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Click to navigate to A_Edite_Base_Screen", style = MaterialTheme.typography.bodyMedium)
-                    }
+                item {
+                    MenuCard("Edit Base Screen", "A_Edite_Base_Screen", navController)
                 }
-                Spacer(modifier = Modifier.height(15.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .clickable {
-                            navController.navigate("C_ManageBonsClients")
-                        },
-                    elevation = CardDefaults.cardElevation(8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                    ) {
-                        Text("C_ManageBonsClients", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Click to navigate to C_ManageBonsClients", style = MaterialTheme.typography.bodyMedium)
-                    }
+                item {
+                    MenuCard("Manage Bons Clients", "C_ManageBonsClients", navController)
                 }
-                Spacer(modifier = Modifier.height(15.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .clickable {
-                            navController.navigate("FragmentEntreBonsGro")
-                        },
-                    elevation = CardDefaults.cardElevation(8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                    ) {
-                        Text("FragmentEntreBonsGro", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Click to navigate to FragmentEntreBonsGro", style = MaterialTheme.typography.bodyMedium)
-                    }
+                item {
+                    MenuCard("Entre Bons Gro", "FragmentEntreBonsGro", navController)
+                }
+                item {
+                    MenuCard("Credits", "FragmentCredits", navController)
                 }
             }
         }
     }
 }
 
-
+@Composable
+fun MenuCard(title: String, route: String, navController: NavHostController) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clickable { navController.navigate(route) },
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
