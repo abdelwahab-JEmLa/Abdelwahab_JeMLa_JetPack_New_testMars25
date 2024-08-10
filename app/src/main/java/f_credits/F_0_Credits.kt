@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -154,16 +155,28 @@ fun SupplierItem(supplier: CreditsViewModel.SupplierTabelle, viewModel: CreditsV
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     ),
-                    modifier = Modifier.drawTextWithOutline()
+                    modifier = Modifier.drawTextWithOutline(Color.Black)
                 )
                 Text(
                     text = "Name: ${supplier.nomSupplierSu}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                    modifier = Modifier.drawTextWithOutline()
+                    modifier = Modifier.drawTextWithOutline(Color.Black)
                 )
+                if (supplier.bonDuSupplierSu.isNotBlank()) {
+                    Text(
+                        text = "Bon N°: ${supplier.bonDuSupplierSu}",
+                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                        modifier = Modifier.drawTextWithOutline(Color.Black)
+                    )
+                }
             }
             IconButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Receipt, contentDescription = "Invoice", tint = Color.White)
+                val icon = if (supplier.bonDuSupplierSu.isNotBlank()) {
+                    Icons.Default.ReceiptLong
+                } else {
+                    Icons.Default.Receipt
+                }
+                Icon(icon, contentDescription = "Invoice", tint = Color.White)
             }
         }
     }
@@ -173,21 +186,28 @@ fun SupplierItem(supplier: CreditsViewModel.SupplierTabelle, viewModel: CreditsV
             onDismissRequest = { showDialog = false },
             title = { Text("Select Invoice Number") },
             text = {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    for (i in 1..10) {
-                        Button(
-                            onClick = {
-                                viewModel.updateSupplierBon(supplier.idSupplierSu, i.toString())
-                                showDialog = false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (supplier.bonDuSupplierSu == i.toString()) Color.Red else MaterialTheme.colorScheme.primary
-                            )
+                    for (i in 1..15 step 3) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(i.toString())
+                            for (j in i..minOf(i + 2, 15)) {
+                                Button(
+                                    onClick = {
+                                        viewModel.updateSupplierBon(supplier.idSupplierSu, j.toString())
+                                        showDialog = false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (supplier.bonDuSupplierSu == j.toString()) Color.Red else MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text(j.toString())
+                                }
+                            }
                         }
                     }
                 }
@@ -200,7 +220,6 @@ fun SupplierItem(supplier: CreditsViewModel.SupplierTabelle, viewModel: CreditsV
         )
     }
 }
-
 @Composable
 fun AddSupplierDialog(onDismiss: () -> Unit, onAddSupplier: (String) -> Unit) {
     var supplierName by remember { mutableStateOf("") }
@@ -236,10 +255,9 @@ fun AddSupplierDialog(onDismiss: () -> Unit, onAddSupplier: (String) -> Unit) {
     )
 }
 
-fun Modifier.drawTextWithOutline() = this.drawBehind {
-    drawRect(Color.Black, style = Stroke(width = 3f))
+fun Modifier.drawTextWithOutline(outlineColor: Color) = this.drawBehind {
+    drawRect(outlineColor, style = Stroke(width = 3f))
 }
-
 class CreditsViewModel : ViewModel() {
     private val _supplierList = MutableStateFlow<List<SupplierTabelle>>(emptyList())
     val supplierList: StateFlow<List<SupplierTabelle>> = _supplierList.asStateFlow()
@@ -280,13 +298,13 @@ class CreditsViewModel : ViewModel() {
         suppliersRef.child(newSupplier.idSupplierSu.toString()).setValue(newSupplier)
     }
 
+
     private fun generateRandomTropicalColor(): String {
         val hue = Random.nextFloat() * 360
         val saturation = 0.7f + Random.nextFloat() * 0.3f  // 70-100% saturation
-        val value = 0.5f + Random.nextFloat() * 0.5f  // 50-100% value
+        val value = 0.5f + Random.nextFloat() * 0.3f  // 50-80% value (darker colors)
         return "#%06X".format(0xFFFFFF and android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
     }
-
     fun deleteSupplier(supplierId: Long) {
         suppliersRef.child(supplierId.toString()).removeValue()
     }
