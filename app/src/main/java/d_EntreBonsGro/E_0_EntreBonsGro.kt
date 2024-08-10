@@ -43,10 +43,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -168,7 +170,11 @@ fun FragmentEntreBonsGro() {
                     val totalSum = articlesEntreBonsGrosTabele
                         .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
                         .sumOf { it.subTotaleBG }
-                    Text("Total: %.2f".format(totalSum))
+                    val supplierName = when (founisseurNowIs) {
+                        null -> "All Suppliers"
+                        else -> "Supplier $founisseurNowIs"
+                    }
+                    Text("$supplierName: %.2f".format(totalSum))
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -269,6 +275,7 @@ fun FragmentEntreBonsGro() {
                 showFullImage -> {
                     ZoomableImage(
                         imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
+                        supplierId = founisseurNowIs,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -276,6 +283,7 @@ fun FragmentEntreBonsGro() {
                     Column(modifier = Modifier.weight(1f)) {
                         ZoomableImage(
                             imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
+                            supplierId = founisseurNowIs,
                             modifier = Modifier.weight(0.5f)
                         )
                         AfficheEntreBonsGro(
@@ -418,14 +426,30 @@ fun SupplierSelectionDialog(
         )
     }
 }
+data class ImageZoomState(
+    var scale: Float = 1f,
+    var offsetX: Float = 0f,
+    var offsetY: Float = 0f
+)
+
 @Composable
 fun ZoomableImage(
     imagePath: String,
+    supplierId: Int?,
     modifier: Modifier = Modifier
 ) {
-    var scale by remember { mutableStateOf(1f) }
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
+    val zoomStateSaver = Saver<ImageZoomState, List<Float>>(
+        save = { listOf(it.scale, it.offsetX, it.offsetY) },
+        restore = { ImageZoomState(it[0], it[1], it[2]) }
+    )
+
+    val zoomState = rememberSaveable(saver = zoomStateSaver) {
+        ImageZoomState()
+    }
+
+    var scale by remember { mutableStateOf(zoomState.scale) }
+    var offsetX by remember { mutableStateOf(zoomState.offsetX) }
+    var offsetY by remember { mutableStateOf(zoomState.offsetY) }
 
     val context = LocalContext.current
     val imageUri = remember(imagePath) {
@@ -440,10 +464,10 @@ fun ZoomableImage(
         ImageRequest.Builder(context).data(imageUri).build()
     )
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.clipToBounds()) {
         Image(
             painter = painter,
-            contentDescription = "Zoomable image",
+            contentDescription = "Zoomable image for supplier $supplierId",
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxSize()
@@ -462,6 +486,11 @@ fun ZoomableImage(
                         val maxY = (size.height * (scale - 1)) / 2
                         val minY = -maxY
                         offsetY = (offsetY + pan.y).coerceIn(minY, maxY)
+
+                        // Update the saveable state
+                        zoomState.scale = scale
+                        zoomState.offsetX = offsetX
+                        zoomState.offsetY = offsetY
                     }
                 }
         )
@@ -481,7 +510,6 @@ fun ZoomableImage(
         }
     }
 }
-
 
 fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesRef: DatabaseReference): Boolean {
     val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
