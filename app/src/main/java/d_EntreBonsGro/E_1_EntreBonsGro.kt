@@ -181,7 +181,6 @@ fun ArticleItem(
     onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
-    var isUnitMostUsed by remember { mutableStateOf(article.uniterCLePlusUtilise) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -318,7 +317,7 @@ fun ArticleItem(
                             .padding(2.dp),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        val priceDifference = if (isUnitMostUsed) {
+                        val priceDifference = if (article.uniterCLePlusUtilise) {
                             article.newPrixAchatBG - article.ancienPrixOnUniterBG
                         } else {
                             article.newPrixAchatBG - article.ancienPrixBG
@@ -330,10 +329,10 @@ fun ArticleItem(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        isUnitMostUsed = !isUnitMostUsed
+                                        val newUniterCLePlusUtilise = !article.uniterCLePlusUtilise
                                         coroutineScope.launch {
                                             articlesRef.child(article.vidBG.toString()).apply {
-                                                child("uniterCLePlusUtilise").setValue(isUnitMostUsed)
+                                                child("uniterCLePlusUtilise").setValue(newUniterCLePlusUtilise)
                                             }
                                         }
                                     }
@@ -353,29 +352,30 @@ fun ArticleItem(
                                         },
                                         label = { Text(article.quantityUniterBG.toString()) },
                                         textStyle = LocalTextStyle.current.copy(
-                                            color = if (isUnitMostUsed) Color.White else Color.Unspecified
+                                            color = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified
                                         ),
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = if (isUnitMostUsed) Color.Red else Color.Transparent,
-                                            unfocusedContainerColor = if (isUnitMostUsed) Color.Red else Color.Transparent,
-                                            focusedLabelColor = if (isUnitMostUsed) Color.White else Color.Unspecified,
-                                            unfocusedLabelColor = if (isUnitMostUsed) Color.White else Color.Unspecified
+                                            focusedContainerColor = if (article.uniterCLePlusUtilise) Color.Red else Color.Transparent,
+                                            unfocusedContainerColor = if (article.uniterCLePlusUtilise) Color.Red else Color.Transparent,
+                                            focusedLabelColor = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified,
+                                            unfocusedLabelColor = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified
                                         ),
                                         modifier = Modifier.width(80.dp)
                                     )
                                     Text("X")
-
                                 }
                                 Text(
-                                    text = if (isUnitMostUsed) {
-                                        "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "+" else "-"}${abs(priceDifference).format(2)})"
+                                    text = if (article.uniterCLePlusUtilise) {
+                                        "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
                                     } else {
-                                        "${article.ancienPrixBG} (${if (priceDifference > 0) "+" else "-"}${abs(priceDifference).format(2)})"
+                                        "${article.ancienPrixBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
                                     },
+                                    color = if (priceDifference > 0) Color.Red else Color.Green
                                 )
                                 Icon(
                                     imageVector = if (priceDifference > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                                     contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
+                                    tint = if (priceDifference > 0) Color.Red else Color.Green
                                 )
                             }
                         }
@@ -391,9 +391,18 @@ fun ArticleItem(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                color = Color(0xFF8E24AA) // Purple color
                             )
                         }
+                        Text(
+                            text = article.supplierNameBG,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End
+                        )
                     }
                 }
             }

@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.speech.RecognizerIntent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -64,6 +65,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
@@ -101,7 +103,6 @@ fun FragmentEntreBonsGro() {
     val baseDonneRef = database.getReference("e_DBJetPackExport")
     val suppliersRef = database.getReference("F_Suppliers")
 
-    val context = LocalContext.current
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -312,23 +313,9 @@ fun FragmentEntreBonsGro() {
                             articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                             modifier = Modifier.weight(1f),
                             coroutineScope = coroutineScope,
-                            onDeleteFromFirestore = { article ->
-                                val firestore = FirebaseFirestore.getInstance()
-                                firestore.collection("B_SupplierHistoriqueBons")
-                                    .whereEqualTo("vidBG", article.vidBG)
-                                    .whereEqualTo("supplierIdBG", article.supplierIdBG)
-                                    .whereEqualTo("dateCreationBG", article.dateCreationBG)
-                                    .get()
-                                    .addOnSuccessListener { documents ->
-                                        for (document in documents) {
-                                            document.reference.delete()
-                                        }
-                                    }
-                                    .addOnFailureListener { e ->
-                                        println("Error deleting document from Firestore: ${e.message}")
-                                    }
-                            }
-                        )                    }
+                            onDeleteFromFirestore = { }
+                        )
+                    }
                 }
                 else -> {
                     AfficheEntreBonsGro(
@@ -342,23 +329,9 @@ fun FragmentEntreBonsGro() {
                         articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                         modifier = Modifier.weight(1f),
                         coroutineScope = coroutineScope,
-                        onDeleteFromFirestore = { article ->
-                            val firestore = FirebaseFirestore.getInstance()
-                            firestore.collection("B_SupplierHistoriqueBons")
-                                .whereEqualTo("vidBG", article.vidBG)
-                                .whereEqualTo("supplierIdBG", article.supplierIdBG)
-                                .whereEqualTo("dateCreationBG", article.dateCreationBG)
-                                .get()
-                                .addOnSuccessListener { documents ->
-                                    for (document in documents) {
-                                        document.reference.delete()
-                                    }
-                                }
-                                .addOnFailureListener { e ->
-                                    println("Error deleting document from Firestore: ${e.message}")
-                                }
-                        }
-                    )                }
+                        onDeleteFromFirestore = {}
+                    )
+                }
             }
         }
     }
@@ -454,25 +427,7 @@ fun DeleteConfirmationDialog(
             title = { Text("Confirm Deletion") },
             text = { Text("Are you sure you want to delete all data?") },
             confirmButton = {
-                TextButton(onClick = {
-                    // Delete from Realtime Database
-                    onConfirm()
 
-                    // Delete from Firestore
-                    val firestore = FirebaseFirestore.getInstance()
-                    firestore.collection("B_SupplierHistoriqueBons")
-                        .get()
-                        .addOnSuccessListener { documents ->
-                            for (document in documents) {
-                                document.reference.delete()
-                            }
-                        }
-                        .addOnFailureListener { e ->
-                            println("Error deleting documents from Firestore: ${e.message}")
-                        }
-                }) {
-                    Text("Delete")
-                }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
@@ -645,97 +600,13 @@ fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesR
         )
         articlesRef.child(article.vidBG.toString()).setValue(updatedArticle)
 
-        val fireStore = FirebaseFirestore.getInstance()
-        coroutineScope.launch {
-            exportToFirestore(fireStore, updatedArticle.supplierIdBG.toString(), updatedArticle.dateCreationBG)
-        }
+
 
         return true
     }
     return false
 }
-suspend fun exportToFirestore(
-    fireStore: FirebaseFirestore,
-    supplierIdBG: String,
-    dateCreation: String,
-) {
-    withContext(Dispatchers.IO) {
-        try {
-            // Fetch current data from Firebase Realtime Database
-            val database = Firebase.database
-            val articlesRef = database.getReference("ArticlesBonsGrosTabele")
-            val snapshot = articlesRef
-                .orderByChild("supplierIdBG")
-                .equalTo(supplierIdBG.toDouble())
-                .get()
-                .await()
 
-            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
-                .filter { it.dateCreationBG == dateCreation }
-
-            // Delete existing documents in Firestore
-            val existingDocs = fireStore.collection("B_SupplierHistoriqueBons")
-                .whereEqualTo("supplierIdBG", supplierIdBG)
-                .whereEqualTo("dateCreation", dateCreation)
-                .get()
-                .await()
-
-            existingDocs.documents.forEach { document ->
-                fireStore.collection("B_SupplierHistoriqueBons").document(document.id).delete().await()
-            }
-
-            // Insert new documents
-            supplierArticles.forEach { article ->
-                val lineData = hashMapOf(
-                    "vidBG" to article.vidBG,
-                    "idArticleBG" to article.idArticleBG,
-                    "nomArticleBG" to article.nomArticleBG,
-                    "ancienPrixBG" to article.ancienPrixBG,
-                    "newPrixAchatBG" to article.newPrixAchatBG,
-                    "quantityAcheteBG" to article.quantityAcheteBG,
-                    "quantityUniterBG" to article.quantityUniterBG,
-                    "subTotaleBG" to article.subTotaleBG,
-                    "grossisstBonN" to article.grossisstBonN,
-                    "supplierIdBG" to article.supplierIdBG,
-                    "supplierNameBG" to article.supplierNameBG,
-                    "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
-                    "erreurCommentaireBG" to article.erreurCommentaireBG,
-                    "passeToEndStateBG" to article.passeToEndStateBG,
-                    "dateCreationBG" to article.dateCreationBG
-                )
-                try {
-                    fireStore.collection("B_SupplierHistoriqueBons").add(lineData).await()
-                    println("Article successfully added to Firestore: ${article.nomArticleBG}")
-                } catch (e: Exception) {
-                    println("Failed to add article to Firestore: ${article.nomArticleBG}, Error: ${e.message}")
-                }
-            }
-
-            // Log articles that were in the list but not added to Firestore
-            val addedArticles = fireStore.collection("B_SupplierHistoriqueBons")
-                .whereEqualTo("supplierIdBG", supplierIdBG)
-                .whereEqualTo("dateCreation", dateCreation)
-                .get()
-                .await()
-                .documents
-                .mapNotNull { it.getString("nomArticleBG") }
-                .toSet()
-
-            supplierArticles.forEach { article ->
-                if (article.nomArticleBG !in addedArticles) {
-                    println(
-                        "Article in list but not in Firestore: ${article.nomArticleBG}, " +
-                                "Subtotal: ${article.subTotaleBG}, " +
-                                "VerifieState: ${article.passeToEndStateBG}"
-                    )
-                }
-            }
-
-        } catch (e: Exception) {
-            println("Error exporting to Firestore: ${e.message}")
-        }
-    }
-}
 
 fun processInputAndInsertData(
     input: String,
@@ -819,14 +690,12 @@ fun updateArticleIdFromSuggestion(
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("passeToEndStateBG").setValue(true)
         articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
-        exportToFirestore(effectiveVid, articlesList, coroutineScope)
         onNameInputComplete()
         return
     }
     if (suggestion == "supp" && effectiveVid != null) {
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("nomArticleBG").setValue("New Article")
-        exportToFirestore(effectiveVid, articlesList, coroutineScope)
         onNameInputComplete()
         return
     }
@@ -853,7 +722,36 @@ fun updateArticleIdFromSuggestion(
             articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
         }
 
-        exportToFirestore(effectiveVid, articlesList, coroutineScope)
+        // Update uniterCLePlusUtilise from Firestore
+        coroutineScope.launch {
+            var fireStorEntreBonsGrosTabele: List<EntreBonsGrosTabele> = emptyList()
+
+            try {
+                val firestore = Firebase.firestore
+                val querySnapshot = firestore.collection("B_SupplierHistoriqueBons").get().await()
+                fireStorEntreBonsGrosTabele = querySnapshot.documents.mapNotNull { document ->
+                    document.toObject(EntreBonsGrosTabele::class.java)
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error getting documents: ", e)
+            }
+
+            val currentArticle = articlesList.find { it.vidBG == effectiveVid }
+
+            val matchingHistorique = fireStorEntreBonsGrosTabele
+                .filter { it.idArticleBG == idArticle && it.supplierIdBG == currentArticle?.supplierIdBG }
+                .maxByOrNull { it.dateCreationBG }
+
+            val uniterCLePlusUtiliseFireStore = matchingHistorique?.uniterCLePlusUtilise ?: false
+
+            // Updated to use current date and time
+            val lastDate = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+
+            articleToUpdate.child("uniterCLePlusUtilise").setValue(uniterCLePlusUtiliseFireStore)
+            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
+            println("DEBUG: Updated uniterCLePlusUtilise to $uniterCLePlusUtiliseFireStore and lastDateCreationBG to $lastDate")
+        }
+
         onNameInputComplete()
     }
 }
@@ -869,6 +767,88 @@ private fun exportToFirestore(effectiveVid: Long, articlesList: List<EntreBonsGr
                 article.supplierIdBG.toString(),
                 article.dateCreationBG
             )
+        }
+    }
+}
+suspend fun exportToFirestore(
+    fireStore: FirebaseFirestore,
+    supplierIdBG: String,
+    dateCreation: String,
+) {
+    withContext(Dispatchers.IO) {
+        try {
+            // Fetch current data from Firebase Realtime Database
+            val database = Firebase.database
+            val articlesRef = database.getReference("ArticlesBonsGrosTabele")
+            val snapshot = articlesRef
+                .orderByChild("supplierIdBG")
+                .equalTo(supplierIdBG.toDouble())
+                .get()
+                .await()
+
+            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+                .filter { it.dateCreationBG == dateCreation }
+
+            // Delete existing documents in Firestore
+            val existingDocs = fireStore.collection("B_SupplierHistoriqueBons")
+                .whereEqualTo("supplierIdBG", supplierIdBG)
+                .whereEqualTo("dateCreation", dateCreation)
+                .get()
+                .await()
+
+            existingDocs.documents.forEach { document ->
+                fireStore.collection("B_SupplierHistoriqueBons").document(document.id).delete().await()
+            }
+
+            // Insert new documents
+            supplierArticles.forEach { article ->
+                val lineData = hashMapOf(
+                    "vidBG" to article.vidBG,
+                    "idArticleBG" to article.idArticleBG,
+                    "nomArticleBG" to article.nomArticleBG,
+                    "ancienPrixBG" to article.ancienPrixBG,
+                    "newPrixAchatBG" to article.newPrixAchatBG,
+                    "quantityAcheteBG" to article.quantityAcheteBG,
+                    "quantityUniterBG" to article.quantityUniterBG,
+                    "subTotaleBG" to article.subTotaleBG,
+                    "grossisstBonN" to article.grossisstBonN,
+                    "supplierIdBG" to article.supplierIdBG,
+                    "supplierNameBG" to article.supplierNameBG,
+                    "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
+                    "erreurCommentaireBG" to article.erreurCommentaireBG,
+                    "passeToEndStateBG" to article.passeToEndStateBG,
+                    "dateCreationBG" to article.dateCreationBG
+                )
+                try {
+                    fireStore.collection("B_SupplierHistoriqueBons").add(lineData).await()
+                    println("Article successfully added to Firestore: ${article.nomArticleBG}")
+                } catch (e: Exception) {
+                    println("Failed to add article to Firestore: ${article.nomArticleBG}, Error: ${e.message}")
+                }
+            }
+
+            // Log articles that were in the list but not added to Firestore
+            val addedArticles = fireStore.collection("B_SupplierHistoriqueBons")
+                .whereEqualTo("supplierIdBG", supplierIdBG)
+                .whereEqualTo("dateCreation", dateCreation)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.getString("nomArticleBG") }
+                .toSet()
+
+            supplierArticles.forEach { article ->
+                if (article.nomArticleBG !in addedArticles) {
+                    println(
+                        "Article in list but not in Firestore: ${article.nomArticleBG}, " +
+                                "Subtotal: ${article.subTotaleBG}, " +
+                                "VerifieState: ${article.passeToEndStateBG}"
+                    )
+                }
+            }
+
+        } catch (e: Exception) {
+            println("Error exporting to Firestore: ${e.message}")
         }
     }
 }

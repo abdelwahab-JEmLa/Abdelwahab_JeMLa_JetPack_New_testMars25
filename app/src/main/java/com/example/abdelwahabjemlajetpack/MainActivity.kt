@@ -37,7 +37,6 @@ import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.MainAppViewModelFactory
-import c_ManageBonsClients.ArticlesAcheteModeleDao
 import c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.database.ktx.database
@@ -65,7 +64,6 @@ class MainActivity : ComponentActivity() {
                 MyApp(
                     viewModel,
                     database.articleDao(),
-                    database.articlesAcheteModeleDao(),
                     creditsViewModel
                 )
             }
@@ -104,7 +102,6 @@ class MainActivity : ComponentActivity() {
 fun MyApp(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
-    articlesAcheteModeleDao: ArticlesAcheteModeleDao,
     creditsViewModel: CreditsViewModel
 ) {
     val navController = rememberNavController()
