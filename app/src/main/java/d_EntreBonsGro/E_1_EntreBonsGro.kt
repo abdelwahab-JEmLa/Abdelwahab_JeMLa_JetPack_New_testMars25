@@ -198,8 +198,8 @@ fun ArticleItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .height(150.dp),
+            .padding(2.dp)
+            .height(180.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -232,12 +232,12 @@ fun ArticleItem(
             ) {
                 Card(
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        .padding(top = 2.dp)
                         .wrapContentSize(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -262,7 +262,7 @@ fun ArticleItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(2f)
-                    .padding(8.dp),
+                    .padding(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Image section
@@ -286,7 +286,7 @@ fun ArticleItem(
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(4.dp)
+                            .padding(2.dp)
                     ) {
                         IconButton(
                             onClick = {
@@ -303,19 +303,19 @@ fun ArticleItem(
                         }
                     }
                 }
-                var quantityUniterBG by remember { mutableStateOf(article.quantityUniterBG.toString()) }
+                var quantityUniterBG by remember { mutableStateOf("") }
 
                 // Article details section
                 Card(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .padding(start = 8.dp)
+                        .padding(start = 2.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(8.dp),
+                            .padding(2.dp),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         val priceDifference = if (isUnitMostUsed) {
@@ -351,7 +351,7 @@ fun ArticleItem(
                                                 }
                                             }
                                         },
-                                        label = { Text("U>") },
+                                        label = { Text(article.quantityUniterBG.toString()) },
                                         textStyle = LocalTextStyle.current.copy(
                                             color = if (isUnitMostUsed) Color.White else Color.Unspecified
                                         ),
