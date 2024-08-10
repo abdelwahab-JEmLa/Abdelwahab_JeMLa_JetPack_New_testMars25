@@ -156,7 +156,6 @@ fun FragmentEntreBonsGro() {
         })
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
