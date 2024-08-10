@@ -65,6 +65,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import f_credits.CreditsViewModel.SupplierTabelle
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +74,7 @@ fun FragmentEntreBonsGro() {
     var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
+    var suppliersList by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
     var inputText by remember { mutableStateOf("") }
     var nowItsNameInputeTime by remember { mutableStateOf(false) }
     var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -88,6 +90,7 @@ fun FragmentEntreBonsGro() {
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
     val articlesAcheteModeleRef = database.getReference("ArticlesAcheteModeleAdapted")
     val baseDonneRef = database.getReference("e_DBJetPackExport")
+    val suppliersRef = database.getReference("F_Suppliers")
 
     var showFullImage by rememberSaveable { mutableStateOf(true) }
     var showSplitView by rememberSaveable { mutableStateOf(false) }
@@ -148,6 +151,16 @@ fun FragmentEntreBonsGro() {
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
                 }.distinct() + listOf("supp", "passe")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+        suppliersRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newSuppliers = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
+                suppliersList = newSuppliers
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -386,14 +399,16 @@ fun FragmentEntreBonsGro() {
         onDismiss = { showSupplierDialog = false },
         onSupplierSelected = { selected ->
             founisseurNowIs = selected
-        }
+        },
+        suppliersList = suppliersList
     )
 }
 @Composable
 fun SupplierSelectionDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onSupplierSelected: (Int) -> Unit
+    onSupplierSelected: (Int) -> Unit,
+    suppliersList: List<SupplierTabelle>
 ) {
     if (showDialog) {
         AlertDialog(
@@ -401,14 +416,19 @@ fun SupplierSelectionDialog(
             title = { Text("Select Supplier") },
             text = {
                 Column {
-                    for (i in 1..10) {
+                    (1..15).forEach { i ->
+                        val supplier = suppliersList.find { it.bonDuSupplierSu == i.toString() }
                         TextButton(
                             onClick = {
                                 onSupplierSelected(i)
                                 onDismiss()
                             }
                         ) {
-                            Text("Supplier $i")
+                            if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
+                                Text("$i->.${supplier.idSupplierSu} ${supplier.nomSupplierSu}")
+                            } else {
+                                Text("$i->.")
+                            }
                         }
                     }
                 }
