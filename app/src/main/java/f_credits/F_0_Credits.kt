@@ -121,7 +121,7 @@ fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
 }
 
 @Composable
-fun SupplierItem(supplier: CreditsViewModel.SupplierTabelle, viewModel: CreditsViewModel) {
+fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     val backgroundColor = remember(supplier.couleurSu) {
         try {
@@ -315,14 +315,13 @@ class CreditsViewModel : ViewModel() {
         }
     }
 
-
-    data class SupplierTabelle(
-        val vidSu: Long = 0,
-        var idSupplierSu: Long = 0,
-        var nomSupplierSu: String = "",
-        var bonDuSupplierSu: String = "",
-        var couleurSu: String = ""
-    ) {
-        constructor() : this(0)
-    }
+}
+data class SupplierTabelle(
+    val vidSu: Long = 0,
+    var idSupplierSu: Long = 0,
+    var nomSupplierSu: String = "",
+    var bonDuSupplierSu: String = "",
+    val couleurSu: String = "#FFFFFF" // Default color
+) {
+    constructor() : this(0)
 }

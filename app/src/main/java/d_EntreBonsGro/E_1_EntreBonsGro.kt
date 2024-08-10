@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import coil.compose.AsyncImage
 import com.google.firebase.database.DatabaseReference
+import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import kotlin.math.abs
 
@@ -66,12 +67,13 @@ fun OutlineInput(
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     articlesBaseDonne: List<BaseDonne>,
     editionPassedMode: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope
 ) {
     val lastArticle = if (editionPassedMode) {
-        articlesList.filter { it.passeToEndState }.maxByOrNull { it.vid }
+        articlesList.filter { it.passeToEndStateBG }.maxByOrNull { it.vidBG }
     } else {
-        articlesList.maxByOrNull { it.vid }
+        articlesList.maxByOrNull { it.vidBG }
     }
     var showDropdown by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
@@ -97,7 +99,7 @@ fun OutlineInput(
                         inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null ->
                             "Quantity: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
                         inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
-                            val lastInputtedArticle = articlesList.find { it.vid == vidOfLastQuantityInputted }
+                            val lastInputtedArticle = articlesList.find { it.vidBG == vidOfLastQuantityInputted }
                             lastInputtedArticle?.let {
                                 "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"
                             } ?: "Entrer quantité et prix"
@@ -128,7 +130,8 @@ fun OutlineInput(
                             articlesBaseDonne,
                             onNameInputComplete,
                             editionPassedMode,
-                            articlesList
+                            articlesList,
+                            coroutineScope=coroutineScope
                         )
                         onInputChange("")
                         showDropdown = false
@@ -146,7 +149,8 @@ fun AfficheEntreBonsGro(
     onDeleteArticle: (EntreBonsGrosTabele) -> Unit,
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope
 ) {
     LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
@@ -154,7 +158,8 @@ fun AfficheEntreBonsGro(
                 article = article,
                 onDelete = onDeleteArticle,
                 articlesRef = articlesRef,
-                articlesArticlesAcheteModele = articlesArticlesAcheteModele
+                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                coroutineScope = coroutineScope  // Pass the coroutineScope here
             )
         }
     }
@@ -164,7 +169,8 @@ fun ArticleItem(
     article: EntreBonsGrosTabele,
     onDelete: (EntreBonsGrosTabele) -> Unit,
     articlesRef: DatabaseReference,
-    articlesArticlesAcheteModele: List<ArticlesAcheteModele>
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    coroutineScope: CoroutineScope
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
 
@@ -175,7 +181,7 @@ fun ArticleItem(
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
-                updateSpecificArticle(it, article, articlesRef)
+                updateSpecificArticle(it, article, articlesRef, coroutineScope)
             }
         }
     }
@@ -259,7 +265,7 @@ fun ArticleItem(
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        val matchingArticle = articlesArticlesAcheteModele.find { it.idArticle == article.idArticle }
+                        val matchingArticle = articlesArticlesAcheteModele.find { it.idArticle == article.idArticleBG }
                         if (matchingArticle != null) {
                             SingleColorImage(matchingArticle, articlesArticlesAcheteModele)
                         } else {
