@@ -146,7 +146,7 @@ fun FragmentEntreBonsGro() {
                 articlesArticlesAcheteModele = newArticlesAcheteModele
                 suggestionsList = newArticlesAcheteModele.map { articleAchete ->
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
-                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
+                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"//TODO fait que la list soit distincte
                 } + "supp" + "passe"
             }
 
@@ -291,8 +291,9 @@ fun FragmentEntreBonsGro() {
                                 }
                             },
                             articlesRef = articlesRef,
-                            modifier = Modifier.weight(0.5f)
-                        )
+                            modifier = Modifier.weight(0.5f),
+                            articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                            )
                     }
                 }
                 else -> {
@@ -308,8 +309,9 @@ fun FragmentEntreBonsGro() {
                             }
                         },
                         articlesRef = articlesRef,
-                        modifier = Modifier.weight(1f)
-                    )
+                        modifier = Modifier.weight(1f),
+                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                        )
                 }
             }
         }
