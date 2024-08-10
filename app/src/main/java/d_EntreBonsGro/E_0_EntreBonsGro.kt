@@ -146,8 +146,8 @@ fun FragmentEntreBonsGro() {
                 articlesArticlesAcheteModele = newArticlesAcheteModele
                 suggestionsList = newArticlesAcheteModele.map { articleAchete ->
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
-                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"//TODO fait que la list soit distincte
-                } + "supp" + "passe"
+                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
+                }.distinct() + listOf("supp", "passe")
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -632,13 +632,13 @@ fun updateArticleIdFromSuggestion(
         val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
         correspondingArticle?.let { article ->
             articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
-            articleToUpdate.child("ancienPrixBG").setValue(article.prixAchat)
         }
 
         // Find corresponding BaseDonne and update quantityUniterBG
         val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
         correspondingBaseDonne?.let { baseDonne ->
             articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
+            articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
         }
 
         // Call the callback to set nowItsNameInputeTime to false
