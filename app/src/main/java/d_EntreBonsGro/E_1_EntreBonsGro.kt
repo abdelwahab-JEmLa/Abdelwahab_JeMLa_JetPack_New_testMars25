@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,8 +33,10 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -300,6 +303,7 @@ fun ArticleItem(
                         }
                     }
                 }
+                var quantityUniterBG by remember { mutableStateOf(article.quantityUniterBG.toString()) }
 
                 // Article details section
                 Card(
@@ -307,21 +311,6 @@ fun ArticleItem(
                         .weight(1f)
                         .fillMaxHeight()
                         .padding(start = 8.dp)
-                        .clickable {
-                            isUnitMostUsed = !isUnitMostUsed
-                            coroutineScope.launch {
-                                articlesRef.child(article.vidBG.toString()).apply {
-                                    child("uniterCLePlusUtilise").setValue(isUnitMostUsed)
-                                }
-                            }
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isUnitMostUsed) {
-                            if ((article.newPrixAchatBG  - article.ancienPrixOnUniterBG) > 0) Color.Red else Color.Green
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        }
-                    )
                 ) {
                     Column(
                         modifier = Modifier
@@ -330,7 +319,7 @@ fun ArticleItem(
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         val priceDifference = if (isUnitMostUsed) {
-                            article.newPrixAchatBG  - article.ancienPrixOnUniterBG
+                            article.newPrixAchatBG - article.ancienPrixOnUniterBG
                         } else {
                             article.newPrixAchatBG - article.ancienPrixBG
                         }
@@ -338,29 +327,63 @@ fun ArticleItem(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        isUnitMostUsed = !isUnitMostUsed
+                                        coroutineScope.launch {
+                                            articlesRef.child(article.vidBG.toString()).apply {
+                                                child("uniterCLePlusUtilise").setValue(isUnitMostUsed)
+                                            }
+                                        }
+                                    }
                             ) {
+                                if (article.quantityUniterBG != 1) {
+                                    OutlinedTextField(
+                                        value = quantityUniterBG,
+                                        onValueChange = { newValue ->
+                                            if (newValue.isNotEmpty() && newValue.toDoubleOrNull() != null) {
+                                                quantityUniterBG = newValue
+                                                coroutineScope.launch {
+                                                    articlesRef.child(article.vidBG.toString()).apply {
+                                                        child("quantityUniterBG").setValue(newValue.toDouble())
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        label = { Text("U>") },
+                                        textStyle = LocalTextStyle.current.copy(
+                                            color = if (isUnitMostUsed) Color.White else Color.Unspecified
+                                        ),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = if (isUnitMostUsed) Color.Red else Color.Transparent,
+                                            unfocusedContainerColor = if (isUnitMostUsed) Color.Red else Color.Transparent,
+                                            focusedLabelColor = if (isUnitMostUsed) Color.White else Color.Unspecified,
+                                            unfocusedLabelColor = if (isUnitMostUsed) Color.White else Color.Unspecified
+                                        ),
+                                        modifier = Modifier.width(80.dp)
+                                    )
+                                    Text("X")
+
+                                }
                                 Text(
                                     text = if (isUnitMostUsed) {
-                                        "aP>${article.ancienPrixOnUniterBG} (${abs(priceDifference).format(2)})"
+                                        "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "+" else "-"}${abs(priceDifference).format(2)})"
                                     } else {
-                                        "aP>${article.ancienPrixBG} (${abs(priceDifference).format(2)})"
+                                        "${article.ancienPrixBG} (${if (priceDifference > 0) "+" else "-"}${abs(priceDifference).format(2)})"
                                     },
-                                    color = if (isUnitMostUsed) Color.White else if (priceDifference > 0) Color.Red else Color.Green
                                 )
                                 Icon(
                                     imageVector = if (priceDifference > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                                     contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
-                                    tint = if (isUnitMostUsed) Color.White else if (priceDifference > 0) Color.Red else Color.Green
                                 )
                             }
                         }
 
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 text = article.nomArticleBG,
@@ -368,14 +391,8 @@ fun ArticleItem(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f),
-                                color = if (isUnitMostUsed) Color.White else Color.Unspecified
+                                textAlign = TextAlign.Center
                             )
-                            if (article.quantityUniterBG != 1) {
-                                Text(
-                                    "nU>${article.quantityUniterBG}",
-                                    color = if (isUnitMostUsed) Color.White else Color.Unspecified
-                                )
-                            }
                         }
                     }
                 }
