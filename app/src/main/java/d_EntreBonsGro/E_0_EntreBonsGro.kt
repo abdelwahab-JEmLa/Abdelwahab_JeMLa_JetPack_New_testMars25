@@ -204,7 +204,7 @@ fun FragmentEntreBonsGro() {
                                 showSplitView -> showSplitView = false
                                 else -> showFullImage = true
                             }
-                            modeFilterChangesDB = false // Reset the filter when changing view mode
+                            modeFilterChangesDB = false
                         }
                     ) {
                         Icon(
@@ -285,7 +285,6 @@ fun FragmentEntreBonsGro() {
                 modifier = Modifier.fillMaxWidth(),
                 coroutineScope=coroutineScope
             )
-
             when {
                 showFullImage -> {
                     ZoomableImage(
@@ -302,30 +301,37 @@ fun FragmentEntreBonsGro() {
                             modifier = Modifier.weight(0.4f)
                         )
                         AfficheEntreBonsGro(
-                            articlesEntreBonsGro = when {
-                                modeFilterChangesDB -> articlesEntreBonsGrosTabele.filter { it.newPrixAchatBG - it.ancienPrixBG != 0.0 }
-                                editionPassedMode -> articlesEntreBonsGrosTabele.filter { it.passeToEndStateBG }
-                                else -> articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
-                            },
+                            articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
                             onDeleteArticle = { article ->
                                 coroutineScope.launch {
                                     articlesRef.child(article.vidBG.toString()).removeValue()
                                 }
                             },
                             articlesRef = articlesRef,
-                            modifier = Modifier.weight(0.6f),
                             articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                            modifier = Modifier.weight(1f),
                             coroutineScope = coroutineScope,
-                        )
-                    }
+                            onDeleteFromFirestore = { article ->
+                                val firestore = FirebaseFirestore.getInstance()
+                                firestore.collection("B_SupplierHistoriqueBons")
+                                    .whereEqualTo("vidBG", article.vidBG)
+                                    .whereEqualTo("supplierIdBG", article.supplierIdBG)
+                                    .whereEqualTo("dateCreationBG", article.dateCreationBG)
+                                    .get()
+                                    .addOnSuccessListener { documents ->
+                                        for (document in documents) {
+                                            document.reference.delete()
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        println("Error deleting document from Firestore: ${e.message}")
+                                    }
+                            }
+                        )                    }
                 }
                 else -> {
                     AfficheEntreBonsGro(
-                        articlesEntreBonsGro = when {
-                            modeFilterChangesDB -> articlesEntreBonsGrosTabele.filter { it.newPrixAchatBG - it.ancienPrixBG != 0.0 }
-                            editionPassedMode -> articlesEntreBonsGrosTabele.filter { it.passeToEndStateBG }
-                            else -> articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
-                        },
+                        articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
                         onDeleteArticle = { article ->
                             coroutineScope.launch {
                                 articlesRef.child(article.vidBG.toString()).removeValue()
@@ -335,8 +341,23 @@ fun FragmentEntreBonsGro() {
                         articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                         modifier = Modifier.weight(1f),
                         coroutineScope = coroutineScope,
-                    )
-                }
+                        onDeleteFromFirestore = { article ->
+                            val firestore = FirebaseFirestore.getInstance()
+                            firestore.collection("B_SupplierHistoriqueBons")
+                                .whereEqualTo("vidBG", article.vidBG)
+                                .whereEqualTo("supplierIdBG", article.supplierIdBG)
+                                .whereEqualTo("dateCreationBG", article.dateCreationBG)
+                                .get()
+                                .addOnSuccessListener { documents ->
+                                    for (document in documents) {
+                                        document.reference.delete()
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    println("Error deleting document from Firestore: ${e.message}")
+                                }
+                        }
+                    )                }
             }
         }
     }
@@ -432,7 +453,23 @@ fun DeleteConfirmationDialog(
             title = { Text("Confirm Deletion") },
             text = { Text("Are you sure you want to delete all data?") },
             confirmButton = {
-                TextButton(onClick = onConfirm) {
+                TextButton(onClick = {
+                    // Delete from Realtime Database
+                    onConfirm()
+
+                    // Delete from Firestore
+                    val firestore = FirebaseFirestore.getInstance()
+                    firestore.collection("B_SupplierHistoriqueBons")
+                        .get()
+                        .addOnSuccessListener { documents ->
+                            for (document in documents) {
+                                document.reference.delete()
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            println("Error deleting documents from Firestore: ${e.message}")
+                        }
+                }) {
                     Text("Delete")
                 }
             },

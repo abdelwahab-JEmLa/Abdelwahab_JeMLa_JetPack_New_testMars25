@@ -150,7 +150,9 @@ fun AfficheEntreBonsGro(
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     modifier: Modifier = Modifier,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit // New parameter
+
 ) {
     LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
@@ -159,7 +161,8 @@ fun AfficheEntreBonsGro(
                 onDelete = onDeleteArticle,
                 articlesRef = articlesRef,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                coroutineScope = coroutineScope  // Pass the coroutineScope here
+                coroutineScope = coroutineScope ,
+                onDeleteFromFirestore =onDeleteFromFirestore
             )
         }
     }
@@ -170,7 +173,8 @@ fun ArticleItem(
     onDelete: (EntreBonsGrosTabele) -> Unit,
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit // New parameter
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
 
@@ -280,7 +284,10 @@ fun ArticleItem(
                             .padding(4.dp)
                     ) {
                         IconButton(
-                            onClick = { onDelete(article) },
+                            onClick = {
+                                onDelete(article)
+                                onDeleteFromFirestore(article)
+                            },
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
