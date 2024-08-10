@@ -72,6 +72,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -849,12 +850,14 @@ fun updateArticleIdFromSuggestion(
         correspondingBaseDonne?.let { baseDonne ->
             articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
             articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
+            articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
         }
 
         exportToFirestore(effectiveVid, articlesList, coroutineScope)
         onNameInputComplete()
     }
 }
+fun Double.roundToTwoDecimals() = (this * 100).roundToInt() / 100.0
 
 private fun exportToFirestore(effectiveVid: Long, articlesList: List<EntreBonsGrosTabele>, coroutineScope: CoroutineScope) {
     val fireStore = FirebaseFirestore.getInstance()
@@ -874,6 +877,7 @@ data class EntreBonsGrosTabele(
     var idArticleBG: Long = 0,
     var nomArticleBG: String = "",
     var ancienPrixBG: Double = 0.0,
+    var ancienPrixOnUniterBG: Double = 0.0,
     var newPrixAchatBG: Double = 0.0,
     var quantityAcheteBG: Int = 0,
     var quantityUniterBG: Int = 0,
@@ -885,6 +889,7 @@ data class EntreBonsGrosTabele(
     var erreurCommentaireBG: String = "",
     var passeToEndStateBG: Boolean = false,
     var dateCreationBG: String = ""
+
 ){
     // Secondary constructor for Firebase
     constructor() : this(0)

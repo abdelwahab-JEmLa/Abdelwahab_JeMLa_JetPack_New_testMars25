@@ -51,6 +51,7 @@ import c_ManageBonsClients.ArticlesAcheteModele
 import coil.compose.AsyncImage
 import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
 
@@ -174,9 +175,10 @@ fun ArticleItem(
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     coroutineScope: CoroutineScope,
-    onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit // New parameter
+    onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
+    var isUnitMostUsed by remember { mutableStateOf(article.uniterCLePlusUtilise) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -300,46 +302,80 @@ fun ArticleItem(
                 }
 
                 // Article details section
-                Column(
+                Card(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .padding(start = 8.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .padding(start = 8.dp)
+                        .clickable {
+                            isUnitMostUsed = !isUnitMostUsed
+                            coroutineScope.launch {
+                                articlesRef.child(article.vidBG.toString()).apply {
+                                    child("uniterCLePlusUtilise").setValue(isUnitMostUsed)
+                                }
+                            }
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isUnitMostUsed) {
+                            if ((article.newPrixAchatBG  - article.ancienPrixOnUniterBG) > 0) Color.Red else Color.Green
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    )
                 ) {
-                    val priceDifference = article.newPrixAchatBG - article.ancienPrixBG
-                    if (priceDifference.toFloat() != 0f) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val priceDifference = if (isUnitMostUsed) {
+                            article.newPrixAchatBG  - article.ancienPrixOnUniterBG
+                        } else {
+                            article.newPrixAchatBG - article.ancienPrixBG
+                        }
+                        if (priceDifference.toFloat() != 0f) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = if (isUnitMostUsed) {
+                                        "aP>${article.ancienPrixOnUniterBG} (${abs(priceDifference).format(2)})"
+                                    } else {
+                                        "aP>${article.ancienPrixBG} (${abs(priceDifference).format(2)})"
+                                    },
+                                    color = if (isUnitMostUsed) Color.White else if (priceDifference > 0) Color.Red else Color.Green
+                                )
+                                Icon(
+                                    imageVector = if (priceDifference > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                    contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
+                                    tint = if (isUnitMostUsed) Color.White else if (priceDifference > 0) Color.Red else Color.Green
+                                )
+                            }
+                        }
+
+
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "aP>${article.ancienPrixBG} (${abs(priceDifference)})",
-                                color = if (priceDifference > 0) Color.Red else Color.Green
+                                text = article.nomArticleBG,
+                                style = MaterialTheme.typography.headlineSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                                color = if (isUnitMostUsed) Color.White else Color.Unspecified
                             )
-                            Icon(
-                                imageVector = if (priceDifference > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
-                                tint = if (priceDifference > 0) Color.Red else Color.Green
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = article.nomArticleBG,
-                            style = MaterialTheme.typography.headlineSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (article.quantityUniterBG != 1) {
-                            Text("nU>${article.quantityUniterBG}")
+                            if (article.quantityUniterBG != 1) {
+                                Text(
+                                    "nU>${article.quantityUniterBG}",
+                                    color = if (isUnitMostUsed) Color.White else Color.Unspecified
+                                )
+                            }
                         }
                     }
                 }
@@ -347,6 +383,8 @@ fun ArticleItem(
         }
     }
 }
+// Add this extension function to format Double to 2 decimal places
+fun Double.format(digits: Int) = "%.${digits}f".format(this)
 @Composable
  fun SingleColorImage(
     article: ArticlesAcheteModele,
