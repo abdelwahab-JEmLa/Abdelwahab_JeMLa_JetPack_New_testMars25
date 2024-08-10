@@ -646,8 +646,7 @@ fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesR
 
         val fireStore = FirebaseFirestore.getInstance()
         coroutineScope.launch {
-            exportToFirestore(fireStore, listOf(updatedArticle),
-                updatedArticle.supplierIdBG.toString(), updatedArticle.dateCreationBG)
+            exportToFirestore(fireStore, updatedArticle.supplierIdBG.toString(), updatedArticle.dateCreationBG)
         }
 
         return true
@@ -656,13 +655,24 @@ fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesR
 }
 suspend fun exportToFirestore(
     fireStore: FirebaseFirestore,
-    supplierArticles: List<EntreBonsGrosTabele>,
     supplierIdBG: String,
     dateCreation: String,
 ) {
     withContext(Dispatchers.IO) {
         try {
-            // Delete existing documents
+            // Fetch current data from Firebase Realtime Database
+            val database = Firebase.database
+            val articlesRef = database.getReference("ArticlesBonsGrosTabele")
+            val snapshot = articlesRef
+                .orderByChild("supplierIdBG")
+                .equalTo(supplierIdBG.toDouble())
+                .get()
+                .await()
+
+            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+                .filter { it.dateCreationBG == dateCreation }
+
+            // Delete existing documents in Firestore
             val existingDocs = fireStore.collection("B_SupplierHistoriqueBons")
                 .whereEqualTo("supplierIdBG", supplierIdBG)
                 .whereEqualTo("dateCreation", dateCreation)
@@ -756,7 +766,7 @@ fun processInputAndInsertData(
         val newArticle = supplier?.idSupplierSu?.let {
             EntreBonsGrosTabele(
                 vidBG = newVid,
-                idArticleBG = newVid,
+                idArticleBG = 0,
                 nomArticleBG = "",
                 ancienPrixBG = 0.0,
                 newPrixAchatBG = price,
@@ -853,7 +863,6 @@ private fun exportToFirestore(effectiveVid: Long, articlesList: List<EntreBonsGr
         coroutineScope.launch(Dispatchers.IO) {
             exportToFirestore(
                 fireStore,
-                listOf(article),
                 article.supplierIdBG.toString(),
                 article.dateCreationBG
             )
