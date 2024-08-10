@@ -290,7 +290,7 @@ fun FragmentEntreBonsGro() {
                         ZoomableImage(
                             imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
                             supplierId = founisseurNowIs,
-                            modifier = Modifier.weight(0.5f)
+                            modifier = Modifier.weight(0.4f)
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = if (editionPassedMode) {
@@ -304,9 +304,9 @@ fun FragmentEntreBonsGro() {
                                 }
                             },
                             articlesRef = articlesRef,
-                            modifier = Modifier.weight(0.5f),
+                            modifier = Modifier.weight(0.6f),
                             articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                            )
+                        )
                     }
                 }
                 else -> {
@@ -425,7 +425,7 @@ fun SupplierSelectionDialog(
                             }
                         ) {
                             if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
-                                Text("$i->.${supplier.idSupplierSu} ${supplier.nomSupplierSu}")
+                                Text("$i->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
                             } else {
                                 Text("$i->.")
                             }
