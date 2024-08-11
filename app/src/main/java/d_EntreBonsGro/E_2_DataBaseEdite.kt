@@ -118,7 +118,6 @@ fun findAndAddMissingArticles(
     }
 }
 
-
 suspend fun trensfertBonSuppAuDataBaseArticles() {
     withContext(Dispatchers.IO) {
         try {
@@ -131,16 +130,23 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
             val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
 
             articlesEntreBonsGrosTabele.forEach { article ->
+                // Calculate the price based on uniterCLePlusUtilise
+                val calculatedPrice = if (article.uniterCLePlusUtilise) {
+                    article.newPrixAchatBG * article.quantityUniterBG
+                } else {
+                    article.newPrixAchatBG
+                }
+
                 // Update all matching entries in ArticlesAcheteModeleAdapted
                 refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().addOnSuccessListener { snapshot ->
                     snapshot.children.forEach { childSnapshot ->
-                        childSnapshot.ref.child("prixAchat").setValue(article.newPrixAchatBG)
+                        childSnapshot.ref.child("prixAchat").setValue(calculatedPrice)
                     }
                 }
 
                 // Update e_DBJetPackExport
                 dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
-                    .setValue(article.newPrixAchatBG)
+                    .setValue(calculatedPrice)
             }
 
             println("Successfully updated e_DBJetPackExport and all matching entries in ArticlesAcheteModeleAdapted")
@@ -193,6 +199,13 @@ suspend fun exportToFirestore() {
                     .document(article.idArticleBG.toString())  // This creates a new document with an auto-generated ID
                 batch.set(docRef, lineData)
             }
+//TODO ajout un export du totale du suplier article
+//            val docRef = supplierArticlesRef
+//                .document(article.supplierIdBG.toString())
+//                .collection("totaleDesBons")
+//                .document(date yyyy/mm/dd)
+//                .collection("totale")
+//                .document(ici mete le totale )
 
             // Commit the batch
             batch.commit().await()

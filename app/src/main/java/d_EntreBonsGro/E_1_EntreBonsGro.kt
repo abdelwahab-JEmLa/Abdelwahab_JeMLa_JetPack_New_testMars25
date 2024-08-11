@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,6 +73,7 @@ import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Locale
 import kotlin.math.abs
 
 @Composable
@@ -106,7 +108,7 @@ fun OutlineInput(
                 val cleanInput = newValue.replace(".", "").toLowerCase()
                 filteredSuggestions = if (cleanInput.length >= 3) {
                     suggestionsList.filter {
-                        it.replace(".", "").toLowerCase().contains(cleanInput)
+                        it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput)
                     }
                 } else {
                     emptyList()
@@ -173,7 +175,8 @@ fun AfficheEntreBonsGro(
     coroutineScope: CoroutineScope,
     onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit,
     suppliersList: List<SupplierTabelle>,
-    onSupplierChanged: (Long, Int) -> Unit // Add this parameter
+    onSupplierChanged: (Long, Int) -> Unit,
+    suppliersRef: DatabaseReference  // Add this parameter
 ) {
     LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
@@ -185,7 +188,8 @@ fun AfficheEntreBonsGro(
                 coroutineScope = coroutineScope,
                 onDeleteFromFirestore = onDeleteFromFirestore,
                 suppliersList = suppliersList,
-                onSupplierChanged = onSupplierChanged // Pass this parameter
+                onSupplierChanged = onSupplierChanged,
+                suppliersRef = suppliersRef  // Pass the suppliersRef here
             )
         }
     }
@@ -199,7 +203,8 @@ fun ArticleItem(
     coroutineScope: CoroutineScope,
     onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit,
     suppliersList: List<SupplierTabelle>,
-    onSupplierChanged: (Long, Int) -> Unit // Add this parameter
+    onSupplierChanged: (Long, Int) -> Unit,
+    suppliersRef: DatabaseReference  // Add this parameter
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
     var showSupplierDialog by remember { mutableStateOf(false) }
@@ -344,21 +349,21 @@ fun ArticleItem(
                         } else {
                             article.newPrixAchatBG - article.ancienPrixBG
                         }
-                        if (priceDifference.toFloat() != 0f) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val newUniterCLePlusUtilise = !article.uniterCLePlusUtilise
-                                        coroutineScope.launch {
-                                            articlesRef.child(article.vidBG.toString()).apply {
-                                                child("uniterCLePlusUtilise").setValue(newUniterCLePlusUtilise)
-                                            }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val newUniterCLePlusUtilise = !article.uniterCLePlusUtilise
+                                    coroutineScope.launch {
+                                        articlesRef.child(article.vidBG.toString()).apply {
+                                            child("uniterCLePlusUtilise").setValue(newUniterCLePlusUtilise)
                                         }
                                     }
-                            ) {
+                                }
+                        )  {
                                 if (article.quantityUniterBG != 1) {
                                     OutlinedTextField(
                                         value = quantityUniterBG,
@@ -399,7 +404,7 @@ fun ArticleItem(
                                     contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
                                     tint = if (priceDifference > 0) Color.Red else Color.Green
                                 )
-                            }
+
                         }
 
                         Row(
@@ -443,42 +448,115 @@ fun ArticleItem(
                     articlesRef.child(article.vidBG.toString()).apply {
                         child("supplierNameBG").setValue(selectedSupplier.nomSupplierSu)
                         child("supplierIdBG").setValue(selectedSupplier.idSupplierSu)
-                        child("grossisstBonN").setValue(selectedSupplierBon) // Add this line
+                        child("grossisstBonN").setValue(selectedSupplierBon)
                     }
                 }
-                // Call the onSupplierChanged callback
                 onSupplierChanged(article.vidBG, selectedSupplierBon)
             }
         },
-        suppliersList = suppliersList
+        suppliersList = suppliersList,
+        suppliersRef = suppliersRef  // Pass the suppliersRef here
     )
 }
+
+
+
 @Composable
 fun SupplierSelectionDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
     onSupplierSelected: (Int) -> Unit,
-    suppliersList: List<SupplierTabelle>
+    suppliersList: List<SupplierTabelle>,
+    suppliersRef: DatabaseReference
 ) {
     if (showDialog) {
+        var showBonUpdateDialog by remember { mutableStateOf(false) }
+        var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
+
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Select Supplier") },
             text = {
-                Column {
-                    (1..15).forEach { i ->
-                        val supplier = suppliersList.find { it.bonDuSupplierSu == i.toString() }
+                LazyColumn {
+                    items(16) { i ->
+                        val supplierNumber = if (i == 15) 100 else i + 1
+                        val supplier = suppliersList.find { it.bonDuSupplierSu == supplierNumber.toString() }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        onSupplierSelected(supplierNumber)
+                                        onDismiss()
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
+                                        Text("$supplierNumber->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
+                                    } else {
+                                        Text("$supplierNumber->.")
+                                    }
+                                }
+                                IconButton(
+                                    onClick = {
+                                        selectedSupplier = supplier
+                                        showBonUpdateDialog = true
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Update Bon Number")
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+
+        SupplierBonUpdateDialog(
+            showDialog = showBonUpdateDialog,
+            onDismiss = { showBonUpdateDialog = false },
+            onBonNumberSelected = { newBonNumber ->
+                selectedSupplier?.let { supplier ->
+                    updateSupplierBon(suppliersRef, supplier.idSupplierSu, newBonNumber.toString())
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun SupplierBonUpdateDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onBonNumberSelected: (Int) -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Update Supplier Bon Number") },
+            text = {
+                LazyColumn {
+                    items(15) { i ->
                         TextButton(
                             onClick = {
-                                onSupplierSelected(i)
+                                onBonNumberSelected(i + 1)
                                 onDismiss()
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
-                                Text("$i->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
-                            } else {
-                                Text("$i->.")
-                            }
+                            Text("${i + 1}")
                         }
                     }
                 }
@@ -492,10 +570,17 @@ fun SupplierSelectionDialog(
     }
 }
 
-
+fun updateSupplierBon(suppliersRef: DatabaseReference, supplierId: Long, bonNumber: String) {
+    suppliersRef.child(supplierId.toString()).child("bonDuSupplierSu").setValue(bonNumber)
+}
+data class ImageZoomState(
+    var scale: Float = 1f,
+    var offsetX: Float = 0f,
+    var offsetY: Float = 0f
+)
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 @Composable
- fun SingleColorImage(
+fun SingleColorImage(
     article: ArticlesAcheteModele,
     allArticles: List<ArticlesAcheteModele>
 ) {
@@ -548,12 +633,6 @@ fun Double.format(digits: Int) = "%.${digits}f".format(this)
         }
     }
 }
-data class ImageZoomState(
-    var scale: Float = 1f,
-    var offsetX: Float = 0f,
-    var offsetY: Float = 0f
-)
-
 @Composable
 fun ZoomableImage(
     imagePath: String,

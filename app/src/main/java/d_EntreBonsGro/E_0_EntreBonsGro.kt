@@ -314,7 +314,8 @@ fun FragmentEntreBonsGro() {
                             coroutineScope = coroutineScope,
                             onDeleteFromFirestore = {},
                             suppliersList = suppliersList,
-                            onSupplierChanged = ::handleSupplierChange // Add this line
+                            onSupplierChanged = ::handleSupplierChange ,
+                            suppliersRef=suppliersRef
                         )
                     }
                 }
@@ -332,7 +333,8 @@ fun FragmentEntreBonsGro() {
                         coroutineScope = coroutineScope,
                         onDeleteFromFirestore = {},
                         suppliersList = suppliersList,
-                        onSupplierChanged = ::handleSupplierChange // Add this line
+                        onSupplierChanged = ::handleSupplierChange ,
+                        suppliersRef=suppliersRef
                     )
                 }
             }
@@ -399,7 +401,9 @@ fun FragmentEntreBonsGro() {
             editionPassedMode = false
             modeFilterChangesDB = false
         },
-        suppliersList = suppliersList
+        suppliersList = suppliersList,
+        suppliersRef=suppliersRef
+
     )
 }
 @Composable
@@ -611,7 +615,12 @@ fun DeleteConfirmationDialog(
             title = { Text("Confirm Deletion") },
             text = { Text("Are you sure you want to delete all data?") },
             confirmButton = {
-
+                TextButton(onClick = {
+                    onConfirm()
+                    onDismiss()
+                }) {
+                    Text("Delete")
+                }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
