@@ -500,7 +500,6 @@ fun ActionsDialog(
 suspend fun trensfertBonSuppAuDataBaseArticles() {
     withContext(Dispatchers.IO) {
         try {
-
             val firebase = Firebase.database
             val articlesEntreBonsGrosTabeleRef = firebase.getReference("ArticlesBonsGrosTabele")
             val snapshotEntreBonsGrosTabele = articlesEntreBonsGrosTabeleRef.get().await()
@@ -510,17 +509,21 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
             val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
 
             articlesEntreBonsGrosTabele.forEach { article ->
-                refArticlesAcheteModele.child(article.idArticleBG.toString()).child("prixAchat")
-                    .setValue(article.newPrixAchatBG)
-            }
-            articlesEntreBonsGrosTabele.forEach { article ->
+                // Update all matching entries in ArticlesAcheteModeleAdapted
+                refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().addOnSuccessListener { snapshot ->
+                    snapshot.children.forEach { childSnapshot ->
+                        childSnapshot.ref.child("prixAchat").setValue(article.newPrixAchatBG)
+                    }
+                }
+
+                // Update e_DBJetPackExport
                 dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
                     .setValue(article.newPrixAchatBG)
             }
 
-            println("Successfully updated e_DBJetPackExport")
+            println("Successfully updated e_DBJetPackExport and all matching entries in ArticlesAcheteModeleAdapted")
         } catch (e: Exception) {
-            println("Error updating e_DBJetPackExport: ${e.message}")
+            println("Error updating databases: ${e.message}")
         }
     }
 }
