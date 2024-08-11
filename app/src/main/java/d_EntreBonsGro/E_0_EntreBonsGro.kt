@@ -30,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -62,6 +63,8 @@ import coil.request.ImageRequest
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
@@ -96,6 +99,10 @@ fun FragmentEntreBonsGro() {
     var modeFilterChangesDB by remember { mutableStateOf(false) }
     var showFullImage by rememberSaveable { mutableStateOf(true) }
     var showSplitView by rememberSaveable { mutableStateOf(false) }
+    var showMissingArticles by remember { mutableStateOf(false) }
+    var totalMissingArticles by remember { mutableStateOf(0) }
+
+    var addedArticlesCount by remember { mutableStateOf(0) }
 
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
@@ -286,7 +293,7 @@ fun FragmentEntreBonsGro() {
                 articlesBaseDonne = articlesBaseDonne,
                 editionPassedMode = editionPassedMode,
                 modifier = Modifier.fillMaxWidth(),
-                coroutineScope=coroutineScope
+                coroutineScope = coroutineScope
             )
             when {
                 showFullImage -> {
@@ -355,13 +362,29 @@ fun FragmentEntreBonsGro() {
             founisseurNowIs = null
             showFullImage = false
         },
+        showMissingArticles = showMissingArticles,
         onExportToFirestore = {
             coroutineScope.launch {
                 exportToFirestore()
                 trensfertBonSuppAuDataBaseArticles()
             }
+        },
+        addedArticlesCount = addedArticlesCount,
+        totalMissingArticles = totalMissingArticles,
+        onShowMissingArticlesChange = { newValue ->
+            showMissingArticles = newValue
+            if (newValue) {
+                findAndAddMissingArticles(articlesRef, articlesAcheteModeleRef, coroutineScope) { count, total ->
+                    addedArticlesCount = count
+                    totalMissingArticles = total
+                }
+            }
+        },
+        onDeleteReferencesWithSupplierId100 = {
+            deleteReferencesWithSupplierId100(articlesRef, coroutineScope)
         }
     )
+
     DeleteConfirmationDialog(
         showDialog = showDeleteConfirmDialog,
         onDismiss = { showDeleteConfirmDialog = false },
@@ -385,44 +408,6 @@ fun FragmentEntreBonsGro() {
     )
 }
 @Composable
-fun SupplierSelectionDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onSupplierSelected: (Int) -> Unit,
-    suppliersList: List<SupplierTabelle>
-) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Select Supplier") },
-            text = {
-                Column {
-                    (1..15).forEach { i ->
-                        val supplier = suppliersList.find { it.bonDuSupplierSu == i.toString() }
-                        TextButton(
-                            onClick = {
-                                onSupplierSelected(i)
-                                onDismiss()
-                            }
-                        ) {
-                            if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
-                                Text("$i->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
-                            } else {
-                                Text("$i->.")
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-@Composable
 fun ActionsDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
@@ -431,7 +416,12 @@ fun ActionsDialog(
     onEditionPassedModeChange: (Boolean) -> Unit,
     modeFilterChangesDB: Boolean,
     onModeFilterChangesDBChange: (Boolean) -> Unit,
-    onExportToFirestore: () -> Unit
+    onExportToFirestore: () -> Unit,
+    showMissingArticles: Boolean,
+    onShowMissingArticlesChange: (Boolean) -> Unit,
+    addedArticlesCount: Int,
+    totalMissingArticles: Int,
+    onDeleteReferencesWithSupplierId100: () -> Unit // New parameter
 ) {
     if (showDialog) {
         AlertDialog(
@@ -475,6 +465,40 @@ fun ActionsDialog(
                             }
                         )
                     }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Show Missing Articles")
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = showMissingArticles,
+                            onCheckedChange = {
+                                onShowMissingArticlesChange(it)
+                            }
+                        )
+                    }
+                    if (showMissingArticles && totalMissingArticles > 0) {
+                        Column {
+                            Text("Adding missing articles: $addedArticlesCount / $totalMissingArticles")
+                            LinearProgressIndicator(
+                                progress = { addedArticlesCount.toFloat() / totalMissingArticles.toFloat() },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            )
+                        }
+                    } else if (addedArticlesCount > 0) {
+                        Text("Added $addedArticlesCount missing articles", color = Color.Green)
+                    }
+                    TextButton(
+                        onClick = {
+                            onDeleteReferencesWithSupplierId100()
+                            onDismiss()
+                        }
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete references with supplierIdBG = 100")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Delete references with supplierIdBG = 100")
+                    }
                     TextButton(
                         onClick = {
                             onExportToFirestore()
@@ -495,6 +519,146 @@ fun ActionsDialog(
         )
     }
 }
+fun deleteReferencesWithSupplierId100(articlesRef: DatabaseReference, coroutineScope: CoroutineScope) {
+    coroutineScope.launch(Dispatchers.IO) {
+        try {
+            val snapshot = articlesRef.orderByChild("supplierIdBG").equalTo(100.0).get().await()
+            snapshot.children.forEach { childSnapshot ->
+                childSnapshot.ref.removeValue().await()
+            }
+            println("Successfully deleted all references with supplierIdBG = 100")
+        } catch (e: Exception) {
+            println("Error deleting references: ${e.message}")
+        }
+    }
+}
+fun findAndAddMissingArticles(
+    articlesRef: DatabaseReference,
+    articlesAcheteModeleRef: DatabaseReference,
+    coroutineScope: CoroutineScope,
+    onProgress: (Int, Int) -> Unit
+) {
+    coroutineScope.launch(Dispatchers.IO) {
+        try {
+            // Fetch existing articles
+            val entreBonsGrosSnapshot = articlesRef.get().await()
+            val acheteModeleSnapshot = articlesAcheteModeleRef.get().await()
+
+            // Extract IDs
+            val entreBonsGrosIds = entreBonsGrosSnapshot.children
+                .mapNotNull { it.getValue(EntreBonsGrosTabele::class.java)?.idArticleBG }
+                .toSet()
+            val acheteModeleIds = acheteModeleSnapshot.children
+                .mapNotNull { it.getValue(ArticlesAcheteModele::class.java)?.idArticle?.toLong() }
+                .toSet()
+
+            // Find missing IDs
+            val missingIds = acheteModeleIds - entreBonsGrosIds
+            val totalMissing = missingIds.size
+
+            var addedCount = 0
+
+            // Get the current maximum VID
+            var maxVid = entreBonsGrosSnapshot.children
+                .mapNotNull { it.getValue(EntreBonsGrosTabele::class.java)?.vidBG }
+                .maxOrNull() ?: 0
+
+            missingIds.forEach { id ->
+                val acheteModeleArticle = acheteModeleSnapshot.children
+                    .find { it.getValue(ArticlesAcheteModele::class.java)?.idArticle?.toLong() == id }
+                    ?.getValue(ArticlesAcheteModele::class.java)
+
+                acheteModeleArticle?.let { article ->
+                    // Increment maxVid for each new article
+                    maxVid++
+
+                    val newArticle = EntreBonsGrosTabele(
+                        vidBG = maxVid,
+                        idArticleBG = id,
+                        nomArticleBG = article.nomArticleFinale,
+                        ancienPrixBG = article.prixAchat,
+                        newPrixAchatBG = article.prixAchat,
+                        quantityAcheteBG = 0,
+                        quantityUniterBG = 1,
+                        subTotaleBG = 0.0,
+                        grossisstBonN = 0,
+                        supplierIdBG = 100,
+                        supplierNameBG = "MissingArticles",
+                        dateCreationBG = LocalDate.now().toString()
+                    )
+
+                    // Use a transaction to ensure atomic write
+                    articlesRef.child(maxVid.toString()).runTransaction(object : Transaction.Handler {
+                        override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                            if (mutableData.getValue(EntreBonsGrosTabele::class.java) == null) {
+                                mutableData.value = newArticle
+                                return Transaction.success(mutableData)
+                            }
+                            return Transaction.abort()
+                        }
+
+                        override fun onComplete(
+                            error: DatabaseError?,
+                            committed: Boolean,
+                            currentData: DataSnapshot?
+                        ) {
+                            if (committed) {
+                                addedCount++
+                                onProgress(addedCount, totalMissing)
+                            } else {
+                                println("Failed to add article with ID $id: ${error?.message}")
+                            }
+                        }
+                    })
+                }
+            }
+
+            println("Successfully added $addedCount missing articles")
+        } catch (e: Exception) {
+            println("Error finding and adding missing articles: ${e.message}")
+            onProgress(0, 0)
+        }
+    }
+}
+@Composable
+fun SupplierSelectionDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onSupplierSelected: (Int) -> Unit,
+    suppliersList: List<SupplierTabelle>
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Select Supplier") },
+            text = {
+                Column {
+                    (1..15).forEach { i ->
+                        val supplier = suppliersList.find { it.bonDuSupplierSu == i.toString() }
+                        TextButton(
+                            onClick = {
+                                onSupplierSelected(i)
+                                onDismiss()
+                            }
+                        ) {
+                            if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
+                                Text("$i->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
+                            } else {
+                                Text("$i->.")
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
 
 
 suspend fun trensfertBonSuppAuDataBaseArticles() {
