@@ -73,6 +73,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -493,6 +495,8 @@ fun ActionsDialog(
     }
 }
 
+
+
 suspend fun exportToFirestore() {
     withContext(Dispatchers.IO) {
         try {
@@ -531,7 +535,10 @@ suspend fun exportToFirestore() {
                 )
 
                 // Add to F_SupplierArticlesFireS collection
-                val docRef = supplierArticlesRef.document("${article.supplierIdBG}-${article.supplierNameBG}").collection("articles").document(article.idArticleBG.toString())
+                val docRef = supplierArticlesRef
+                    .document(article.supplierIdBG.toString())
+                    .collection("historiquesAchats")
+                    .document(article.idArticleBG.toString())  // This creates a new document with an auto-generated ID
                 batch.set(docRef, lineData)
             }
 
@@ -542,6 +549,91 @@ suspend fun exportToFirestore() {
         } catch (e: Exception) {
             println("Error exporting to Firestore: ${e.message}")
         }
+    }
+}
+
+fun updateArticleIdFromSuggestion(
+    suggestion: String,
+    vidOfLastQuantityInputted: Long?,
+    articlesRef: DatabaseReference,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
+    onNameInputComplete: () -> Unit,
+    editionPassedMode: Boolean,
+    articlesList: List<EntreBonsGrosTabele>,
+    coroutineScope: CoroutineScope
+) {
+    val effectiveVid = if (editionPassedMode) {
+        articlesList.firstOrNull { it.passeToEndStateBG }?.vidBG ?: vidOfLastQuantityInputted
+    } else {
+        vidOfLastQuantityInputted
+    }
+
+    if (suggestion == "passe" && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        articleToUpdate.child("passeToEndStateBG").setValue(true)
+        articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
+        onNameInputComplete()
+        return
+    }
+    if (suggestion == "supp" && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        articleToUpdate.child("nomArticleBG").setValue("New Article")
+        onNameInputComplete()
+        return
+    }
+
+    val idArticleRegex = """\((\d+)\)$""".toRegex()
+    val matchResult = idArticleRegex.find(suggestion)
+
+    val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
+
+    if (idArticle != null && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        val currentArticle = articlesList.find { it.vidBG == effectiveVid }
+
+        articleToUpdate.child("idArticleBG").setValue(idArticle)
+
+        val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
+        correspondingArticle?.let { article ->
+            articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
+        }
+        val lastDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+
+        val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
+        correspondingBaseDonne?.let { baseDonne ->
+            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
+            articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
+            articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
+            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
+        }
+
+        coroutineScope.launch {
+            var fireStorEntreBonsGrosTabele: EntreBonsGrosTabele? = null
+
+            try {
+                val firestore = Firebase.firestore
+                val documentSnapshot = firestore
+                    .collection("F_SupplierArticlesFireS")
+                    .document(currentArticle?.supplierIdBG.toString())
+                    .collection("historiquesAchats")
+                    .document(idArticle.toString())
+                    .get()
+                    .await()
+
+                if (documentSnapshot.exists()) {
+                    fireStorEntreBonsGrosTabele = documentSnapshot.toObject(EntreBonsGrosTabele::class.java)
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error getting document: ", e)
+            }
+
+            val uniterCLePlusUtiliseFireStore = fireStorEntreBonsGrosTabele?.uniterCLePlusUtilise ?: false
+
+            articleToUpdate.child("uniterCLePlusUtilise").setValue(uniterCLePlusUtiliseFireStore)
+            println("DEBUG: Updated uniterCLePlusUtilise to $uniterCLePlusUtiliseFireStore and lastDateCreationBG to $lastDate")
+        }
+        onNameInputComplete()
     }
 }
 @Composable
@@ -745,89 +837,7 @@ fun processInputAndInsertData(
     return null
 }
 
-fun updateArticleIdFromSuggestion(
-    suggestion: String,
-    vidOfLastQuantityInputted: Long?,
-    articlesRef: DatabaseReference,
-    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    articlesBaseDonne: List<BaseDonne>,
-    onNameInputComplete: () -> Unit,
-    editionPassedMode: Boolean,
-    articlesList: List<EntreBonsGrosTabele>,
-    coroutineScope: CoroutineScope
-) {
-    val effectiveVid = if (editionPassedMode) {
-        articlesList.firstOrNull { it.passeToEndStateBG }?.vidBG ?: vidOfLastQuantityInputted
-    } else {
-        vidOfLastQuantityInputted
-    }
 
-    if (suggestion == "passe" && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        articleToUpdate.child("passeToEndStateBG").setValue(true)
-        articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
-        onNameInputComplete()
-        return
-    }
-    if (suggestion == "supp" && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        articleToUpdate.child("nomArticleBG").setValue("New Article")
-        onNameInputComplete()
-        return
-    }
-
-    val idArticleRegex = """\((\d+)\)$""".toRegex()
-    val matchResult = idArticleRegex.find(suggestion)
-
-    val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
-
-    if (idArticle != null && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        val currentArticle = articlesList.find { it.vidBG == effectiveVid }
-
-        articleToUpdate.child("idArticleBG").setValue(idArticle)
-
-        val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
-        correspondingArticle?.let { article ->
-            articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
-        }
-        val lastDate = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
-
-        val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
-        correspondingBaseDonne?.let { baseDonne ->
-            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
-            articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
-            articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
-            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
-        }
-
-        coroutineScope.launch {
-            var fireStorEntreBonsGrosTabele: EntreBonsGrosTabele? = null
-
-            try {
-                val firestore = Firebase.firestore
-                val documentSnapshot = firestore
-                    .collection("B_SupplierHistoriqueBons")
-                    .document("${currentArticle?.supplierIdBG}-${currentArticle?.supplierNameBG}")
-                    .collection("articles")
-                    .document(idArticle.toString())
-                    .get()
-                    .await()
-
-                fireStorEntreBonsGrosTabele = documentSnapshot.toObject(EntreBonsGrosTabele::class.java)
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error getting document: ", e)
-            }
-
-            val uniterCLePlusUtiliseFireStore = fireStorEntreBonsGrosTabele?.uniterCLePlusUtilise ?: false
-
-            articleToUpdate.child("uniterCLePlusUtilise").setValue(uniterCLePlusUtiliseFireStore)
-            println("DEBUG: Updated uniterCLePlusUtilise to $uniterCLePlusUtiliseFireStore and lastDateCreationBG to $lastDate")
-        }
-
-        onNameInputComplete()
-    }
-}
 fun Double.roundToTwoDecimals() = (this * 100).roundToInt() / 100.0
 
 
