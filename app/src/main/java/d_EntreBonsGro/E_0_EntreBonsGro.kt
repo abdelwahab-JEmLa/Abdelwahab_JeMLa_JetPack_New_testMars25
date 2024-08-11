@@ -167,7 +167,16 @@ fun FragmentEntreBonsGro() {
             }
         })
     }
-
+    fun handleSupplierChange(vidBG: Long, newSupplierId: Int) {
+        val updatedList = articlesEntreBonsGrosTabele.map { article ->
+            if (article.vidBG == vidBG) {
+                article.copy(grossisstBonN = newSupplierId)
+            } else {
+                article
+            }
+        }
+        articlesEntreBonsGrosTabele = updatedList
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -303,8 +312,9 @@ fun FragmentEntreBonsGro() {
                             articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                             modifier = Modifier.weight(1f),
                             coroutineScope = coroutineScope,
-                            onDeleteFromFirestore = { },
-                            suppliersList= suppliersList
+                            onDeleteFromFirestore = {},
+                            suppliersList = suppliersList,
+                            onSupplierChanged = ::handleSupplierChange // Add this line
                         )
                     }
                 }
@@ -321,8 +331,8 @@ fun FragmentEntreBonsGro() {
                         modifier = Modifier.weight(1f),
                         coroutineScope = coroutineScope,
                         onDeleteFromFirestore = {},
-                        suppliersList= suppliersList
-
+                        suppliersList = suppliersList,
+                        onSupplierChanged = ::handleSupplierChange // Add this line
                     )
                 }
             }

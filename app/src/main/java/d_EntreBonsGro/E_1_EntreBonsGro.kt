@@ -171,9 +171,9 @@ fun AfficheEntreBonsGro(
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope,
-    onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit ,
-    suppliersList: List<SupplierTabelle> // Add this parameter
-
+    onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit,
+    suppliersList: List<SupplierTabelle>,
+    onSupplierChanged: (Long, Int) -> Unit // Add this parameter
 ) {
     LazyColumn(modifier = modifier) {
         items(articlesEntreBonsGro) { article ->
@@ -182,9 +182,10 @@ fun AfficheEntreBonsGro(
                 onDelete = onDeleteArticle,
                 articlesRef = articlesRef,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                coroutineScope = coroutineScope ,
-                onDeleteFromFirestore =onDeleteFromFirestore,
-                suppliersList=suppliersList,
+                coroutineScope = coroutineScope,
+                onDeleteFromFirestore = onDeleteFromFirestore,
+                suppliersList = suppliersList,
+                onSupplierChanged = onSupplierChanged // Pass this parameter
             )
         }
     }
@@ -198,6 +199,7 @@ fun ArticleItem(
     coroutineScope: CoroutineScope,
     onDeleteFromFirestore: (EntreBonsGrosTabele) -> Unit,
     suppliersList: List<SupplierTabelle>,
+    onSupplierChanged: (Long, Int) -> Unit // Add this parameter
 ) {
     var lastLaunchTime by remember { mutableStateOf(0L) }
     var showSupplierDialog by remember { mutableStateOf(false) }
@@ -441,8 +443,11 @@ fun ArticleItem(
                     articlesRef.child(article.vidBG.toString()).apply {
                         child("supplierNameBG").setValue(selectedSupplier.nomSupplierSu)
                         child("supplierIdBG").setValue(selectedSupplier.idSupplierSu)
+                        child("grossisstBonN").setValue(selectedSupplierBon) // Add this line
                     }
                 }
+                // Call the onSupplierChanged callback
+                onSupplierChanged(article.vidBG, selectedSupplierBon)
             }
         },
         suppliersList = suppliersList
