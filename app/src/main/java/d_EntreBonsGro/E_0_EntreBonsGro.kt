@@ -358,6 +358,7 @@ fun FragmentEntreBonsGro() {
         onExportToFirestore = {
             coroutineScope.launch {
                 exportToFirestore()
+                trensfertBonSuppAuDataBaseArticles()
             }
         }
     )
@@ -496,7 +497,33 @@ fun ActionsDialog(
 }
 
 
+suspend fun trensfertBonSuppAuDataBaseArticles() {
+    withContext(Dispatchers.IO) {
+        try {
 
+            val firebase = Firebase.database
+            val articlesEntreBonsGrosTabeleRef = firebase.getReference("ArticlesBonsGrosTabele")
+            val snapshotEntreBonsGrosTabele = articlesEntreBonsGrosTabeleRef.get().await()
+            val articlesEntreBonsGrosTabele = snapshotEntreBonsGrosTabele.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+
+            val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
+            val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
+
+            articlesEntreBonsGrosTabele.forEach { article ->
+                refArticlesAcheteModele.child(article.idArticleBG.toString()).child("prixAchat")
+                    .setValue(article.newPrixAchatBG)
+            }
+            articlesEntreBonsGrosTabele.forEach { article ->
+                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
+                    .setValue(article.newPrixAchatBG)
+            }
+
+            println("Successfully updated e_DBJetPackExport")
+        } catch (e: Exception) {
+            println("Error updating e_DBJetPackExport: ${e.message}")
+        }
+    }
+}
 suspend fun exportToFirestore() {
     withContext(Dispatchers.IO) {
         try {
