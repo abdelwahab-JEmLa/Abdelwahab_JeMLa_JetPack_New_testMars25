@@ -431,8 +431,6 @@ fun ActionsDialog(
     onExportToFirestore: () -> Unit
 ) {
     if (showDialog) {
-        var showExportDialog by remember { mutableStateOf(false) }
-
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Actions") },
@@ -475,9 +473,12 @@ fun ActionsDialog(
                         )
                     }
                     TextButton(
-                        onClick = onExportToFirestore
+                        onClick = {
+                            onExportToFirestore()
+                            onDismiss()
+                        }
                     ) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Export to Firestore")//TODO change l icon au uplode et fait ferme le dialoge au click
+                        Icon(Icons.Default.MoreVert, contentDescription = "Export to Firestore")
                         Spacer(Modifier.width(8.dp))
                         Text("Export to Firestore")
                     }
@@ -489,7 +490,6 @@ fun ActionsDialog(
                 }
             }
         )
-
     }
 }
 
@@ -745,7 +745,6 @@ fun processInputAndInsertData(
     return null
 }
 
-
 fun updateArticleIdFromSuggestion(
     suggestion: String,
     vidOfLastQuantityInputted: Long?,
@@ -784,6 +783,7 @@ fun updateArticleIdFromSuggestion(
 
     if (idArticle != null && effectiveVid != null) {
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        val currentArticle = articlesList.find { it.vidBG == effectiveVid }
 
         articleToUpdate.child("idArticleBG").setValue(idArticle)
 
@@ -791,41 +791,37 @@ fun updateArticleIdFromSuggestion(
         correspondingArticle?.let { article ->
             articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
         }
+        val lastDate = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
 
         val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
         correspondingBaseDonne?.let { baseDonne ->
             articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
             articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
             articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
+            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
         }
 
-        // Update uniterCLePlusUtilise from Firestore
         coroutineScope.launch {
-            var fireStorEntreBonsGrosTabele: List<EntreBonsGrosTabele> = emptyList()
+            var fireStorEntreBonsGrosTabele: EntreBonsGrosTabele? = null
 
             try {
                 val firestore = Firebase.firestore
-                val querySnapshot = firestore.collection("B_SupplierHistoriqueBons").get().await()
-                fireStorEntreBonsGrosTabele = querySnapshot.documents.mapNotNull { document ->
-                    document.toObject(EntreBonsGrosTabele::class.java)
-                }
+                val documentSnapshot = firestore
+                    .collection("B_SupplierHistoriqueBons")
+                    .document("${currentArticle?.supplierIdBG}-${currentArticle?.supplierNameBG}")
+                    .collection("articles")
+                    .document(idArticle.toString())
+                    .get()
+                    .await()
+
+                fireStorEntreBonsGrosTabele = documentSnapshot.toObject(EntreBonsGrosTabele::class.java)
             } catch (e: Exception) {
-                Log.e("Firestore", "Error getting documents: ", e)
+                Log.e("Firestore", "Error getting document: ", e)
             }
 
-            val currentArticle = articlesList.find { it.vidBG == effectiveVid }
-
-            val matchingHistorique = fireStorEntreBonsGrosTabele
-                .filter { it.idArticleBG == idArticle && it.supplierIdBG == currentArticle?.supplierIdBG }
-                .maxByOrNull { it.dateCreationBG }
-
-            val uniterCLePlusUtiliseFireStore = matchingHistorique?.uniterCLePlusUtilise ?: false
-
-            // Updated to use current date and time
-            val lastDate = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+            val uniterCLePlusUtiliseFireStore = fireStorEntreBonsGrosTabele?.uniterCLePlusUtilise ?: false
 
             articleToUpdate.child("uniterCLePlusUtilise").setValue(uniterCLePlusUtiliseFireStore)
-            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
             println("DEBUG: Updated uniterCLePlusUtilise to $uniterCLePlusUtiliseFireStore and lastDateCreationBG to $lastDate")
         }
 
