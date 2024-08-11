@@ -317,3 +317,13 @@ class CreditsViewModel : ViewModel() {
     }
 
 }
+
+data class SupplierTabelle(
+    val vidSu: Long = 0,
+    var idSupplierSu: Long = 0,
+    var nomSupplierSu: String = "",
+    var bonDuSupplierSu: String = "",
+    val couleurSu: String = "#FFFFFF" // Default color
+) {
+    constructor() : this(0)
+}

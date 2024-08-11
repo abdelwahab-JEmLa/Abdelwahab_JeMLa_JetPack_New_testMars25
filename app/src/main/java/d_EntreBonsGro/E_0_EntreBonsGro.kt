@@ -3,14 +3,10 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,7 +21,6 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -44,37 +39,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
-import coil.compose.AsyncImagePainter
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.MutableData
-import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -308,7 +290,7 @@ fun FragmentEntreBonsGro() {
                         ZoomableImage(
                             imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
                             supplierId = founisseurNowIs,
-                            modifier = Modifier.weight(0.4f)
+                            modifier = Modifier.weight(0.35f)
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
@@ -321,7 +303,8 @@ fun FragmentEntreBonsGro() {
                             articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                             modifier = Modifier.weight(1f),
                             coroutineScope = coroutineScope,
-                            onDeleteFromFirestore = { }
+                            onDeleteFromFirestore = { },
+                            suppliersList= suppliersList
                         )
                     }
                 }
@@ -337,7 +320,9 @@ fun FragmentEntreBonsGro() {
                         articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                         modifier = Modifier.weight(1f),
                         coroutineScope = coroutineScope,
-                        onDeleteFromFirestore = {}
+                        onDeleteFromFirestore = {},
+                        suppliersList= suppliersList
+
                     )
                 }
             }
@@ -519,232 +504,6 @@ fun ActionsDialog(
         )
     }
 }
-fun deleteReferencesWithSupplierId100(articlesRef: DatabaseReference, coroutineScope: CoroutineScope) {
-    coroutineScope.launch(Dispatchers.IO) {
-        try {
-            val snapshot = articlesRef.orderByChild("supplierIdBG").equalTo(100.0).get().await()
-            snapshot.children.forEach { childSnapshot ->
-                childSnapshot.ref.removeValue().await()
-            }
-            println("Successfully deleted all references with supplierIdBG = 100")
-        } catch (e: Exception) {
-            println("Error deleting references: ${e.message}")
-        }
-    }
-}
-fun findAndAddMissingArticles(
-    articlesRef: DatabaseReference,
-    articlesAcheteModeleRef: DatabaseReference,
-    coroutineScope: CoroutineScope,
-    onProgress: (Int, Int) -> Unit
-) {
-    coroutineScope.launch(Dispatchers.IO) {
-        try {
-            // Fetch existing articles
-            val entreBonsGrosSnapshot = articlesRef.get().await()
-            val acheteModeleSnapshot = articlesAcheteModeleRef.get().await()
-
-            // Extract IDs
-            val entreBonsGrosIds = entreBonsGrosSnapshot.children
-                .mapNotNull { it.getValue(EntreBonsGrosTabele::class.java)?.idArticleBG }
-                .toSet()
-            val acheteModeleIds = acheteModeleSnapshot.children
-                .mapNotNull { it.getValue(ArticlesAcheteModele::class.java)?.idArticle?.toLong() }
-                .toSet()
-
-            // Find missing IDs
-            val missingIds = acheteModeleIds - entreBonsGrosIds
-            val totalMissing = missingIds.size
-
-            var addedCount = 0
-
-            // Get the current maximum VID
-            var maxVid = entreBonsGrosSnapshot.children
-                .mapNotNull { it.getValue(EntreBonsGrosTabele::class.java)?.vidBG }
-                .maxOrNull() ?: 0
-
-            missingIds.forEach { id ->
-                val acheteModeleArticle = acheteModeleSnapshot.children
-                    .find { it.getValue(ArticlesAcheteModele::class.java)?.idArticle?.toLong() == id }
-                    ?.getValue(ArticlesAcheteModele::class.java)
-
-                acheteModeleArticle?.let { article ->
-                    // Increment maxVid for each new article
-                    maxVid++
-
-                    val newArticle = EntreBonsGrosTabele(
-                        vidBG = maxVid,
-                        idArticleBG = id,
-                        nomArticleBG = article.nomArticleFinale,
-                        ancienPrixBG = article.prixAchat,
-                        newPrixAchatBG = article.prixAchat,
-                        quantityAcheteBG = 0,
-                        quantityUniterBG = 1,
-                        subTotaleBG = 0.0,
-                        grossisstBonN = 0,
-                        supplierIdBG = 100,
-                        supplierNameBG = "MissingArticles",
-                        dateCreationBG = LocalDate.now().toString()
-                    )
-
-                    // Use a transaction to ensure atomic write
-                    articlesRef.child(maxVid.toString()).runTransaction(object : Transaction.Handler {
-                        override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                            if (mutableData.getValue(EntreBonsGrosTabele::class.java) == null) {
-                                mutableData.value = newArticle
-                                return Transaction.success(mutableData)
-                            }
-                            return Transaction.abort()
-                        }
-
-                        override fun onComplete(
-                            error: DatabaseError?,
-                            committed: Boolean,
-                            currentData: DataSnapshot?
-                        ) {
-                            if (committed) {
-                                addedCount++
-                                onProgress(addedCount, totalMissing)
-                            } else {
-                                println("Failed to add article with ID $id: ${error?.message}")
-                            }
-                        }
-                    })
-                }
-            }
-
-            println("Successfully added $addedCount missing articles")
-        } catch (e: Exception) {
-            println("Error finding and adding missing articles: ${e.message}")
-            onProgress(0, 0)
-        }
-    }
-}
-@Composable
-fun SupplierSelectionDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onSupplierSelected: (Int) -> Unit,
-    suppliersList: List<SupplierTabelle>
-) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Select Supplier") },
-            text = {
-                Column {
-                    (1..15).forEach { i ->
-                        val supplier = suppliersList.find { it.bonDuSupplierSu == i.toString() }
-                        TextButton(
-                            onClick = {
-                                onSupplierSelected(i)
-                                onDismiss()
-                            }
-                        ) {
-                            if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
-                                Text("$i->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
-                            } else {
-                                Text("$i->.")
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-
-
-
-suspend fun trensfertBonSuppAuDataBaseArticles() {
-    withContext(Dispatchers.IO) {
-        try {
-            val firebase = Firebase.database
-            val articlesEntreBonsGrosTabeleRef = firebase.getReference("ArticlesBonsGrosTabele")
-            val snapshotEntreBonsGrosTabele = articlesEntreBonsGrosTabeleRef.get().await()
-            val articlesEntreBonsGrosTabele = snapshotEntreBonsGrosTabele.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
-
-            val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
-            val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
-
-            articlesEntreBonsGrosTabele.forEach { article ->
-                // Update all matching entries in ArticlesAcheteModeleAdapted
-                refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().addOnSuccessListener { snapshot ->
-                    snapshot.children.forEach { childSnapshot ->
-                        childSnapshot.ref.child("prixAchat").setValue(article.newPrixAchatBG)
-                    }
-                }
-
-                // Update e_DBJetPackExport
-                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
-                    .setValue(article.newPrixAchatBG)
-            }
-
-            println("Successfully updated e_DBJetPackExport and all matching entries in ArticlesAcheteModeleAdapted")
-        } catch (e: Exception) {
-            println("Error updating databases: ${e.message}")
-        }
-    }
-}
-suspend fun exportToFirestore() {
-    withContext(Dispatchers.IO) {
-        try {
-            // Fetch current data from Firebase Realtime Database
-            val firebase = Firebase.database
-            val articlesRef = firebase.getReference("ArticlesBonsGrosTabele")
-            val snapshot = articlesRef.get().await()
-
-            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
-
-            // Create a reference to the F_SupplierArticlesFireS collection in Firestore
-            val firestore = FirebaseFirestore.getInstance()
-            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
-
-            // Create a batch to perform multiple write operations
-            val batch = firestore.batch()
-
-            // Process each article
-            supplierArticles.forEach { article ->
-                val lineData = hashMapOf(
-                    "vidBG" to article.vidBG,
-                    "idArticleBG" to article.idArticleBG,
-                    "nomArticleBG" to article.nomArticleBG,
-                    "ancienPrixBG" to article.ancienPrixBG,
-                    "newPrixAchatBG" to article.newPrixAchatBG,
-                    "quantityAcheteBG" to article.quantityAcheteBG,
-                    "quantityUniterBG" to article.quantityUniterBG,
-                    "subTotaleBG" to article.subTotaleBG,
-                    "grossisstBonN" to article.grossisstBonN,
-                    "supplierIdBG" to article.supplierIdBG,
-                    "supplierNameBG" to article.supplierNameBG,
-                    "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
-                    "erreurCommentaireBG" to article.erreurCommentaireBG,
-                    "passeToEndStateBG" to article.passeToEndStateBG,
-                    "dateCreationBG" to article.dateCreationBG
-                )
-
-                // Add to F_SupplierArticlesFireS collection
-                val docRef = supplierArticlesRef
-                    .document(article.supplierIdBG.toString())
-                    .collection("historiquesAchats")
-                    .document(article.idArticleBG.toString())  // This creates a new document with an auto-generated ID
-                batch.set(docRef, lineData)
-            }
-
-            // Commit the batch
-            batch.commit().await()
-            println("Successfully exported to Firestore")
-
-        } catch (e: Exception) {
-            println("Error exporting to Firestore: ${e.message}")
-        }
-    }
-}
 
 fun updateArticleIdFromSuggestion(
     suggestion: String,
@@ -850,100 +609,6 @@ fun DeleteConfirmationDialog(
                 }
             }
         )
-    }
-}
-
-data class SupplierTabelle(
-    val vidSu: Long = 0,
-    var idSupplierSu: Long = 0,
-    var nomSupplierSu: String = "",
-    var bonDuSupplierSu: String = "",
-    val couleurSu: String = "#FFFFFF" // Default color
-) {
-    constructor() : this(0)
-}
-data class ImageZoomState(
-    var scale: Float = 1f,
-    var offsetX: Float = 0f,
-    var offsetY: Float = 0f
-)
-
-@Composable
-fun ZoomableImage(
-    imagePath: String,
-    supplierId: Int?,
-    modifier: Modifier = Modifier
-) {
-    val zoomStateSaver = Saver<ImageZoomState, List<Float>>(
-        save = { listOf(it.scale, it.offsetX, it.offsetY) },
-        restore = { ImageZoomState(it[0], it[1], it[2]) }
-    )
-
-    val zoomState = rememberSaveable(saver = zoomStateSaver) {
-        ImageZoomState()
-    }
-
-    var scale by remember { mutableStateOf(zoomState.scale) }
-    var offsetX by remember { mutableStateOf(zoomState.offsetX) }
-    var offsetY by remember { mutableStateOf(zoomState.offsetY) }
-
-    val context = LocalContext.current
-    val imageUri = remember(imagePath) {
-        try {
-            Uri.parse(imagePath)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(context).data(imageUri).build()
-    )
-
-    Box(modifier = modifier.clipToBounds()) {
-        Image(
-            painter = painter,
-            contentDescription = "Zoomable image for supplier $supplierId",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offsetX,
-                    translationY = offsetY
-                )
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(1f, 3f)
-                        val maxX = (size.width * (scale - 1)) / 2
-                        val minX = -maxX
-                        offsetX = (offsetX + pan.x).coerceIn(minX, maxX)
-                        val maxY = (size.height * (scale - 1)) / 2
-                        val minY = -maxY
-                        offsetY = (offsetY + pan.y).coerceIn(minY, maxY)
-
-                        // Update the saveable state
-                        zoomState.scale = scale
-                        zoomState.offsetX = offsetX
-                        zoomState.offsetY = offsetY
-                    }
-                }
-        )
-
-        when (painter.state) {
-            is AsyncImagePainter.State.Loading -> {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
-            }
-            is AsyncImagePainter.State.Error -> {
-                Text(
-                    text = "Error loading image",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            else -> {} // Do nothing for success state
-        }
     }
 }
 
