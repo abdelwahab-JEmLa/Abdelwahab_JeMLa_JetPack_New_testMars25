@@ -67,7 +67,6 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -353,6 +352,11 @@ fun FragmentEntreBonsGro() {
             editionPassedMode = false
             founisseurNowIs = null
             showFullImage = false
+        },
+        onExportToFirestore = {
+            coroutineScope.launch {
+                exportToFirestore()
+            }
         }
     )
     DeleteConfirmationDialog(
@@ -416,28 +420,6 @@ fun SupplierSelectionDialog(
     }
 }
 @Composable
-fun DeleteConfirmationDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Confirm Deletion") },
-            text = { Text("Are you sure you want to delete all data?") },
-            confirmButton = {
-
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-@Composable
 fun ActionsDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
@@ -445,9 +427,12 @@ fun ActionsDialog(
     editionPassedMode: Boolean,
     onEditionPassedModeChange: (Boolean) -> Unit,
     modeFilterChangesDB: Boolean,
-    onModeFilterChangesDBChange: (Boolean) -> Unit
+    onModeFilterChangesDBChange: (Boolean) -> Unit,
+    onExportToFirestore: () -> Unit
 ) {
     if (showDialog) {
+        var showExportDialog by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Actions") },
@@ -489,6 +474,13 @@ fun ActionsDialog(
                             }
                         )
                     }
+                    TextButton(
+                        onClick = onExportToFirestore
+                    ) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Export to Firestore")//TODO change l icon au uplode et fait ferme le dialoge au click
+                        Spacer(Modifier.width(8.dp))
+                        Text("Export to Firestore")
+                    }
                 }
             },
             confirmButton = {
@@ -497,7 +489,92 @@ fun ActionsDialog(
                 }
             }
         )
+
     }
+}
+
+suspend fun exportToFirestore() {
+    withContext(Dispatchers.IO) {
+        try {
+            // Fetch current data from Firebase Realtime Database
+            val firebase = Firebase.database
+            val articlesRef = firebase.getReference("ArticlesBonsGrosTabele")
+            val snapshot = articlesRef.get().await()
+
+            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+
+            // Create a reference to the F_SupplierArticlesFireS collection in Firestore
+            val firestore = FirebaseFirestore.getInstance()
+            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+
+            // Create a batch to perform multiple write operations
+            val batch = firestore.batch()
+
+            // Process each article
+            supplierArticles.forEach { article ->
+                val lineData = hashMapOf(
+                    "vidBG" to article.vidBG,
+                    "idArticleBG" to article.idArticleBG,
+                    "nomArticleBG" to article.nomArticleBG,
+                    "ancienPrixBG" to article.ancienPrixBG,
+                    "newPrixAchatBG" to article.newPrixAchatBG,
+                    "quantityAcheteBG" to article.quantityAcheteBG,
+                    "quantityUniterBG" to article.quantityUniterBG,
+                    "subTotaleBG" to article.subTotaleBG,
+                    "grossisstBonN" to article.grossisstBonN,
+                    "supplierIdBG" to article.supplierIdBG,
+                    "supplierNameBG" to article.supplierNameBG,
+                    "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
+                    "erreurCommentaireBG" to article.erreurCommentaireBG,
+                    "passeToEndStateBG" to article.passeToEndStateBG,
+                    "dateCreationBG" to article.dateCreationBG
+                )
+
+                // Add to F_SupplierArticlesFireS collection
+                val docRef = supplierArticlesRef.document("${article.supplierIdBG}-${article.supplierNameBG}").collection("articles").document(article.idArticleBG.toString())
+                batch.set(docRef, lineData)
+            }
+
+            // Commit the batch
+            batch.commit().await()
+            println("Successfully exported to Firestore")
+
+        } catch (e: Exception) {
+            println("Error exporting to Firestore: ${e.message}")
+        }
+    }
+}
+@Composable
+fun DeleteConfirmationDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Confirm Deletion") },
+            text = { Text("Are you sure you want to delete all data?") },
+            confirmButton = {
+
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+data class SupplierTabelle(
+    val vidSu: Long = 0,
+    var idSupplierSu: Long = 0,
+    var nomSupplierSu: String = "",
+    var bonDuSupplierSu: String = "",
+    val couleurSu: String = "#FFFFFF" // Default color
+) {
+    constructor() : this(0)
 }
 data class ImageZoomState(
     var scale: Float = 1f,
@@ -757,101 +834,8 @@ fun updateArticleIdFromSuggestion(
 }
 fun Double.roundToTwoDecimals() = (this * 100).roundToInt() / 100.0
 
-private fun exportToFirestore(effectiveVid: Long, articlesList: List<EntreBonsGrosTabele>, coroutineScope: CoroutineScope) {
-    val fireStore = FirebaseFirestore.getInstance()
-    val updatedArticle = articlesList.find { it.vidBG == effectiveVid }
-    updatedArticle?.let { article ->
-        coroutineScope.launch(Dispatchers.IO) {
-            exportToFirestore(
-                fireStore,
-                article.supplierIdBG.toString(),
-                article.dateCreationBG
-            )
-        }
-    }
-}
-suspend fun exportToFirestore(
-    fireStore: FirebaseFirestore,
-    supplierIdBG: String,
-    dateCreation: String,
-) {
-    withContext(Dispatchers.IO) {
-        try {
-            // Fetch current data from Firebase Realtime Database
-            val database = Firebase.database
-            val articlesRef = database.getReference("ArticlesBonsGrosTabele")
-            val snapshot = articlesRef
-                .orderByChild("supplierIdBG")
-                .equalTo(supplierIdBG.toDouble())
-                .get()
-                .await()
 
-            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
-                .filter { it.dateCreationBG == dateCreation }
 
-            // Delete existing documents in Firestore
-            val existingDocs = fireStore.collection("B_SupplierHistoriqueBons")
-                .whereEqualTo("supplierIdBG", supplierIdBG)
-                .whereEqualTo("dateCreation", dateCreation)
-                .get()
-                .await()
-
-            existingDocs.documents.forEach { document ->
-                fireStore.collection("B_SupplierHistoriqueBons").document(document.id).delete().await()
-            }
-
-            // Insert new documents
-            supplierArticles.forEach { article ->
-                val lineData = hashMapOf(
-                    "vidBG" to article.vidBG,
-                    "idArticleBG" to article.idArticleBG,
-                    "nomArticleBG" to article.nomArticleBG,
-                    "ancienPrixBG" to article.ancienPrixBG,
-                    "newPrixAchatBG" to article.newPrixAchatBG,
-                    "quantityAcheteBG" to article.quantityAcheteBG,
-                    "quantityUniterBG" to article.quantityUniterBG,
-                    "subTotaleBG" to article.subTotaleBG,
-                    "grossisstBonN" to article.grossisstBonN,
-                    "supplierIdBG" to article.supplierIdBG,
-                    "supplierNameBG" to article.supplierNameBG,
-                    "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
-                    "erreurCommentaireBG" to article.erreurCommentaireBG,
-                    "passeToEndStateBG" to article.passeToEndStateBG,
-                    "dateCreationBG" to article.dateCreationBG
-                )
-                try {
-                    fireStore.collection("B_SupplierHistoriqueBons").add(lineData).await()
-                    println("Article successfully added to Firestore: ${article.nomArticleBG}")
-                } catch (e: Exception) {
-                    println("Failed to add article to Firestore: ${article.nomArticleBG}, Error: ${e.message}")
-                }
-            }
-
-            // Log articles that were in the list but not added to Firestore
-            val addedArticles = fireStore.collection("B_SupplierHistoriqueBons")
-                .whereEqualTo("supplierIdBG", supplierIdBG)
-                .whereEqualTo("dateCreation", dateCreation)
-                .get()
-                .await()
-                .documents
-                .mapNotNull { it.getString("nomArticleBG") }
-                .toSet()
-
-            supplierArticles.forEach { article ->
-                if (article.nomArticleBG !in addedArticles) {
-                    println(
-                        "Article in list but not in Firestore: ${article.nomArticleBG}, " +
-                                "Subtotal: ${article.subTotaleBG}, " +
-                                "VerifieState: ${article.passeToEndStateBG}"
-                    )
-                }
-            }
-
-        } catch (e: Exception) {
-            println("Error exporting to Firestore: ${e.message}")
-        }
-    }
-}
 data class EntreBonsGrosTabele(
     val vidBG: Long = 0,
     var idArticleBG: Long = 0,

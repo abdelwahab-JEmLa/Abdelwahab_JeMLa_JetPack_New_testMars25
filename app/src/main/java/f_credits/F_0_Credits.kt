@@ -48,6 +48,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import d_EntreBonsGro.SupplierTabelle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -315,13 +316,4 @@ class CreditsViewModel : ViewModel() {
         }
     }
 
-}
-data class SupplierTabelle(
-    val vidSu: Long = 0,
-    var idSupplierSu: Long = 0,
-    var nomSupplierSu: String = "",
-    var bonDuSupplierSu: String = "",
-    val couleurSu: String = "#FFFFFF" // Default color
-) {
-    constructor() : this(0)
 }
