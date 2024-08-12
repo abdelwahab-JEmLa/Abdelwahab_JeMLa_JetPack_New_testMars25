@@ -8,18 +8,15 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
@@ -28,11 +25,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -45,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
@@ -56,16 +50,18 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -426,189 +422,7 @@ fun FragmentEntreBonsGro() {
 
     )
 }
-@Composable
-fun SupplierCreditDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    supplierId: Int?,
-    supplierName: String,
-    supplierTotal: Double,
-    coroutineScope: CoroutineScope
-) {
-    var supplierCredit by remember { mutableStateOf("") }
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Manage Supplier Credit: $supplierName") },
-            text = {
-                Column {
-                    Text("Total Amount: ${"%.2f".format(supplierTotal)}")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = supplierCredit,
-                        onValueChange = { supplierCredit = it },
-                        label = { Text("Supplier Credit") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierCredit.toDoubleOrNull() ?: 0.0))}")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    coroutineScope.launch {
-                        supplierId?.let { id ->
-                            updateSupplierCredit(id, supplierTotal, supplierCredit.toDoubleOrNull() ?: 0.0)
-                        }
-                    }
-                    onDismiss()
-                }) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-@Composable
-fun ActionsDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onDeleteAllData: () -> Unit,
-    editionPassedMode: Boolean,
-    onEditionPassedModeChange: (Boolean) -> Unit,
-    modeFilterChangesDB: Boolean,
-    onModeFilterChangesDBChange: (Boolean) -> Unit,
-    onExportToFirestore: () -> Unit,
-    showMissingArticles: Boolean,
-    onShowMissingArticlesChange: (Boolean) -> Unit,
-    addedArticlesCount: Int,
-    totalMissingArticles: Int,
-    onDeleteReferencesWithSupplierId100: () -> Unit // New parameter
-) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Actions") },
-            text = {
-                Column {
-                    TextButton(
-                        onClick = {
-                            onDeleteAllData()
-                            onDismiss()
-                        }
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete all data")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Delete all data")
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Edition Passed Mode")
-                        Spacer(Modifier.width(8.dp))
-                        Switch(
-                            checked = editionPassedMode,
-                            onCheckedChange = {
-                                onEditionPassedModeChange(it)
-                                onDismiss()
-                            }
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Filter Changed Prices")
-                        Spacer(Modifier.width(8.dp))
-                        Switch(
-                            checked = modeFilterChangesDB,
-                            onCheckedChange = {
-                                onModeFilterChangesDBChange(it)
-                                onDismiss()
-                            }
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Show Missing Articles")
-                        Spacer(Modifier.width(8.dp))
-                        Switch(
-                            checked = showMissingArticles,
-                            onCheckedChange = {
-                                onShowMissingArticlesChange(it)
-                            }
-                        )
-                    }
-                    if (showMissingArticles && totalMissingArticles > 0) {
-                        Column {
-                            Text("Adding missing articles: $addedArticlesCount / $totalMissingArticles")
-                            LinearProgressIndicator(
-                                progress = { addedArticlesCount.toFloat() / totalMissingArticles.toFloat() },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            )
-                        }
-                    } else if (addedArticlesCount > 0) {
-                        Text("Added $addedArticlesCount missing articles", color = Color.Green)
-                    }
-                    TextButton(
-                        onClick = {
-                            onDeleteReferencesWithSupplierId100()
-                            onDismiss()
-                        }
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete references with supplierIdBG = 100")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Delete references with supplierIdBG = 100")
-                    }
-                    TextButton(
-                        onClick = {
-                            onExportToFirestore()
-                            onDismiss()
-                        }
-                    ) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Export to Firestore")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Export to Firestore")
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Close")
-                }
-            }
-        )
-    }
-}
-suspend fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierCredit: Double) {
-    val firestore = Firebase.firestore
-    val currentDate = LocalDate.now().toString()
-    val restCredit = supplierTotal - supplierCredit
-
-    val data = hashMapOf(
-        "date" to currentDate,
-        "totalAmount" to supplierTotal,
-        "totalCredit" to supplierCredit,
-        "restCredit" to restCredit
-    )
-
-    try {
-        firestore.collection("F_SupplierArticlesFireS")
-            .document(supplierId.toString())
-            .collection("Totale et Credit Des Bons")
-            .document(currentDate)
-            .set(data)
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating supplier credit: ", e)
-    }
-}
 fun updateArticleIdFromSuggestion(
     suggestion: String,
     vidOfLastQuantityInputted: Long?,
@@ -693,23 +507,123 @@ fun updateArticleIdFromSuggestion(
         onNameInputComplete()
     }
 }
+suspend fun exportToFirestore() {
+    withContext(Dispatchers.IO) {
+        try {
+            // Fetch current data from Firebase Realtime Database
+            val firebase = Firebase.database
+            val articlesRef = firebase.getReference("ArticlesBonsGrosTabele")
+            val snapshot = articlesRef.get().await()
+
+            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+
+            // Create a reference to the F_SupplierArticlesFireS collection in Firestore
+            val firestore = FirebaseFirestore.getInstance()
+            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+
+            // Create a batch to perform multiple write operations
+            val batch = firestore.batch()
+
+            // Group articles by supplier
+            val supplierGroups = supplierArticles.groupBy { it.supplierIdBG }
+
+            // Process each article and calculate totals
+            supplierGroups.forEach { (supplierId, articles) ->
+                var supplierTotal = 0.0
+                val currentDate = LocalDate.now().toString()
+
+                articles.forEach { article ->
+                    val lineData = hashMapOf(
+                        "vidBG" to article.vidBG,
+                        "idArticleBG" to article.idArticleBG,
+                        "nomArticleBG" to article.nomArticleBG,
+                        "ancienPrixBG" to article.ancienPrixBG,
+                        "newPrixAchatBG" to article.newPrixAchatBG,
+                        "quantityAcheteBG" to article.quantityAcheteBG,
+                        "quantityUniterBG" to article.quantityUniterBG,
+                        "subTotaleBG" to article.subTotaleBG,
+                        "grossisstBonN" to article.grossisstBonN,
+                        "supplierIdBG" to article.supplierIdBG,
+                        "supplierNameBG" to article.supplierNameBG,
+                        "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
+                        "erreurCommentaireBG" to article.erreurCommentaireBG,
+                        "passeToEndStateBG" to article.passeToEndStateBG,
+                        "dateCreationBG" to article.dateCreationBG
+                    )
+
+                    // Add to F_SupplierArticlesFireS collection
+                    val docRef = supplierArticlesRef
+                        .document(supplierId.toString())
+                        .collection("historiquesAchats")
+                        .document(article.idArticleBG.toString())
+                    batch.set(docRef, lineData)
+
+                    // Calculate total
+                    supplierTotal += article.subTotaleBG
+                }
+
+                // Export the total for the supplier
+                val totalData = hashMapOf(
+                    "date" to currentDate,
+                    "totalAmount" to supplierTotal
+                )//TODO regle cette parti pour quelle utilise updateSupplierCredit
+                //fait que ici      si  totalCredit dons fire store = 0  "totalCredit" to supplierCredit, =         "totalAmount" to supplierTotal,
+                // et le rest         "restCredit" to restCredit = totalAmount
+                val totalDocRef = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("totaleDesBons")
+                    .document(currentDate)
+                batch.set(totalDocRef, totalData)
+            }
+
+            // Commit the batch
+            batch.commit().await()
+            println("Successfully exported articles and totals to Firestore")
+
+        } catch (e: Exception) {
+            println("Error exporting to Firestore: ${e.message}")
+        }
+    }
+}
 @Composable
-fun DeleteConfirmationDialog(
+fun SupplierCreditDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    supplierId: Int?,
+    supplierName: String,
+    supplierTotal: Double,
+    coroutineScope: CoroutineScope
 ) {
+    var supplierCredit by remember { mutableStateOf("") }
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Confirm Deletion") },
-            text = { Text("Are you sure you want to delete all data?") },
+            title = { Text("Manage Supplier Credit: $supplierName") },
+            text = {
+                Column {
+                    Text("Total Amount: ${"%.2f".format(supplierTotal)}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = supplierCredit,
+                        onValueChange = { supplierCredit = it },
+                        label = { Text("Supplier Credit") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierCredit.toDoubleOrNull() ?: 0.0))}")
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
-                    onConfirm()
+                    coroutineScope.launch {
+                        supplierId?.let { id ->
+                            updateSupplierCredit(id, supplierTotal, supplierCredit.toDoubleOrNull() ?: 0.0)
+                        }
+                    }
                     onDismiss()
                 }) {
-                    Text("Delete")
+                    Text("Save")
                 }
             },
             dismissButton = {
@@ -720,94 +634,6 @@ fun DeleteConfirmationDialog(
         )
     }
 }
-
-fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesRef: DatabaseReference, coroutineScope: CoroutineScope): Boolean {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
-    val matchResult = regex.find(input)
-
-    val (quantity, price) = matchResult?.destructured?.let {
-        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
-    } ?: Pair(null, null)
-
-    if (quantity != null && price != null) {
-        val updatedArticle = article.copy(
-            quantityAcheteBG = quantity,
-            newPrixAchatBG = price,
-            subTotaleBG = price * quantity
-        )
-        articlesRef.child(article.vidBG.toString()).setValue(updatedArticle)
-
-
-
-        return true
-    }
-    return false
-}
-
-
-fun processInputAndInsertData(
-    input: String,
-    articlesList: List<EntreBonsGrosTabele>,
-    articlesRef: DatabaseReference,
-    founisseurNowIs: Int?,
-    articlesBaseDonne: List<BaseDonne>,
-    suppliersList: List<SupplierTabelle>
-): Long? {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
-    val matchResult = regex.find(input)
-
-    val (quantity, price) = matchResult?.destructured?.let {
-        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
-    } ?: Pair(null, null)
-
-    if (quantity != null && price != null) {
-        val newVid = (articlesList.maxOfOrNull { it.vidBG } ?: 0) + 1
-        var quantityUniterBG = 1
-
-        val baseDonneEntry = articlesBaseDonne.find { it.idArticle.toLong() == newVid }
-        if (baseDonneEntry != null) {
-            quantityUniterBG = baseDonneEntry.nmbrUnite.toInt()
-        }
-
-        val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
-        val currentDate = LocalDate.now().toString()
-
-        val newArticle = supplier?.idSupplierSu?.let {
-            EntreBonsGrosTabele(
-                vidBG = newVid,
-                idArticleBG = 0,
-                nomArticleBG = "",
-                ancienPrixBG = 0.0,
-                newPrixAchatBG = price,
-                quantityAcheteBG = quantity,
-                quantityUniterBG = quantityUniterBG,
-                subTotaleBG = price * quantity,
-                grossisstBonN = founisseurNowIs ?: 0,
-                supplierIdBG = it,
-                supplierNameBG = supplier.nomSupplierSu ,
-                uniterCLePlusUtilise = false,
-                erreurCommentaireBG = "",
-                passeToEndStateBG = false,
-                dateCreationBG = currentDate
-            )
-        }
-        articlesRef.child(newVid.toString()).setValue(newArticle)
-            .addOnSuccessListener {
-                println("New article inserted successfully")
-            }
-            .addOnFailureListener { e ->
-                println("Error inserting new article: ${e.message}")
-            }
-
-        return newVid
-    }
-
-    return null
-}
-
-
-fun Double.roundToTwoDecimals() = (this * 100).roundToInt() / 100.0
-
 
 
 data class EntreBonsGrosTabele(

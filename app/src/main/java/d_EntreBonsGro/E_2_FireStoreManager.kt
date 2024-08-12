@@ -1,5 +1,22 @@
 package d_EntreBonsGro
 
+import android.util.Log
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -8,6 +25,7 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -212,10 +230,11 @@ suspend fun exportToFirestore() {
 
                 // Export the total for the supplier
                 val totalData = hashMapOf(
-                    "date" to currentDate,
-                    "totalAmount" to supplierTotal
-                )
-
+                "date" to currentDate,
+                "totalAmount" to supplierTotal
+            )//TODO regle cette parti pour quelle utilise updateSupplierCredit
+                //fait que ici      si  totalCredit dons fire store = 0  "totalCredit" to supplierCredit, =         "totalAmount" to supplierTotal,
+    // et le rest         "restCredit" to restCredit = totalAmount
                 val totalDocRef = supplierArticlesRef
                     .document(supplierId.toString())
                     .collection("totaleDesBons")
@@ -231,4 +250,78 @@ suspend fun exportToFirestore() {
             println("Error exporting to Firestore: ${e.message}")
         }
     }
+}
+@Composable
+fun SupplierCreditDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    supplierId: Int?,
+    supplierName: String,
+    supplierTotal: Double,
+    coroutineScope: CoroutineScope
+) {
+    var supplierCredit by remember { mutableStateOf("") }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Manage Supplier Credit: $supplierName") },
+            text = {
+                Column {
+                    Text("Total Amount: ${"%.2f".format(supplierTotal)}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = supplierCredit,
+                        onValueChange = { supplierCredit = it },
+                        label = { Text("Supplier Credit") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierCredit.toDoubleOrNull() ?: 0.0))}")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        supplierId?.let { id ->
+                            updateSupplierCredit(id, supplierTotal, supplierCredit.toDoubleOrNull() ?: 0.0)
+                        }
+                    }
+                    onDismiss()
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierCredit: Double) {
+    val firestore = Firebase.firestore
+    val currentDate = LocalDate.now().toString()
+    val restCredit = supplierTotal - supplierCredit
+
+    val data = hashMapOf(
+        "date" to currentDate,
+        "totalAmount" to supplierTotal,
+        "totalCredit" to supplierCredit,
+        "restCredit" to restCredit
+    )
+
+    try {
+        firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(currentDate)
+            .set(data)
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating supplier credit: ", e)
+    }
+}
+fun updateSupplierBon(suppliersRef: DatabaseReference, supplierId: Long, bonNumber: String) {
+    suppliersRef.child(supplierId.toString()).child("bonDuSupplierSu").setValue(bonNumber)
 }
