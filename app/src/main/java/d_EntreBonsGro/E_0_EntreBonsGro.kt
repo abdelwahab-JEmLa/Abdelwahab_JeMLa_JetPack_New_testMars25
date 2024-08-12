@@ -604,7 +604,7 @@ suspend fun exportToFirestore() {
                 // Fetch current totalCredit from Firestore
                 val totalCreditDoc = supplierArticlesRef
                     .document(supplierId.toString())
-                    .collection("Totale et Credit Des Bons")
+                    .collection("latest Totale et Credit Des Bons")
                     .document("latest")
                     .get()
                     .await()
@@ -633,7 +633,7 @@ suspend fun exportToFirestore() {
                 // Update the latest document
                 val latestDocRef = supplierArticlesRef
                     .document(supplierId.toString())
-                    .collection("Totale et Credit Des Bons")
+                    .collection("latest Totale et Credit Des Bons")
                     .document("latest")
                 batch.set(latestDocRef, totalData)
             }
@@ -660,7 +660,7 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
     // Fetch current totalCredit from Firestore
     val totalCreditDoc = supplierArticlesRef
         .document(supplierId.toString())
-        .collection("Totale et Credit Des Bons")
+        .collection("latest Totale et Credit Des Bons")
         .document("latest")
         .get()
         .await()
@@ -690,7 +690,7 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
         // Update the latest document
         firestore.collection("F_SupplierArticlesFireS")
             .document(supplierId.toString())
-            .collection("Totale et Credit Des Bons")
+            .collection("latest Totale et Credit Des Bons")
             .document("latest")
             .set(data)
     } catch (e: Exception) {
@@ -727,35 +727,29 @@ fun SupplierCreditDialog(
             try {
                 val latestDoc = firestore.collection("F_SupplierArticlesFireS")
                     .document(supplierId.toString())
-                    .collection("Totale et Credit Des Bons")
+                    .collection("latest Totale et Credit Des Bons")
                     .document("latest")
                     .get()
                     .await()
 
                 currentCredit = latestDoc.getDouble("restCreditDeCetteBon") ?: 0.0
 
-                // Fetch all documents except "latest"
+                // Fetch recent invoices, excluding the "latest" document
                 val invoicesQuery = firestore.collection("F_SupplierArticlesFireS")
                     .document(supplierId.toString())
                     .collection("Totale et Credit Des Bons")
-                    .whereNotEqualTo("__name__", "latest")
-                    .orderBy("__name__", Query.Direction.DESCENDING)
+                    .orderBy("date", Query.Direction.DESCENDING)
+                    .limit(3)
 
                 val invoicesSnapshot = invoicesQuery.get().await()
-                Log.d("Firestore", "Number of documents fetched: ${invoicesSnapshot.documents.size}")
-
                 recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
-                    Log.d("Firestore", "Document ID: ${doc.id}")
-                    Log.d("Firestore", "Document data: ${doc.data}")
                     SupplierInvoice(
                         date = doc.getString("date") ?: "",
                         totalAmount = doc.getDouble("totalAmount") ?: 0.0,
                         totalCredit = doc.getDouble("totalCredit") ?: 0.0,
                         restCreditDeCetteBon = doc.getDouble("restCreditDeCetteBon") ?: 0.0
                     )
-                }.take(3)  // Prend les 3 premiers éléments après le mappage
-
-                Log.d("Firestore", "Number of recent invoices: ${recentInvoices.size}")
+                }
             } catch (e: Exception) {
                 Log.e("Firestore", "Error fetching data: ", e)
                 currentCredit = 0.0
