@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,11 +20,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -44,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
@@ -51,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
@@ -355,7 +360,7 @@ fun FragmentEntreBonsGro() {
     SupplierCreditDialog(
         showDialog = showCreditDialog,
         onDismiss = { showCreditDialog = false },
-        supplierId = founisseurNowIs,
+        supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.idSupplierSu,
         supplierName = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.nomSupplierSu ?: "Unknown Supplier",
         supplierTotal = articlesEntreBonsGrosTabele
             .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
@@ -428,6 +433,114 @@ fun FragmentEntreBonsGro() {
     )
 }
 
+@Composable
+fun SupplierSelectionDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onSupplierSelected: (Int) -> Unit,
+    suppliersList: List<SupplierTabelle>,
+    suppliersRef: DatabaseReference
+) {
+    if (showDialog) {
+        var showBonUpdateDialog by remember { mutableStateOf(false) }
+        var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
+
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Select Supplier") },
+            text = {
+                LazyColumn {
+                    items(16) { i ->
+                        val supplierNumber = if (i == 15) 100 else i + 1
+                        val supplier = suppliersList.find { it.bonDuSupplierSu == supplierNumber.toString() }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        onSupplierSelected(supplierNumber)
+                                        onDismiss()
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
+                                        Text("$supplierNumber->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
+                                    } else {
+                                        Text("$supplierNumber->.")
+                                    }
+                                }
+                                IconButton(
+                                    onClick = {
+                                        selectedSupplier = supplier
+                                        showBonUpdateDialog = true
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Update Bon Number")
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+
+        SupplierBonUpdateDialog(
+            showDialog = showBonUpdateDialog,
+            onDismiss = { showBonUpdateDialog = false },
+            onBonNumberSelected = { newBonNumber ->
+                selectedSupplier?.let { supplier ->
+                    updateSupplierBon(suppliersRef, supplier.idSupplierSu, newBonNumber.toString())
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun SupplierBonUpdateDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onBonNumberSelected: (Int) -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Update Supplier Bon Number") },
+            text = {
+                LazyColumn {
+                    items(15) { i ->
+                        TextButton(
+                            onClick = {
+                                onBonNumberSelected(i + 1)
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("${i + 1}")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
 
 
 
@@ -535,7 +648,7 @@ suspend fun exportToFirestore() {
     }
 }
 
-suspend fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierPayment: Double) {
+suspend fun updateSupplierCredit(supplierId: Long, supplierTotal: Double, supplierPayment: Double) {
     val firestore = Firebase.firestore
     val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
     val currentDateTime = LocalDateTime.now()
@@ -597,7 +710,7 @@ data class SupplierInvoice(
 fun SupplierCreditDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    supplierId: Int?,
+    supplierId: Long?,
     supplierName: String,
     supplierTotal: Double,
     coroutineScope: CoroutineScope
@@ -607,7 +720,7 @@ fun SupplierCreditDialog(
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
 
-    LaunchedEffect(showDialog) {
+    LaunchedEffect(showDialog, supplierId) {
         if (showDialog && supplierId != null) {
             isLoading = true
             val firestore = Firebase.firestore
@@ -640,6 +753,7 @@ fun SupplierCreditDialog(
             } catch (e: Exception) {
                 Log.e("Firestore", "Error fetching data: ", e)
                 currentCredit = 0.0
+                recentInvoices = emptyList()
             }
             isLoading = false
         }
@@ -670,20 +784,24 @@ fun SupplierCreditDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Recent Invoices", style = MaterialTheme.typography.titleMedium)
-                        LazyColumn(
-                            modifier = Modifier.height(200.dp)
-                        ) {
-                            items(recentInvoices) { invoice ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(8.dp)) {
-                                        Text("Date: ${invoice.date}")
-                                        Text("Total: ${"%.2f".format(invoice.totalAmount)}")
-                                        Text("Credit: ${"%.2f".format(invoice.totalCredit)}")
-                                        Text("Remaining: ${"%.2f".format(invoice.restCreditDeCetteBon)}")
+                        if (recentInvoices.isEmpty()) {
+                            Text("No recent invoices found")
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.height(200.dp)
+                            ) {
+                                items(recentInvoices) { invoice ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
+                                            Text("Date: ${invoice.date}")
+                                            Text("Total: ${"%.2f".format(invoice.totalAmount)}")
+                                            Text("Credit: ${"%.2f".format(invoice.totalCredit)}")
+                                            Text("Remaining: ${"%.2f".format(invoice.restCreditDeCetteBon)}")
+                                        }
                                     }
                                 }
                             }
