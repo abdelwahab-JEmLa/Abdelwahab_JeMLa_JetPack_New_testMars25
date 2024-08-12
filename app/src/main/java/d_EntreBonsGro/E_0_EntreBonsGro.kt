@@ -649,9 +649,13 @@ suspend fun exportToFirestore() {
     }
 }
 
-suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplierPayment: Double) {
+suspend fun updateSupplierCredit(
+    supplierId: Int,
+    supplierTotal: Double,
+    supplierPayment: Double,
+    ancienCredit: Double
+) {
     val firestore = Firebase.firestore
-    val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
     val currentDateTime = LocalDateTime.now()
     val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -660,15 +664,6 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
     // Calculate restCreditDeCetteBon, ensuring it's not negative
     val restCreditDeCetteBon = maxOf(supplierTotal - supplierPayment, 0.0)
 
-    // Fetch current totalCredit from Firestore
-    val totalCreditDoc = supplierArticlesRef
-        .document(supplierId.toString())
-        .collection("latest Totale et Credit Des Bons")
-        .document("latest")
-        .get()
-        .await()
-
-    val ancienCredit = totalCreditDoc.getDouble("ancienCredit") ?: 0.0
 
     // Calculate the new total credit
     val newTotalCredit = ancienCredit + supplierTotal - supplierPayment
@@ -793,7 +788,7 @@ fun SupplierCreditDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                        val paymentAmount = if((supplierPayment.toDoubleOrNull() ?: 0.0) == 0.0) ancienCredit else supplierPayment.toDoubleOrNull() ?: 0.0
                         val newCredit = ancienCredit + supplierTotal - paymentAmount
                         Text("New Credit Balance: ${"%.2f".format(newCredit)}")
 
@@ -831,7 +826,7 @@ fun SupplierCreditDialog(
                         coroutineScope.launch {
                             supplierId?.let { id ->
                                 val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
-                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount)
+                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount,ancienCredit)
                             }
                         }
                         onDismiss()
