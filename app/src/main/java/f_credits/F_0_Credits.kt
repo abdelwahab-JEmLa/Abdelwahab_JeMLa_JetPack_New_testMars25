@@ -1,17 +1,23 @@
 package f_credits
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.AlertDialog
@@ -19,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,10 +37,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +50,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,9 +58,16 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import d_EntreBonsGro.updateSupplierCredit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,6 +140,8 @@ fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
 @Composable
 fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
+    var showCreditDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
     val backgroundColor = remember(supplier.couleurSu) {
         try {
             Color(android.graphics.Color.parseColor(supplier.couleurSu))
@@ -170,13 +189,21 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     )
                 }
             }
-            IconButton(onClick = { showDialog = true }) {
-                val icon = if (supplier.bonDuSupplierSu.isNotBlank()) {
-                    Icons.AutoMirrored.Filled.ReceiptLong
-                } else {
-                    Icons.Default.Receipt
+            Row {
+                IconButton(onClick = { showCreditDialog = true }) {
+                    Icon(Icons.Default.CreditCard, contentDescription = "Credit", tint = Color.White)
                 }
-                Icon(icon, contentDescription = "Invoice", tint = Color.White)
+                IconButton(onClick = { showDialog = true }) {
+                    val icon = if (supplier.bonDuSupplierSu.isNotBlank()) {
+                        Icons.AutoMirrored.Filled.ReceiptLong
+                    } else {
+                        Icons.Default.Receipt
+                    }
+                    Icon(icon, contentDescription = "Invoice", tint = Color.White)
+                }
+                IconButton(onClick = { showEditDialog = true }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
+                }
             }
         }
     }
@@ -215,6 +242,209 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
                     Text("Close")
+                }
+            }
+        )
+    }
+
+    if (showCreditDialog) {
+        SupplierCreditDialog(
+            showDialog = true,
+            onDismiss = { showCreditDialog = false },
+            supplierId = supplier.idSupplierSu,
+            supplierName = supplier.nomSupplierSu,
+            supplierTotal = 0.0, // You may want to pass the actual total here
+            coroutineScope = rememberCoroutineScope()
+        )
+    }
+
+    if (showEditDialog) {
+        EditSupplierDialog(
+            supplier = supplier,
+            onDismiss = { showEditDialog = false },
+            onEditSupplier = { editedSupplier ->
+                viewModel.updateSupplier(editedSupplier)
+                showEditDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun EditSupplierDialog(supplier: SupplierTabelle, onDismiss: () -> Unit, onEditSupplier: (SupplierTabelle) -> Unit) {
+    var editedName by remember { mutableStateOf(supplier.nomSupplierSu) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Supplier") },
+        text = {
+            OutlinedTextField(
+                value = editedName,
+                onValueChange = { editedName = it },
+                label = { Text("Supplier Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (editedName.isNotBlank()) {
+                        onEditSupplier(supplier.copy(nomSupplierSu = editedName))
+                    }
+                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
+data class SupplierInvoice(
+    val date: String,
+    val totaleDeCeBon: Double,
+    val payeCetteFoit: Double,
+    val creditFaitDonCeBon: Double,
+    val ancienCredits: Double
+)
+
+@Composable
+fun SupplierCreditDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    supplierId: Long?,
+    supplierName: String,
+    supplierTotal: Double,
+    coroutineScope: CoroutineScope
+) {
+    var supplierPayment by remember { mutableStateOf("") }
+    var ancienCredit by remember { mutableStateOf(0.0) }
+    var isLoading by remember { mutableStateOf(true) }
+    var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
+
+    // Reset supplierPayment when dialog is opened
+    LaunchedEffect(showDialog) {
+        if (showDialog) {
+            supplierPayment = ""
+        }
+    }
+
+    LaunchedEffect(showDialog, supplierId) {
+        if (showDialog && supplierId != null) {
+            isLoading = true
+            val firestore = Firebase.firestore
+            try {
+                val latestDoc = firestore.collection("F_SupplierArticlesFireS")
+                    .document(supplierId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+
+                ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
+
+                // Fetch recent invoices, excluding the "latest" document
+                val invoicesQuery = firestore.collection("F_SupplierArticlesFireS")
+                    .document(supplierId.toString())
+                    .collection("Totale et Credit Des Bons")
+                    .orderBy("date", Query.Direction.DESCENDING)
+                    .limit(3)
+
+                val invoicesSnapshot = invoicesQuery.get().await()
+                recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
+                    SupplierInvoice(
+                        date = doc.getString("date") ?: "",
+                        totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
+                        payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
+                        creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
+                        ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error fetching data: ", e)
+                ancienCredit = 0.0
+                recentInvoices = emptyList()
+            }
+            isLoading = false
+        }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Manage Supplier Credit: $supplierName") },
+            text = {
+                Column {
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                    } else {
+                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}")
+                        Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = supplierPayment,
+                            onValueChange = { supplierPayment = it },
+                            label = { Text("Payment Amount") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val paymentAmount = if((supplierPayment.toDoubleOrNull() ?: 0.0) == 0.0) ancienCredit else supplierPayment.toDoubleOrNull() ?: 0.0
+                        val newCredit = ancienCredit + supplierTotal - paymentAmount
+                        Text("New Credit Balance: ${"%.2f".format(newCredit)}")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium)
+                        if (recentInvoices.isEmpty()) {
+                            Text("No recent invoices found")
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.height(200.dp)
+                            ) {
+                                items(recentInvoices) { invoice ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
+                                            Text("Date: ${invoice.date}")
+                                            Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
+                                            Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
+                                            Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                            Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            supplierId?.let { id ->
+                                val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount,ancienCredit)
+                            }
+                        }
+                        onDismiss()
+                    },
+                    enabled = !isLoading
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
                 }
             }
         )
@@ -282,6 +512,9 @@ class CreditsViewModel : ViewModel() {
         })
     }
 
+    fun updateSupplier(updatedSupplier: SupplierTabelle) {
+        suppliersRef.child(updatedSupplier.idSupplierSu.toString()).setValue(updatedSupplier)
+    }
     fun updateSupplierBon(supplierId: Long, bonNumber: String) {
         suppliersRef.child(supplierId.toString()).child("bonDuSupplierSu").setValue(bonNumber)
     }

@@ -649,7 +649,7 @@ suspend fun exportToFirestore() {
     }
 }
 
-suspend fun updateSupplierCredit(
+ fun updateSupplierCredit(
     supplierId: Int,
     supplierTotal: Double,
     supplierPayment: Double,
