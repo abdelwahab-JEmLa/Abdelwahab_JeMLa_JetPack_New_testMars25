@@ -157,28 +157,7 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
     }
 }
 
-fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierCredit: Double) {
-    val firestore = Firebase.firestore
-    val currentDate = LocalDate.now().toString()
-    val restCredit = supplierTotal - supplierCredit
 
-    val data = hashMapOf(
-        "date" to currentDate,
-        "totalAmount" to supplierTotal,
-        "totalCredit" to supplierCredit,
-        "restCredit" to restCredit
-    )
-
-    try {
-        firestore.collection("F_SupplierArticlesFireS")
-            .document(supplierId.toString())
-            .collection("Totale et Credit Des Bons")
-            .document(currentDate)
-            .set(data)
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating supplier credit: ", e)
-    }
-}
 fun updateSupplierBon(suppliersRef: DatabaseReference, supplierId: Long, bonNumber: String) {
     suppliersRef.child(supplierId.toString()).child("bonDuSupplierSu").setValue(bonNumber)
 }

@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
@@ -59,9 +58,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -423,90 +423,9 @@ fun FragmentEntreBonsGro() {
     )
 }
 
-fun updateArticleIdFromSuggestion(
-    suggestion: String,
-    vidOfLastQuantityInputted: Long?,
-    articlesRef: DatabaseReference,
-    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    articlesBaseDonne: List<BaseDonne>,
-    onNameInputComplete: () -> Unit,
-    editionPassedMode: Boolean,
-    articlesList: List<EntreBonsGrosTabele>,
-    coroutineScope: CoroutineScope
-) {
-    val effectiveVid = if (editionPassedMode) {
-        articlesList.firstOrNull { it.passeToEndStateBG }?.vidBG ?: vidOfLastQuantityInputted
-    } else {
-        vidOfLastQuantityInputted
-    }
 
-    if (suggestion == "passe" && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        articleToUpdate.child("passeToEndStateBG").setValue(true)
-        articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
-        onNameInputComplete()
-        return
-    }
-    if (suggestion == "supp" && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        articleToUpdate.child("nomArticleBG").setValue("New Article")
-        onNameInputComplete()
-        return
-    }
 
-    val idArticleRegex = """\((\d+)\)$""".toRegex()
-    val matchResult = idArticleRegex.find(suggestion)
 
-    val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
-
-    if (idArticle != null && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        val currentArticle = articlesList.find { it.vidBG == effectiveVid }
-
-        articleToUpdate.child("idArticleBG").setValue(idArticle)
-
-        val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
-        correspondingArticle?.let { article ->
-            articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
-        }
-        val lastDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
-
-        val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
-        correspondingBaseDonne?.let { baseDonne ->
-            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
-            articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
-            articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
-            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
-        }
-
-        coroutineScope.launch {
-            var fireStorEntreBonsGrosTabele: EntreBonsGrosTabele? = null
-
-            try {
-                val firestore = Firebase.firestore
-                val documentSnapshot = firestore
-                    .collection("F_SupplierArticlesFireS")
-                    .document(currentArticle?.supplierIdBG.toString())
-                    .collection("historiquesAchats")
-                    .document(idArticle.toString())
-                    .get()
-                    .await()
-
-                if (documentSnapshot.exists()) {
-                    fireStorEntreBonsGrosTabele = documentSnapshot.toObject(EntreBonsGrosTabele::class.java)
-                }
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error getting document: ", e)
-            }
-
-            val uniterCLePlusUtiliseFireStore = fireStorEntreBonsGrosTabele?.uniterCLePlusUtilise ?: false
-
-            articleToUpdate.child("uniterCLePlusUtilise").setValue(uniterCLePlusUtiliseFireStore)
-            println("DEBUG: Updated uniterCLePlusUtilise to $uniterCLePlusUtiliseFireStore and lastDateCreationBG to $lastDate")
-        }
-        onNameInputComplete()
-    }
-}
 suspend fun exportToFirestore() {
     withContext(Dispatchers.IO) {
         try {
@@ -530,7 +449,10 @@ suspend fun exportToFirestore() {
             // Process each article and calculate totals
             supplierGroups.forEach { (supplierId, articles) ->
                 var supplierTotal = 0.0
-                val currentDate = LocalDate.now().toString()
+                val currentDateTime = LocalDateTime.now()
+                val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+                val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
                 articles.forEach { article ->
                     val lineData = hashMapOf(
@@ -561,19 +483,41 @@ suspend fun exportToFirestore() {
                     // Calculate total
                     supplierTotal += article.subTotaleBG
                 }
+                // Fetch current totalCredit from Firestore
+                val totalCreditDoc = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
 
-                // Export the total for the supplier
+                val lastestTotaleCredit = totalCreditDoc.getDouble("totalCredit") ?: 0.0
+
+                // Calculate the new total credit
+                val newTotalCredit = lastestTotaleCredit + supplierTotal
+                // Prepare the updated total data
                 val totalData = hashMapOf(
-                    "date" to currentDate,
-                    "totalAmount" to supplierTotal
-                )//TODO regle cette parti pour quelle utilise updateSupplierCredit
-                //fait que ici      si  totalCredit dons fire store = 0  "totalCredit" to supplierCredit, =         "totalAmount" to supplierTotal,
-                // et le rest         "restCredit" to restCredit = totalAmount
+                    "date" to formattedDateTime,
+                    "totalAmount" to supplierTotal,
+                    "totalCredit" to supplierTotal,
+                    "restCreditDeCetteBon" to newTotalCredit
+                )
+
+                // Update the total for the supplier
+                // Use the new document ID format with date and time
+                val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(supplierTotal)}"
                 val totalDocRef = supplierArticlesRef
                     .document(supplierId.toString())
-                    .collection("totaleDesBons")
-                    .document(currentDate)
+                    .collection("Totale et Credit Des Bons")
+                    .document(documentId)
                 batch.set(totalDocRef, totalData)
+
+                // Update the latest document
+                val latestDocRef = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("Totale et Credit Des Bons")
+                    .document("latest")
+                batch.set(latestDocRef, totalData)
             }
 
             // Commit the batch
@@ -585,6 +529,56 @@ suspend fun exportToFirestore() {
         }
     }
 }
+
+suspend fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierPayment: Double) {
+    val firestore = Firebase.firestore
+    val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+    val currentDateTime = LocalDateTime.now()
+    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+    val restCreditDeCetteBon = supplierTotal - supplierPayment
+
+    // Fetch current totalCredit from Firestore
+    val totalCreditDoc = supplierArticlesRef
+        .document(supplierId.toString())
+        .collection("Totale et Credit Des Bons")
+        .document("latest")
+        .get()
+        .await()
+
+    val lastestTotaleCredit = totalCreditDoc.getDouble("totalCredit") ?: 0.0
+
+    // Calculate the new total credit
+    val newTotalCredit = lastestTotaleCredit + restCreditDeCetteBon
+
+    val data = hashMapOf(
+        "date" to formattedDateTime,
+        "totalAmount" to supplierTotal,
+        "totalCredit" to supplierPayment,
+        "restCreditDeCetteBon" to restCreditDeCetteBon,
+        "creditDuComptActuelle" to newTotalCredit
+    )
+
+    try {
+        // Update the current bon document
+        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(supplierTotal)}"
+        firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(documentId)
+            .set(data)
+
+        // Update the latest document
+        firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document("latest")
+            .set(data)
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating supplier credit: ", e)
+    }
+}
 @Composable
 fun SupplierCreditDialog(
     showDialog: Boolean,
@@ -594,7 +588,7 @@ fun SupplierCreditDialog(
     supplierTotal: Double,
     coroutineScope: CoroutineScope
 ) {
-    var supplierCredit by remember { mutableStateOf("") }
+    var supplierPayment by remember { mutableStateOf("") }
 
     if (showDialog) {
         AlertDialog(
@@ -605,20 +599,20 @@ fun SupplierCreditDialog(
                     Text("Total Amount: ${"%.2f".format(supplierTotal)}")
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = supplierCredit,
-                        onValueChange = { supplierCredit = it },
+                        value = supplierPayment,
+                        onValueChange = { supplierPayment = it },
                         label = { Text("Supplier Credit") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierCredit.toDoubleOrNull() ?: 0.0))}")
+                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierPayment.toDoubleOrNull() ?: 0.0))}")
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     coroutineScope.launch {
                         supplierId?.let { id ->
-                            updateSupplierCredit(id, supplierTotal, supplierCredit.toDoubleOrNull() ?: 0.0)
+                            updateSupplierCredit(id, supplierTotal, supplierPayment.toDoubleOrNull() ?: 0.0)
                         }
                     }
                     onDismiss()
