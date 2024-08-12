@@ -566,7 +566,7 @@ suspend fun exportToFirestore() {
 
             // Process each article and calculate totals
             supplierGroups.forEach { (supplierId, articles) ->
-                var supplierTotal = 0.0
+                var totaleDeCeBon = 0.0
                 val currentDateTime = LocalDateTime.now()
                 val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
                 val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -599,7 +599,7 @@ suspend fun exportToFirestore() {
                     batch.set(docRef, lineData)
 
                     // Calculate total
-                    supplierTotal += article.subTotaleBG
+                    totaleDeCeBon += article.subTotaleBG
                 }
                 // Fetch current totalCredit from Firestore
                 val totalCreditDoc = supplierArticlesRef
@@ -609,21 +609,22 @@ suspend fun exportToFirestore() {
                     .get()
                     .await()
 
-                val lastestTotaleCredit = totalCreditDoc.getDouble("restCreditDeCetteBon") ?: 0.0
+                val ancienCredit = totalCreditDoc.getDouble("ancienCredit") ?: 0.0
 
                 // Calculate the new total credit
-                val newTotalCredit = lastestTotaleCredit + supplierTotal
+                val newTotalCredit = ancienCredit + totaleDeCeBon
                 // Prepare the updated total data
                 val totalData = hashMapOf(
                     "date" to formattedDateTime,
-                    "totalAmount" to supplierTotal,
-                    "totalCredit" to supplierTotal,
-                    "restCreditDeCetteBon" to newTotalCredit
+                    "totaleDeCeBon" to totaleDeCeBon,
+                    "payeCetteFoit" to 0.0,
+                    "creditFaitDonCeBon" to totaleDeCeBon,
+                    "ancienCredits" to newTotalCredit
                 )
 
                 // Update the total for the supplier
                 // Use the new document ID format with date and time
-                val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(supplierTotal)}"
+                val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(totaleDeCeBon)}"
                 val totalDocRef = supplierArticlesRef
                     .document(supplierId.toString())
                     .collection("Totale et Credit Des Bons")
@@ -655,7 +656,9 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
     val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-    val restCreditDeCetteBon = supplierTotal - supplierPayment
+
+    // Calculate restCreditDeCetteBon, ensuring it's not negative
+    val restCreditDeCetteBon = maxOf(supplierTotal - supplierPayment, 0.0)
 
     // Fetch current totalCredit from Firestore
     val totalCreditDoc = supplierArticlesRef
@@ -665,18 +668,19 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
         .get()
         .await()
 
-    val lastestTotaleCredit = totalCreditDoc.getDouble("totalCredit") ?: 0.0
+    val ancienCredit = totalCreditDoc.getDouble("ancienCredit") ?: 0.0
 
     // Calculate the new total credit
-    val newTotalCredit = lastestTotaleCredit + restCreditDeCetteBon
-
+    val newTotalCredit = ancienCredit + supplierTotal - supplierPayment
+    // Prepare the updated total data
     val data = hashMapOf(
         "date" to formattedDateTime,
-        "totalAmount" to supplierTotal,
-        "totalCredit" to supplierPayment,
-        "restCreditDeCetteBon" to restCreditDeCetteBon,
-        "creditDuComptActuelle" to newTotalCredit
+        "totaleDeCeBon" to supplierTotal,
+        "payeCetteFoit" to supplierPayment,
+        "creditFaitDonCeBon" to restCreditDeCetteBon,
+        "ancienCredits" to newTotalCredit
     )
+
 
     try {
         // Update the current bon document
@@ -693,6 +697,8 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
             .collection("latest Totale et Credit Des Bons")
             .document("latest")
             .set(data)
+
+        Log.d("Firestore", "Supplier credit updated successfully")
     } catch (e: Exception) {
         Log.e("Firestore", "Error updating supplier credit: ", e)
     }
@@ -701,9 +707,10 @@ suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplie
 
 data class SupplierInvoice(
     val date: String,
-    val totalAmount: Double,
-    val totalCredit: Double,
-    val restCreditDeCetteBon: Double
+    val totaleDeCeBon: Double,
+    val payeCetteFoit: Double,
+    val creditFaitDonCeBon: Double,
+    val ancienCredits: Double
 )
 
 @Composable
@@ -716,9 +723,16 @@ fun SupplierCreditDialog(
     coroutineScope: CoroutineScope
 ) {
     var supplierPayment by remember { mutableStateOf("") }
-    var currentCredit by remember { mutableStateOf(0.0) }
+    var ancienCredit by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
+
+    // Reset supplierPayment when dialog is opened
+    LaunchedEffect(showDialog) {
+        if (showDialog) {
+            supplierPayment = ""
+        }
+    }
 
     LaunchedEffect(showDialog, supplierId) {
         if (showDialog && supplierId != null) {
@@ -732,7 +746,7 @@ fun SupplierCreditDialog(
                     .get()
                     .await()
 
-                currentCredit = latestDoc.getDouble("restCreditDeCetteBon") ?: 0.0
+                ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
 
                 // Fetch recent invoices, excluding the "latest" document
                 val invoicesQuery = firestore.collection("F_SupplierArticlesFireS")
@@ -745,14 +759,15 @@ fun SupplierCreditDialog(
                 recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
                     SupplierInvoice(
                         date = doc.getString("date") ?: "",
-                        totalAmount = doc.getDouble("totalAmount") ?: 0.0,
-                        totalCredit = doc.getDouble("totalCredit") ?: 0.0,
-                        restCreditDeCetteBon = doc.getDouble("restCreditDeCetteBon") ?: 0.0
+                        totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
+                        payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
+                        creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
+                        ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
                     )
                 }
             } catch (e: Exception) {
                 Log.e("Firestore", "Error fetching data: ", e)
-                currentCredit = 0.0
+                ancienCredit = 0.0
                 recentInvoices = emptyList()
             }
             isLoading = false
@@ -768,8 +783,8 @@ fun SupplierCreditDialog(
                     if (isLoading) {
                         CircularProgressIndicator()
                     } else {
-                        Text("Current Credit: ${"%.2f".format(currentCredit)}")
-                        Text("New Purchase Total: ${"%.2f".format(supplierTotal)}")
+                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}")
+                        Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}")
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
                             value = supplierPayment,
@@ -778,8 +793,8 @@ fun SupplierCreditDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = supplierPayment.toDoubleOrNull() ?: currentCredit
-                        val newCredit = currentCredit + supplierTotal - paymentAmount
+                        val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                        val newCredit = ancienCredit + supplierTotal - paymentAmount
                         Text("New Credit Balance: ${"%.2f".format(newCredit)}")
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -798,9 +813,10 @@ fun SupplierCreditDialog(
                                     ) {
                                         Column(modifier = Modifier.padding(8.dp)) {
                                             Text("Date: ${invoice.date}")
-                                            Text("Total: ${"%.2f".format(invoice.totalAmount)}")
-                                            Text("Credit: ${"%.2f".format(invoice.totalCredit)}")
-                                            Text("Remaining: ${"%.2f".format(invoice.restCreditDeCetteBon)}")
+                                            Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
+                                            Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
+                                            Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                            Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
                                         }
                                     }
                                 }
@@ -814,7 +830,7 @@ fun SupplierCreditDialog(
                     onClick = {
                         coroutineScope.launch {
                             supplierId?.let { id ->
-                                val paymentAmount = if (supplierPayment.isEmpty()) currentCredit else supplierPayment.toDoubleOrNull() ?: currentCredit
+                                val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
                                 updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount)
                             }
                         }
