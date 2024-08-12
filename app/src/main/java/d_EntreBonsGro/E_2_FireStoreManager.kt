@@ -1,22 +1,6 @@
 package d_EntreBonsGro
 
 import android.util.Log
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -24,7 +8,6 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ktx.database
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
@@ -173,133 +156,7 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
         }
     }
 }
-suspend fun exportToFirestore() {
-    withContext(Dispatchers.IO) {
-        try {
-            // Fetch current data from Firebase Realtime Database
-            val firebase = Firebase.database
-            val articlesRef = firebase.getReference("ArticlesBonsGrosTabele")
-            val snapshot = articlesRef.get().await()
 
-            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
-
-            // Create a reference to the F_SupplierArticlesFireS collection in Firestore
-            val firestore = FirebaseFirestore.getInstance()
-            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
-
-            // Create a batch to perform multiple write operations
-            val batch = firestore.batch()
-
-            // Group articles by supplier
-            val supplierGroups = supplierArticles.groupBy { it.supplierIdBG }
-
-            // Process each article and calculate totals
-            supplierGroups.forEach { (supplierId, articles) ->
-                var supplierTotal = 0.0
-                val currentDate = LocalDate.now().toString()
-
-                articles.forEach { article ->
-                    val lineData = hashMapOf(
-                        "vidBG" to article.vidBG,
-                        "idArticleBG" to article.idArticleBG,
-                        "nomArticleBG" to article.nomArticleBG,
-                        "ancienPrixBG" to article.ancienPrixBG,
-                        "newPrixAchatBG" to article.newPrixAchatBG,
-                        "quantityAcheteBG" to article.quantityAcheteBG,
-                        "quantityUniterBG" to article.quantityUniterBG,
-                        "subTotaleBG" to article.subTotaleBG,
-                        "grossisstBonN" to article.grossisstBonN,
-                        "supplierIdBG" to article.supplierIdBG,
-                        "supplierNameBG" to article.supplierNameBG,
-                        "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
-                        "erreurCommentaireBG" to article.erreurCommentaireBG,
-                        "passeToEndStateBG" to article.passeToEndStateBG,
-                        "dateCreationBG" to article.dateCreationBG
-                    )
-
-                    // Add to F_SupplierArticlesFireS collection
-                    val docRef = supplierArticlesRef
-                        .document(supplierId.toString())
-                        .collection("historiquesAchats")
-                        .document(article.idArticleBG.toString())
-                    batch.set(docRef, lineData)
-
-                    // Calculate total
-                    supplierTotal += article.subTotaleBG
-                }
-
-                // Export the total for the supplier
-                val totalData = hashMapOf(
-                "date" to currentDate,
-                "totalAmount" to supplierTotal
-            )//TODO regle cette parti pour quelle utilise updateSupplierCredit
-                //fait que ici      si  totalCredit dons fire store = 0  "totalCredit" to supplierCredit, =         "totalAmount" to supplierTotal,
-    // et le rest         "restCredit" to restCredit = totalAmount
-                val totalDocRef = supplierArticlesRef
-                    .document(supplierId.toString())
-                    .collection("totaleDesBons")
-                    .document(currentDate)
-                batch.set(totalDocRef, totalData)
-            }
-
-            // Commit the batch
-            batch.commit().await()
-            println("Successfully exported articles and totals to Firestore")
-
-        } catch (e: Exception) {
-            println("Error exporting to Firestore: ${e.message}")
-        }
-    }
-}
-@Composable
-fun SupplierCreditDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    supplierId: Int?,
-    supplierName: String,
-    supplierTotal: Double,
-    coroutineScope: CoroutineScope
-) {
-    var supplierCredit by remember { mutableStateOf("") }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Manage Supplier Credit: $supplierName") },
-            text = {
-                Column {
-                    Text("Total Amount: ${"%.2f".format(supplierTotal)}")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = supplierCredit,
-                        onValueChange = { supplierCredit = it },
-                        label = { Text("Supplier Credit") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierCredit.toDoubleOrNull() ?: 0.0))}")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    coroutineScope.launch {
-                        supplierId?.let { id ->
-                            updateSupplierCredit(id, supplierTotal, supplierCredit.toDoubleOrNull() ?: 0.0)
-                        }
-                    }
-                    onDismiss()
-                }) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
 fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierCredit: Double) {
     val firestore = Firebase.firestore
     val currentDate = LocalDate.now().toString()
