@@ -648,7 +648,7 @@ suspend fun exportToFirestore() {
     }
 }
 
-suspend fun updateSupplierCredit(supplierId: Long, supplierTotal: Double, supplierPayment: Double) {
+suspend fun updateSupplierCredit(supplierId: Int, supplierTotal: Double, supplierPayment: Double) {
     val firestore = Firebase.firestore
     val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
     val currentDateTime = LocalDateTime.now()
@@ -734,22 +734,28 @@ fun SupplierCreditDialog(
 
                 currentCredit = latestDoc.getDouble("restCreditDeCetteBon") ?: 0.0
 
-                // Fetch recent invoices
+                // Fetch all documents except "latest"
                 val invoicesQuery = firestore.collection("F_SupplierArticlesFireS")
                     .document(supplierId.toString())
                     .collection("Totale et Credit Des Bons")
-                    .orderBy("date", Query.Direction.DESCENDING)
-                    .limit(3)
+                    .whereNotEqualTo("__name__", "latest")
+                    .orderBy("__name__", Query.Direction.DESCENDING)
 
                 val invoicesSnapshot = invoicesQuery.get().await()
+                Log.d("Firestore", "Number of documents fetched: ${invoicesSnapshot.documents.size}")
+
                 recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
+                    Log.d("Firestore", "Document ID: ${doc.id}")
+                    Log.d("Firestore", "Document data: ${doc.data}")
                     SupplierInvoice(
                         date = doc.getString("date") ?: "",
                         totalAmount = doc.getDouble("totalAmount") ?: 0.0,
                         totalCredit = doc.getDouble("totalCredit") ?: 0.0,
                         restCreditDeCetteBon = doc.getDouble("restCreditDeCetteBon") ?: 0.0
                     )
-                }
+                }.take(3)  // Prend les 3 premiers éléments après le mappage
+
+                Log.d("Firestore", "Number of recent invoices: ${recentInvoices.size}")
             } catch (e: Exception) {
                 Log.e("Firestore", "Error fetching data: ", e)
                 currentCredit = 0.0
@@ -815,7 +821,7 @@ fun SupplierCreditDialog(
                         coroutineScope.launch {
                             supplierId?.let { id ->
                                 val paymentAmount = if (supplierPayment.isEmpty()) currentCredit else supplierPayment.toDoubleOrNull() ?: currentCredit
-                                updateSupplierCredit(id, supplierTotal, paymentAmount)
+                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount)
                             }
                         }
                         onDismiss()
