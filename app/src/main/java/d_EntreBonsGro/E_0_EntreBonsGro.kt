@@ -491,7 +491,7 @@ suspend fun exportToFirestore() {
                     .get()
                     .await()
 
-                val lastestTotaleCredit = totalCreditDoc.getDouble("totalCredit") ?: 0.0
+                val lastestTotaleCredit = totalCreditDoc.getDouble("restCreditDeCetteBon") ?: 0.0
 
                 // Calculate the new total credit
                 val newTotalCredit = lastestTotaleCredit + supplierTotal
