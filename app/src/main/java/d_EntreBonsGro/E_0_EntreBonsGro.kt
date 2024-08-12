@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
@@ -27,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -44,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
@@ -83,7 +88,7 @@ fun FragmentEntreBonsGro() {
     var showSplitView by rememberSaveable { mutableStateOf(false) }
     var showMissingArticles by remember { mutableStateOf(false) }
     var totalMissingArticles by remember { mutableStateOf(0) }
-
+    var showCreditDialog by remember { mutableStateOf(false) }
     var addedArticlesCount by remember { mutableStateOf(0) }
 
     val coroutineScope = rememberCoroutineScope()
@@ -195,6 +200,12 @@ fun FragmentEntreBonsGro() {
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
                 actions = {
+                    IconButton(onClick = { showCreditDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CreditCard,
+                            contentDescription = "Manage Credit"
+                        )
+                    }
                     IconButton(
                         onClick = {
                             when {
@@ -340,7 +351,16 @@ fun FragmentEntreBonsGro() {
             }
         }
     }
-
+    SupplierCreditDialog(
+        showDialog = showCreditDialog,
+        onDismiss = { showCreditDialog = false },
+        supplierId = founisseurNowIs,
+        supplierName = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.nomSupplierSu ?: "Unknown Supplier",
+        supplierTotal = articlesEntreBonsGrosTabele
+            .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+            .sumOf { it.subTotaleBG },
+        coroutineScope = coroutineScope
+    )
     ActionsDialog(
         showDialog = showActionsDialog,
         onDismiss = { showActionsDialog = false },
@@ -405,6 +425,55 @@ fun FragmentEntreBonsGro() {
         suppliersRef=suppliersRef
 
     )
+}
+@Composable
+fun SupplierCreditDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    supplierId: Int?,
+    supplierName: String,
+    supplierTotal: Double,
+    coroutineScope: CoroutineScope
+) {
+    var supplierCredit by remember { mutableStateOf("") }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Manage Supplier Credit: $supplierName") },
+            text = {
+                Column {
+                    Text("Total Amount: ${"%.2f".format(supplierTotal)}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = supplierCredit,
+                        onValueChange = { supplierCredit = it },
+                        label = { Text("Supplier Credit") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Rest Credit: ${"%.2f".format(supplierTotal - (supplierCredit.toDoubleOrNull() ?: 0.0))}")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        supplierId?.let { id ->
+                            updateSupplierCredit(id, supplierTotal, supplierCredit.toDoubleOrNull() ?: 0.0)
+                        }
+                    }
+                    onDismiss()
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 @Composable
 fun ActionsDialog(
@@ -518,7 +587,28 @@ fun ActionsDialog(
         )
     }
 }
+suspend fun updateSupplierCredit(supplierId: Int?, supplierTotal: Double, supplierCredit: Double) {
+    val firestore = Firebase.firestore
+    val currentDate = LocalDate.now().toString()
+    val restCredit = supplierTotal - supplierCredit
 
+    val data = hashMapOf(
+        "date" to currentDate,
+        "totalAmount" to supplierTotal,
+        "totalCredit" to supplierCredit,
+        "restCredit" to restCredit
+    )
+
+    try {
+        firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(currentDate)
+            .set(data)
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating supplier credit: ", e)
+    }
+}
 fun updateArticleIdFromSuggestion(
     suggestion: String,
     vidOfLastQuantityInputted: Long?,

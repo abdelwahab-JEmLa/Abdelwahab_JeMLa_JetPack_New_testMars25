@@ -172,44 +172,60 @@ suspend fun exportToFirestore() {
             // Create a batch to perform multiple write operations
             val batch = firestore.batch()
 
-            // Process each article
-            supplierArticles.forEach { article ->
-                val lineData = hashMapOf(
-                    "vidBG" to article.vidBG,
-                    "idArticleBG" to article.idArticleBG,
-                    "nomArticleBG" to article.nomArticleBG,
-                    "ancienPrixBG" to article.ancienPrixBG,
-                    "newPrixAchatBG" to article.newPrixAchatBG,
-                    "quantityAcheteBG" to article.quantityAcheteBG,
-                    "quantityUniterBG" to article.quantityUniterBG,
-                    "subTotaleBG" to article.subTotaleBG,
-                    "grossisstBonN" to article.grossisstBonN,
-                    "supplierIdBG" to article.supplierIdBG,
-                    "supplierNameBG" to article.supplierNameBG,
-                    "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
-                    "erreurCommentaireBG" to article.erreurCommentaireBG,
-                    "passeToEndStateBG" to article.passeToEndStateBG,
-                    "dateCreationBG" to article.dateCreationBG
+            // Group articles by supplier
+            val supplierGroups = supplierArticles.groupBy { it.supplierIdBG }
+
+            // Process each article and calculate totals
+            supplierGroups.forEach { (supplierId, articles) ->
+                var supplierTotal = 0.0
+                val currentDate = LocalDate.now().toString()
+
+                articles.forEach { article ->
+                    val lineData = hashMapOf(
+                        "vidBG" to article.vidBG,
+                        "idArticleBG" to article.idArticleBG,
+                        "nomArticleBG" to article.nomArticleBG,
+                        "ancienPrixBG" to article.ancienPrixBG,
+                        "newPrixAchatBG" to article.newPrixAchatBG,
+                        "quantityAcheteBG" to article.quantityAcheteBG,
+                        "quantityUniterBG" to article.quantityUniterBG,
+                        "subTotaleBG" to article.subTotaleBG,
+                        "grossisstBonN" to article.grossisstBonN,
+                        "supplierIdBG" to article.supplierIdBG,
+                        "supplierNameBG" to article.supplierNameBG,
+                        "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
+                        "erreurCommentaireBG" to article.erreurCommentaireBG,
+                        "passeToEndStateBG" to article.passeToEndStateBG,
+                        "dateCreationBG" to article.dateCreationBG
+                    )
+
+                    // Add to F_SupplierArticlesFireS collection
+                    val docRef = supplierArticlesRef
+                        .document(supplierId.toString())
+                        .collection("historiquesAchats")
+                        .document(article.idArticleBG.toString())
+                    batch.set(docRef, lineData)
+
+                    // Calculate total
+                    supplierTotal += article.subTotaleBG
+                }
+
+                // Export the total for the supplier
+                val totalData = hashMapOf(
+                    "date" to currentDate,
+                    "totalAmount" to supplierTotal
                 )
 
-                // Add to F_SupplierArticlesFireS collection
-                val docRef = supplierArticlesRef
-                    .document(article.supplierIdBG.toString())
-                    .collection("historiquesAchats")
-                    .document(article.idArticleBG.toString())  // This creates a new document with an auto-generated ID
-                batch.set(docRef, lineData)
+                val totalDocRef = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("totaleDesBons")
+                    .document(currentDate)
+                batch.set(totalDocRef, totalData)
             }
-//TODO ajout un export du totale du suplier article
-//            val docRef = supplierArticlesRef
-//                .document(article.supplierIdBG.toString())
-//                .collection("totaleDesBons")
-//                .document(date yyyy/mm/dd)
-//                .collection("totale")
-//                .document(ici mete le totale )
 
             // Commit the batch
             batch.commit().await()
-            println("Successfully exported to Firestore")
+            println("Successfully exported articles and totals to Firestore")
 
         } catch (e: Exception) {
             println("Error exporting to Firestore: ${e.message}")
