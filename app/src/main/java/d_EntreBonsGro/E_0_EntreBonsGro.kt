@@ -7,8 +7,6 @@ import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,14 +23,11 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,7 +43,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
@@ -66,7 +60,6 @@ import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,19 +100,7 @@ fun FragmentEntreBonsGro() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                //TODO fait que si l imput et par le vocal speechRecognizerLauncher
-                //  contien "+" tu lence la fun  processInputAndInsertData comme preview
 
-
-                //TODO   filteredSuggestions = suggestionsList.replace(".", "").toLowerCase().contains(inputText)
-                // fait que si  filteredSuggestions il  1  element  updateArticleIdFromSuggestion (inputText)
-                //
-
-                //.2 si si  filteredSuggestions il n aya acune  element
-                //filteredSuggestions3Sentence = suggestionsList.replace(".", "").toLowerCase().contains(cleanInput.take(3))
-                // tue lence un alert dialoge contien filteredSuggestions3Sentence on card
-                //au click updateArticleIdFromSuggestion (clickebe element)
-                //n utilise pas le fun OutlineInput( cree moi une nouvel funcction
 
 
 
@@ -274,7 +255,19 @@ fun FragmentEntreBonsGro() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
+                onClick = {//TODO fait que si l imput et par le vocal speechRecognizerLauncher
+                    //  contien "+" tu lence la fun  processInputAndInsertData comme preview
+
+
+                    //TODO   filteredSuggestions = suggestionsList.replace(".", "").toLowerCase().contains(inputText)
+                    // fait que si  filteredSuggestions il  1  element  updateArticleIdFromSuggestion (inputText)
+                    //
+
+                    //.2 si si  filteredSuggestions il n aya acune  element
+                    //filteredSuggestions3Sentence = suggestionsList.replace(".", "").toLowerCase().contains(cleanInput.take(3))
+                    // tue lence un alert dialoge contien filteredSuggestions3Sentence on card
+                    //au click updateArticleIdFromSuggestion (clickebe element)
+                    //n utilise pas le fun OutlineInput( cree moi une nouvel funcction
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
@@ -696,114 +689,4 @@ fun updateArticleIdFromSuggestion(
         onNameInputComplete()
     }
 }
-@Composable
-fun OutlineInput(
-    inputText: String,
-    onInputChange: (String) -> Unit,
-    nowItsNameInputeTime: Boolean,
-    onNameInputComplete: () -> Unit,
-    articlesList: List<EntreBonsGrosTabele>,
-    suggestionsList: List<String>,
-    vidOfLastQuantityInputted: Long?,
-    articlesRef: DatabaseReference,
-    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    articlesBaseDonne: List<BaseDonne>,
-    editionPassedMode: Boolean,
-    modifier: Modifier = Modifier,
-    coroutineScope: CoroutineScope
-) {
-    var showDropdown by remember { mutableStateOf(false) }
-    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
-    var textFieldFocused by remember { mutableStateOf(false) }
 
-    val lastArticle by remember(articlesList, editionPassedMode) {
-        mutableStateOf(
-            if (editionPassedMode) {
-                articlesList.filter { it.passeToEndStateBG }.maxByOrNull { it.vidBG }
-            } else {
-                articlesList.maxByOrNull { it.vidBG }
-            }
-        )
-    }
-
-    Column(modifier = modifier) {
-        Box {
-            OutlinedTextField(
-                value = inputText,
-                onValueChange = { newValue ->
-                    onInputChange(newValue)
-                    if (newValue.length >= 3) {
-                        val cleanInput = newValue.replace(".", "").toLowerCase()
-                        filteredSuggestions = suggestionsList.asSequence().filter { suggestion ->
-                            val cleanSuggestion = suggestion.replace(".", "").toLowerCase(Locale.ROOT)
-                            if (isArabic(cleanInput)) {
-                                cleanSuggestion.contains(cleanInput.take(3))
-                            } else {
-                                cleanSuggestion.contains(cleanInput)
-                            }
-                        }.take(10).toList()
-                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
-                    } else {
-                        filteredSuggestions = emptyList()
-                        showDropdown = false
-                    }
-                },
-                label = {
-                    Text(
-                        when {
-                            inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null ->
-                                "Quantity: ${lastArticle!!.quantityAcheteBG} x ${lastArticle!!.newPrixAchatBG}"
-                            inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
-                                articlesList.find { it.vidBG == vidOfLastQuantityInputted }?.let {
-                                    "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"
-                                } ?: "Entrer quantité et prix"
-                            }
-                            inputText.isEmpty() -> "Entrer quantité et prix"
-                            else -> inputText
-                        }
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { focusState ->
-                        textFieldFocused = focusState.isFocused
-                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
-                    }
-            )
-
-            DropdownMenu(
-                expanded = showDropdown,
-                onDismissRequest = { showDropdown = false },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                filteredSuggestions.forEach { suggestion ->
-                    DropdownMenuItem(
-                        text = { Text(suggestion) },
-                        onClick = {
-                            updateArticleIdFromSuggestion(
-                                suggestion,
-                                vidOfLastQuantityInputted,
-                                articlesRef,
-                                articlesArticlesAcheteModele,
-                                articlesBaseDonne,
-                                onNameInputComplete,
-                                editionPassedMode,
-                                articlesList,
-                                coroutineScope = coroutineScope
-                            )
-                            onInputChange("")
-                            showDropdown = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-// Helper function to check if a string contains Arabic characters
-fun isArabic(text: String): Boolean {
-    return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
-}
