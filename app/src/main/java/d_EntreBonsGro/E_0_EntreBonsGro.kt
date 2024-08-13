@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CreditCard
@@ -254,30 +255,26 @@ fun FragmentEntreBonsGro() {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {//TODO fait que si l imput et par le vocal speechRecognizerLauncher
-                    //  contien "+" tu lence la fun  processInputAndInsertData comme preview
-
-
-                    //TODO   filteredSuggestions = suggestionsList.replace(".", "").toLowerCase().contains(inputText)
-                    // fait que si  filteredSuggestions il  1  element  updateArticleIdFromSuggestion (inputText)
-                    //
-
-                    //.2 si si  filteredSuggestions il n aya acune  element
-                    //filteredSuggestions3Sentence = suggestionsList.replace(".", "").toLowerCase().contains(cleanInput.take(3))
-                    // tue lence un alert dialoge contien filteredSuggestions3Sentence on card
-                    //au click updateArticleIdFromSuggestion (clickebe element)
-                    //n utilise pas le fun OutlineInput( cree moi une nouvel funcction
-                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+            VoiceInputButton(
+                articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                articlesRef = articlesRef,
+                founisseurNowIs = founisseurNowIs,
+                articlesBaseDonne = articlesBaseDonne,
+                suppliersList = suppliersList,
+                suggestionsList = suggestionsList,
+                onInputProcessed = { newVid ->
+                    if (newVid != null) {
+                        vidOfLastQuantityInputted = newVid
+                        nowItsNameInputeTime = true
                     }
-                    speechRecognizerLauncher.launch(intent)
-                }
-            ) {
-                Icon(Icons.Default.Mic, contentDescription = "Voice Input")
-            }
+                    inputText = ""
+                },
+                updateArticleIdFromSuggestion = ::updateArticleIdFromSuggestion,
+                vidOfLastQuantityInputted = vidOfLastQuantityInputted,
+                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                editionPassedMode = editionPassedMode,
+                coroutineScope = coroutineScope
+            )
         }
     ) { innerPadding ->
         Column(
@@ -690,3 +687,120 @@ fun updateArticleIdFromSuggestion(
     }
 }
 
+
+
+@Composable
+fun VoiceInputButton(
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
+    articlesRef: DatabaseReference,
+    founisseurNowIs: Int?,
+    articlesBaseDonne: List<BaseDonne>,
+    suppliersList: List<SupplierTabelle>,
+    suggestionsList: List<String>,
+    onInputProcessed: (Long?) -> Unit,
+    updateArticleIdFromSuggestion: (String, Long?, DatabaseReference, List<ArticlesAcheteModele>, List<BaseDonne>, () -> Unit, Boolean, List<EntreBonsGrosTabele>, CoroutineScope) -> Unit,
+    vidOfLastQuantityInputted: Long?,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    editionPassedMode: Boolean,
+    coroutineScope: CoroutineScope
+) {
+    var inputText by remember { mutableStateOf("") }
+    var showSuggestions by remember { mutableStateOf(false) }
+    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+
+    fun processVoiceInput(input: String) {
+        if (input.contains("+")) {
+            val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
+            onInputProcessed(newVid)
+        } else {
+            val cleanInput = input.replace(".", "").toLowerCase()
+            filteredSuggestions = suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
+
+            when {
+                filteredSuggestions.size == 1 -> {
+                    updateArticleIdFromSuggestion(
+                        filteredSuggestions[0],
+                        vidOfLastQuantityInputted,
+                        articlesRef,
+                        articlesArticlesAcheteModele,
+                        articlesBaseDonne,
+                        { onInputProcessed(null) },
+                        editionPassedMode,
+                        articlesEntreBonsGrosTabele,
+                        coroutineScope
+                    )
+                }
+                filteredSuggestions.isEmpty() -> {
+                    val filteredSuggestions3Sentence = suggestionsList.filter {
+                        it.replace(".", "").toLowerCase().contains(cleanInput.take(3))
+                    }
+                    showSuggestions = true
+                    filteredSuggestions = filteredSuggestions3Sentence
+                }
+                else -> {
+                    showSuggestions = true
+                }
+            }
+        }
+    }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText: String? =
+                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            spokenText?.let {
+                inputText = it
+                processVoiceInput(it) // This line should now work correctly
+            }
+        }
+    }
+
+    FloatingActionButton(
+        onClick = {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+            }
+            speechRecognizerLauncher.launch(intent)
+        }
+    ) {
+        Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+    }
+
+    if (showSuggestions) {
+        AlertDialog(
+            onDismissRequest = { showSuggestions = false },
+            title = { Text("Suggestions") },
+            text = {
+                LazyColumn {
+                    items(filteredSuggestions) { suggestion ->
+                        TextButton(onClick = {
+                            updateArticleIdFromSuggestion(
+                                suggestion,
+                                vidOfLastQuantityInputted,
+                                articlesRef,
+                                articlesArticlesAcheteModele,
+                                articlesBaseDonne,
+                                { onInputProcessed(null) },
+                                editionPassedMode,
+                                articlesEntreBonsGrosTabele,
+                                coroutineScope
+                            )
+                            showSuggestions = false
+                        }) {
+                            Text(suggestion)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSuggestions = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
