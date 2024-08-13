@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,80 +74,92 @@ fun OutlineInput(
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope
 ) {
-    val lastArticle = if (editionPassedMode) {
-        articlesList.filter { it.passeToEndStateBG }.maxByOrNull { it.vidBG }
-    } else {
-        articlesList.maxByOrNull { it.vidBG }
-    }
     var showDropdown by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var textFieldFocused by remember { mutableStateOf(false) }
+
+    val lastArticle by remember(articlesList, editionPassedMode) {
+        mutableStateOf(
+            if (editionPassedMode) {
+                articlesList.filter { it.passeToEndStateBG }.maxByOrNull { it.vidBG }
+            } else {
+                articlesList.maxByOrNull { it.vidBG }
+            }
+        )
+    }
 
     Column(modifier = modifier) {
-        OutlinedTextField(
-            value = inputText,
-            onValueChange = { newValue ->
-                onInputChange(newValue)
-                val cleanInput = newValue.replace(".", "").toLowerCase()
-                filteredSuggestions = if (cleanInput.length >= 2) {
-                    if (isArabic(cleanInput)) {
-                        // For Arabic input, compare only the first 3 letters
-                        suggestionsList.filter {
-                            it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput.take(3))
-                        }
+        Box {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = { newValue ->
+                    onInputChange(newValue)
+                    if (newValue.length >= 3) {
+                        val cleanInput = newValue.replace(".", "").toLowerCase()
+                        filteredSuggestions = suggestionsList.asSequence().filter { suggestion ->
+                            val cleanSuggestion = suggestion.replace(".", "").toLowerCase(Locale.ROOT)
+                            if (isArabic(cleanInput)) {
+                                cleanSuggestion.contains(cleanInput.take(3))
+                            } else {
+                                cleanSuggestion.contains(cleanInput)
+                            }
+                        }.take(10).toList()
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
                     } else {
-                        suggestionsList.filter {
-                            it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput)
-                        }
-                    }
-                } else {
-                    emptyList()
-                }
-                showDropdown = filteredSuggestions.isNotEmpty() && newValue.isNotEmpty()
-            },
-            label = {
-                Text(
-                    when {
-                        inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null ->
-                            "Quantity: ${lastArticle.quantityAcheteBG} x ${lastArticle.newPrixAchatBG}"
-                        inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
-                            val lastInputtedArticle = articlesList.find { it.vidBG == vidOfLastQuantityInputted }
-                            lastInputtedArticle?.let {
-                                "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"
-                            } ?: "Entrer quantité et prix"
-                        }
-                        inputText.isEmpty() -> "Entrer quantité et prix"
-                        else -> inputText
-                    }
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-
-        DropdownMenu(//TODO pk quand le drop dow s affiche le keybord se cache
-            expanded = showDropdown,
-            onDismissRequest = { showDropdown = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            filteredSuggestions.forEach { suggestion ->
-                DropdownMenuItem(
-                    text = { Text(suggestion) },
-                    onClick = {
-                        updateArticleIdFromSuggestion(
-                            suggestion,
-                            vidOfLastQuantityInputted,
-                            articlesRef,
-                            articlesArticlesAcheteModele,
-                            articlesBaseDonne,
-                            onNameInputComplete,
-                            editionPassedMode,
-                            articlesList,
-                            coroutineScope=coroutineScope
-                        )
-                        onInputChange("")
+                        filteredSuggestions = emptyList()
                         showDropdown = false
                     }
-                )
+                },
+                label = {
+                    Text(
+                        when {
+                            inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null ->
+                                "Quantity: ${lastArticle!!.quantityAcheteBG} x ${lastArticle!!.newPrixAchatBG}"
+                            inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
+                                articlesList.find { it.vidBG == vidOfLastQuantityInputted }?.let {
+                                    "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"
+                                } ?: "Entrer quantité et prix"
+                            }
+                            inputText.isEmpty() -> "Entrer quantité et prix"
+                            else -> inputText
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        textFieldFocused = focusState.isFocused
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    }
+            )
+
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { showDropdown = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                filteredSuggestions.forEach { suggestion ->
+                    DropdownMenuItem(
+                        text = { Text(suggestion) },
+                        onClick = {
+                            updateArticleIdFromSuggestion(
+                                suggestion,
+                                vidOfLastQuantityInputted,
+                                articlesRef,
+                                articlesArticlesAcheteModele,
+                                articlesBaseDonne,
+                                onNameInputComplete,
+                                editionPassedMode,
+                                articlesList,
+                                coroutineScope = coroutineScope
+                            )
+                            onInputChange("")
+                            showDropdown = false
+                        }
+                    )
+                }
             }
         }
     }

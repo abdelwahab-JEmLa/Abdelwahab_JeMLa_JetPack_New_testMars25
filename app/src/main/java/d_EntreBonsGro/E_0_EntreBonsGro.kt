@@ -273,11 +273,16 @@ fun FragmentEntreBonsGro() {
                 inputText = inputText,
                 onInputChange = { newValue ->
                     inputText = newValue
-                    if (newValue.endsWith("تغير")) {
-                        val newArabName = newValue.removeSuffix("تغير").trim()
+                    if (newValue.endsWith("تغيير")) {
+                        val newArabName = newValue.removeSuffix("تغيير").trim()
                         coroutineScope.launch {
                             vidOfLastQuantityInputted?.let { vid ->
-                                baseDonneRef.child(vid.toString()).child("nomArab").setValue(newArabName)
+                                // Find the article in articlesEntreBonsGrosTabele by vid
+                                val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
+                                article?.let { foundArticle ->
+                                    // Use the idArticleBG to update the corresponding entry in baseDonneRef
+                                    baseDonneRef.child(foundArticle.idArticleBG.toString()).child("nomArab").setValue(newArabName)
+                                }
                             }
                         }
                         inputText = ""
