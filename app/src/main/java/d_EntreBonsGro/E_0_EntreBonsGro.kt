@@ -309,10 +309,7 @@ fun FragmentEntreBonsGro() {
                 modifier = Modifier.fillMaxWidth(),
                 coroutineScope = coroutineScope
             )
-            when {//TODO ajoute un autre mode de splite qui affiche 70 au image 30 et a
-                //AfficheEntreBonsGro
-                //TODO ici fait que AfficheEntreBonsGro soit ordre par dec le vid le plus grand on haut
-                //Fait que ce mode soit le standart mode a ffiche quen au selection du supplier
+            when {
                 showFullImage -> {
                     ZoomableImage(
                         imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",

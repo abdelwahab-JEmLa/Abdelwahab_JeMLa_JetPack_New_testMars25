@@ -215,7 +215,7 @@ private fun Dialog(
                             onDismiss()
                         }
                     )
-                    if (false){
+                    if (false){//TODO fait que ca soit don un dialoge separe
                     DialogButton(
                         text = "Export Names List to Firebase",
                         icon = Icons.Default.Upload,
@@ -227,7 +227,7 @@ private fun Dialog(
                         },
                         tint2 = Color.Blue
                     )
-                    }
+
                     DialogButton(
                         text = "Import Arab Names",
                         icon = Icons.Default.CloudDownload,
@@ -239,6 +239,7 @@ private fun Dialog(
                         },
                         tint2 = Color.Green
                     )
+                    }
                 }
             },
             dismissButton = {
