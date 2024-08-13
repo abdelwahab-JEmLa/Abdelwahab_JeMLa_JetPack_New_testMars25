@@ -78,12 +78,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import kotlin.random.Random
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.random.Random
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
@@ -328,7 +328,6 @@ fun EditSupplierDialog(supplier: SupplierTabelle, onDismiss: () -> Unit, onEditS
 
 
 
-// Update the SupplierCreditDialog to use this function
 @Composable
 fun SupplierCreditDialog(
     showDialog: Boolean,
@@ -344,23 +343,25 @@ fun SupplierCreditDialog(
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
     var isPositive by remember { mutableStateOf(true) }
-
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     // Reset supplierPayment when dialog is opened
     LaunchedEffect(showDialog) {
         if (showDialog) {
             supplierPayment = ""
             isPositive = true
+            errorMessage = null
         }
     }
 
-    LaunchedEffect(showDialog, supplierId) {
-        if (showDialog && supplierId != null) {
+    suspend fun fetchRecentInvoices() {
+        supplierId?.let { id ->
             isLoading = true
+            errorMessage = null
             val firestore = Firebase.firestore
             try {
                 val latestDoc = firestore.collection("F_SupplierArticlesFireS")
-                    .document(supplierId.toString())
+                    .document(id.toString())
                     .collection("latest Totale et Credit Des Bons")
                     .document("latest")
                     .get()
@@ -368,9 +369,8 @@ fun SupplierCreditDialog(
 
                 ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
 
-                // Fetch recent invoices, excluding the "latest" document
                 val invoicesQuery = firestore.collection("F_SupplierArticlesFireS")
-                    .document(supplierId.toString())
+                    .document(id.toString())
                     .collection("Totale et Credit Des Bons")
                     .orderBy("date", Query.Direction.DESCENDING)
                     .limit(3)
@@ -386,11 +386,79 @@ fun SupplierCreditDialog(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("Firestore", "Error fetching data: ", e)
+                errorMessage = "Error fetching data: ${e.message}"
                 ancienCredit = 0.0
                 recentInvoices = emptyList()
+            } finally {
+                isLoading = false
             }
-            isLoading = false
+        }
+    }
+
+    suspend fun updateLatestDocument(supplierId: Long, deletedInvoiceDate: String) {
+        val firestore = Firebase.firestore
+        val latestDocRef = firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("latest Totale et Credit Des Bons")
+            .document("latest")
+
+        val invoicesRef = firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("Totale et Credit Des Bons")
+            .orderBy("date", Query.Direction.DESCENDING)
+            .limit(1)
+
+        try {
+            val latestInvoiceSnapshot = invoicesRef.get().await()
+            if (!latestInvoiceSnapshot.isEmpty) {
+                val latestInvoice = latestInvoiceSnapshot.documents[0]
+                latestDocRef.set(latestInvoice.data!!).await()
+            } else {
+                latestDocRef.set(mapOf(
+                    "ancienCredits" to 0.0,
+                    "date" to "",
+                    "totaleDeCeBon" to 0.0,
+                    "payeCetteFoit" to 0.0,
+                    "creditFaitDonCeBon" to 0.0
+                )).await()
+            }
+        } catch (e: Exception) {
+            errorMessage = "Error updating latest document: ${e.message}"
+            throw e
+        }
+    }
+
+    suspend fun deleteInvoice(invoiceDate: String) {
+        supplierId?.let { id ->
+            val firestore = Firebase.firestore
+            val invoiceRef = firestore.collection("F_SupplierArticlesFireS")
+                .document(id.toString())
+                .collection("Totale et Credit Des Bons")
+                .whereEqualTo("date", invoiceDate)
+                .limit(1)
+
+            try {
+                val querySnapshot = invoiceRef.get().await()
+                if (!querySnapshot.isEmpty) {
+                    val documentToDelete = querySnapshot.documents[0]
+                    documentToDelete.reference.delete().await()
+                    updateLatestDocument(id, invoiceDate)
+                } else {
+                    errorMessage = "No matching invoice found for deletion"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error deleting invoice: ${e.message}"
+                throw e
+            }
+        } ?: run {
+            errorMessage = "Invalid supplier ID"
+            throw IllegalArgumentException("Invalid supplier ID")
+        }
+    }
+
+    LaunchedEffect(showDialog, supplierId) {
+        if (showDialog && supplierId != null) {
+            fetchRecentInvoices()
         }
     }
 
@@ -402,20 +470,20 @@ fun SupplierCreditDialog(
             text = {
                 Column {
                     if (isLoading) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = Color.White)
                     } else {
                         Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}", color = Color.White)
                         Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}", color = Color.White)
                         Spacer(modifier = Modifier.height(8.dp))
+                        val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                        val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
+                        val newCredit = ancienCredit + supplierTotal - adjustedPayment
+                        Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
-                            val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                            val newCredit = ancienCredit + supplierTotal - adjustedPayment
-                            Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
-
                             OutlinedTextField(
                                 value = supplierPayment,
                                 onValueChange = { supplierPayment = it },
@@ -447,8 +515,6 @@ fun SupplierCreditDialog(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Recent Invoices", style = MaterialTheme.typography.titleMedium, color = Color.White)
                         if (recentInvoices.isEmpty()) {
@@ -478,7 +544,12 @@ fun SupplierCreditDialog(
                                             IconButton(
                                                 onClick = {
                                                     coroutineScope.launch {
-                                                        deleteInvoice(supplierId, invoice.date)
+                                                        try {
+                                                            deleteInvoice(invoice.date)
+                                                            fetchRecentInvoices()
+                                                        } catch (e: Exception) {
+                                                            errorMessage = "Error deleting invoice: ${e.message}"
+                                                        }
                                                     }
                                                 }
                                             ) {
@@ -488,6 +559,9 @@ fun SupplierCreditDialog(
                                     }
                                 }
                             }
+                        }
+                        errorMessage?.let {
+                            Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -499,10 +573,15 @@ fun SupplierCreditDialog(
                             supplierId?.let { id ->
                                 val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
                                 val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                                updateSupplierCredit(id.toInt(), supplierTotal, adjustedPayment, ancienCredit)
+                                try {
+                                    updateSupplierCredit(id.toInt(), supplierTotal, adjustedPayment, ancienCredit)
+                                    fetchRecentInvoices()
+                                    onDismiss()
+                                } catch (e: Exception) {
+                                    errorMessage = "Error updating credit: ${e.message}"
+                                }
                             }
                         }
-                        onDismiss()
                     },
                     enabled = !isLoading
                 ) {
@@ -523,22 +602,7 @@ fun getDayOfWeek(dateString: String): String {
     val dateTime = LocalDateTime.parse(dateString, formatter)
     return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
 }
-suspend fun deleteInvoice(supplierId: Long?, invoiceDate: String) {
-    supplierId?.let { id ->
-        val firestore = Firebase.firestore
-        val invoiceRef = firestore.collection("F_SupplierArticlesFireS")
-            .document(id.toString())
-            .collection("Totale et Credit Des Bons")
-            .document(invoiceDate)
 
-        try {
-            invoiceRef.delete().await()
-            // You might want to update the UI or refresh the data after deletion
-        } catch (e: Exception) {
-            Log.e("Firestore", "Error deleting invoice: ", e)
-        }
-    }
-}
 
 // Update SupplierTabelle to include currentCreditBalance
 data class SupplierTabelle(
