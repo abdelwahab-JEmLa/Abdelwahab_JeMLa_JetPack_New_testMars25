@@ -443,7 +443,6 @@ fun SupplierSelectionDialog(
 ) {
     if (showDialog) {
         var showBonUpdateDialog by remember { mutableStateOf(false) }
-        var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
 
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -477,10 +476,7 @@ fun SupplierSelectionDialog(
                                     }
                                 }
                                 IconButton(
-                                    onClick = {
-                                        selectedSupplier = supplier
-                                        showBonUpdateDialog = true
-                                    }
+                                    onClick = { showBonUpdateDialog = true }
                                 ) {
                                     Icon(Icons.Default.Edit, contentDescription = "Update Bon Number")
                                 }
@@ -499,11 +495,10 @@ fun SupplierSelectionDialog(
         SupplierBonUpdateDialog(
             showDialog = showBonUpdateDialog,
             onDismiss = { showBonUpdateDialog = false },
-            onBonNumberSelected = { newBonNumber ->
-                selectedSupplier?.let { supplier ->
-                    updateSupplierBon(suppliersRef, supplier.idSupplierSu, newBonNumber.toString())
-                }
-            }
+            onBonNumberSelected = { supplierId, newBonNumber ->
+                updateSupplierBon(suppliersRef, supplierId, newBonNumber.toString())
+            },
+            suppliersList = suppliersList
         )
     }
 }
@@ -512,23 +507,53 @@ fun SupplierSelectionDialog(
 fun SupplierBonUpdateDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onBonNumberSelected: (Int) -> Unit
+    onBonNumberSelected: (Int, Int) -> Unit,
+    suppliersList: List<SupplierTabelle>
 ) {
     if (showDialog) {
+        var selectedSupplierId by remember { mutableStateOf<Int?>(null) }
+
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Update Supplier Bon Number") },
             text = {
-                LazyColumn {
-                    items(15) { i ->
-                        TextButton(
-                            onClick = {
-                                onBonNumberSelected(i + 1)
-                                onDismiss()
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                Column {
+                    Text("Select Supplier:", style = MaterialTheme.typography.titleMedium)
+                    LazyColumn(
+                        modifier = Modifier
+                            .height(200.dp)
+                            .fillMaxWidth()
+                    ) {
+                        items(suppliersList) { supplier ->
+                            TextButton(
+                                onClick = { selectedSupplierId = supplier.idSupplierSu.toInt() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${supplier.idSupplierSu} - ${supplier.nomSupplierSu}")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (selectedSupplierId != null) {
+                        Text("Select Bon Number:", style = MaterialTheme.typography.titleMedium)
+                        LazyColumn(
+                            modifier = Modifier
+                                .height(200.dp)
+                                .fillMaxWidth()
                         ) {
-                            Text("${i + 1}")
+                            items(15) { i ->
+                                TextButton(
+                                    onClick = {
+                                        onBonNumberSelected(selectedSupplierId!!, i + 1)
+                                        onDismiss()
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("${i + 1}")
+                                }
+                            }
                         }
                     }
                 }
@@ -541,7 +566,6 @@ fun SupplierBonUpdateDialog(
         )
     }
 }
-
 
 
 suspend fun exportToFirestore() {
