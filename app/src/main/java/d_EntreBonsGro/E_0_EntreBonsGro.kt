@@ -158,7 +158,9 @@ fun FragmentEntreBonsGro() {
                 articlesArticlesAcheteModele = newArticlesAcheteModele
                 suggestionsList = newArticlesAcheteModele.map { articleAchete ->
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
-                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} (${articleAchete.idArticle})"
+                    val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
+                    val nomArabe = baseDonneArticle?.nomArab ?: ""
+                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomArabe (${articleAchete.idArticle})"
                 }.distinct() + listOf("supp", "passe")
             }
 
@@ -166,6 +168,7 @@ fun FragmentEntreBonsGro() {
                 // Handle error
             }
         })
+
 
         suppliersRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
