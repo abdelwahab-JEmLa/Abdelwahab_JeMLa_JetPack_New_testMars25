@@ -1,6 +1,7 @@
 package f_credits
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,8 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -20,6 +24,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,8 +34,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -306,14 +313,7 @@ fun EditSupplierDialog(supplier: SupplierTabelle, onDismiss: () -> Unit, onEditS
 }
 
 
-data class SupplierInvoice(
-    val date: String,
-    val totaleDeCeBon: Double,
-    val payeCetteFoit: Double,
-    val creditFaitDonCeBon: Double,
-    val ancienCredits: Double
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupplierCreditDialog(
     showDialog: Boolean,
@@ -327,11 +327,13 @@ fun SupplierCreditDialog(
     var ancienCredit by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
+    var isPositive by remember { mutableStateOf(true) }
 
     // Reset supplierPayment when dialog is opened
     LaunchedEffect(showDialog) {
         if (showDialog) {
             supplierPayment = ""
+            isPositive = true
         }
     }
 
@@ -387,15 +389,45 @@ fun SupplierCreditDialog(
                         Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}")
                         Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}")
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = supplierPayment,
-                            onValueChange = { supplierPayment = it },
-                            label = { Text("Payment Amount") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = supplierPayment,
+                                onValueChange = { supplierPayment = it },
+                                label = { Text("Payment Amount") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = if (isPositive) Color.Green else Color.Red,
+                                    unfocusedTextColor = if (isPositive) Color.Green.copy(alpha = 0.7f) else Color.Red.copy(alpha = 0.7f),
+                                    focusedBorderColor = if (isPositive) Color.Green else Color.Red,
+                                    unfocusedBorderColor = if (isPositive) Color.Green.copy(alpha = 0.5f) else Color.Red.copy(alpha = 0.5f)
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconToggleButton(
+                                checked = isPositive,
+                                onCheckedChange = { isPositive = it },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = if (isPositive) Color.Green else Color.Red,
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = if (isPositive) Icons.Default.Add else Icons.Default.Remove,
+                                    contentDescription = if (isPositive) "Add" else "Subtract",
+                                    tint = Color.White
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = if((supplierPayment.toDoubleOrNull() ?: 0.0) == 0.0) ancienCredit else supplierPayment.toDoubleOrNull() ?: 0.0
-                        val newCredit = ancienCredit + supplierTotal - paymentAmount
+                        val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                        val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
+                        val newCredit = ancienCredit + supplierTotal - adjustedPayment
                         Text("New Credit Balance: ${"%.2f".format(newCredit)}")
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -432,7 +464,8 @@ fun SupplierCreditDialog(
                         coroutineScope.launch {
                             supplierId?.let { id ->
                                 val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
-                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount,ancienCredit)
+                                val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
+                                updateSupplierCredit(id.toInt(), supplierTotal, adjustedPayment, ancienCredit)
                             }
                         }
                         onDismiss()
@@ -450,6 +483,14 @@ fun SupplierCreditDialog(
         )
     }
 }
+
+data class SupplierInvoice(
+    val date: String,
+    val totaleDeCeBon: Double,
+    val payeCetteFoit: Double,
+    val creditFaitDonCeBon: Double,
+    val ancienCredits: Double
+)
 @Composable
 fun AddSupplierDialog(onDismiss: () -> Unit, onAddSupplier: (String) -> Unit) {
     var supplierName by remember { mutableStateOf("") }
