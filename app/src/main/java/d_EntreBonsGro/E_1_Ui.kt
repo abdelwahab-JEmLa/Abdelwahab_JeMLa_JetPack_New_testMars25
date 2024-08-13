@@ -116,7 +116,10 @@ fun OutlineInput(
                                 "Quantity: ${lastArticle!!.quantityAcheteBG} x ${lastArticle!!.newPrixAchatBG}"
                             inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
                                 articlesList.find { it.vidBG == vidOfLastQuantityInputted }?.let {
-                                    "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"
+                                    "last: ${it.quantityAcheteBG} x ${it.newPrixAchatBG} (${it.nomArticleBG})"//TODO ajout le nom arabe coresspondont a partire
+                                    //
+//                                    val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
+//                                    val nomArabe = baseDonneArticle?.nomArab ?: ""
                                 } ?: "Entrer quantité et prix"
                             }
                             inputText.isEmpty() -> "Entrer quantité et prix"

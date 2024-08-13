@@ -154,7 +154,7 @@ fun FragmentEntreBonsGro() {
                     val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
                     val nomArabe = baseDonneArticle?.nomArab ?: ""
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomArabe (${articleAchete.idArticle})"
-                }.distinct() + listOf("supp", "passe")
+                }.distinct() + listOf("supp", "passe")//TODO ajoute ou = "تمرير"  et "محو"
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -619,14 +619,14 @@ fun updateArticleIdFromSuggestion(
         vidOfLastQuantityInputted
     }
 
-    if (suggestion == "passe" && effectiveVid != null) {
+    if (suggestion == "passe" && effectiveVid != null) {//TODO ajoute ou = "تمرير"
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("passeToEndStateBG").setValue(true)
         articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
         onNameInputComplete()
         return
     }
-    if (suggestion == "supp" && effectiveVid != null) {
+    if (suggestion == "supp" && effectiveVid != null) {//TODO ajoute ou = "محو"
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("nomArticleBG").setValue("New Article")
         onNameInputComplete()
@@ -712,7 +712,19 @@ fun VoiceInputButton(
         if (input.contains("+")) {
             val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
             onInputProcessed(newVid)
-        } else {
+        } else {//TODO fait que si
+            // if (newValue.endsWith("تغيير")) {
+            //                        val newArabName = newValue.removeSuffix("تغيير").trim()
+            //                        coroutineScope.launch {
+            //                            vidOfLastQuantityInputted?.let { vid ->
+            //                                // Find the article in articlesEntreBonsGrosTabele by vid
+            //                                val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
+            //                                article?.let { foundArticle ->
+            //                                    // Use the idArticleBG to update the corresponding entry in baseDonneRef
+            //                                    baseDonneRef.child(foundArticle.idArticleBG.toString()).child("nomArab").setValue(newArabName)
+            //                                }
+            //                            }
+            //                        }
             val cleanInput = input.replace(".", "").toLowerCase()
             filteredSuggestions = suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
 
@@ -773,7 +785,7 @@ fun VoiceInputButton(
     if (showSuggestions) {
         AlertDialog(
             onDismissRequest = { showSuggestions = false },
-            title = { Text("Suggestions") },
+            title = { Text("Suggestions") },//fait que les suggetions soit on card avec de couleur deffirenn et le text blanche
             text = {
                 LazyColumn {
                     items(filteredSuggestions) { suggestion ->
