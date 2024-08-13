@@ -7,6 +7,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +15,115 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
+suspend fun exportToFirestore() {
+    withContext(Dispatchers.IO) {
+        try {
+            // Fetch current data from Firebase Realtime Database
+            val firebase = Firebase.database
+            val articlesRef = firebase.getReference("ArticlesBonsGrosTabele")
+            val snapshot = articlesRef.get().await()
+
+            val supplierArticles = snapshot.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
+
+            // Create a reference to the F_SupplierArticlesFireS collection in Firestore
+            val firestore = FirebaseFirestore.getInstance()
+            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+
+            // Create a batch to perform multiple write operations
+            val batch = firestore.batch()
+
+            // Group articles by supplier
+            val supplierGroups = supplierArticles.groupBy { it.supplierIdBG }
+
+            // Process each article and calculate totals
+            supplierGroups.forEach { (supplierId, articles) ->
+                var totaleDeCeBon = 0.0
+                val currentDateTime = LocalDateTime.now()
+                val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+                val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+                articles.forEach { article ->
+                    val lineData = hashMapOf(
+                        "vidBG" to article.vidBG,
+                        "idArticleBG" to article.idArticleBG,
+                        "nomArticleBG" to article.nomArticleBG,
+                        "ancienPrixBG" to article.ancienPrixBG,
+                        "newPrixAchatBG" to article.newPrixAchatBG,
+                        "quantityAcheteBG" to article.quantityAcheteBG,
+                        "quantityUniterBG" to article.quantityUniterBG,
+                        "subTotaleBG" to article.subTotaleBG,
+                        "grossisstBonN" to article.grossisstBonN,
+                        "supplierIdBG" to article.supplierIdBG,
+                        "supplierNameBG" to article.supplierNameBG,
+                        "uniterCLePlusUtilise" to article.uniterCLePlusUtilise,
+                        "erreurCommentaireBG" to article.erreurCommentaireBG,
+                        "passeToEndStateBG" to article.passeToEndStateBG,
+                        "dateCreationBG" to article.dateCreationBG
+                    )
+
+                    // Add to F_SupplierArticlesFireS collection
+                    val docRef = supplierArticlesRef
+                        .document(supplierId.toString())
+                        .collection("historiquesAchats")
+                        .document(article.idArticleBG.toString())
+                    batch.set(docRef, lineData)
+
+                    // Calculate total
+                    totaleDeCeBon += article.subTotaleBG
+                }
+                // Fetch current totalCredit from Firestore
+                val totalCreditDoc = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+
+                val ancienCredit = totalCreditDoc.getDouble("ancienCredit") ?: 0.0
+
+                // Calculate the new total credit
+                val newTotalCredit = ancienCredit + totaleDeCeBon
+                // Prepare the updated total data
+                val totalData = hashMapOf(
+                    "date" to formattedDateTime,
+                    "totaleDeCeBon" to totaleDeCeBon,
+                    "payeCetteFoit" to 0.0,
+                    "creditFaitDonCeBon" to totaleDeCeBon,
+                    "ancienCredits" to newTotalCredit
+                )
+
+                // Update the total for the supplier
+                // Use the new document ID format with date and time
+                val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(totaleDeCeBon)}"
+                val totalDocRef = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("Totale et Credit Des Bons")
+                    .document(documentId)
+                batch.set(totalDocRef, totalData)
+
+                // Update the latest document
+                val latestDocRef = supplierArticlesRef
+                    .document(supplierId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                batch.set(latestDocRef, totalData)
+            }
+
+            // Commit the batch
+            batch.commit().await()
+            println("Successfully exported articles and totals to Firestore")
+
+        } catch (e: Exception) {
+            println("Error exporting to Firestore: ${e.message}")
+        }
+    }
+}
 fun deleteReferencesWithSupplierId100(articlesRef: DatabaseReference, coroutineScope: CoroutineScope) {
     coroutineScope.launch(Dispatchers.IO) {
         try {

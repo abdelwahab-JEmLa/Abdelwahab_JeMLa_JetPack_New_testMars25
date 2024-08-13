@@ -42,7 +42,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBar(
@@ -264,6 +263,7 @@ private fun Dialog(
         )
     }
 }
+
 suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
     val refFirebase = FirebaseDatabase.getInstance().getReference("tasks").child("arab")
     val snapshot = refFirebase.get().await()
@@ -271,7 +271,7 @@ suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
 
     arabNames?.let { names ->
         val namesList = names.split(",").map { it.trim() }
-        val articles = articleDao.getAllArticlesOrder() // This now returns articles ordered by idCategorie and classementCate
+        val articles = articleDao.getAllArticlesOrder()
 
         articles.forEachIndexed { index, article ->
             if (index < namesList.size) {
@@ -281,6 +281,7 @@ suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
         }
     }
 }
+
 suspend fun exportNamesListToFirebase(articleDao: ArticleDao) {
     val articles = articleDao.getAllArticlesOrder()
     val namesList = articles.joinToString(",") { it.nomArticleFinale }
@@ -296,8 +297,8 @@ private fun DialogButton(
     onClick: () -> Unit,
     tint2: Color? = null
 ) {
-    val iconTint = tint2 ?: Color.Black // Use tint2 if not null, otherwise use Color.Red as default
-    val textColor = tint2 ?: Color.Black // Use tint2 if not null, otherwise use Color.Black as default
+    val iconTint = tint2 ?: Color.Black
+    val textColor = tint2 ?: Color.Black
 
     TextButton(
         onClick = onClick,
