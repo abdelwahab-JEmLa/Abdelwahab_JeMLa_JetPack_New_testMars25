@@ -87,7 +87,7 @@ fun OutlineInput(
             onValueChange = { newValue ->
                 onInputChange(newValue)
                 val cleanInput = newValue.replace(".", "").toLowerCase()
-                filteredSuggestions = if (cleanInput.length >= 3) {
+                filteredSuggestions = if (cleanInput.length >= 2) {
                     suggestionsList.filter {
                         it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput)
                     }

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Transform
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,8 +37,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -213,6 +216,30 @@ private fun Dialog(
                             onDismiss()
                         }
                     )
+                    if (false){
+                    DialogButton(
+                        text = "Export Names List to Firebase",
+                        icon = Icons.Default.Upload,
+                        onClick = {
+                            coroutineScope.launch {
+                                exportNamesListToFirebase(articleDao)
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Blue
+                    )
+                    }
+                    DialogButton(
+                        text = "Import Arab Names",
+                        icon = Icons.Default.CloudDownload,
+                        onClick = {
+                            coroutineScope.launch {
+                                importArabNamesToarticleDao(articleDao)
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Green
+                    )
                 }
             },
             dismissButton = {
@@ -236,6 +263,30 @@ private fun Dialog(
             }
         )
     }
+}
+suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
+    val refFirebase = FirebaseDatabase.getInstance().getReference("tasks").child("arab")
+    val snapshot = refFirebase.get().await()
+    val arabNames = snapshot.getValue(String::class.java)
+
+    arabNames?.let { names ->
+        val namesList = names.split(",").map { it.trim() }
+        val articles = articleDao.getAllArticlesOrder() // This now returns articles ordered by idCategorie and classementCate
+
+        articles.forEachIndexed { index, article ->
+            if (index < namesList.size) {
+                article.nomArab = namesList[index]
+                articleDao.updateArticle(article)
+            }
+        }
+    }
+}
+suspend fun exportNamesListToFirebase(articleDao: ArticleDao) {
+    val articles = articleDao.getAllArticlesOrder()
+    val namesList = articles.joinToString(",") { it.nomArticleFinale }
+
+    val refFirebase = FirebaseDatabase.getInstance().getReference("nameslist")
+    refFirebase.setValue(namesList)
 }
 
 @Composable

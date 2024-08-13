@@ -143,7 +143,8 @@ fun MainScreen(
                 .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
-            LazyVerticalGrid(//DOnne a chaque element couleur et text blanche et centre le
+            LazyVerticalGrid(//TODO DOnne a chaque element couleur et text blanche et donne le une icone corespondent fait lagrondire et centre le
+                //TODo le text on bas centre avec majusscule au debut
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(16.dp)
             ) {
