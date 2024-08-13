@@ -105,21 +105,24 @@ fun FragmentEntreBonsGro() {
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
-            spokenText?.let {//TODO fait que si l imput contien "+" tu lence la fun si non tu
-                //TODO fait que si  val cleanInput = inputText.replace(".", "").toLowerCase()
-                //
-                //                                cleanSuggestion.contains(cleanInput)
-                //si il ya un element a la list tu lence updateArticleIdFromSuggestion pa la sugtion trouve
-                //si non           filteredSuggestion =      cleanSuggestion.contains(cleanInput.take(3))
-                //Et tu affiche DropdownMenu(
-                //                expanded = showDropdown,
-                //                onDismissRequest = { showDropdown = false },
-                //                modifier = Modifier
-                //                    .fillMaxWidth()
-                //                    .background(MaterialTheme.colorScheme.surface)
-                //            ) {
-                //                filteredSuggestion
+            spokenText?.let {
                 inputText = it
+                //TODO fait que si l imput et par le vocal speechRecognizerLauncher
+                //  contien "+" tu lence la fun  processInputAndInsertData comme preview
+
+
+                //TODO   filteredSuggestions = suggestionsList.replace(".", "").toLowerCase().contains(inputText)
+                // fait que si  filteredSuggestions il  1  element  updateArticleIdFromSuggestion (inputText)
+                //
+
+                //.2 si si  filteredSuggestions il n aya acune  element
+                //filteredSuggestions3Sentence = suggestionsList.replace(".", "").toLowerCase().contains(cleanInput.take(3))
+                // tue lence un alert dialoge contien filteredSuggestions3Sentence on card
+                //au click updateArticleIdFromSuggestion (clickebe element)
+                //n utilise pas le fun OutlineInput( cree moi une nouvel funcction
+
+
+
                 val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
                 if (newVid != null) {
                     inputText = ""
