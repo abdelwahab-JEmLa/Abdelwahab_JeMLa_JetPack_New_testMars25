@@ -7,6 +7,8 @@ import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,11 +27,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +50,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
@@ -62,6 +68,7 @@ import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,27 +101,7 @@ fun FragmentEntreBonsGro() {
     val baseDonneRef = database.getReference("e_DBJetPackExport")
     val suppliersRef = database.getReference("F_Suppliers")
 
-    val speechRecognizerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val spokenText: String? =
-                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
-            spokenText?.let {
-                inputText = it
 
-
-
-
-                val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
-                if (newVid != null) {
-                    inputText = ""
-                    nowItsNameInputeTime = true
-                    vidOfLastQuantityInputted = newVid
-                }
-            }
-        }
-    }
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -322,7 +309,10 @@ fun FragmentEntreBonsGro() {
                 modifier = Modifier.fillMaxWidth(),
                 coroutineScope = coroutineScope
             )
-            when {
+            when {//TODO ajoute un autre mode de splite qui affiche 70 au image 30 et a
+                //AfficheEntreBonsGro
+                //TODO ici fait que AfficheEntreBonsGro soit ordre par dec le vid le plus grand on haut
+                //Fait que ce mode soit le standart mode a ffiche quen au selection du supplier
                 showFullImage -> {
                     ZoomableImage(
                         imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
@@ -784,7 +774,6 @@ fun VoiceInputButton(
     ) {
         Icon(Icons.Default.Mic, contentDescription = "Voice Input")
     }
-
     if (showSuggestions) {
         AlertDialog(
             onDismissRequest = { showSuggestions = false },
@@ -792,12 +781,17 @@ fun VoiceInputButton(
             text = {
                 LazyColumn {
                     items(filteredSuggestions) { suggestion ->
+                        val randomColor = Color(
+                            red = (0..255).random(),
+                            green = (0..255).random(),
+                            blue = (0..255).random()
+                        )
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                                containerColor = randomColor
                             )
                         ) {
                             TextButton(
@@ -816,7 +810,7 @@ fun VoiceInputButton(
                                     showSuggestions = false
                                 },
                                 colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    contentColor = Color.White
                                 )
                             ) {
                                 Text(suggestion)
@@ -831,5 +825,116 @@ fun VoiceInputButton(
                 }
             }
         )
+    }
+}
+@Composable
+fun OutlineInput(
+    inputText: String,
+    onInputChange: (String) -> Unit,
+    nowItsNameInputeTime: Boolean,
+    onNameInputComplete: () -> Unit,
+    articlesList: List<EntreBonsGrosTabele>,
+    suggestionsList: List<String>,
+    vidOfLastQuantityInputted: Long?,
+    articlesRef: DatabaseReference,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
+    editionPassedMode: Boolean,
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope
+) {
+    var showDropdown by remember { mutableStateOf(false) }
+    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var textFieldFocused by remember { mutableStateOf(false) }
+
+    val lastArticle by remember(articlesList, editionPassedMode) {
+        mutableStateOf(
+            if (editionPassedMode) {
+                articlesList.filter { it.passeToEndStateBG }.maxByOrNull { it.vidBG }
+            } else {
+                articlesList.maxByOrNull { it.vidBG }
+            }
+        )
+    }
+
+    Column(modifier = modifier) {
+        Box {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = { newValue ->
+                    onInputChange(newValue)
+                    if (newValue.length >= 3) {
+                        val cleanInput = newValue.replace(".", "").toLowerCase()
+                        filteredSuggestions = suggestionsList.asSequence().filter { suggestion ->
+                            val cleanSuggestion = suggestion.replace(".", "").toLowerCase(Locale.ROOT)
+                            if (isArabic(cleanInput)) {
+                                cleanSuggestion.contains(cleanInput.take(3))
+                            } else {
+                                cleanSuggestion.contains(cleanInput)
+                            }
+                        }.take(10).toList()
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    } else {
+                        filteredSuggestions = emptyList()
+                        showDropdown = false
+                    }
+                },
+                label = {
+                    Text(
+                        when {
+                            inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null -> {
+                                val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == lastArticle!!.idArticleBG }
+                                val nomArabe = baseDonneArticle?.nomArab ?: ""
+                                "Quantity: ${lastArticle!!.quantityAcheteBG} x ${lastArticle!!.newPrixAchatBG} (${lastArticle!!.nomArticleBG}) $nomArabe"
+                            }
+                            inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
+                                articlesList.find { it.vidBG == vidOfLastQuantityInputted }?.let { article ->
+                                    val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == article.idArticleBG }
+                                    val nomArabe = baseDonneArticle?.nomArab ?: ""
+                                    "last: ${article.quantityAcheteBG} x ${article.newPrixAchatBG} (${article.nomArticleBG}) $nomArabe"
+                                } ?: "Entrer quantité et prix"
+                            }
+                            inputText.isEmpty() -> "Entrer quantité et prix"
+                            else -> inputText
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        textFieldFocused = focusState.isFocused
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    }
+            )
+
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { showDropdown = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                filteredSuggestions.forEach { suggestion ->
+                    DropdownMenuItem(
+                        text = { Text(suggestion) },
+                        onClick = {
+                            updateArticleIdFromSuggestion(
+                                suggestion,
+                                vidOfLastQuantityInputted,
+                                articlesRef,
+                                articlesArticlesAcheteModele,
+                                articlesBaseDonne,
+                                onNameInputComplete,
+                                editionPassedMode,
+                                articlesList,
+                                coroutineScope = coroutineScope
+                            )
+                            onInputChange("")
+                            showDropdown = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
