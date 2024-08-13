@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -70,13 +71,19 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import d_EntreBonsGro.updateSupplierCredit
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 import kotlin.random.Random
-
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
@@ -195,6 +202,11 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                         modifier = Modifier.drawTextWithOutline(Color.Black)
                     )
                 }
+                Text(
+                    text = "Credit Balance: ${supplier.currentCreditBalance}",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                    modifier = Modifier.drawTextWithOutline(Color.Black)
+                )
             }
             Row {
                 IconButton(onClick = { showCreditDialog = true }) {
@@ -261,7 +273,8 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
             supplierId = supplier.idSupplierSu,
             supplierName = supplier.nomSupplierSu,
             supplierTotal = 0.0, // You may want to pass the actual total here
-            coroutineScope = rememberCoroutineScope()
+            coroutineScope = rememberCoroutineScope(),
+            supplierColor = backgroundColor // Pass the background color here
         )
     }
 
@@ -313,7 +326,9 @@ fun EditSupplierDialog(supplier: SupplierTabelle, onDismiss: () -> Unit, onEditS
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+
+// Update the SupplierCreditDialog to use this function
 @Composable
 fun SupplierCreditDialog(
     showDialog: Boolean,
@@ -321,13 +336,15 @@ fun SupplierCreditDialog(
     supplierId: Long?,
     supplierName: String,
     supplierTotal: Double,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    supplierColor: Color
 ) {
     var supplierPayment by remember { mutableStateOf("") }
     var ancienCredit by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
     var isPositive by remember { mutableStateOf(true) }
+
 
     // Reset supplierPayment when dialog is opened
     LaunchedEffect(showDialog) {
@@ -380,23 +397,29 @@ fun SupplierCreditDialog(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Manage Supplier Credit: $supplierName") },
+            title = { Text("Manage Supplier Credit: $supplierName", color = Color.White) },
+            containerColor = supplierColor,
             text = {
                 Column {
                     if (isLoading) {
                         CircularProgressIndicator()
                     } else {
-                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}")
-                        Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}")
+                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}", color = Color.White)
+                        Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}", color = Color.White)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
+                            val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                            val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
+                            val newCredit = ancienCredit + supplierTotal - adjustedPayment
+                            Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
+
                             OutlinedTextField(
                                 value = supplierPayment,
                                 onValueChange = { supplierPayment = it },
-                                label = { Text("Payment Amount") },
+                                label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -425,15 +448,11 @@ fun SupplierCreditDialog(
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
-                        val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                        val newCredit = ancienCredit + supplierTotal - adjustedPayment
-                        Text("New Credit Balance: ${"%.2f".format(newCredit)}")
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium)
+                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium, color = Color.White)
                         if (recentInvoices.isEmpty()) {
-                            Text("No recent invoices found")
+                            Text("No recent invoices found", color = Color.White)
                         } else {
                             LazyColumn(
                                 modifier = Modifier.height(200.dp)
@@ -444,12 +463,27 @@ fun SupplierCreditDialog(
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
                                     ) {
-                                        Column(modifier = Modifier.padding(8.dp)) {
-                                            Text("Date: ${invoice.date}")
-                                            Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
-                                            Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
-                                            Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
-                                            Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                        Row(
+                                            modifier = Modifier.padding(8.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text("Date: ${invoice.date} (${getDayOfWeek(invoice.date)})")
+                                                Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
+                                                Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
+                                                Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                                Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        deleteInvoice(supplierId, invoice.date)
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Delete Invoice")
+                                            }
                                         }
                                     }
                                 }
@@ -472,16 +506,50 @@ fun SupplierCreditDialog(
                     },
                     enabled = !isLoading
                 ) {
-                    Text("Save")
+                    Text("Save", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text("Cancel", color = Color.White)
                 }
             }
         )
     }
+}
+
+fun getDayOfWeek(dateString: String): String {
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val dateTime = LocalDateTime.parse(dateString, formatter)
+    return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+}
+suspend fun deleteInvoice(supplierId: Long?, invoiceDate: String) {
+    supplierId?.let { id ->
+        val firestore = Firebase.firestore
+        val invoiceRef = firestore.collection("F_SupplierArticlesFireS")
+            .document(id.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(invoiceDate)
+
+        try {
+            invoiceRef.delete().await()
+            // You might want to update the UI or refresh the data after deletion
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error deleting invoice: ", e)
+        }
+    }
+}
+
+// Update SupplierTabelle to include currentCreditBalance
+data class SupplierTabelle(
+    val vidSu: Long = 0,
+    var idSupplierSu: Long = 0,
+    var nomSupplierSu: String = "",
+    var bonDuSupplierSu: String = "",
+    val couleurSu: String = "#FFFFFF", // Default color
+    var currentCreditBalance: Double = 0.0 // New field for current credit balance
+) {
+    constructor() : this(0)
 }
 
 data class SupplierInvoice(
@@ -544,13 +612,37 @@ class CreditsViewModel : ViewModel() {
         suppliersRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val newList = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
-                _supplierList.value = newList
+                viewModelScope.launch {
+                    newList.forEach { supplier ->
+                        supplier.currentCreditBalance = getCurrentCreditBalance(supplier.idSupplierSu)
+                    }
+                    _supplierList.value = newList
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
                 println("Error loading suppliers: ${error.message}")
             }
         })
+    }
+
+    private suspend fun getCurrentCreditBalance(supplierId: Long): Double {
+        return withContext(Dispatchers.IO) {
+            try {
+                val firestore = Firebase.firestore
+                val latestDoc = firestore.collection("F_SupplierArticlesFireS")
+                    .document(supplierId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+
+                latestDoc.getDouble("ancienCredits") ?: 0.0
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error fetching current credit balance: ", e)
+                0.0
+            }
+        }
     }
 
     fun updateSupplier(updatedSupplier: SupplierTabelle) {
@@ -591,12 +683,4 @@ class CreditsViewModel : ViewModel() {
 
 }
 
-data class SupplierTabelle(
-    val vidSu: Long = 0,
-    var idSupplierSu: Long = 0,
-    var nomSupplierSu: String = "",
-    var bonDuSupplierSu: String = "",
-    val couleurSu: String = "#FFFFFF" // Default color
-) {
-    constructor() : this(0)
-}
+
