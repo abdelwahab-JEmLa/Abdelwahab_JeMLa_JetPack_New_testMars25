@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -154,7 +155,7 @@ fun FragmentEntreBonsGro() {
                     val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
                     val nomArabe = baseDonneArticle?.nomArab ?: ""
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomArabe (${articleAchete.idArticle})"
-                }.distinct() + listOf("supp", "passe")//TODO ajoute ou = "تمرير"  et "محو"
+                }.distinct() + listOf("supp", "passe","تمرير" ,"محو" )
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -258,6 +259,7 @@ fun FragmentEntreBonsGro() {
             VoiceInputButton(
                 articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
                 articlesRef = articlesRef,
+                baseDonneRef = baseDonneRef,  // Add this line
                 founisseurNowIs = founisseurNowIs,
                 articlesBaseDonne = articlesBaseDonne,
                 suppliersList = suppliersList,
@@ -619,14 +621,14 @@ fun updateArticleIdFromSuggestion(
         vidOfLastQuantityInputted
     }
 
-    if (suggestion == "passe" && effectiveVid != null) {//TODO ajoute ou = "تمرير"
+    if (suggestion == "passe" || suggestion == "تمرير" && effectiveVid != null) {
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("passeToEndStateBG").setValue(true)
         articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
         onNameInputComplete()
         return
     }
-    if (suggestion == "supp" && effectiveVid != null) {//TODO ajoute ou = "محو"
+    if (suggestion == "supp" || suggestion == "محو" && effectiveVid != null) {
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("nomArticleBG").setValue("New Article")
         onNameInputComplete()
@@ -693,6 +695,7 @@ fun updateArticleIdFromSuggestion(
 fun VoiceInputButton(
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     articlesRef: DatabaseReference,
+    baseDonneRef: DatabaseReference,  // Add this line
     founisseurNowIs: Int?,
     articlesBaseDonne: List<BaseDonne>,
     suppliersList: List<SupplierTabelle>,
@@ -704,6 +707,7 @@ fun VoiceInputButton(
     editionPassedMode: Boolean,
     coroutineScope: CoroutineScope
 ) {
+    // ... rest of the function
     var inputText by remember { mutableStateOf("") }
     var showSuggestions by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
@@ -712,19 +716,18 @@ fun VoiceInputButton(
         if (input.contains("+")) {
             val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
             onInputProcessed(newVid)
-        } else {//TODO fait que si
-            // if (newValue.endsWith("تغيير")) {
-            //                        val newArabName = newValue.removeSuffix("تغيير").trim()
-            //                        coroutineScope.launch {
-            //                            vidOfLastQuantityInputted?.let { vid ->
-            //                                // Find the article in articlesEntreBonsGrosTabele by vid
-            //                                val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
-            //                                article?.let { foundArticle ->
-            //                                    // Use the idArticleBG to update the corresponding entry in baseDonneRef
-            //                                    baseDonneRef.child(foundArticle.idArticleBG.toString()).child("nomArab").setValue(newArabName)
-            //                                }
-            //                            }
-            //                        }
+        } else if (input.endsWith("تغيير")) {
+            val newArabName = input.removeSuffix("تغيير").trim()
+            coroutineScope.launch {
+                vidOfLastQuantityInputted?.let { vid ->
+                    val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
+                    article?.let { foundArticle ->
+                        baseDonneRef.child(foundArticle.idArticleBG.toString()).child("nomArab").setValue(newArabName)
+                    }
+                }
+            }
+            onInputProcessed(null)
+        } else {
             val cleanInput = input.replace(".", "").toLowerCase()
             filteredSuggestions = suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
 
@@ -785,25 +788,39 @@ fun VoiceInputButton(
     if (showSuggestions) {
         AlertDialog(
             onDismissRequest = { showSuggestions = false },
-            title = { Text("Suggestions") },//fait que les suggetions soit on card avec de couleur deffirenn et le text blanche
+            title = { Text("Suggestions") },
             text = {
                 LazyColumn {
                     items(filteredSuggestions) { suggestion ->
-                        TextButton(onClick = {
-                            updateArticleIdFromSuggestion(
-                                suggestion,
-                                vidOfLastQuantityInputted,
-                                articlesRef,
-                                articlesArticlesAcheteModele,
-                                articlesBaseDonne,
-                                { onInputProcessed(null) },
-                                editionPassedMode,
-                                articlesEntreBonsGrosTabele,
-                                coroutineScope
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
                             )
-                            showSuggestions = false
-                        }) {
-                            Text(suggestion)
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    updateArticleIdFromSuggestion(
+                                        suggestion,
+                                        vidOfLastQuantityInputted,
+                                        articlesRef,
+                                        articlesArticlesAcheteModele,
+                                        articlesBaseDonne,
+                                        { onInputProcessed(null) },
+                                        editionPassedMode,
+                                        articlesEntreBonsGrosTabele,
+                                        coroutineScope
+                                    )
+                                    showSuggestions = false
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            ) {
+                                Text(suggestion)
+                            }
                         }
                     }
                 }
