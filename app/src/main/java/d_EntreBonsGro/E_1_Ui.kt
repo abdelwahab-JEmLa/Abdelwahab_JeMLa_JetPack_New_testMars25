@@ -88,8 +88,15 @@ fun OutlineInput(
                 onInputChange(newValue)
                 val cleanInput = newValue.replace(".", "").toLowerCase()
                 filteredSuggestions = if (cleanInput.length >= 2) {
-                    suggestionsList.filter {
-                        it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput)
+                    if (isArabic(cleanInput)) {
+                        // For Arabic input, compare only the first 3 letters
+                        suggestionsList.filter {
+                            it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput.take(3))
+                        }
+                    } else {
+                        suggestionsList.filter {
+                            it.replace(".", "").toLowerCase(Locale.ROOT).contains(cleanInput)
+                        }
                     }
                 } else {
                     emptyList()
@@ -116,7 +123,7 @@ fun OutlineInput(
                 .fillMaxWidth()
         )
 
-        DropdownMenu(
+        DropdownMenu(//TODO pk quand le drop dow s affiche le keybord se cache
             expanded = showDropdown,
             onDismissRequest = { showDropdown = false },
             modifier = Modifier.fillMaxWidth()
@@ -145,6 +152,10 @@ fun OutlineInput(
     }
 }
 
+// Helper function to check if a string contains Arabic characters
+fun isArabic(text: String): Boolean {
+    return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
+}
 
 @Composable
 fun AfficheEntreBonsGro(

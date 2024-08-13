@@ -9,14 +9,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CreditCard
@@ -27,13 +23,11 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
@@ -58,20 +51,15 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -285,7 +273,15 @@ fun FragmentEntreBonsGro() {
                 inputText = inputText,
                 onInputChange = { newValue ->
                     inputText = newValue
-                    if (newValue.contains("+")) {
+                    if (newValue.endsWith("تغير")) {
+                        val newArabName = newValue.removeSuffix("تغير").trim()
+                        coroutineScope.launch {
+                            vidOfLastQuantityInputted?.let { vid ->
+                                baseDonneRef.child(vid.toString()).child("nomArab").setValue(newArabName)
+                            }
+                        }
+                        inputText = ""
+                    } else if (newValue.contains("+")) {
                         val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
                         if (newVid != null) {
                             inputText = ""
@@ -528,4 +524,147 @@ data class EntreBonsGrosTabele(
 ){
     // Secondary constructor for Firebase
     constructor() : this(0)
+}
+fun processInputAndInsertData(
+    input: String,
+    articlesList: List<EntreBonsGrosTabele>,
+    articlesRef: DatabaseReference,
+    founisseurNowIs: Int?,
+    articlesBaseDonne: List<BaseDonne>,
+    suppliersList: List<SupplierTabelle>
+): Long? {
+    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    val matchResult = regex.find(input)
+
+    val (quantity, price) = matchResult?.destructured?.let {
+        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
+    } ?: Pair(null, null)
+
+    if (quantity != null && price != null) {
+        val newVid = (articlesList.maxOfOrNull { it.vidBG } ?: 0) + 1
+        var quantityUniterBG = 1
+
+        val baseDonneEntry = articlesBaseDonne.find { it.idArticle.toLong() == newVid }
+        if (baseDonneEntry != null) {
+            quantityUniterBG = baseDonneEntry.nmbrUnite.toInt()
+        }
+
+        val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
+        val currentDate = LocalDate.now().toString()
+
+        val newArticle = supplier?.idSupplierSu?.let {
+            EntreBonsGrosTabele(
+                vidBG = newVid,
+                idArticleBG = 0,
+                nomArticleBG = "",
+                ancienPrixBG = 0.0,
+                newPrixAchatBG = price,
+                quantityAcheteBG = quantity,
+                quantityUniterBG = quantityUniterBG,
+                subTotaleBG = price * quantity,
+                grossisstBonN = founisseurNowIs ?: 0,
+                supplierIdBG = it,
+                supplierNameBG = supplier.nomSupplierSu ,
+                uniterCLePlusUtilise = false,
+                erreurCommentaireBG = "",
+                passeToEndStateBG = false,
+                dateCreationBG = currentDate
+            )
+        }
+        articlesRef.child(newVid.toString()).setValue(newArticle)
+            .addOnSuccessListener {
+                println("New article inserted successfully")
+            }
+            .addOnFailureListener { e ->
+                println("Error inserting new article: ${e.message}")
+            }
+
+        return newVid
+    }
+
+    return null
+}
+fun updateArticleIdFromSuggestion(
+    suggestion: String,
+    vidOfLastQuantityInputted: Long?,
+    articlesRef: DatabaseReference,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
+    onNameInputComplete: () -> Unit,
+    editionPassedMode: Boolean,
+    articlesList: List<EntreBonsGrosTabele>,
+    coroutineScope: CoroutineScope
+) {
+    val effectiveVid = if (editionPassedMode) {
+        articlesList.firstOrNull { it.passeToEndStateBG }?.vidBG ?: vidOfLastQuantityInputted
+    } else {
+        vidOfLastQuantityInputted
+    }
+
+    if (suggestion == "passe" && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        articleToUpdate.child("passeToEndStateBG").setValue(true)
+        articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
+        onNameInputComplete()
+        return
+    }
+    if (suggestion == "supp" && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        articleToUpdate.child("nomArticleBG").setValue("New Article")
+        onNameInputComplete()
+        return
+    }
+
+    val idArticleRegex = """\((\d+)\)$""".toRegex()
+    val matchResult = idArticleRegex.find(suggestion)
+
+    val idArticle = matchResult?.groupValues?.get(1)?.toLongOrNull()
+
+    if (idArticle != null && effectiveVid != null) {
+        val articleToUpdate = articlesRef.child(effectiveVid.toString())
+        val currentArticle = articlesList.find { it.vidBG == effectiveVid }
+
+        articleToUpdate.child("idArticleBG").setValue(idArticle)
+
+        val correspondingArticle = articlesArticlesAcheteModele.find { it.idArticle == idArticle }
+        correspondingArticle?.let { article ->
+            articleToUpdate.child("nomArticleBG").setValue(article.nomArticleFinale)
+        }
+        val lastDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+
+        val correspondingBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == idArticle }
+        correspondingBaseDonne?.let { baseDonne ->
+            articleToUpdate.child("quantityUniterBG").setValue(baseDonne.nmbrUnite.toInt())
+            articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
+            articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
+            articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
+        }
+
+        coroutineScope.launch {
+            var fireStorEntreBonsGrosTabele: EntreBonsGrosTabele? = null
+
+            try {
+                val firestore = Firebase.firestore
+                val documentSnapshot = firestore
+                    .collection("F_SupplierArticlesFireS")
+                    .document(currentArticle?.supplierIdBG.toString())
+                    .collection("historiquesAchats")
+                    .document(idArticle.toString())
+                    .get()
+                    .await()
+
+                if (documentSnapshot.exists()) {
+                    fireStorEntreBonsGrosTabele = documentSnapshot.toObject(EntreBonsGrosTabele::class.java)
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error getting document: ", e)
+            }
+
+            val uniterCLePlusUtiliseFireStore = fireStorEntreBonsGrosTabele?.uniterCLePlusUtilise ?: false
+
+            articleToUpdate.child("uniterCLePlusUtilise").setValue(uniterCLePlusUtiliseFireStore)
+            println("DEBUG: Updated uniterCLePlusUtilise to $uniterCLePlusUtiliseFireStore and lastDateCreationBG to $lastDate")
+        }
+        onNameInputComplete()
+    }
 }
