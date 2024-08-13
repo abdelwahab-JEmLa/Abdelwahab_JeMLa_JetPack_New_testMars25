@@ -105,7 +105,20 @@ fun FragmentEntreBonsGro() {
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
-            spokenText?.let {
+            spokenText?.let {//TODO fait que si l imput contien "+" tu lence la fun si non tu
+                //TODO fait que si  val cleanInput = inputText.replace(".", "").toLowerCase()
+                //
+                //                                cleanSuggestion.contains(cleanInput)
+                //si il ya un element a la list tu lence updateArticleIdFromSuggestion pa la sugtion trouve
+                //si non           filteredSuggestion =      cleanSuggestion.contains(cleanInput.take(3))
+                //Et tu affiche DropdownMenu(
+                //                expanded = showDropdown,
+                //                onDismissRequest = { showDropdown = false },
+                //                modifier = Modifier
+                //                    .fillMaxWidth()
+                //                    .background(MaterialTheme.colorScheme.surface)
+                //            ) {
+                //                filteredSuggestion
                 inputText = it
                 val newVid = processInputAndInsertData(it, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
                 if (newVid != null) {
@@ -259,7 +272,7 @@ fun FragmentEntreBonsGro() {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {//TODO pk quand je met l ecrit la sugtion list ne s affiche pas au outline
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
                         putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
