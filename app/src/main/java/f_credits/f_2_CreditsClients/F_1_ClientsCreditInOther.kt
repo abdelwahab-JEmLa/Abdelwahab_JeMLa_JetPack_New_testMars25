@@ -101,59 +101,6 @@ fun ClientsBonUpdateDialog(
 }
 
 
-
-
-fun updateClientsCredit(
-    clientsId: Int,
-    clientsTotal: Double,
-    clientsPayment: Double,
-    ancienCredit: Double
-) {
-    val firestore = Firebase.firestore
-    val currentDateTime = LocalDateTime.now()
-    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-
-    // Calculate restCreditDeCetteBon, ensuring it's not negative
-    val restCreditDeCetteBon = maxOf(clientsTotal - clientsPayment, 0.0)
-
-
-    // Calculate the new total credit
-    val newTotalCredit = ancienCredit + clientsTotal - clientsPayment
-    // Prepare the updated total data
-    val data = hashMapOf(
-        "date" to formattedDateTime,
-        "totaleDeCeBon" to clientsTotal,
-        "payeCetteFoit" to clientsPayment,
-        "creditFaitDonCeBon" to restCreditDeCetteBon,
-        "ancienCredits" to newTotalCredit
-    )
-
-
-    try {
-        // Update the current bon document
-        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(clientsTotal)}"
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientsId.toString())
-            .collection("Totale et Credit Des Bons")
-            .document(documentId)
-            .set(data)
-
-        // Update the latest document
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientsId.toString())
-            .collection("latest Totale et Credit Des Bons")
-            .document("latest")
-            .set(data)
-
-        Log.d("Firestore", "Clients credit updated successfully")
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating clients credit: ", e)
-    }
-}
-
-
 data class ClientsInvoiceOther(
     val date: String,
     val totaleDeCeBon: Double,
@@ -298,3 +245,56 @@ fun ClientsCreditDialog(
         )
     }
 }
+
+
+fun updateClientsCredit(
+    clientsId: Int,
+    clientsTotal: Double,
+    clientsPayment: Double,
+    ancienCredit: Double
+) {
+    val firestore = Firebase.firestore
+    val currentDateTime = LocalDateTime.now()
+    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+    // Calculate restCreditDeCetteBon, ensuring it's not negative
+    val restCreditDeCetteBon = maxOf(clientsTotal - clientsPayment, 0.0)
+
+
+    // Calculate the new total credit
+    val newTotalCredit = ancienCredit + clientsTotal - clientsPayment
+    // Prepare the updated total data
+    val data = hashMapOf(
+        "date" to formattedDateTime,
+        "totaleDeCeBon" to clientsTotal,
+        "payeCetteFoit" to clientsPayment,
+        "creditFaitDonCeBon" to restCreditDeCetteBon,
+        "ancienCredits" to newTotalCredit
+    )
+
+
+    try {
+        // Update the current bon document
+        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(clientsTotal)}"
+        firestore.collection("F_ClientsArticlesFireS")
+            .document(clientsId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(documentId)
+            .set(data)
+
+        // Update the latest document
+        firestore.collection("F_ClientsArticlesFireS")
+            .document(clientsId.toString())
+            .collection("latest Totale et Credit Des Bons")
+            .document("latest")
+            .set(data)
+
+        Log.d("Firestore", "Clients credit updated successfully")
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating clients credit: ", e)
+    }
+}
+
+

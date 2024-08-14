@@ -76,3 +76,15 @@ fun calculateClientTotal(clientArticles: List<ArticlesAcheteModele>): Double {
         round(monPrixVentDetermineBM * 10) / 10 * article.totalQuantity
     }
 }
+
+fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: String): Double {
+    return articles.filter { it.nomClient == clientName && !it.nonTrouveState }
+        .sumOf { article ->
+            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
+                article.monPrixVentBM else article.monPrixVentFireStoreBM
+            val prixVente = round(monPrixVentDetermineBM * 10) / 10
+            val prixAchatC = if (article.prixAchat == 0.0) prixVente else article.prixAchat
+            val profit = prixVente - prixAchatC
+            profit * article.totalQuantity
+        }
+}

@@ -22,14 +22,10 @@ import androidx.compose.material.icons.filled.AllInbox
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -142,89 +138,6 @@ fun FragmentManageBonsClients() {
             articles = articles  // Ajout de ce paramètre
         )
     }
-}
-
-
-
-
-
-fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: String): Double {
-    return articles.filter { it.nomClient == clientName && !it.nonTrouveState }
-        .sumOf { article ->
-            val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
-                article.monPrixVentBM else article.monPrixVentFireStoreBM
-            val prixVente = round(monPrixVentDetermineBM * 10) / 10
-            val prixAchatC = if (article.prixAchat == 0.0) prixVente else article.prixAchat
-            val profit = prixVente - prixAchatC
-            profit * article.totalQuantity
-        }
-}
-
-@Composable
-fun ClientSelectionDialog(
-    numberedClients: List<Pair<String, String>>,
-    onClientSelected: (String) -> Unit,
-    onDismiss: () -> Unit,
-    onClearFilter: () -> Unit,
-    calculateClientProfit: (String) -> Double,
-    articles: List<ArticlesAcheteModele>  // Ajout de ce paramètre
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Select Client") },
-        text = {
-            LazyColumn {
-                item {
-                    TextButton(
-                        onClick = onClearFilter,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Clear Filter")
-                    }
-                }
-                items(numberedClients.size) { index ->
-                    val (numberedClient, clientName) = numberedClients[index]
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = generateClientColor(clientName)
-                        )
-                    ) {
-                        TextButton(
-                            onClick = { onClientSelected(clientName) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.Start
-                            ) {
-                                Text(numberedClient, color = Color.Black)
-                                Text(
-                                    "Bénéfice: ${String.format("%.2f", calculateClientProfit(clientName))}Da",
-                                    color = Color.Black,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                // Titre: Calcul et affichage du total client
-                                val clientTotal = calculateClientTotal(articles.filter { it.nomClient == clientName })
-                                Text(
-                                    "Total: ${String.format("%.2f", clientTotal)}Da",
-                                    color = Color.Black,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }
 
 
@@ -361,10 +274,6 @@ fun DisplayManageBonsClients(
     }
 }
 
-
-
-
-
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
@@ -421,6 +330,7 @@ fun ClientAndEmballageHeader(
                     tint = Color.Black
                 )
             }
+            //TODO ajoute une icon de card au click tu affiche ClientsBonUpdateDialog du client spisifier
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
