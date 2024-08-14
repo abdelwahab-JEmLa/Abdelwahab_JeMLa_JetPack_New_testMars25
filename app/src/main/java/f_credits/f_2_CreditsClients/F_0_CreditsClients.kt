@@ -62,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import c_ManageBonsClients.ClientsTabelle
+import c_ManageBonsClients.updateClientsCredit
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -603,17 +605,7 @@ fun getDayOfWeekClients(dateString: String): String {
 }
 
 
-// Update ClientsTabelle to include currentCreditBalance
-data class ClientsTabelle(
-    val vidSu: Long = 0,
-    var idClientsSu: Long = 0,
-    var nomClientsSu: String = "",
-    var bonDuClientsSu: String = "",
-    val couleurSu: String = "#FFFFFF", // Default color
-    var currentCreditBalance: Double = 0.0 // New field for current credit balance
-) {
-    constructor() : this(0)
-}
+
 
 data class ClientsInvoice(
     val date: String,
