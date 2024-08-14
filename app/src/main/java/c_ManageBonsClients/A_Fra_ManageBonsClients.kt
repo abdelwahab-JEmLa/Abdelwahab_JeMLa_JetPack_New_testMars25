@@ -59,6 +59,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -81,7 +82,7 @@ fun FragmentManageBonsClients() {
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val clientsTableRef = Firebase.database.getReference("ClientsTabelle")
+    val clientsTableRef = Firebase.database.getReference("G_Clients")
     val articlesAcheteModeleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
 
     LaunchedEffect(Unit) {
@@ -457,55 +458,7 @@ fun ClientsCreditDialog(
 }
 
 
-fun updateClientsCredit(
-    clientsId: Int,
-    clientsTotal: Double,
-    clientsPayment: Double,
-    ancienCredit: Double
-) {
-    val firestore = com.google.firebase.ktx.Firebase.firestore
-    val currentDateTime = LocalDateTime.now()
-    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
-    // Calculate restCreditDeCetteBon, ensuring it's not negative
-    val restCreditDeCetteBon = maxOf(clientsTotal - clientsPayment, 0.0)
-
-
-    // Calculate the new total credit
-    val newTotalCredit = ancienCredit + clientsTotal - clientsPayment
-    // Prepare the updated total data
-    val data = hashMapOf(
-        "date" to formattedDateTime,
-        "totaleDeCeBon" to clientsTotal,
-        "payeCetteFoit" to clientsPayment,
-        "creditFaitDonCeBon" to restCreditDeCetteBon,
-        "ancienCredits" to newTotalCredit
-    )
-
-
-    try {
-        // Update the current bon document
-        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(clientsTotal)}"
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientsId.toString())
-            .collection("Totale et Credit Des Bons")
-            .document(documentId)
-            .set(data)
-
-        // Update the latest document
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientsId.toString())
-            .collection("latest Totale et Credit Des Bons")
-            .document("latest")
-            .set(data)
-
-        Log.d("Firestore", "Clients credit updated successfully")
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating clients credit: ", e)
-    }
-}
 
 // Update ClientsTabelle to include currentCreditBalance
 data class ClientsTabelle(
@@ -529,14 +482,33 @@ fun ClientAndEmballageHeader(
     articles: List<ArticlesAcheteModele>,
     allArticles: List<ArticlesAcheteModele>,
     clientTotal: Double,
-    clientId: Long? // Add this parameter
+    clientId: Long?
 ) {
     var showPrintDialog by remember { mutableStateOf(false) }
     var showClientsBonUpdateDialog by remember { mutableStateOf(false) }
+    var ancienCredits by remember { mutableStateOf(0.0) }
     val verifiedCount = allArticles.count { it.nomClient == nomClient && it.verifieState }
     val clientColor = remember(nomClient) { generateClientColor(nomClient) }
     val clientProfit = calculateClientProfit(allArticles, nomClient)
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(clientId) {
+        if (clientId != null) {
+            val firestore = Firebase.firestore
+            try {
+                val latestDoc = firestore.collection("F_ClientsArticlesFireS")
+                    .document(clientId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+
+                ancienCredits = latestDoc.getDouble("ancienCredits") ?: 0.0
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error fetching ancienCredits: ", e)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -544,7 +516,6 @@ fun ClientAndEmballageHeader(
             .background(clientColor)
             .padding(4.dp)
     ) {
-        // Add client name and emballage type
         Text(
             text = "$nomClient - $typeEmballage",
             style = MaterialTheme.typography.titleMedium,
@@ -557,11 +528,19 @@ fun ClientAndEmballageHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { showPrintDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Print,
-                    contentDescription = "Print",
-                    tint = Color.Black
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { showPrintDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Print,
+                        contentDescription = "Print",
+                        tint = Color.Black
+                    )
+                }
+                Text(
+                    text = "Ancien Crédit: ${String.format("%.2f", ancienCredits)}Da",
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
             IconButton(onClick = onToggleActive) {
@@ -583,7 +562,6 @@ fun ClientAndEmballageHeader(
                     if (clientId != null) {
                         showClientsBonUpdateDialog = true
                     } else {
-                        // Handle the case where clientId is null (e.g., show an error message)
                         Log.e("ClientAndEmballageHeader", "Client ID is null for $nomClient")
                     }
                 }
@@ -618,6 +596,11 @@ fun ClientAndEmballageHeader(
             onConfirm = {
                 val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
                 onPrintClick(verifiedClientArticles)
+                coroutineScope.launch {
+                    if (clientId != null) {
+                        updateClientsCredit(clientId.toInt(), clientTotal, 0.0, ancienCredits)
+                    }
+                }
                 showPrintDialog = false
             },
             onDismiss = { showPrintDialog = false }
@@ -633,6 +616,49 @@ fun ClientAndEmballageHeader(
             clientsTotal = clientTotal,
             coroutineScope = coroutineScope
         )
+    }
+}
+
+suspend fun updateClientsCredit(
+    clientId: Int,
+    clientsTotal: Double,
+    clientsPayment: Double,
+    ancienCredit: Double
+) {
+    val firestore = Firebase.firestore
+    val currentDateTime = LocalDateTime.now()
+    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+    val restCreditDeCetteBon = clientsTotal - clientsPayment
+    val newTotalCredit = ancienCredit + restCreditDeCetteBon
+
+    val data = hashMapOf(
+        "date" to formattedDateTime,
+        "totaleDeCeBon" to clientsTotal,
+        "payeCetteFoit" to clientsPayment,
+        "creditFaitDonCeBon" to restCreditDeCetteBon,
+        "ancienCredits" to newTotalCredit
+    )
+
+    try {
+        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(clientsTotal)}"
+        firestore.collection("F_ClientsArticlesFireS")
+            .document(clientId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(documentId)
+            .set(data)
+
+        firestore.collection("F_ClientsArticlesFireS")
+            .document(clientId.toString())
+            .collection("latest Totale et Credit Des Bons")
+            .document("latest")
+            .set(data)
+
+        Log.d("Firestore", "Clients credit updated successfully")
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating clients credit: ", e)
     }
 }
 @Entity

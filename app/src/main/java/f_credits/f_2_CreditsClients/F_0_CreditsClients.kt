@@ -604,9 +604,6 @@ fun getDayOfWeekClients(dateString: String): String {
     return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
 }
 
-
-
-
 data class ClientsInvoice(
     val date: String,
     val totaleDeCeBon: Double,
