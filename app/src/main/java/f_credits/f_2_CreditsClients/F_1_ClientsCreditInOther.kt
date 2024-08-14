@@ -1,4 +1,4 @@
-package f_credits.f_2
+package f_credits.f_2_CreditsClients
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column

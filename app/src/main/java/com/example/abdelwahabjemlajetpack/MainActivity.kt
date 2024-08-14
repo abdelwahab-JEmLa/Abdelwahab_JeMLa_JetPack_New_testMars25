@@ -44,8 +44,8 @@ import com.google.firebase.ktx.Firebase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
-import f_credits.f_2.CreditsClientsViewModel
-import f_credits.f_2.FragmentCreditsClients
+import f_credits.f_2_CreditsClients.CreditsClientsViewModel
+import f_credits.f_2_CreditsClients.FragmentCreditsClients
 
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
