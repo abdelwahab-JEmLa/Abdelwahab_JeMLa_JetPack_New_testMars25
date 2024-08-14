@@ -76,6 +76,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.round
+import kotlin.random.Random
 
 @Composable
 fun FragmentManageBonsClients() {
@@ -222,8 +223,7 @@ fun DisplayManageBonsClients(
             groupedArticles.forEach { (groupKey, clientArticles) ->
                 val (typeEmballage, nomClient) = groupKey
                 stickyHeader(key = "${nomClient}_${typeEmballage}") {
-                    // Extract clientId from the first article of the client
-                    val clientId = clientArticles.firstOrNull()?.idArticle
+
                     ClientAndEmballageHeader(
                         nomClient = nomClient,
                         typeEmballage = typeEmballage,
@@ -243,7 +243,6 @@ fun DisplayManageBonsClients(
                         articles = clientArticles,
                         allArticles = articles,
                         clientTotal = clientTotals[nomClient] ?: 0.0,
-                        clientId = clientId // Pass the extracted clientId here
                     )
                 }
 
@@ -593,6 +592,43 @@ fun getDayOfWeekClients(dateString: String): String {
     val dateTime = LocalDateTime.parse(dateString, formatter)
     return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
 }
+fun addNewClient(name: String, onComplete: (Long) -> Unit) {
+    val clientsTableRef = Firebase.database.getReference("G_Clients")
+    clientsTableRef.orderByChild("idClientsSu").limitToLast(1).addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            val maxId = if (snapshot.exists()) {
+                snapshot.children.first().getValue(ClientsTabelle::class.java)?.idClientsSu ?: 0
+            } else {
+                0
+            }
+            val newClients = ClientsTabelle(
+                vidSu = System.currentTimeMillis(),
+                idClientsSu = maxId + 1,
+                nomClientsSu = name,
+                bonDuClientsSu = "",
+                couleurSu = generateRandomTropicalColor()
+            )
+            clientsTableRef.child((maxId + 1).toString()).setValue(newClients)
+                .addOnSuccessListener {
+                    onComplete(maxId + 1)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firebase", "Error adding new client: ${e.message}")
+                }
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            Log.e("Firebase", "Error fetching max client ID: ${error.message}")
+        }
+    })
+}
+
+private fun generateRandomTropicalColor(): String {
+    val hue = Random.nextFloat() * 360
+    val saturation = 0.7f + Random.nextFloat() * 0.3f  // 70-100% saturation
+    val value = 0.5f + Random.nextFloat() * 0.3f  // 50-80% value (darker colors)
+    return "#%06X".format(0xFFFFFF and android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+}
 
 // Update ClientsTabelle to include currentCreditBalance
 data class ClientsTabelle(
@@ -605,7 +641,6 @@ data class ClientsTabelle(
 ) {
     constructor() : this(0)
 }
-
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
@@ -615,34 +650,66 @@ fun ClientAndEmballageHeader(
     isActive: Boolean,
     articles: List<ArticlesAcheteModele>,
     allArticles: List<ArticlesAcheteModele>,
-    clientTotal: Double,
-    clientId: Long?
+    clientTotal: Double
 ) {
     var showPrintDialog by remember { mutableStateOf(false) }
     var showClientsBonUpdateDialog by remember { mutableStateOf(false) }
+    var clientId by remember { mutableStateOf<Long?>(null) }
     var ancienCredits by remember { mutableStateOf(0.0) }
     val verifiedCount = allArticles.count { it.nomClient == nomClient && it.verifieState }
     val clientColor = remember(nomClient) { generateClientColor(nomClient) }
     val clientProfit = calculateClientProfit(allArticles, nomClient)
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(clientId) {
+    fun fetchAncienCredits(clientId: Long?, onCreditsFetched: (Double) -> Unit) {
         if (clientId != null) {
             val firestore = Firebase.firestore
-            try {
-                val latestDoc = firestore.collection("F_ClientsArticlesFireS")
-                    .document(clientId.toString())
-                    .collection("latest Totale et Credit Des Bons")
-                    .document("latest")
-                    .get()
-                    .await()
-
-                ancienCredits = latestDoc.getDouble("ancienCredits") ?: 0.0
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error fetching ancienCredits: ", e)
-            }
+            firestore.collection("F_ClientsArticlesFireS")
+                .document(clientId.toString())
+                .collection("latest Totale et Credit Des Bons")
+                .document("latest")
+                .get()
+                .addOnSuccessListener { document ->
+                    val credits = document.getDouble("ancienCredits") ?: 0.0
+                    onCreditsFetched(credits)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error fetching ancienCredits: ", e)
+                    onCreditsFetched(0.0)
+                }
+        } else {
+            onCreditsFetched(0.0)
         }
     }
+
+    LaunchedEffect(nomClient) {
+        val clientsTableRef = Firebase.database.getReference("G_Clients")
+        clientsTableRef.orderByChild("nomClientsSu").equalTo(nomClient).limitToFirst(1)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val clientData = snapshot.children.first().getValue(ClientsTabelle::class.java)
+                        clientId = clientData?.idClientsSu
+                        fetchAncienCredits(clientId) { credits ->
+                            ancienCredits = credits
+                        }
+                    } else {
+                        // Client doesn't exist, add new client
+                        addNewClient(nomClient) { newClientId ->
+                            clientId = newClientId
+                            fetchAncienCredits(clientId) { credits ->
+                                ancienCredits = credits
+                            }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Firebase", "Error fetching client ID: ${error.message}")
+                }
+            })
+    }
+
 
     Column(
         modifier = Modifier
@@ -732,7 +799,7 @@ fun ClientAndEmballageHeader(
                 onPrintClick(verifiedClientArticles)
                 coroutineScope.launch {
                     if (clientId != null) {
-                        updateClientsCredit(clientId.toInt(), clientTotal, 0.0, ancienCredits)
+                        updateClientsCredit(clientId!!.toInt(), clientTotal, 0.0, ancienCredits)
                     }
                 }
                 showPrintDialog = false
@@ -752,6 +819,7 @@ fun ClientAndEmballageHeader(
         )
     }
 }
+
 
 suspend fun updateClientsCredit(
     clientId: Int,
