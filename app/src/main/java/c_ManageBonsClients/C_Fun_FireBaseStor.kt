@@ -6,12 +6,15 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import kotlin.math.round
@@ -98,6 +101,14 @@ private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArt
     }
 
     return Pair(texteImprimable, totaleBon)
+}
+fun updateTotalProfitInFirestore(totalProfit: Double) {
+    val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+    val db = com.google.firebase.Firebase.firestore
+    db.collection("Benifice Du Jour").document(currentDate)
+        .set(mapOf("benifice" to totalProfit))
+        .addOnSuccessListener { println("Bénéfice mis à jour avec succès") }
+        .addOnFailureListener { e -> println("Erreur lors de la mise à jour du bénéfice: $e") }
 }
 
 suspend fun exportToFirestore(

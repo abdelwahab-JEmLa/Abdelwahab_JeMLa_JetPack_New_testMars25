@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -46,53 +45,10 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.AutoResizedText
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.example.abdelwahabjemlajetpack.R
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import java.io.File
 import kotlin.math.roundToInt
-
-@OptIn(ExperimentalGlideComposeApi::class)
-@Composable
-fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
-    val defaultDrawable = R.drawable.blanc
-
-    val imageExist: String? = when {
-        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-        File("$imagePath.webp").exists() -> "$imagePath.webp"
-        else -> null
-    }
-
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .wrapContentSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        GlideImage(
-            model = imageExist ?: defaultDrawable,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .wrapContentSize(Alignment.Center),
-        ) {
-            it
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .override(1000) // Set a larger size
-                .thumbnail(0.25f) // Start with 25% quality
-                .fitCenter() // Ensure the image fits within the bounds
-                .transition(DrawableTransitionOptions.withCrossFade()) // Smooth transition as quality improves
-        }
-    }
-}
-
-
 
 
 @Composable

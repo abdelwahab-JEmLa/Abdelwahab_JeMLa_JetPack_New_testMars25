@@ -1,6 +1,5 @@
 package c_ManageBonsClients
 
-import android.provider.Settings.System.DATE_FORMAT
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -48,15 +47,10 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import kotlin.math.abs
 import kotlin.math.round
 
 @Composable
@@ -91,77 +85,67 @@ fun FragmentManageBonsClients() {
         })
     }
 
-        Column {
-            // Custom app bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Bénéfice Total: ${String.format("%.2f", totalProfit)}Da",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                IconButton(onClick = { showClientDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.AllInbox,
-                        contentDescription = "Select Client",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-
-            Box(modifier = Modifier.weight(1f)) {
-                DisplayManageBonsClients(
-                    articles = articles.filter { selectedClientFilter == null || it.nomClient == selectedClientFilter },
-                    selectedArticleId = selectedArticleId,
-                    onArticleSelect = { selectedArticleId = it },
-                    coroutineScope = coroutineScope,
-                    listState = listState,
-                    paddingValues = PaddingValues(0.dp),
+    Column {
+        // Custom app bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primary)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Bénéfice Total: ${String.format("%.2f", totalProfit)}Da",
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconButton(onClick = { showClientDialog = true }) {
+                Icon(
+                    imageVector = Icons.Default.AllInbox,
+                    contentDescription = "Select Client",
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
 
-        if (showClientDialog) {
-            val distinctClients = articles.map { it.nomClient }.distinct().sorted()
-            val numberedClients = distinctClients.mapIndexed { index, client ->
-                "${index + 1}. $client" to client
-            }
-
-            ClientSelectionDialog(
-                numberedClients = numberedClients,
-                onClientSelected = { selectedClientName ->
-                    selectedClientFilter = selectedClientName
-                    showClientDialog = false
-                },
-                onDismiss = { showClientDialog = false },
-                onClearFilter = {
-                    selectedClientFilter = null
-                    showClientDialog = false
-                },
-                calculateClientProfit = { clientName -> calculateClientProfit(articles, clientName) },
-                articles = articles  // Ajout de ce paramètre
+        Box(modifier = Modifier.weight(1f)) {
+            DisplayManageBonsClients(
+                articles = articles.filter { selectedClientFilter == null || it.nomClient == selectedClientFilter },
+                selectedArticleId = selectedArticleId,
+                onArticleSelect = { selectedArticleId = it },
+                coroutineScope = coroutineScope,
+                listState = listState,
+                paddingValues = PaddingValues(0.dp),
             )
         }
     }
 
+    if (showClientDialog) {
+        val distinctClients = articles.map { it.nomClient }.distinct().sorted()
+        val numberedClients = distinctClients.mapIndexed { index, client ->
+            "${index + 1}. $client" to client
+        }
 
-
-fun calculateTotalProfit(articles: List<ArticlesAcheteModele>): Double {
-    return articles.sumOf { article ->
-        val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
-            article.monPrixVentBM else article.monPrixVentFireStoreBM
-        val prixVente = round(monPrixVentDetermineBM * 10) / 10
-        val prixAchatC = if (article.prixAchat == 0.0) prixVente else article.prixAchat
-        val profit = prixVente - prixAchatC
-        profit * article.totalQuantity
+        ClientSelectionDialog(
+            numberedClients = numberedClients,
+            onClientSelected = { selectedClientName ->
+                selectedClientFilter = selectedClientName
+                showClientDialog = false
+            },
+            onDismiss = { showClientDialog = false },
+            onClearFilter = {
+                selectedClientFilter = null
+                showClientDialog = false
+            },
+            calculateClientProfit = { clientName -> calculateClientProfit(articles, clientName) },
+            articles = articles  // Ajout de ce paramètre
+        )
     }
 }
+
+
+
 
 
 fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: String): Double {
@@ -176,7 +160,6 @@ fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: Stri
         }
 }
 
-// Titre: Correction de la fonction ClientSelectionDialog pour inclure la liste des articles
 @Composable
 fun ClientSelectionDialog(
     numberedClients: List<Pair<String, String>>,
@@ -242,21 +225,6 @@ fun ClientSelectionDialog(
             }
         }
     )
-}
-fun calculateClientTotal(clientArticles: List<ArticlesAcheteModele>): Double {
-    return clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
-        val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
-            article.monPrixVentBM else article.monPrixVentFireStoreBM
-        round(monPrixVentDetermineBM * 10) / 10 * article.totalQuantity
-    }
-}
-fun updateTotalProfitInFirestore(totalProfit: Double) {
-    val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-    val db = Firebase.firestore
-    db.collection("Benifice Du Jour").document(currentDate)
-        .set(mapOf("benifice" to totalProfit))
-        .addOnSuccessListener { println("Bénéfice mis à jour avec succès") }
-        .addOnFailureListener { e -> println("Erreur lors de la mise à jour du bénéfice: $e") }
 }
 
 
@@ -393,34 +361,7 @@ fun DisplayManageBonsClients(
     }
 }
 
-@Composable
-fun PrintConfirmationDialog(
-    verifiedCount: Int,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Confirm Printing") },
-        text = { Text("There are $verifiedCount verified articles. Do you want to proceed with printing?") },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
 
-fun generateClientColor(clientName: String): Color {
-    val hash = abs(clientName.hashCode())
-    val hue = (hash % 360).toFloat()
-    return Color.hsl(hue, 0.4f, 0.6f)
-}
 
 
 
@@ -511,33 +452,3 @@ fun ClientAndEmballageHeader(
     }
 }
 
-
-fun createEmptyArticle(nomClient: String) {
-    val database = FirebaseDatabase.getInstance()
-    val articleRef = database.getReference("ArticlesAcheteModeleAdapted")
-
-    articleRef.orderByChild("nomClient").equalTo(nomClient).limitToFirst(1).get().addOnSuccessListener { clientSnapshot ->
-        val firstClientArticle = clientSnapshot.children.firstOrNull()?.getValue(ArticlesAcheteModele::class.java)
-        val clientDate = firstClientArticle?.dateDachate ?: LocalDate.now().format(DateTimeFormatter.ofPattern(DATE_FORMAT))
-
-        articleRef.get().addOnSuccessListener { allArticlesSnapshot ->
-            val maxId = allArticlesSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
-            val newId = maxId + 1
-
-            val emptyArticle = ArticlesAcheteModele(
-                idArticle = newId,
-                nomArticleFinale = "New Empty Article",
-                nomClient = nomClient,
-                totalQuantity = 1,
-                dateDachate = clientDate,
-                typeEmballage = "Boit", // Default value
-                choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
-            )
-
-            articleRef.child(newId.toString()).setValue(emptyArticle)
-        }
-    }.addOnFailureListener { exception ->
-        // Handle any errors here
-        println("Error creating empty article: ${exception.message}")
-    }
-}
