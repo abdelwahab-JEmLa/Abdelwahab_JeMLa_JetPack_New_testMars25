@@ -15,25 +15,32 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AllInbox
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -320,6 +327,8 @@ data class ClientsInvoiceOther(
     val ancienCredits: Double
 )
 
+
+
 @Composable
 fun ClientsCreditDialog(
     showDialog: Boolean,
@@ -333,81 +342,79 @@ fun ClientsCreditDialog(
     var ancienCredit by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<ClientsInvoiceOther>>(emptyList()) }
+    var isPositive by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Reset clientsPayment when dialog is opened
+    val clientsColor = remember(clientsName) { generateClientColor(clientsName) }
+
     LaunchedEffect(showDialog) {
         if (showDialog) {
             clientsPayment = ""
-        }
-    }
-
-    LaunchedEffect(showDialog, clientsId) {
-        if (showDialog && clientsId != null) {
-            isLoading = true
-            val firestore = com.google.firebase.ktx.Firebase.firestore
-            try {
-                val latestDoc = firestore.collection("F_ClientsArticlesFireS")
-                    .document(clientsId.toString())
-                    .collection("latest Totale et Credit Des Bons")
-                    .document("latest")
-                    .get()
-                    .await()
-
-                ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
-
-                // Fetch recent invoices, excluding the "latest" document
-                val invoicesQuery = firestore.collection("F_ClientsArticlesFireS")
-                    .document(clientsId.toString())
-                    .collection("Totale et Credit Des Bons")
-                    .orderBy("date", Query.Direction.DESCENDING)
-                    .limit(3)
-
-                val invoicesSnapshot = invoicesQuery.get().await()
-                recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
-                    ClientsInvoiceOther(
-                        date = doc.getString("date") ?: "",
-                        totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
-                        payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
-                        creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
-                        ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error fetching data: ", e)
-                ancienCredit = 0.0
-                recentInvoices = emptyList()
-            }
-            isLoading = false
+            fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
+                recentInvoices = invoices
+                ancienCredit = credit
+                isLoading = false
+            })
         }
     }
 
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Manage Clients Credit: $clientsName") },
+            title = { Text("Manage Client Credit: $clientsName", color = Color.White) },
+            containerColor = clientsColor,
             text = {
                 Column {
                     if (isLoading) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = Color.White)
                     } else {
-                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + clientsTotal)}")
-                        Text("Total of Current Invoice: ${"%.2f".format(clientsTotal)}")
+                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + clientsTotal)}", color = Color.White)
+                        Text("Total of Current Invoice: ${"%.2f".format(clientsTotal)}", color = Color.White)
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = clientsPayment,
-                            onValueChange = { clientsPayment = it },
-                            label = { Text("Payment Amount") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = if((clientsPayment.toDoubleOrNull() ?: 0.0) == 0.0) ancienCredit else clientsPayment.toDoubleOrNull() ?: 0.0
-                        val newCredit = ancienCredit + clientsTotal - paymentAmount
-                        Text("New Credit Balance: ${"%.2f".format(newCredit)}")
+                        val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
+                        val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
+                        val newCredit = ancienCredit + clientsTotal - adjustedPayment
+                        Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
 
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = clientsPayment,
+                                onValueChange = { clientsPayment = it },
+                                label = { Text("Payment Amount", color = Color.White) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = if (isPositive) Color.Green else Color.Red,
+                                    unfocusedTextColor = if (isPositive) Color.Green.copy(alpha = 0.7f) else Color.Red.copy(alpha = 0.7f),
+                                    focusedBorderColor = if (isPositive) Color.Green else Color.Red,
+                                    unfocusedBorderColor = if (isPositive) Color.Green.copy(alpha = 0.5f) else Color.Red.copy(alpha = 0.5f)
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconToggleButton(
+                                checked = isPositive,
+                                onCheckedChange = { isPositive = it },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = if (isPositive) Color.Green else Color.Red,
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = if (isPositive) Icons.Default.Add else Icons.Default.Remove,
+                                    contentDescription = if (isPositive) "Add" else "Subtract",
+                                    tint = Color.White
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium)
+                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium, color = Color.White)
                         if (recentInvoices.isEmpty()) {
-                            Text("No recent invoices found")
+                            Text("No recent invoices found", color = Color.White)
                         } else {
                             LazyColumn(
                                 modifier = Modifier.height(200.dp)
@@ -418,16 +425,42 @@ fun ClientsCreditDialog(
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
                                     ) {
-                                        Column(modifier = Modifier.padding(8.dp)) {
-                                            Text("Date: ${invoice.date}")
-                                            Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
-                                            Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
-                                            Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
-                                            Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                        Row(
+                                            modifier = Modifier.padding(8.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text("Date: ${invoice.date} (${getDayOfWeekClients(invoice.date)})")
+                                                Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
+                                                Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
+                                                Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                                Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        try {
+                                                            deleteInvoice(clientsId, invoice.date)
+                                                            fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
+                                                                recentInvoices = invoices
+                                                                ancienCredit = credit
+                                                            })
+                                                        } catch (e: Exception) {
+                                                            errorMessage = "Error deleting invoice: ${e.message}"
+                                                        }
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Delete Invoice")
+                                            }
                                         }
                                     }
                                 }
                             }
+                        }
+                        errorMessage?.let {
+                            Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -438,27 +471,128 @@ fun ClientsCreditDialog(
                         coroutineScope.launch {
                             clientsId?.let { id ->
                                 val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
-                                updateClientsCredit(id.toInt(), clientsTotal, paymentAmount,ancienCredit)
+                                val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
+                                try {
+                                    updateClientsCredit(id.toInt(), clientsTotal, adjustedPayment, ancienCredit)
+                                    fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
+                                        recentInvoices = invoices
+                                        ancienCredit = credit
+                                    })
+                                    onDismiss()
+                                } catch (e: Exception) {
+                                    errorMessage = "Error updating credit: ${e.message}"
+                                }
                             }
                         }
-                        onDismiss()
                     },
                     enabled = !isLoading
                 ) {
-                    Text("Save")
+                    Text("Save", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text("Cancel", color = Color.White)
                 }
             }
         )
     }
 }
 
+suspend fun fetchRecentInvoices(clientsId: Long?, onFetchComplete: (List<ClientsInvoiceOther>, Double) -> Unit) {
+    clientsId?.let { id ->
+        val firestore = com.google.firebase.ktx.Firebase.firestore
+        try {
+            val latestDoc = firestore.collection("F_ClientsArticlesFireS")
+                .document(id.toString())
+                .collection("latest Totale et Credit Des Bons")
+                .document("latest")
+                .get()
+                .await()
 
+            val ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
 
+            val invoicesQuery = firestore.collection("F_ClientsArticlesFireS")
+                .document(id.toString())
+                .collection("Totale et Credit Des Bons")
+                .orderBy("date", Query.Direction.DESCENDING)
+                .limit(3)
+
+            val invoicesSnapshot = invoicesQuery.get().await()
+            val recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
+                ClientsInvoiceOther(
+                    date = doc.getString("date") ?: "",
+                    totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
+                    payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
+                    creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
+                    ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
+                )
+            }
+            onFetchComplete(recentInvoices, ancienCredit)
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error fetching data: ", e)
+            onFetchComplete(emptyList(), 0.0)
+        }
+    }
+}
+
+suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
+    clientsId?.let { id ->
+        val firestore = com.google.firebase.ktx.Firebase.firestore
+        val invoiceRef = firestore.collection("F_ClientsArticlesFireS")
+            .document(id.toString())
+            .collection("Totale et Credit Des Bons")
+            .whereEqualTo("date", invoiceDate)
+            .limit(1)
+
+        try {
+            val querySnapshot = invoiceRef.get().await()
+            if (!querySnapshot.isEmpty) {
+                val documentToDelete = querySnapshot.documents[0]
+                documentToDelete.reference.delete().await()
+                updateLatestDocument(id, invoiceDate)
+            } else {
+                throw Exception("No matching invoice found for deletion")
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+    } ?: throw IllegalArgumentException("Invalid clients ID")
+}
+
+suspend fun updateLatestDocument(clientsId: Long, deletedInvoiceDate: String) {
+    val firestore = com.google.firebase.ktx.Firebase.firestore
+    val latestDocRef = firestore.collection("F_ClientsArticlesFireS")
+        .document(clientsId.toString())
+        .collection("latest Totale et Credit Des Bons")
+        .document("latest")
+
+    val invoicesQuery = firestore.collection("F_ClientsArticlesFireS")
+        .document(clientsId.toString())
+        .collection("Totale et Credit Des Bons")
+        .orderBy("date", Query.Direction.DESCENDING)
+        .limit(1)
+
+    try {
+        val querySnapshot = invoicesQuery.get().await()
+        if (!querySnapshot.isEmpty) {
+            val latestInvoice = querySnapshot.documents[0]
+            latestDocRef.set(latestInvoice.data!!).await()
+        } else {
+            // If no invoices left, set default values or delete the latest document
+            latestDocRef.delete().await()
+        }
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating latest document: ", e)
+        throw e
+    }
+}
+
+fun getDayOfWeekClients(dateString: String): String {
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val dateTime = LocalDateTime.parse(dateString, formatter)
+    return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+}
 
 // Update ClientsTabelle to include currentCreditBalance
 data class ClientsTabelle(
@@ -537,7 +671,7 @@ fun ClientAndEmballageHeader(
                     )
                 }
                 Text(
-                    text = "Ancien Crédit: ${String.format("%.2f", ancienCredits)}Da",
+                    text = "A.C:${String.format("%.2f", ancienCredits)}Da",
                     color = Color.Black,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(start = 4.dp)
