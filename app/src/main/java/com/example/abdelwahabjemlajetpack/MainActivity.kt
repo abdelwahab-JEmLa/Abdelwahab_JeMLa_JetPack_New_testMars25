@@ -44,6 +44,8 @@ import com.google.firebase.ktx.Firebase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
+import f_credits.f_2.CreditsClientsViewModel
+import f_credits.f_2.FragmentCreditsClients
 
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
@@ -52,6 +54,7 @@ class MainActivity : ComponentActivity() {
         MainAppViewModelFactory(database.articleDao())
     }
     private val creditsViewModel: CreditsViewModel by viewModels()
+    private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +67,7 @@ class MainActivity : ComponentActivity() {
                 MyApp(
                     viewModel,
                     database.articleDao(),
-                    creditsViewModel
+                    creditsViewModel,creditsClientsViewModel
                 )
             }
         }
@@ -102,7 +105,8 @@ class MainActivity : ComponentActivity() {
 fun MyApp(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
-    creditsViewModel: CreditsViewModel
+    creditsViewModel: CreditsViewModel,
+    creditsClientsViewModel: CreditsClientsViewModel
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_screen") {
@@ -117,6 +121,7 @@ fun MyApp(
         composable("C_ManageBonsClients") { FragmentManageBonsClients() }
         composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao) }
         composable("FragmentCredits") { FragmentCredits(creditsViewModel) }
+        composable("FragmentCreditsClients") { FragmentCreditsClients(creditsClientsViewModel) }
     }
 }
 
@@ -143,7 +148,7 @@ fun MainScreen(
                 .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
-            LazyVerticalGrid(//TODO DOnne a chaque element couleur et text blanche et donne le une icone corespondent fait lagrondire et centre le
+            LazyVerticalGrid(//TODO Donne a chaque element couleur et text blanche et donne le une icone corespondent fait lagrondire et centre le
                 //TODo le text on bas centre avec majusscule au debut
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(16.dp)
@@ -159,6 +164,9 @@ fun MainScreen(
                 }
                 item {
                     MenuCard("Credits", "FragmentCredits", navController)
+                }
+                item {
+                    MenuCard("CreditsClients", "FragmentCreditsClients", navController)
                 }
             }
         }
