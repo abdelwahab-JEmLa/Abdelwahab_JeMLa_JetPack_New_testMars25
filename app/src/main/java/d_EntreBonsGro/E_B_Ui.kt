@@ -58,7 +58,117 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.abs
 
+@Composable
+fun OutlineInput(
+    inputText: String,
+    onInputChange: (String) -> Unit,
+    nowItsNameInputeTime: Boolean,
+    onNameInputComplete: () -> Unit,
+    articlesList: List<EntreBonsGrosTabele>,
+    suggestionsList: List<String>,
+    vidOfLastQuantityInputted: Long?,
+    articlesRef: DatabaseReference,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
+    editionPassedMode: Boolean,
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope
+) {
+    var showDropdown by remember { mutableStateOf(false) }
+    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var textFieldFocused by remember { mutableStateOf(false) }
 
+    val lastArticle by remember(articlesList, editionPassedMode) {
+        mutableStateOf(
+            if (editionPassedMode) {
+                articlesList.filter { it.passeToEndStateBG }.maxByOrNull { it.vidBG }
+            } else {
+                articlesList.maxByOrNull { it.vidBG }
+            }
+        )
+    }
+
+    Column(modifier = modifier) {
+        Box {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = { newValue ->
+                    onInputChange(newValue)
+                    if (newValue.length >= 3) {
+                        val cleanInput = newValue.replace(".", "").toLowerCase()
+                        filteredSuggestions = suggestionsList.asSequence().filter { suggestion ->
+                            val cleanSuggestion = suggestion.replace(".", "").toLowerCase(Locale.ROOT)
+                            if (isArabic(cleanInput)) {
+                                cleanSuggestion.contains(cleanInput.take(3))
+                            } else {
+                                cleanSuggestion.contains(cleanInput)
+                            }
+                        }.take(10).toList()
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    } else {
+                        filteredSuggestions = emptyList()
+                        showDropdown = false
+                    }
+                },
+                label = {
+                    Text(
+                        when {
+                            inputText.isEmpty() && nowItsNameInputeTime && lastArticle != null -> {
+                                val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == lastArticle!!.idArticleBG }
+                                val nomArabe = baseDonneArticle?.nomArab ?: ""
+                                "Quantity: ${lastArticle!!.quantityAcheteBG} x ${lastArticle!!.newPrixAchatBG} (${lastArticle!!.nomArticleBG}) $nomArabe"
+                            }
+                            inputText.isEmpty() && !nowItsNameInputeTime && vidOfLastQuantityInputted != null -> {
+                                articlesList.find { it.vidBG == vidOfLastQuantityInputted }?.let { article ->
+                                    val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == article.idArticleBG }
+                                    val nomArabe = baseDonneArticle?.nomArab ?: ""
+                                    "last: ${article.quantityAcheteBG} x ${article.newPrixAchatBG} (${article.nomArticleBG}) $nomArabe"
+                                } ?: "Entrer quantité et prix"
+                            }
+                            inputText.isEmpty() -> "Entrer quantité et prix"
+                            else -> inputText
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        textFieldFocused = focusState.isFocused
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    }
+            )
+
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { showDropdown = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                filteredSuggestions.forEach { suggestion ->
+                    DropdownMenuItem(
+                        text = { Text(suggestion) },
+                        onClick = {
+                            updateArticleIdFromSuggestion(
+                                suggestion,
+                                vidOfLastQuantityInputted,
+                                articlesRef,
+                                articlesArticlesAcheteModele,
+                                articlesBaseDonne,
+                                onNameInputComplete,
+                                editionPassedMode,
+                                articlesList,
+                                coroutineScope = coroutineScope
+                            )
+                            onInputChange("")
+                            showDropdown = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
 // Helper function to check if a string contains Arabic characters
 fun isArabic(text: String): Boolean {
     return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
@@ -263,46 +373,46 @@ fun ArticleItem(
                                     }
                                 }
                         )  {
-                                if (article.quantityUniterBG != 1) {
-                                    OutlinedTextField(
-                                        value = quantityUniterBG,
-                                        onValueChange = { newValue ->
-                                            if (newValue.isNotEmpty() && newValue.toDoubleOrNull() != null) {
-                                                quantityUniterBG = newValue
-                                                coroutineScope.launch {
-                                                    articlesRef.child(article.vidBG.toString()).apply {
-                                                        child("quantityUniterBG").setValue(newValue.toDouble())
-                                                    }
+                            if (article.quantityUniterBG != 1) {
+                                OutlinedTextField(
+                                    value = quantityUniterBG,
+                                    onValueChange = { newValue ->
+                                        if (newValue.isNotEmpty() && newValue.toDoubleOrNull() != null) {
+                                            quantityUniterBG = newValue
+                                            coroutineScope.launch {
+                                                articlesRef.child(article.vidBG.toString()).apply {
+                                                    child("quantityUniterBG").setValue(newValue.toDouble())
                                                 }
                                             }
-                                        },
-                                        label = { Text(article.quantityUniterBG.toString()) },
-                                        textStyle = LocalTextStyle.current.copy(
-                                            color = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified
-                                        ),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = if (article.uniterCLePlusUtilise) Color.Red else Color.Transparent,
-                                            unfocusedContainerColor = if (article.uniterCLePlusUtilise) Color.Red else Color.Transparent,
-                                            focusedLabelColor = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified,
-                                            unfocusedLabelColor = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified
-                                        ),
-                                        modifier = Modifier.width(80.dp)
-                                    )
-                                    Text("X")
-                                }
-                                Text(
-                                    text = if (article.uniterCLePlusUtilise) {
-                                        "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
-                                    } else {
-                                        "${article.ancienPrixBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
+                                        }
                                     },
-                                    color = if (priceDifference > 0) Color.Red else Color.Green
+                                    label = { Text(article.quantityUniterBG.toString()) },
+                                    textStyle = LocalTextStyle.current.copy(
+                                        color = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified
+                                    ),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = if (article.uniterCLePlusUtilise) Color.Red else Color.Transparent,
+                                        unfocusedContainerColor = if (article.uniterCLePlusUtilise) Color.Red else Color.Transparent,
+                                        focusedLabelColor = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified,
+                                        unfocusedLabelColor = if (article.uniterCLePlusUtilise) Color.White else Color.Unspecified
+                                    ),
+                                    modifier = Modifier.width(80.dp)
                                 )
-                                Icon(
-                                    imageVector = if (priceDifference > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                    contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
-                                    tint = if (priceDifference > 0) Color.Red else Color.Green
-                                )
+                                Text("X")
+                            }
+                            Text(
+                                text = if (article.uniterCLePlusUtilise) {
+                                    "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
+                                } else {
+                                    "${article.ancienPrixBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
+                                },
+                                color = if (priceDifference > 0) Color.Red else Color.Green
+                            )
+                            Icon(
+                                imageVector = if (priceDifference > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
+                                tint = if (priceDifference > 0) Color.Red else Color.Green
+                            )
 
                         }
 
