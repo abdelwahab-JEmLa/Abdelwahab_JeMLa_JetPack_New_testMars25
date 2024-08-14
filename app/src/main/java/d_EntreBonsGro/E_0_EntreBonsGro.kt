@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import b_Edite_Base_Donne.ArticleDao
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -72,7 +73,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FragmentEntreBonsGro() {
+fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
@@ -242,7 +243,7 @@ fun FragmentEntreBonsGro() {
                 }
             )
         },
-        floatingActionButton = {
+        floatingActionButton = {//TODO fait qui soit au start button
             VoiceInputButton(
                 articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
                 articlesRef = articlesRef,
@@ -262,7 +263,7 @@ fun FragmentEntreBonsGro() {
                 vidOfLastQuantityInputted = vidOfLastQuantityInputted,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                 editionPassedMode = editionPassedMode,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,articleDao=articleDao
             )
         }
     ) { innerPadding ->
@@ -692,7 +693,8 @@ fun VoiceInputButton(
     vidOfLastQuantityInputted: Long?,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     editionPassedMode: Boolean,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    articleDao: ArticleDao
 ) {
     // ... rest of the function
     var inputText by remember { mutableStateOf("") }
@@ -703,13 +705,14 @@ fun VoiceInputButton(
         if (input.contains("+")) {
             val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
             onInputProcessed(newVid)
-        } else if (input.endsWith("تغيير")) {
-            val newArabName = input.removeSuffix("تغيير").trim()
+        } else if (input.contains("تغيير")) {
+            val newArabName = input.removeSuffix("تغييرالى ").trim()
             coroutineScope.launch {
                 vidOfLastQuantityInputted?.let { vid ->
                     val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
                     article?.let { foundArticle ->
                         baseDonneRef.child(foundArticle.idArticleBG.toString()).child("nomArab").setValue(newArabName)
+                        articleDao.updateArticleArabName(foundArticle.idArticleBG, newArabName)
                     }
                 }
             }
@@ -760,7 +763,7 @@ fun VoiceInputButton(
     }
 
     FloatingActionButton(
-        onClick = {//TODO fait que si aucune n ai entre de relence
+        onClick = {
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")

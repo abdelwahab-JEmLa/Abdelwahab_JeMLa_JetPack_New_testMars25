@@ -14,6 +14,9 @@ interface ArticleDao {
     @Query("SELECT * FROM articles ORDER BY idCategorie, classementCate")
     suspend fun getAllArticlesOrder(): List<BaseDonne>
 
+    @Query("UPDATE articles SET nomArab = :newArabName WHERE idArticle = :idArticle")
+    suspend fun updateArticleArabName(idArticle: Long, newArabName: String)
+
     @Update
     suspend fun updateArticle(article: BaseDonne)
 
