@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -135,7 +136,14 @@ fun OutlineInput(
                     .onFocusChanged { focusState ->
                         textFieldFocused = focusState.isFocused
                         showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    },
+                trailingIcon = {
+                    if (inputText.isNotEmpty()) {
+                        IconButton(onClick = { onInputChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear input")
+                        }
                     }
+                }
             )
 
             DropdownMenu(
