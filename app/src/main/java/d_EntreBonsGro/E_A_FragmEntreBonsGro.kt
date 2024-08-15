@@ -5,22 +5,17 @@ import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
@@ -36,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -49,9 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -617,14 +609,10 @@ fun VoiceInputButton(
     coroutineScope: CoroutineScope,
     articleDao: ArticleDao
 ) {
+    // ... rest of the function
     var inputText by remember { mutableStateOf("") }
     var showSuggestions by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
-    var isRecognizing by remember { mutableStateOf(false) }
-    var showErrorToast by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-
-    val context = LocalContext.current
 
     fun processVoiceInput(input: String) {
         if (input.contains("+")) {
@@ -674,6 +662,9 @@ fun VoiceInputButton(
         }
     }
 
+    val context = LocalContext.current
+    var isRecognizing by remember { mutableStateOf(false) }
+
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -686,135 +677,83 @@ fun VoiceInputButton(
                 processVoiceInput(it)
             }
         } else {
-            showErrorToast = true
-            errorMessage = "La reconnaissance vocale a échoué. Veuillez réessayer."
+            Toast.makeText(context, "La reconnaissance vocale a échoué. Veuillez réessayer.", Toast.LENGTH_SHORT).show()
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FloatingActionButton(
-            onClick = {
-                if (!isRecognizing) {
-                    isRecognizing = true
-                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
-                    }
-                    try {
-                        speechRecognizerLauncher.launch(intent)
-                    } catch (e: Exception) {
-                        isRecognizing = false
-                        showErrorToast = true
-                        errorMessage = "Erreur lors du lancement de la reconnaissance vocale: ${e.message}"
-                    }
-                } else {
-                    showErrorToast = true
-                    errorMessage = "Reconnaissance vocale en cours..."
+    FloatingActionButton(
+        onClick = {
+            if (!isRecognizing) {
+                isRecognizing = true
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
                 }
-            },
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+                try {
+                    speechRecognizerLauncher.launch(intent)
+                } catch (e: Exception) {
+                    isRecognizing = false
+                    Toast.makeText(context, "Erreur lors du lancement de la reconnaissance vocale: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Reconnaissance vocale en cours...", Toast.LENGTH_SHORT).show()
+            }
         }
-
-        if (showErrorToast) {
-            Toast(
-                message = errorMessage,
-                onDismiss = { showErrorToast = false }
-            )
-        }
-
-        if (showSuggestions) {
-            AlertDialog(
-                onDismissRequest = { showSuggestions = false },
-                title = { Text("Suggestions") },
-                text = {
-                    LazyColumn {
-                        items(filteredSuggestions) { suggestion ->
-                            val randomColor = Color(
-                                red = (0..255).random(),
-                                green = (0..255).random(),
-                                blue = (0..255).random()
+    ) {
+        Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+    }
+    if (showSuggestions) {
+        AlertDialog(
+            onDismissRequest = { showSuggestions = false },
+            title = { Text("Suggestions") },
+            text = {
+                LazyColumn {
+                    items(filteredSuggestions) { suggestion ->
+                        val randomColor = Color(
+                            red = (0..255).random(),
+                            green = (0..255).random(),
+                            blue = (0..255).random()
+                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = randomColor
                             )
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = randomColor
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    updateArticleIdFromSuggestion(
+                                        suggestion,
+                                        vidOfLastQuantityInputted,
+                                        articlesRef,
+                                        articlesArticlesAcheteModele,
+                                        articlesBaseDonne,
+                                        { onInputProcessed(null) },
+                                        editionPassedMode,
+                                        articlesEntreBonsGrosTabele,
+                                        coroutineScope
+                                    )
+                                    showSuggestions = false
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = Color.White
                                 )
                             ) {
-                                TextButton(
-                                    onClick = {
-                                        updateArticleIdFromSuggestion(
-                                            suggestion,
-                                            vidOfLastQuantityInputted,
-                                            articlesRef,
-                                            articlesArticlesAcheteModele,
-                                            articlesBaseDonne,
-                                            { onInputProcessed(null) },
-                                            editionPassedMode,
-                                            articlesEntreBonsGrosTabele,
-                                            coroutineScope
-                                        )
-                                        showSuggestions = false
-                                    },
-                                    colors = ButtonDefaults.textButtonColors(
-                                        contentColor = Color.White
-                                    )
-                                ) {
-                                    Text(suggestion)
-                                }
+                                Text(suggestion)
                             }
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showSuggestions = false }) {
-                        Text("Cancel")
-                    }
                 }
-            )
-        }
-    }
-}
-
-@Composable
-fun Toast(
-    message: String,
-    onDismiss: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 16.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        Surface(
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Black.copy(alpha = 0.6f))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = message,
-                    color = Color.White
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Dismiss",
-                        tint = Color.White
-                    )
+            },
+            confirmButton = {
+                TextButton(onClick = { showSuggestions = false }) {
+                    Text("Cancel")
                 }
             }
-        }
+        )
     }
 }
 data class EntreBonsGrosTabele(
