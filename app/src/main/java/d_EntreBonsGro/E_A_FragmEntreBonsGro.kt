@@ -24,6 +24,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -238,7 +239,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             VoiceInputButton(
                 articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
                 articlesRef = articlesRef,
-                baseDonneRef = baseDonneRef,  // Add this line
+                baseDonneRef = baseDonneRef,
                 founisseurNowIs = founisseurNowIs,
                 articlesBaseDonne = articlesBaseDonne,
                 suppliersList = suppliersList,
@@ -254,9 +255,11 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 vidOfLastQuantityInputted = vidOfLastQuantityInputted,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                 editionPassedMode = editionPassedMode,
-                coroutineScope = coroutineScope,articleDao=articleDao
+                coroutineScope = coroutineScope,
+                articleDao = articleDao
             )
-        }
+        },
+        floatingActionButtonPosition = FabPosition.Start // This line moves the FAB to the start
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -437,6 +440,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 }
 
 
+
 fun processInputAndInsertData(
     input: String,
     articlesList: List<EntreBonsGrosTabele>,
@@ -445,14 +449,17 @@ fun processInputAndInsertData(
     articlesBaseDonne: List<BaseDonne>,
     suppliersList: List<SupplierTabelle>
 ): Long? {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()//TODO fait que si lepremier numbre avec le "x" ((\d+)\s*[x+])  est null de ecrire quantity > 1
+    val regex = """(\d+)?\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
     val matchResult = regex.find(input)
 
-    val (quantity, price) = matchResult?.destructured?.let {
-        Pair(it.component1().toIntOrNull(), it.component2().toDoubleOrNull())
+    val (quantityStr, priceStr) = matchResult?.destructured?.let {
+        Pair(it.component1(), it.component2())
     } ?: Pair(null, null)
 
-    if (quantity != null && price != null) {
+    val quantity = quantityStr?.toIntOrNull() ?: 1
+    val price = priceStr?.toDoubleOrNull()
+
+    if (price != null) {
         val newVid = (articlesList.maxOfOrNull { it.vidBG } ?: 0) + 1
         var quantityUniterBG = 1
 
@@ -476,20 +483,23 @@ fun processInputAndInsertData(
                 subTotaleBG = price * quantity,
                 grossisstBonN = founisseurNowIs ?: 0,
                 supplierIdBG = it,
-                supplierNameBG = supplier.nomSupplierSu ,
+                supplierNameBG = supplier.nomSupplierSu,
                 uniterCLePlusUtilise = false,
                 erreurCommentaireBG = "",
                 passeToEndStateBG = false,
                 dateCreationBG = currentDate
             )
         }
-        articlesRef.child(newVid.toString()).setValue(newArticle)
-            .addOnSuccessListener {
-                println("New article inserted successfully")
-            }
-            .addOnFailureListener { e ->
-                println("Error inserting new article: ${e.message}")
-            }
+
+        newArticle?.let {
+            articlesRef.child(newVid.toString()).setValue(it)
+                .addOnSuccessListener {
+                    println("New article inserted successfully")
+                }
+                .addOnFailureListener { e ->
+                    println("Error inserting new article: ${e.message}")
+                }
+        }
 
         return newVid
     }
@@ -609,8 +619,8 @@ fun VoiceInputButton(
         if (input.contains("+")) {
             val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
             onInputProcessed(newVid)
-        } else if (input.startsWith("تغييرالى ")) {
-            val newArabName = input.removeSuffix("تغييرالى").trim()//TODO pk ca ne marche pas et ne supp pas le
+        } else if (input.startsWith("تغييرالى")) {
+            val newArabName = input.substringAfter("تغييرالى").trim()
             coroutineScope.launch {
                 vidOfLastQuantityInputted?.let { vid ->
                     val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }

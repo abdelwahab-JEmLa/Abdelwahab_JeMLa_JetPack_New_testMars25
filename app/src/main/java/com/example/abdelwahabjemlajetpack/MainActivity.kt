@@ -2,6 +2,7 @@ package com.example.abdelwahabjemlajetpack
 
 import a_RoomDB.AppDatabase
 import android.Manifest
+import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -39,13 +40,21 @@ import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.MainAppViewModelFactory
 import c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.database.FirebaseDatabase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
 import f_credits.f_2_CreditsClients.CreditsClientsViewModel
 import f_credits.f_2_CreditsClients.FragmentCreditsClients
+
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseApp.initializeApp(this)
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+    }
+}
 
 class MainActivity : ComponentActivity() {
     private val PERMISSION_REQUEST_CODE = 101
@@ -58,7 +67,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Firebase.database.setPersistenceEnabled(true)
         if (!checkPermission()) {
             requestPermission()
         }
@@ -67,12 +75,12 @@ class MainActivity : ComponentActivity() {
                 MyApp(
                     viewModel,
                     database.articleDao(),
-                    creditsViewModel,creditsClientsViewModel
+                    creditsViewModel,
+                    creditsClientsViewModel
                 )
             }
         }
     }
-
     private fun checkPermission(): Boolean {
         val result = ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_EXTERNAL_STORAGE)
         return result == PackageManager.PERMISSION_GRANTED
