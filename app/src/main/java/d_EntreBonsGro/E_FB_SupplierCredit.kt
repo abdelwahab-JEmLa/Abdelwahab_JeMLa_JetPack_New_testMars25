@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -36,72 +35,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-
-@Composable
-fun SupplierBonUpdateDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onBonNumberSelected: (Int, Int) -> Unit,
-    suppliersList: List<SupplierTabelle>
-) {
-    if (showDialog) {
-        var selectedSupplierId by remember { mutableStateOf<Int?>(null) }
-
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Update Supplier Bon Number") },
-            text = {
-                Column {
-                    Text("Select Supplier:", style = MaterialTheme.typography.titleMedium)
-                    LazyColumn(
-                        modifier = Modifier
-                            .height(200.dp)
-                            .fillMaxWidth()
-                    ) {
-                        items(suppliersList) { supplier ->
-                            TextButton(
-                                onClick = { selectedSupplierId = supplier.idSupplierSu.toInt() },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("${supplier.idSupplierSu} - ${supplier.nomSupplierSu}")
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    if (selectedSupplierId != null) {
-                        Text("Select Bon Number:", style = MaterialTheme.typography.titleMedium)
-                        LazyColumn(
-                            modifier = Modifier
-                                .height(200.dp)
-                                .fillMaxWidth()
-                        ) {
-                            items(15) { i ->
-                                TextButton(
-                                    onClick = {
-                                        onBonNumberSelected(selectedSupplierId!!, i + 1)
-                                        onDismiss()
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("${i + 1}")
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-
-
 
 
 fun updateSupplierCredit(
@@ -155,13 +88,6 @@ fun updateSupplierCredit(
 }
 
 
-data class SupplierInvoice(
-    val date: String,
-    val totaleDeCeBon: Double,
-    val payeCetteFoit: Double,
-    val creditFaitDonCeBon: Double,
-    val ancienCredits: Double
-)
 
 @Composable
 fun SupplierCreditDialog(

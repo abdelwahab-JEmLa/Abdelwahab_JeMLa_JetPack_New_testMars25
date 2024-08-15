@@ -3,13 +3,18 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
@@ -19,8 +24,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -79,6 +86,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     val baseDonneRef = database.getReference("e_DBJetPackExport")
     val suppliersRef = database.getReference("F_Suppliers")
 
+    var currentImagePath by remember { mutableStateOf("file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg") }
 
 
     LaunchedEffect(Unit) {
@@ -290,7 +298,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             when {
                 showFullImage -> {
                     ZoomableImage(
-                        imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
+                        imagePath = currentImagePath,
                         supplierId = founisseurNowIs,
                         modifier = Modifier.weight(1f)
                     )
@@ -298,9 +306,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 showSplitView -> {
                     Column(modifier = Modifier.weight(1f)) {
                         ZoomableImage(
-                            imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg",
+                            imagePath = currentImagePath,
                             supplierId = founisseurNowIs,
-                            modifier = Modifier.weight(0.35f)
+                            modifier = Modifier.weight(1f)
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
@@ -351,6 +359,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             .sumOf { it.subTotaleBG },
         coroutineScope = coroutineScope
     )
+
     ActionsDialog(
         showDialog = showActionsDialog,
         onDismiss = { showActionsDialog = false },
@@ -389,6 +398,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         },
         onDeleteReferencesWithSupplierId100 = {
             deleteReferencesWithSupplierId100(articlesRef, coroutineScope)
+        } ,
+        founisseurNowIs = founisseurNowIs,
+        onImagePathChange = { newPath ->
+            currentImagePath = newPath
         }
     )
 
@@ -415,6 +428,156 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         suppliersRef=suppliersRef
 
     )
+}
+@Composable
+fun ActionsDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onDeleteAllData: () -> Unit,
+    editionPassedMode: Boolean,
+    onEditionPassedModeChange: (Boolean) -> Unit,
+    modeFilterChangesDB: Boolean,
+    onModeFilterChangesDBChange: (Boolean) -> Unit,
+    onExportToFirestore: () -> Unit,
+    showMissingArticles: Boolean,
+    onShowMissingArticlesChange: (Boolean) -> Unit,
+    addedArticlesCount: Int,
+    totalMissingArticles: Int,
+    onDeleteReferencesWithSupplierId100: () -> Unit,
+    founisseurNowIs: Int?,
+    onImagePathChange: (String) -> Unit
+) {
+    var showImageSelectDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Actions") },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            onDeleteAllData()
+                            onDismiss()
+                        }
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete all data")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Delete all data")
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Edition Passed Mode")
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = editionPassedMode,
+                            onCheckedChange = {
+                                onEditionPassedModeChange(it)
+                                onDismiss()
+                            }
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Filter Changed Prices")
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = modeFilterChangesDB,
+                            onCheckedChange = {
+                                onModeFilterChangesDBChange(it)
+                                onDismiss()
+                            }
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Show Missing Articles")
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = showMissingArticles,
+                            onCheckedChange = {
+                                onShowMissingArticlesChange(it)
+                            }
+                        )
+                    }
+                    if (showMissingArticles && totalMissingArticles > 0) {
+                        Column {
+                            Text("Adding missing articles: $addedArticlesCount / $totalMissingArticles")
+                            LinearProgressIndicator(
+                                progress = { addedArticlesCount.toFloat() / totalMissingArticles.toFloat() },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            )
+                        }
+                    } else if (addedArticlesCount > 0) {
+                        Text("Added $addedArticlesCount missing articles", color = Color.Green)
+                    }
+                    TextButton(
+                        onClick = {
+                            onDeleteReferencesWithSupplierId100()
+                            onDismiss()
+                        }
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete references with supplierIdBG = 100")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Delete references with supplierIdBG = 100")
+                    }
+                    TextButton(
+                        onClick = {
+                            onExportToFirestore()
+                            onDismiss()
+                        }
+                    ) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Export to Firestore")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Export to Firestore")
+                    }
+                    TextButton(
+                        onClick = { showImageSelectDialog = true }
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = "Select Image")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Select Image")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    if (showImageSelectDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSelectDialog = false },
+            title = { Text("Select Image Number") },
+            text = {
+                Row {
+                    (2..5).forEach { num ->
+                        TextButton(
+                            onClick = {
+                                val newImagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).$num.jpg"
+                                onImagePathChange(newImagePath)
+                                showImageSelectDialog = false
+                            }
+                        ) {
+                            Text(num.toString())
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showImageSelectDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -486,6 +649,79 @@ fun SupplierSelectionDialog(
         )
     }
 }
+data class SupplierInvoice(
+    val date: String,
+    val totaleDeCeBon: Double,
+    val payeCetteFoit: Double,
+    val creditFaitDonCeBon: Double,
+    val ancienCredits: Double
+)
+@Composable
+fun SupplierBonUpdateDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onBonNumberSelected: (Int, Int) -> Unit,
+    suppliersList: List<SupplierTabelle>
+) {
+    if (showDialog) {
+        var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
+
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Update Supplier Bon Number") },
+            text = {
+                Column {
+                    Text("Select Supplier:", style = MaterialTheme.typography.titleMedium)
+                    LazyColumn(
+                        modifier = Modifier
+                            .height(200.dp)
+                            .fillMaxWidth()
+                    ) {
+                        items(suppliersList) { supplier ->
+                            TextButton(
+                                onClick = { selectedSupplier = supplier },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${supplier.idSupplierSu} - ${supplier.nomSupplierSu}")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (selectedSupplier != null) {
+                        Text("Current Bon Number: ${selectedSupplier?.bonDuSupplierSu}", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Select New Bon Number:", style = MaterialTheme.typography.titleMedium)
+                        LazyColumn(
+                            modifier = Modifier
+                                .height(200.dp)
+                                .fillMaxWidth()
+                        ) {
+                            items(15) { i ->
+                                TextButton(
+                                    onClick = {
+                                        onBonNumberSelected(selectedSupplier!!.idSupplierSu.toInt(), i + 1)
+                                        onDismiss()
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("${i + 1}")
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
 
 
 data class EntreBonsGrosTabele(

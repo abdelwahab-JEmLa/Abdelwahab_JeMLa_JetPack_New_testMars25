@@ -75,7 +75,7 @@ fun processInputAndInsertData(
     articlesBaseDonne: List<BaseDonne>,
     suppliersList: List<SupplierTabelle>
 ): Long? {
-    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    val regex = """(\d+)\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()//TODO fait que si lepremier numbre avec le "x" ((\d+)\s*[x+])  est null de ecrire quantity > 1
     val matchResult = regex.find(input)
 
     val (quantity, price) = matchResult?.destructured?.let {
@@ -240,7 +240,7 @@ fun VoiceInputButton(
             val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
             onInputProcessed(newVid)
         } else if (input.contains("تغيير")) {
-            val newArabName = input.removeSuffix("تغييرالى ").trim()
+            val newArabName = input.removeSuffix("تغييرالى ").trim()//TODO
             coroutineScope.launch {
                 vidOfLastQuantityInputted?.let { vid ->
                     val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
