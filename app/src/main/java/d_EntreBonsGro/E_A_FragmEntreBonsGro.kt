@@ -7,14 +7,20 @@ import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
@@ -30,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -42,8 +49,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import c_ManageBonsClients.ArticlesAcheteModele
@@ -440,7 +450,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 }
 
 
-
 fun processInputAndInsertData(
     input: String,
     articlesList: List<EntreBonsGrosTabele>,
@@ -449,63 +458,61 @@ fun processInputAndInsertData(
     articlesBaseDonne: List<BaseDonne>,
     suppliersList: List<SupplierTabelle>
 ): Long? {
-    val regex = """(\d+)?\s*[x+]\s*(\d+(\.\d+)?)""".toRegex()
+    // Improved regex to handle various input formats
+    val regex = """(\d+(?:\.\d+)?)\s*(?:[x*]\s*(\d+(?:\.\d+)?)|)""".toRegex()
     val matchResult = regex.find(input)
 
-    val (quantityStr, priceStr) = matchResult?.destructured?.let {
-        Pair(it.component1(), it.component2())
-    } ?: Pair(null, null)
+    val (priceStr, quantityStr) = matchResult?.destructured?.let {
+        Pair(it.component1(), it.component2().ifEmpty { "1" })
+    } ?: return null
 
-    val quantity = quantityStr?.toIntOrNull() ?: 1
-    val price = priceStr?.toDoubleOrNull()
+    val price = priceStr.toDoubleOrNull() ?: return null
+    val quantity = quantityStr.toIntOrNull() ?: 1
 
-    if (price != null) {
-        val newVid = (articlesList.maxOfOrNull { it.vidBG } ?: 0) + 1
-        var quantityUniterBG = 1
+    val newVid = (articlesList.maxOfOrNull { it.vidBG } ?: 0) + 1
+    var quantityUniterBG = 1
 
-        val baseDonneEntry = articlesBaseDonne.find { it.idArticle.toLong() == newVid }
-        if (baseDonneEntry != null) {
-            quantityUniterBG = baseDonneEntry.nmbrUnite.toInt()
-        }
-
-        val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
-        val currentDate = LocalDate.now().toString()
-
-        val newArticle = supplier?.idSupplierSu?.let {
-            EntreBonsGrosTabele(
-                vidBG = newVid,
-                idArticleBG = 0,
-                nomArticleBG = "",
-                ancienPrixBG = 0.0,
-                newPrixAchatBG = price,
-                quantityAcheteBG = quantity,
-                quantityUniterBG = quantityUniterBG,
-                subTotaleBG = price * quantity,
-                grossisstBonN = founisseurNowIs ?: 0,
-                supplierIdBG = it,
-                supplierNameBG = supplier.nomSupplierSu,
-                uniterCLePlusUtilise = false,
-                erreurCommentaireBG = "",
-                passeToEndStateBG = false,
-                dateCreationBG = currentDate
-            )
-        }
-
-        newArticle?.let {
-            articlesRef.child(newVid.toString()).setValue(it)
-                .addOnSuccessListener {
-                    println("New article inserted successfully")
-                }
-                .addOnFailureListener { e ->
-                    println("Error inserting new article: ${e.message}")
-                }
-        }
-
-        return newVid
+    val baseDonneEntry = articlesBaseDonne.find { it.idArticle.toLong() == newVid }
+    if (baseDonneEntry != null) {
+        quantityUniterBG = baseDonneEntry.nmbrUnite.toInt()
     }
 
-    return null
+    val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
+    val currentDate = LocalDate.now().toString()
+
+    val newArticle = supplier?.idSupplierSu?.let {
+        EntreBonsGrosTabele(
+            vidBG = newVid,
+            idArticleBG = 0,
+            nomArticleBG = "",
+            ancienPrixBG = 0.0,
+            newPrixAchatBG = price,
+            quantityAcheteBG = quantity,
+            quantityUniterBG = quantityUniterBG,
+            subTotaleBG = price * quantity,
+            grossisstBonN = founisseurNowIs ?: 0,
+            supplierIdBG = it,
+            supplierNameBG = supplier.nomSupplierSu,
+            uniterCLePlusUtilise = false,
+            erreurCommentaireBG = "",
+            passeToEndStateBG = false,
+            dateCreationBG = currentDate
+        )
+    }
+
+    newArticle?.let {
+        articlesRef.child(newVid.toString()).setValue(it)
+            .addOnSuccessListener {
+                println("New article inserted successfully")
+            }
+            .addOnFailureListener { e ->
+                println("Error inserting new article: ${e.message}")
+            }
+    }
+
+    return newVid
 }
+
 fun updateArticleIdFromSuggestion(
     suggestion: String,
     vidOfLastQuantityInputted: Long?,
@@ -597,7 +604,7 @@ fun updateArticleIdFromSuggestion(
 fun VoiceInputButton(
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     articlesRef: DatabaseReference,
-    baseDonneRef: DatabaseReference,  // Add this line
+    baseDonneRef: DatabaseReference,
     founisseurNowIs: Int?,
     articlesBaseDonne: List<BaseDonne>,
     suppliersList: List<SupplierTabelle>,
@@ -610,17 +617,21 @@ fun VoiceInputButton(
     coroutineScope: CoroutineScope,
     articleDao: ArticleDao
 ) {
-    // ... rest of the function
     var inputText by remember { mutableStateOf("") }
     var showSuggestions by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var isRecognizing by remember { mutableStateOf(false) }
+    var showErrorToast by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
 
     fun processVoiceInput(input: String) {
         if (input.contains("+")) {
             val newVid = processInputAndInsertData(input, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
             onInputProcessed(newVid)
-        } else if (input.startsWith("تغييرالى")) {
-            val newArabName = input.substringAfter("تغييرالى").trim()
+        } else if (input.contains("تغيير")) {
+            val newArabName = input.substringAfter("تغيير").trim()
             coroutineScope.launch {
                 vidOfLastQuantityInputted?.let { vid ->
                     val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
@@ -666,79 +677,144 @@ fun VoiceInputButton(
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        isRecognizing = false
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 inputText = it
-                processVoiceInput(it) // This line should now work correctly
+                processVoiceInput(it)
             }
+        } else {
+            showErrorToast = true
+            errorMessage = "La reconnaissance vocale a échoué. Veuillez réessayer."
         }
     }
 
-    FloatingActionButton(
-        onClick = {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
-            }
-            speechRecognizerLauncher.launch(intent)
+    Box(modifier = Modifier.fillMaxSize()) {
+        FloatingActionButton(
+            onClick = {
+                if (!isRecognizing) {
+                    isRecognizing = true
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant...")
+                    }
+                    try {
+                        speechRecognizerLauncher.launch(intent)
+                    } catch (e: Exception) {
+                        isRecognizing = false
+                        showErrorToast = true
+                        errorMessage = "Erreur lors du lancement de la reconnaissance vocale: ${e.message}"
+                    }
+                } else {
+                    showErrorToast = true
+                    errorMessage = "Reconnaissance vocale en cours..."
+                }
+            },
+            modifier = Modifier
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Mic, contentDescription = "Voice Input")
         }
-    ) {
-        Icon(Icons.Default.Mic, contentDescription = "Voice Input")
-    }
-    if (showSuggestions) {
-        AlertDialog(
-            onDismissRequest = { showSuggestions = false },
-            title = { Text("Suggestions") },
-            text = {
-                LazyColumn {
-                    items(filteredSuggestions) { suggestion ->
-                        val randomColor = Color(
-                            red = (0..255).random(),
-                            green = (0..255).random(),
-                            blue = (0..255).random()
-                        )
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = randomColor
+
+        if (showErrorToast) {
+            Toast(
+                message = errorMessage,
+                onDismiss = { showErrorToast = false }
+            )
+        }
+
+        if (showSuggestions) {
+            AlertDialog(
+                onDismissRequest = { showSuggestions = false },
+                title = { Text("Suggestions") },
+                text = {
+                    LazyColumn {
+                        items(filteredSuggestions) { suggestion ->
+                            val randomColor = Color(
+                                red = (0..255).random(),
+                                green = (0..255).random(),
+                                blue = (0..255).random()
                             )
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    updateArticleIdFromSuggestion(
-                                        suggestion,
-                                        vidOfLastQuantityInputted,
-                                        articlesRef,
-                                        articlesArticlesAcheteModele,
-                                        articlesBaseDonne,
-                                        { onInputProcessed(null) },
-                                        editionPassedMode,
-                                        articlesEntreBonsGrosTabele,
-                                        coroutineScope
-                                    )
-                                    showSuggestions = false
-                                },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = Color.White
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = randomColor
                                 )
                             ) {
-                                Text(suggestion)
+                                TextButton(
+                                    onClick = {
+                                        updateArticleIdFromSuggestion(
+                                            suggestion,
+                                            vidOfLastQuantityInputted,
+                                            articlesRef,
+                                            articlesArticlesAcheteModele,
+                                            articlesBaseDonne,
+                                            { onInputProcessed(null) },
+                                            editionPassedMode,
+                                            articlesEntreBonsGrosTabele,
+                                            coroutineScope
+                                        )
+                                        showSuggestions = false
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text(suggestion)
+                                }
                             }
                         }
                     }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSuggestions = false }) {
+                        Text("Cancel")
+                    }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showSuggestions = false }) {
-                    Text("Cancel")
+            )
+        }
+    }
+}
+
+@Composable
+fun Toast(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 16.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Surface(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.6f))
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = message,
+                    color = Color.White
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Dismiss",
+                        tint = Color.White
+                    )
                 }
             }
-        )
+        }
     }
 }
 data class EntreBonsGrosTabele(
