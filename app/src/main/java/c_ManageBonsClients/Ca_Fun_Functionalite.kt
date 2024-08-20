@@ -5,7 +5,6 @@ import com.google.firebase.database.FirebaseDatabase
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
 fun createEmptyArticle(nomClient: String) {
     val database = FirebaseDatabase.getInstance()
     val articleRef = database.getReference("ArticlesAcheteModeleAdapted")
@@ -19,9 +18,11 @@ fun createEmptyArticle(nomClient: String) {
 
         articleRef.get().addOnSuccessListener { allArticlesSnapshot ->
             val maxId = allArticlesSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
+            val maxVid =allArticlesSnapshot.children.mapNotNull { it.child("vid").getValue(Long::class.java) }.maxOrNull() ?: 1
             val newId = maxId + 1
 
             val emptyArticle = ArticlesAcheteModele(
+                vid = maxVid,
                 idArticle = newId,
                 nomArticleFinale = "New Empty Article",
                 nomClient = nomClient,
@@ -31,7 +32,7 @@ fun createEmptyArticle(nomClient: String) {
                 choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
             )
 
-            articleRef.child(newId.toString()).setValue(emptyArticle)
+            articleRef.child(maxVid.toString()).setValue(emptyArticle)
         }
     }.addOnFailureListener { exception ->
         // Handle any errors here
