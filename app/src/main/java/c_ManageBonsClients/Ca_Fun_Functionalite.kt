@@ -18,12 +18,12 @@ fun createEmptyArticle(nomClient: String) {
 
         articleRef.get().addOnSuccessListener { allArticlesSnapshot ->
             val maxId = allArticlesSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
-            val maxVid =allArticlesSnapshot.children.mapNotNull { it.child("vid").getValue(Long::class.java) }.maxOrNull() ?: 1
+            val maxVid =allArticlesSnapshot.children.mapNotNull { it.child("vid").getValue(Long::class.java) }.minOrNull() ?: 1
             val newId = maxId + 1
 
             val emptyArticle = ArticlesAcheteModele(
                 vid = maxVid,
-                idArticle = newId,
+                idArticle = newId+2000,
                 nomArticleFinale = "New Empty Article",
                 nomClient = nomClient,
                 totalQuantity = 1,
