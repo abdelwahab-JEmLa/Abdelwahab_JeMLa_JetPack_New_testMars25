@@ -95,7 +95,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     var currentImagePath by remember { mutableStateOf("file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg") }
 
-    var totaleProvisoire by remember { mutableStateOf(0.0) }
+    var totaleProvisoire by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -169,8 +169,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     Scaffold(
         topBar = {
-            TopAppBar(//TODO augment la taille du app bar
-                modifier = Modifier.fillMaxWidth(),
+            TopAppBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp), // Increase the height of the app bar
                 title = {
                     Column {
                         val totalSum = articlesEntreBonsGrosTabele
@@ -184,11 +186,11 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             textAlign = TextAlign.Center
                         )
                         OutlinedTextField(
-                            value = totaleProvisoire.toString(),
+                            value = totaleProvisoire,
                             onValueChange = { newValue ->
-                                totaleProvisoire = newValue.toDoubleOrNull() ?: 0.0
+                                totaleProvisoire = newValue
                             },
-                            label = { Text("Totale Provisoire - $totalSum") },
+                            label = { Text((totaleProvisoire.toDouble() - totalSum).toString()/*TODO fait que si null ou 0.0 ""*/) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
