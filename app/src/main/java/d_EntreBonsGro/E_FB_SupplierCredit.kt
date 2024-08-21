@@ -40,7 +40,6 @@ fun updateSupplierCredit(
 ) {
     val firestore = Firebase.firestore
     val currentDateTime = LocalDateTime.now()
-    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
@@ -62,11 +61,10 @@ fun updateSupplierCredit(
 
     try {
         // Update the current bon document
-        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(supplierTotal)}"
         firestore.collection("F_SupplierArticlesFireS")
             .document(supplierId.toString())
             .collection("Totale et Credit Des Bons")
-            .document(documentId)
+            .document(documentIdFireStoreClientCredit())
             .set(data)
 
         // Update the latest document
@@ -82,6 +80,16 @@ fun updateSupplierCredit(
     }
 }
 
+private fun documentIdFireStoreClientCredit(
+): String {
+    val currentDateTime = LocalDateTime.now()
+    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+    val documentId = "Bon($dayOfWeek)${formattedDateTime}"
+    return documentId
+}
 
 
 @Composable

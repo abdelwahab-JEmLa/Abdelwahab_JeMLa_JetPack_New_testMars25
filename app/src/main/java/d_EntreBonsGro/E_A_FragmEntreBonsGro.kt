@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,8 +62,10 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +98,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     var currentImagePath by remember { mutableStateOf("file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg") }
 
-    var totaleProvisoire by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -232,15 +234,46 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         }
                     )
                 }
-                val totalSum = articlesEntreBonsGrosTabele
+
+                 suspend fun getCurrenttotaleDeCeBon(supplierId: Number): Double {
+                    return withContext(Dispatchers.IO) {
+                        try {
+                            val firestore = Firebase.firestore
+                            val latestDoc = firestore.collection("F_SupplierArticlesFireS")
+                                .document(supplierId.toString())
+                                .collection("latest Totale et Credit Des Bons")
+                                .document("latest")
+                                .get()
+                                .await()
+
+                            latestDoc.getDouble("totaleDeCeBon") ?: 0.0
+                        } catch (e: Exception) {
+                            Log.e("Firestore", "Error fetching current credit balance: ", e)
+                            0.0
+                        }
+                    }
+                }
+
+                // Use a LaunchedEffect to fetch the data asynchronously
+                var totalDeCeBon by remember { mutableDoubleStateOf(0.0) }
+                LaunchedEffect(key1 = founisseurNowIs) { // Re-fetch when founisseurNowIs changes
+                    totalDeCeBon = getCurrenttotaleDeCeBon(founisseurNowIs ?: 0L)
+                }
+
+                var totaleProvisoire by remember { mutableStateOf("") }
+                val totalSumNow = articlesEntreBonsGrosTabele
                     .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
                     .sumOf { it.subTotaleBG }
+
                 OutlinedTextField(
                     value = totaleProvisoire,
-                    onValueChange = { totaleProvisoire = it },
+                    onValueChange = {
+                        totaleProvisoire = it
+                        founisseurNowIs?.let { it1 -> updateSupplierCredit(it1, it.toDouble(), 0.0, 0.0) }
+                    },
                     label = {
                         Text(
-                            (totaleProvisoire.toDoubleOrNull()?.minus(totalSum))?.toString() ?: ""
+                            (totalDeCeBon.minus(totalSumNow)).toString()
                         )
                     },
                     colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -289,7 +322,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 articleDao = articleDao
             )
         },
-        floatingActionButtonPosition = FabPosition.Start // This line moves the FAB to the start
+        floatingActionButtonPosition = FabPosition.Start
     )
 { innerPadding ->
         Column(
