@@ -1,30 +1,34 @@
 package d_EntreBonsGro
 
 import a_RoomDB.BaseDonne
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -42,17 +46,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import f_credits.SupplierTabelle
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +83,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showSplitView by rememberSaveable { mutableStateOf(false) }
     var showMissingArticles by remember { mutableStateOf(false) }
     var totalMissingArticles by remember { mutableStateOf(0) }
-    var showCreditDialog by remember { mutableStateOf(false) }
     var addedArticlesCount by remember { mutableStateOf(0) }
 
     val coroutineScope = rememberCoroutineScope()
@@ -173,14 +180,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
-                actions = {//TODO fait que ca soit dont     ActionsDialog(
-
-                    IconButton(onClick = { showCreditDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.CreditCard,
-                            contentDescription = "Manage Credit"
-                        )
-                    }
+                actions = {
                     IconButton(
                         onClick = {
                             when {
@@ -350,17 +350,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
         }
     }
-    SupplierCreditDialog(
-        showDialog = showCreditDialog,
-        onDismiss = { showCreditDialog = false },
-        supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.idSupplierSu,
-        supplierName = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.nomSupplierSu ?: "Unknown Supplier",
-        supplierTotal = articlesEntreBonsGrosTabele
-            .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
-            .sumOf { it.subTotaleBG },
-        coroutineScope = coroutineScope
-    )
-
     ActionsDialog(
         showDialog = showActionsDialog,
         onDismiss = { showActionsDialog = false },
@@ -403,7 +392,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         founisseurNowIs = founisseurNowIs,
         onImagePathChange = { newPath ->
             currentImagePath = newPath
-        }
+        },
+        suppliersList =suppliersList,
+        articlesEntreBonsGrosTabele=articlesEntreBonsGrosTabele,
+        coroutineScope=coroutineScope
     )
 
     DeleteConfirmationDialog(
@@ -429,104 +421,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         suppliersRef = suppliersRef
     )
 }
-@Composable
-fun SupplierSelectionDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onSupplierSelected: (Int) -> Unit,
-    suppliersList: List<SupplierTabelle>,
-    suppliersRef: DatabaseReference
-) {
-    if (showDialog) {
-        var showBonUpdateDialog by remember { mutableStateOf(false) }
-
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Select Supplier") },
-            text = {
-                LazyColumn {
-                    items(16) { i ->
-                        val supplierNumber = if (i == 15) 100 else i + 1
-                        val supplier = suppliersList.find { it.bonDuSupplierSu == supplierNumber.toString() }
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        onSupplierSelected(supplierNumber)
-                                        onDismiss()
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    if (supplier != null && supplier.bonDuSupplierSu.isNotEmpty()) {
-                                        Text("$supplierNumber->.(${supplier.idSupplierSu}) ${supplier.nomSupplierSu}")
-                                    } else {
-                                        Text("$supplierNumber->.")
-                                    }
-                                }
-                                IconButton(
-                                    onClick = { showBonUpdateDialog = true }
-                                ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Update Bon Number")
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-
-        SupplierBonUpdateDialog(
-            showDialog = showBonUpdateDialog,
-            onDismiss = { showBonUpdateDialog = false },
-            onBonNumberSelected = { supplierId, newBonNumber ->
-                updateSupplierBon(suppliersRef, supplierId, newBonNumber.toString())
-            },
-            suppliersList = suppliersList
-        )
-    }
-}
-
-@Composable
-fun DeleteConfirmationDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Confirm Deletion") },
-            text = { Text("Are you sure you want to delete all data?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onConfirm()
-                    onDismiss()
-                }) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-
 
 
 
@@ -546,10 +440,14 @@ fun ActionsDialog(
     totalMissingArticles: Int,
     onDeleteReferencesWithSupplierId100: () -> Unit,
     founisseurNowIs: Int?,
-    onImagePathChange: (String) -> Unit
+    onImagePathChange: (String) -> Unit,
+    suppliersList: List<SupplierTabelle>,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
+    coroutineScope: CoroutineScope
 ) {
     var showImageSelectDialog by remember { mutableStateOf(false) }
     var showExportConfirmDialog by remember { mutableStateOf(false) }
+    var showCreditDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
         AlertDialog(
@@ -566,6 +464,12 @@ fun ActionsDialog(
                         Icon(Icons.Default.Delete, contentDescription = "Delete all data")
                         Spacer(Modifier.width(8.dp))
                         Text("Delete all data")
+                    }
+                    IconButton(onClick = { showCreditDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CreditCard,
+                            contentDescription = "Manage Credit"
+                        )
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -652,6 +556,17 @@ fun ActionsDialog(
             }
         )
     }
+    SupplierCreditDialog(
+        showDialog = showCreditDialog,
+        onDismiss = { showCreditDialog = false },
+        supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.idSupplierSu, //TODO fix err Unresolved reference: suppliersList suppliersList.find
+        supplierName = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.nomSupplierSu ?: "Unknown Supplier",
+        supplierTotal = articlesEntreBonsGrosTabele
+            .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+            .sumOf { it.subTotaleBG },
+        coroutineScope = coroutineScope
+    )
+
 
     if (showImageSelectDialog) {
         AlertDialog(
@@ -706,28 +621,141 @@ fun ActionsDialog(
         )
     }
 }
+@Composable
+fun SupplierCreditDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    supplierId: Long?,
+    supplierName: String,
+    supplierTotal: Double,
+    coroutineScope: CoroutineScope
+) {
+    var supplierPayment by remember { mutableStateOf("") }
+    var ancienCredit by remember { mutableStateOf(0.0) }
+    var isLoading by remember { mutableStateOf(true) }
+    var recentInvoices by remember { mutableStateOf<List<SupplierInvoice>>(emptyList()) }
 
+    // Reset supplierPayment when dialog is opened
+    LaunchedEffect(showDialog) {
+        if (showDialog) {
+            supplierPayment = ""
+        }
+    }
 
-data class EntreBonsGrosTabele(
-    val vidBG: Long = 0,
-    var idArticleBG: Long = 0,
-    var nomArticleBG: String = "",
-    var ancienPrixBG: Double = 0.0,
-    var ancienPrixOnUniterBG: Double = 0.0,
-    var newPrixAchatBG: Double = 0.0,
-    var quantityAcheteBG: Int = 0,
-    var quantityUniterBG: Int = 0,
-    var subTotaleBG: Double = 0.0,
-    var grossisstBonN: Int = 0,
-    var supplierIdBG: Long = 0,
-    var supplierNameBG: String = "",
-    var uniterCLePlusUtilise: Boolean = false,
-    var erreurCommentaireBG: String = "",
-    var passeToEndStateBG: Boolean = false,
-    var dateCreationBG: String = ""
+    LaunchedEffect(showDialog, supplierId) {
+        if (showDialog && supplierId != null) {
+            isLoading = true
+            val firestore = Firebase.firestore
+            try {
+                val latestDoc = firestore.collection("F_SupplierArticlesFireS")
+                    .document(supplierId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
 
-){
-    // Secondary constructor for Firebase
-    constructor() : this(0)
+                ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
+
+                // Fetch recent invoices, excluding the "latest" document
+                val invoicesQuery = firestore.collection("F_SupplierArticlesFireS")
+                    .document(supplierId.toString())
+                    .collection("Totale et Credit Des Bons")
+                    .orderBy("date", Query.Direction.DESCENDING)
+                    .limit(3)
+
+                val invoicesSnapshot = invoicesQuery.get().await()
+                recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
+                    SupplierInvoice(
+                        date = doc.getString("date") ?: "",
+                        totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
+                        payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
+                        creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
+                        ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error fetching data: ", e)
+                ancienCredit = 0.0
+                recentInvoices = emptyList()
+            }
+            isLoading = false
+        }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Manage Supplier Credit: $supplierName") },
+            text = {
+                Column {
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                    } else {
+                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + supplierTotal)}")
+                        Text("Total of Current Invoice: ${"%.2f".format(supplierTotal)}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = supplierPayment,
+                            onValueChange = { supplierPayment = it },
+                            label = { Text("Payment Amount") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val paymentAmount = if((supplierPayment.toDoubleOrNull() ?: 0.0) == 0.0) ancienCredit else supplierPayment.toDoubleOrNull() ?: 0.0
+                        val newCredit = ancienCredit + supplierTotal - paymentAmount
+                        Text("New Credit Balance: ${"%.2f".format(newCredit)}")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium)
+                        if (recentInvoices.isEmpty()) {
+                            Text("No recent invoices found")
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.height(200.dp)
+                            ) {
+                                items(recentInvoices) { invoice ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
+                                            Text("Date: ${invoice.date}")
+                                            Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
+                                            Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
+                                            Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                            Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            supplierId?.let { id ->
+                                val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
+                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount,ancienCredit)
+                            }
+                        }
+                        onDismiss()
+                    },
+                    enabled = !isLoading
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
+
 
