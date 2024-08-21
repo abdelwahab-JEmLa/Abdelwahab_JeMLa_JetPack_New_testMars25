@@ -2,7 +2,6 @@ package d_EntreBonsGro
 
 import a_RoomDB.BaseDonne
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -170,28 +170,19 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     Scaffold(
         topBar = {
             TopAppBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp), // Increase the height of the app bar
                 title = {
-                    Column {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         val totalSum = articlesEntreBonsGrosTabele
                             .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
                             .sumOf { it.subTotaleBG }
                         val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
                         val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
                         Text(
-                            "$supplierName: %.2f".format(totalSum),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                        OutlinedTextField(
-                            value = totaleProvisoire,
-                            onValueChange = { newValue ->
-                                totaleProvisoire = newValue
-                            },
-                            label = { Text((totaleProvisoire.toDouble() - totalSum).toString()/*TODO fait que si null ou 0.0 ""*/) },
-                            modifier = Modifier.fillMaxWidth()
+                            text = "$supplierName: %.2f".format(totalSum),
+                            textAlign = TextAlign.Center,
                         )
                     }
                 },
@@ -207,7 +198,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         bottomBar = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
@@ -221,7 +211,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             else -> showFullImage = true
                         }
                         modeFilterChangesDB = false
-                    }
+                    },
+                    modifier = Modifier.weight(0.1f)
                 ) {
                     Icon(
                         imageVector = when {
@@ -241,20 +232,38 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         }
                     )
                 }
-                IconButton(onClick = { showSupplierDialog = true }) {
+                val totalSum = articlesEntreBonsGrosTabele
+                    .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+                    .sumOf { it.subTotaleBG }
+                OutlinedTextField(
+                    value = totaleProvisoire,
+                    onValueChange = { totaleProvisoire = it },
+                    label = {
+                        Text(
+                            (totaleProvisoire.toDoubleOrNull()?.minus(totalSum))?.toString() ?: ""
+                        )
+                    },
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = Color.Red,
+                        unfocusedBorderColor = Color.Gray
+                    ),
+                    modifier = Modifier.weight(0.7f)
+                )
+                IconButton(onClick = { showSupplierDialog = true },
+                    modifier = Modifier.weight(0.1f)) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.List,
                         contentDescription = "Select Supplier"
                     )
                 }
-                IconButton(onClick = { showActionsDialog = true }) {
+                IconButton(onClick = { showActionsDialog = true },
+                    modifier = Modifier.weight(0.1f)) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More actions"
                     )
-                    }
                 }
-
+            }
         },
         floatingActionButton = {
             VoiceInputButton(
@@ -281,7 +290,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             )
         },
         floatingActionButtonPosition = FabPosition.Start // This line moves the FAB to the start
-    ) { innerPadding ->
+    )
+{ innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
