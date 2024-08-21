@@ -86,7 +86,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showMissingArticles by remember { mutableStateOf(false) }
     var totalMissingArticles by remember { mutableStateOf(0) }
     var addedArticlesCount by remember { mutableStateOf(0) }
-
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
@@ -95,6 +94,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     val suppliersRef = database.getReference("F_Suppliers")
 
     var currentImagePath by remember { mutableStateOf("file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${founisseurNowIs ?: 1}).jpg") }
+
+    var totaleProvisoire by remember { mutableStateOf(0.0) }
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -168,19 +169,29 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            TopAppBar(//TODO augment la taille du app bar
                 modifier = Modifier.fillMaxWidth(),
                 title = {
-                    val totalSum = articlesEntreBonsGrosTabele
-                        .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
-                        .sumOf { it.subTotaleBG }
-                    val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
-                    val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
-                    Text(
-                        "$supplierName: %.2f".format(totalSum),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
+                    Column {
+                        val totalSum = articlesEntreBonsGrosTabele
+                            .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+                            .sumOf { it.subTotaleBG }
+                        val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
+                        val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
+                        Text(
+                            "$supplierName: %.2f".format(totalSum),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                        OutlinedTextField(
+                            value = totaleProvisoire.toString(),
+                            onValueChange = { newValue ->
+                                totaleProvisoire = newValue.toDoubleOrNull() ?: 0.0
+                            },
+                            label = { Text("Totale Provisoire - $totalSum") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = Color(android.graphics.Color.parseColor(
@@ -531,7 +542,9 @@ fun ActionsDialog(
                             Text("Adding missing articles: $addedArticlesCount / $totalMissingArticles")
                             LinearProgressIndicator(
                                 progress = { addedArticlesCount.toFloat() / totalMissingArticles.toFloat() },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
                             )
                         }
                     } else if (addedArticlesCount > 0) {
