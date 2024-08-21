@@ -237,50 +237,13 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )
                 }
 
-                 suspend fun getCurrenttotaleDeCeBon(founisseurIdNowIs: Long): Double {
-                    return withContext(Dispatchers.IO) {
-                        try {
-                            val firestore = Firebase.firestore
-                            val latestDoc = firestore.collection("F_SupplierArticlesFireS")
-                                .document(founisseurIdNowIs.toString())
-                                .collection("latest Totale et Credit Des Bons")
-                                .document("latest")
-                                .get()
-                                .await()
-
-                            latestDoc.getDouble("totaleDeCeBon") ?: 0.0
-                        } catch (e: Exception) {
-                            Log.e("Firestore", "Error fetching current credit balance: ", e)
-                            0.0
-                        }
-                    }
-                }
-
-                // Use a LaunchedEffect to fetch the data asynchronously
-                var totalDeCeBon by remember { mutableDoubleStateOf(0.0) }
-                LaunchedEffect(key1 = founisseurIdNowIs) { // Re-fetch when founisseurNowIs changes
-                    totalDeCeBon = getCurrenttotaleDeCeBon(founisseurIdNowIs ?: 0L)
-                }
-
-                var totaleProvisoire by remember { mutableStateOf("") }
-                val totalSumNow = articlesEntreBonsGrosTabele
-                    .filter { founisseurNowIs == null || it.grossisstBonN.toLong() == founisseurIdNowIs }
-                    .sumOf { it.subTotaleBG }
-
-                OutlinedTextField(
-                    value = totaleProvisoire,
-                    onValueChange = { newVal ->
-                        totaleProvisoire = newVal
-                        if (founisseurIdNowIs != null) {
-                            updateSupplierCredit(founisseurIdNowIs!!, newVal.toDouble(), totalDeCeBon, totalSumNow)
-                        }
-                    },
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color.Red,
-                        unfocusedBorderColor = Color.Gray
-                    ),
+                OutlineQuichangeLeTotaleProvisoire(
+                    founisseurIdNowIs,
+                    articlesEntreBonsGrosTabele,
+                    founisseurNowIs,
                     modifier = Modifier.weight(0.7f)
                 )
+
                 IconButton(onClick = { showSupplierDialog = true },
                     modifier = Modifier.weight(0.1f)) {
                     Icon(
@@ -494,6 +457,69 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     )
 }
 
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun OutlineQuichangeLeTotaleProvisoire(
+    founisseurIdNowIs: Long?,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
+    founisseurNowIs: Int?,
+    modifier: Modifier
+) {
+    suspend fun getCurrenttotaleDeCeBon(founisseurIdNowIs: Long): Double {
+        return withContext(Dispatchers.IO) {
+            try {
+                val firestore = Firebase.firestore
+                val latestDoc = firestore.collection("F_SupplierArticlesFireS")
+                    .document(founisseurIdNowIs.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+
+                latestDoc.getDouble("totaleDeCeBon") ?: 0.0
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error fetching current credit balance: ", e)
+                0.0
+            }
+        }
+    }
+
+    // Use a LaunchedEffect to fetch the data asynchronously
+    var ancienTotaleDepuitFireStore by remember { mutableDoubleStateOf(0.0) }
+    LaunchedEffect(key1 = founisseurIdNowIs) { // Re-fetch when founisseurNowIs changes
+        ancienTotaleDepuitFireStore = getCurrenttotaleDeCeBon(founisseurIdNowIs ?: 0L)
+    }
+
+    var totaleProvisoire by remember { mutableStateOf("") }
+    val totalSumNow = articlesEntreBonsGrosTabele
+        .filter { founisseurNowIs == null || it.supplierIdBG.toLong() == founisseurIdNowIs }
+        .sumOf { it.subTotaleBG }
+
+    OutlinedTextField(
+        value = totaleProvisoire,
+        onValueChange = { newVal ->
+            totaleProvisoire = newVal
+            if (founisseurIdNowIs != null) {
+                updateSupplierCredit(
+                    founisseurIdNowIs,
+                    newVal.toDouble(),
+                    ancienTotaleDepuitFireStore,
+                    totalSumNow
+                )
+            }
+        },
+        label = {
+            Text(
+                (ancienTotaleDepuitFireStore.minus(totalSumNow)).toString()
+            )
+        },
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = Color.Red,
+            unfocusedBorderColor = Color.Gray
+        ),
+        modifier = modifier
+    )
+}
 
 
 @Composable
