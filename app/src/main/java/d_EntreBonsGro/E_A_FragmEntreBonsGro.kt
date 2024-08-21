@@ -2,6 +2,7 @@ package d_EntreBonsGro
 
 import a_RoomDB.BaseDonne
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import c_ManageBonsClients.ArticlesAcheteModele
@@ -141,7 +143,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
         })
 
-
         suppliersRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val newSuppliers = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
@@ -153,6 +154,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
         })
     }
+
     fun handleSupplierChange(vidBG: Long, newSupplierId: Int) {
         val updatedList = articlesEntreBonsGrosTabele.map { article ->
             if (article.vidBG == vidBG) {
@@ -163,16 +165,22 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         }
         articlesEntreBonsGrosTabele = updatedList
     }
+
     Scaffold(
         topBar = {
             TopAppBar(
+                modifier = Modifier.fillMaxWidth(),
                 title = {
                     val totalSum = articlesEntreBonsGrosTabele
                         .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
                         .sumOf { it.subTotaleBG }
                     val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
                     val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
-                    Text("$supplierName: %.2f".format(totalSum))
+                    Text(
+                        "$supplierName: %.2f".format(totalSum),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = Color(android.graphics.Color.parseColor(
@@ -180,52 +188,60 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
-                actions = {
-                    IconButton(
-                        onClick = {
-                            when {
-                                showFullImage -> {
-                                    showFullImage = false
-                                    showSplitView = true
-                                }
-                                showSplitView -> showSplitView = false
-                                else -> showFullImage = true
+                actions = {}
+            )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {
+                        when {
+                            showFullImage -> {
+                                showFullImage = false
+                                showSplitView = true
                             }
-                            modeFilterChangesDB = false
+                            showSplitView -> showSplitView = false
+                            else -> showFullImage = true
                         }
-                    ) {
-                        Icon(
-                            imageVector = when {
-                                showFullImage -> Icons.AutoMirrored.Filled.List
-                                showSplitView -> Icons.AutoMirrored.Filled.List
-                                else -> Icons.Default.Image
-                            },
-                            contentDescription = when {
-                                showFullImage -> "Show Split View"
-                                showSplitView -> "Hide Image"
-                                else -> "Show Image"
-                            },
-                            tint = when {
-                                showFullImage -> Color.Red
-                                showSplitView -> Color.Yellow
-                                else -> MaterialTheme.colorScheme.onPrimary
-                            }
-                        )
+                        modeFilterChangesDB = false
                     }
-                    IconButton(onClick = { showSupplierDialog = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = "Select Supplier"
-                        )
-                    }
-                    IconButton(onClick = { showActionsDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More actions"
-                        )
+                ) {
+                    Icon(
+                        imageVector = when {
+                            showFullImage -> Icons.AutoMirrored.Filled.List
+                            showSplitView -> Icons.AutoMirrored.Filled.List
+                            else -> Icons.Default.Image
+                        },
+                        contentDescription = when {
+                            showFullImage -> "Show Split View"
+                            showSplitView -> "Hide Image"
+                            else -> "Show Image"
+                        },
+                        tint = when {
+                            showFullImage -> Color.Red
+                            showSplitView -> Color.Yellow
+                            else -> MaterialTheme.colorScheme.onPrimary
+                        }
+                    )
+                }
+                IconButton(onClick = { showSupplierDialog = true }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Select Supplier"
+                    )
+                }
+                IconButton(onClick = { showActionsDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More actions"
+                    )
                     }
                 }
-            )
+
         },
         floatingActionButton = {
             VoiceInputButton(
@@ -559,7 +575,7 @@ fun ActionsDialog(
     SupplierCreditDialog(
         showDialog = showCreditDialog,
         onDismiss = { showCreditDialog = false },
-        supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.idSupplierSu, //TODO fix err Unresolved reference: suppliersList suppliersList.find
+        supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.idSupplierSu,
         supplierName = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.nomSupplierSu ?: "Unknown Supplier",
         supplierTotal = articlesEntreBonsGrosTabele
             .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
