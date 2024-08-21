@@ -100,7 +100,7 @@ suspend fun exportToFirestore() {
 
                 // Update the total for the supplier
                 // Use the new document ID format with date and time
-                val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(totaleDeCeBon)}"
+                val documentId = documentIdFireStoreClientCredit()
                 val totalDocRef = supplierArticlesRef
                     .document(supplierId.toString())
                     .collection("Totale et Credit Des Bons")

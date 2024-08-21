@@ -80,7 +80,7 @@ fun updateSupplierCredit(
     }
 }
 
-private fun documentIdFireStoreClientCredit(
+fun documentIdFireStoreClientCredit(
 ): String {
     val currentDateTime = LocalDateTime.now()
     val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
