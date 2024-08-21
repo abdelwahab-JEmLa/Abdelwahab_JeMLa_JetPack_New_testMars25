@@ -173,7 +173,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
-                actions = {
+                actions = {//TODO fait que ca soit dont     ActionsDialog(
+
                     IconButton(onClick = { showCreditDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.CreditCard,
@@ -704,7 +705,6 @@ fun ActionsDialog(
             }
         )
     }
-
 }
 
 
