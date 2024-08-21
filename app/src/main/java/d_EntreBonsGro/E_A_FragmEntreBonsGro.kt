@@ -235,7 +235,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )
                 }
 
-                 suspend fun getCurrenttotaleDeCeBon(supplierId: Number): Double {
+                 suspend fun getCurrenttotaleDeCeBon(founisseurNowIs: Number): Double {
+                     val supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs.toString() }
                     return withContext(Dispatchers.IO) {
                         try {
                             val firestore = Firebase.firestore
@@ -267,14 +268,12 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
                 OutlinedTextField(
                     value = totaleProvisoire,
-                    onValueChange = {
+                    onValueChange = { it ->
                         totaleProvisoire = it
-                        founisseurNowIs?.let { it1 -> updateSupplierCredit(it1, it.toDouble(), 0.0, 0.0) }
-                    },
-                    label = {
-                        Text(
-                            (totalDeCeBon.minus(totalSumNow)).toString()
-                        )
+                        val supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs.toString() }
+                        if (supplierId != null) {
+                            updateSupplierCredit(supplierId.idSupplierSu, it.toDouble(), totalDeCeBon, totalSumNow)
+                        }
                     },
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color.Red,
@@ -813,7 +812,7 @@ fun SupplierCreditDialog(
                         coroutineScope.launch {
                             supplierId?.let { id ->
                                 val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
-                                updateSupplierCredit(id.toInt(), supplierTotal, paymentAmount,ancienCredit)
+                                updateSupplierCredit(id, supplierTotal, paymentAmount,ancienCredit)
                             }
                         }
                         onDismiss()

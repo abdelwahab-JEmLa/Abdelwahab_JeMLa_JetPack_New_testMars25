@@ -574,7 +574,7 @@ fun SupplierCreditDialog(
                                 val paymentAmount = supplierPayment.toDoubleOrNull() ?: 0.0
                                 val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
                                 try {
-                                    updateSupplierCredit(id.toInt(), supplierTotal, adjustedPayment, ancienCredit)
+                                    updateSupplierCredit(id, supplierTotal, adjustedPayment, ancienCredit)
                                     fetchRecentInvoices()
                                     onDismiss()
                                 } catch (e: Exception) {

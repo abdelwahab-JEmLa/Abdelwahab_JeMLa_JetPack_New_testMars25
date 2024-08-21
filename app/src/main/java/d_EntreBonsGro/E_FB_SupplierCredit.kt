@@ -33,7 +33,7 @@ import java.util.Locale
 
 
 fun updateSupplierCredit(
-    supplierId: Int,
+    supplierId: Long,
     supplierTotal: Double,
     supplierPayment: Double,
     ancienCredit: Double
