@@ -96,7 +96,7 @@ private fun documentIdFireStoreClientCredit(
 fun SupplierSelectionDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onSupplierSelected: (Int) -> Unit,
+    onSupplierSelected: (Int,Long) -> Unit,
     suppliersList: List<SupplierTabelle>,
     suppliersRef: DatabaseReference
 ) {
@@ -123,7 +123,9 @@ fun SupplierSelectionDialog(
                             ) {
                                 TextButton(
                                     onClick = {
-                                        onSupplierSelected(supplierNumber)
+                                        if (supplier != null) {
+                                            onSupplierSelected(supplierNumber,supplier.idSupplierSu)
+                                        }
                                         onDismiss()
                                     },
                                     modifier = Modifier.weight(1f)

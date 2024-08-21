@@ -83,6 +83,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showActionsDialog by remember { mutableStateOf(false) }
     var showSupplierDialog by remember { mutableStateOf(false) }
     var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(null) }
+    var founisseurIdNowIs by rememberSaveable { mutableStateOf<Long?>(null) }
+
     var modeFilterChangesDB by remember { mutableStateOf(false) }
     var showFullImage by rememberSaveable { mutableStateOf(true) }
     var showSplitView by rememberSaveable { mutableStateOf(false) }
@@ -235,13 +237,12 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )
                 }
 
-                 suspend fun getCurrenttotaleDeCeBon(founisseurNowIs: Number): Double {
-                     val supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs.toString() }
+                 suspend fun getCurrenttotaleDeCeBon(founisseurIdNowIs: Long): Double {
                     return withContext(Dispatchers.IO) {
                         try {
                             val firestore = Firebase.firestore
                             val latestDoc = firestore.collection("F_SupplierArticlesFireS")
-                                .document(supplierId.toString())
+                                .document(founisseurIdNowIs.toString())
                                 .collection("latest Totale et Credit Des Bons")
                                 .document("latest")
                                 .get()
@@ -257,22 +258,21 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
                 // Use a LaunchedEffect to fetch the data asynchronously
                 var totalDeCeBon by remember { mutableDoubleStateOf(0.0) }
-                LaunchedEffect(key1 = founisseurNowIs) { // Re-fetch when founisseurNowIs changes
-                    totalDeCeBon = getCurrenttotaleDeCeBon(founisseurNowIs ?: 0L)
+                LaunchedEffect(key1 = founisseurIdNowIs) { // Re-fetch when founisseurNowIs changes
+                    totalDeCeBon = getCurrenttotaleDeCeBon(founisseurIdNowIs ?: 0L)
                 }
 
                 var totaleProvisoire by remember { mutableStateOf("") }
                 val totalSumNow = articlesEntreBonsGrosTabele
-                    .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+                    .filter { founisseurNowIs == null || it.grossisstBonN.toLong() == founisseurIdNowIs }
                     .sumOf { it.subTotaleBG }
 
                 OutlinedTextField(
                     value = totaleProvisoire,
-                    onValueChange = { it ->
-                        totaleProvisoire = it
-                        val supplierId = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs.toString() }
-                        if (supplierId != null) {
-                            updateSupplierCredit(supplierId.idSupplierSu, it.toDouble(), totalDeCeBon, totalSumNow)
+                    onValueChange = { newVal ->
+                        totaleProvisoire = newVal
+                        if (founisseurIdNowIs != null) {
+                            updateSupplierCredit(founisseurIdNowIs!!, newVal.toDouble(), totalDeCeBon, totalSumNow)
                         }
                     },
                     colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -483,8 +483,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     SupplierSelectionDialog(
         showDialog = showSupplierDialog,
         onDismiss = { showSupplierDialog = false },
-        onSupplierSelected = { selected ->
-            founisseurNowIs = selected
+        onSupplierSelected = { number,idSupp ->
+            founisseurNowIs = number
+            founisseurIdNowIs = idSupp
             editionPassedMode = false
             modeFilterChangesDB = false
         },

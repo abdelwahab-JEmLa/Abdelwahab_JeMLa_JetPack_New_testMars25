@@ -458,7 +458,7 @@ fun ArticleItem(
     SupplierSelectionDialog(
         showDialog = showSupplierDialog,
         onDismiss = { showSupplierDialog = false },
-        onSupplierSelected = { selectedSupplierBon ->
+        onSupplierSelected = { selectedSupplierBon,_ ->
             val selectedSupplier = suppliersList.find { it.bonDuSupplierSu == selectedSupplierBon.toString() }
             if (selectedSupplier != null) {
                 coroutineScope.launch {
