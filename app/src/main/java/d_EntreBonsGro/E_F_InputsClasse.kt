@@ -57,23 +57,37 @@ fun processInputAndInsertData(
     articlesBaseDonne: List<BaseDonne>,
     suppliersList: List<SupplierTabelle>
 ): Long? {
-    // Improved regex to handle various input formats
-    val regex = """(\d+(?:\.\d+)?)\s*(?:[x*]\s*(\d+(?:\.\d+)?)|)""".toRegex()
+
+    // Updated regex to handle both implicit and explicit quantity
+    val regex = """(?:(\d+)\s*[xX]\s*)?(\d+(?:\.\d+)?)\+?""".toRegex()
     val matchResult = regex.find(input)
 
-    val (priceStr, quantityStr) = matchResult?.destructured?.let {
-        Pair(it.component1(), it.component2().ifEmpty { "1" })
-    } ?: return null
+    // Handle cases where only price or quantity is provided
+    val (quantityStr, priceStr) = when {
+        matchResult?.groupValues?.get(1)?.isNotEmpty() == true -> {
+            // Both quantity and price provided (explicit case)
+            Pair(matchResult.groupValues[1], matchResult.groupValues[2])
+        }
+        matchResult?.groupValues?.get(2)?.isNotEmpty() == true -> {
+            // Only price provided (implicit quantity of 1)
+            Pair("1", matchResult.groupValues[2])
+        }
+        else -> {
+            // Invalid input
+            return null
+        }
+    }
 
-    val price = priceStr.toDoubleOrNull() ?: return null
     val quantity = quantityStr.toIntOrNull() ?: 1
+    val price = priceStr.toDoubleOrNull() ?: return null
 
+    // Rest of the function remains the same
     val newVid = (articlesList.maxOfOrNull { it.vidBG } ?: 0) + 1
     var quantityUniterBG = 1
 
     val baseDonneEntry = articlesBaseDonne.find { it.idArticle.toLong() == newVid }
     if (baseDonneEntry != null) {
-        quantityUniterBG = baseDonneEntry.nmbrUnite.toInt()
+        quantityUniterBG = baseDonneEntry.nmbrUnite
     }
 
     val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
