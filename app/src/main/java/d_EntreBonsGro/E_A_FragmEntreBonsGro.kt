@@ -208,7 +208,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     onClick = {
                         when {
                             showFullImage -> {
-                                showFullImage = false
+                                showFullImage =  false
                                 showSplitView = true
                             }
                             showSplitView -> showSplitView = false
