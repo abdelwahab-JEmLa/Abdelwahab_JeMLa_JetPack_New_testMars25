@@ -179,13 +179,14 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val totalSum = articlesEntreBonsGrosTabele
+                        val filteredArticles = articlesEntreBonsGrosTabele
                             .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
-                            .sumOf { it.subTotaleBG }
+                        val totalSum = filteredArticles.sumOf { it.subTotaleBG }
+                        val articleCount = filteredArticles.size
                         val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
                         val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
                         Text(
-                            text = "$supplierName: %.2f".format(totalSum),
+                            text = "$articleCount articles - $supplierName: %.2f".format(totalSum),
                             textAlign = TextAlign.Center,
                         )
                     }

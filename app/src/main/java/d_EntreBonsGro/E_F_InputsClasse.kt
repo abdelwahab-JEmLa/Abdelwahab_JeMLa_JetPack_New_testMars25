@@ -208,7 +208,7 @@ fun updateArticleIdFromSuggestion(
 
 
 @Composable
-fun VoiceInputButton(
+fun VoiceInputButton(//TODO fait que l input vocale ce relence apre 3 seconds
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     articlesRef: DatabaseReference,
     baseDonneRef: DatabaseReference,
