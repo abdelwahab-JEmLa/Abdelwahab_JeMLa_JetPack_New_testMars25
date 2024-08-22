@@ -108,7 +108,7 @@ fun processInputAndInsertData(
             supplierNameBG = supplier.nomSupplierSu,
             uniterCLePlusUtilise = false,
             erreurCommentaireBG = "",
-            passeToEndStateBG = false,
+            passeToEndStateBG = true,
             dateCreationBG = currentDate
         )
     }
@@ -143,13 +143,6 @@ fun updateArticleIdFromSuggestion(
         vidOfLastQuantityInputted
     }
 
-    if (suggestion == "passe" || suggestion == "تمرير" && effectiveVid != null) {
-        val articleToUpdate = articlesRef.child(effectiveVid.toString())
-        articleToUpdate.child("passeToEndStateBG").setValue(true)
-        articleToUpdate.child("nomArticleBG").setValue("Passe A La Fin")
-        onNameInputComplete()
-        return
-    }
     if (suggestion == "supp" || suggestion == "محو" && effectiveVid != null) {
         val articleToUpdate = articlesRef.child(effectiveVid.toString())
         articleToUpdate.child("nomArticleBG").setValue("New Article")
@@ -180,6 +173,7 @@ fun updateArticleIdFromSuggestion(
             articleToUpdate.child("ancienPrixBG").setValue(baseDonne.monPrixAchat)
             articleToUpdate.child("ancienPrixOnUniterBG").setValue((baseDonne.monPrixAchat / baseDonne.nmbrUnite).roundToTwoDecimals())
             articleToUpdate.child("lastDateCreationBG").setValue(lastDate)
+            articleToUpdate.child("passeToEndStateBG").setValue(false)
         }
 
         coroutineScope.launch {

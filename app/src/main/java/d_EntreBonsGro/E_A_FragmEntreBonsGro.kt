@@ -140,7 +140,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
                     val nomArabe = baseDonneArticle?.nomArab ?: ""
                     "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomArabe (${articleAchete.idArticle})"
-                }.distinct() + listOf("supp", "passe","تمرير" ,"محو" )
+                }.distinct() + listOf("supp","محو" )
             }
 
             override fun onCancelled(error: DatabaseError) {
