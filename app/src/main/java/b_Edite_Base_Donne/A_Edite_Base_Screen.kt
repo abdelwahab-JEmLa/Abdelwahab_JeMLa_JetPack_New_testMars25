@@ -2,7 +2,6 @@ package b_Edite_Base_Donne
 
 import a_RoomDB.BaseDonne
 import android.annotation.SuppressLint
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,20 +25,23 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,13 +52,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -84,59 +84,91 @@ fun A_Edite_Base_Screen(
     var selectedArticle by remember { mutableStateOf<BaseDonneStatTabel?>(null) }
     var articleDataBaseDonne by remember { mutableStateOf<BaseDonne?>(null) }
     val focusManager = LocalFocusManager.current
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearchVisible by remember { mutableStateOf(false) }
 
     // Explication : Appliquez le filtre par Prix = 0.0
     Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel) { showDialog = false }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Articles List") },
-                actions = {
-                    IconButton(onClick = { showDialog = true }) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Articles List",
+                )
+                IconButton(onClick = { showDialog = true }) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
                 }
-            )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { isSearchVisible = !isSearchVisible }
+            ) {
+                Icon(
+                    imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                    contentDescription = if (isSearchVisible) "Close Search" else "Open Search"
+                )
+            }
         },
         content = { paddingValues ->
-            ArticlesScreenList(
-                editeBaseDonneViewModel = editeBaseDonneViewModel,
-                articlesDataBaseDonne = articlesDataBaseDonne,
-                articlesBaseDonneStatTabel = articles,
-                selectedArticle = selectedArticle,
-                onArticleSelect = { article ->
-                    val index = articles.indexOf(article)
-                    focusManager.clearFocus()
-                    selectedArticle = article
-                    coroutineScope.launch {
-                        if (index >= 0) {
-                            listState.scrollToItem(index / 2)
-                        }
-                    }
-                    currentChangingField = ""
-                    articleDataBaseDonne =
-                        articlesDataBaseDonne.find { it.idArticle == article.idArticle }
-                },
-                listState = listState,
-                currentChangingField = currentChangingField,
-                paddingValues = paddingValues,
-                function = { currentChangingField = it },
-                function1 = { articlesDataBaseDonne ->
-                    if (articlesDataBaseDonne != null) {
-                        articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
-                        editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
-                    }
-                },
-                onClickImageDimentionChangeur = { baseDonne ->
-                    val updatedArticle = baseDonne.copy(funChangeImagsDimention = !baseDonne.funChangeImagsDimention)
-                    editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
+            Column {
+                if (isSearchVisible) {//TODO pk ca ne s affiche pas au bas de app ar row
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            searchQuery = it
+                            editeBaseDonneViewModel.updateSearchQuery(it)
+                        },
+                        label = { Text("Search Articles") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    )
                 }
-            )
+                ArticlesScreenList(
+                    editeBaseDonneViewModel = editeBaseDonneViewModel,
+                    articlesDataBaseDonne = articlesDataBaseDonne,
+                    articlesBaseDonneStatTabel = articles,
+                    selectedArticle = selectedArticle,
+                    onArticleSelect = { article ->
+                        val index = articles.indexOf(article)
+                        focusManager.clearFocus()
+                        selectedArticle = article
+                        coroutineScope.launch {
+                            if (index >= 0) {
+                                listState.scrollToItem(index / 2)
+                            }
+                        }
+                        currentChangingField = ""
+                        articleDataBaseDonne =
+                            articlesDataBaseDonne.find { it.idArticle == article.idArticle }
+                    },
+                    listState = listState,
+                    currentChangingField = currentChangingField,
+                    paddingValues = paddingValues,
+                    function = { currentChangingField = it },
+                    function1 = { articlesDataBaseDonne ->
+                        if (articlesDataBaseDonne != null) {
+                            articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
+                            editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
+                        }
+                    },
+                    onClickImageDimentionChangeur = { baseDonne ->
+                        val updatedArticle = baseDonne.copy(funChangeImagsDimention = !baseDonne.funChangeImagsDimention)
+                        editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
+                    }
+                )
+            }
         }
     )
 }
-
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ArticlesScreenList(

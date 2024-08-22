@@ -23,8 +23,12 @@ class EditeBaseDonneViewModel(
     private val _originalBaseDonneStatTabel = mutableListOf<BaseDonneStatTabel>()
     val baseDonneStatTabel: StateFlow<List<BaseDonneStatTabel>> = _baseDonneStatTabel.asStateFlow()
 
+
     private val _isFilterApplied = MutableStateFlow(false)
     val isFilterApplied: StateFlow<Boolean> get() = _isFilterApplied
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     init {
         initBaseDonneStatTabel()
@@ -55,6 +59,25 @@ class EditeBaseDonneViewModel(
         }
     }
 
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+        filterArticles()
+    }
+    fun resetFilter() {
+        _isFilterApplied.value = false
+        _baseDonneStatTabel.value = _originalBaseDonneStatTabel
+    }
+
+    private fun filterArticles() {
+        val query = _searchQuery.value.lowercase()
+        if (query.isEmpty()) {
+            _baseDonneStatTabel.value = _originalBaseDonneStatTabel
+        } else {
+            _baseDonneStatTabel.value = _originalBaseDonneStatTabel.filter { article ->
+                article.nomArticleFinale.lowercase().contains(query) ||
+                        article.idArticle.toString().contains(query) }
+        }
+    }
     fun toggleFilter() {
         viewModelScope.launch(Dispatchers.IO) {
             val filterApplied = _isFilterApplied.value
