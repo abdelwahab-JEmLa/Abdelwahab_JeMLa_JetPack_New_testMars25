@@ -182,7 +182,6 @@ fun FragmentManageBonsClients() {
     }
 }
 
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DisplayManageBonsClients(
@@ -317,7 +316,6 @@ fun DisplayManageBonsClients(
     }
 }
 
-
 data class ClientsInvoiceOther(
     val date: String,
     val totaleDeCeBon: Double,
@@ -325,8 +323,6 @@ data class ClientsInvoiceOther(
     val creditFaitDonCeBon: Double,
     val ancienCredits: Double
 )
-
-
 
 @Composable
 fun ClientsCreditDialog(
@@ -592,6 +588,7 @@ fun getDayOfWeekClients(dateString: String): String {
     val dateTime = LocalDateTime.parse(dateString, formatter)
     return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
 }
+
 fun addNewClient(name: String, onComplete: (Long) -> Unit) {
     val clientsTableRef = Firebase.database.getReference("G_Clients")
     clientsTableRef.orderByChild("idClientsSu").limitToLast(1).addListenerForSingleValueEvent(object : ValueEventListener {
@@ -630,7 +627,6 @@ private fun generateRandomTropicalColor(): String {
     return "#%06X".format(0xFFFFFF and android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
 }
 
-// Update ClientsTabelle to include currentCreditBalance
 data class ClientsTabelle(
     val vidSu: Long = 0,
     var idClientsSu: Long = 0,
@@ -641,6 +637,7 @@ data class ClientsTabelle(
 ) {
     constructor() : this(0)
 }
+
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
@@ -799,7 +796,7 @@ fun ClientAndEmballageHeader(
                 onPrintClick(verifiedClientArticles)
                 coroutineScope.launch {
                     if (clientId != null) {
-                        updateClientsCredit(clientId!!.toInt(), clientTotal, 0.0, ancienCredits)
+                        updateClientsCredit(clientId!!.toInt(), clientTotal, clientTotal, ancienCredits)
                     }
                 }
                 showPrintDialog = false
@@ -821,7 +818,7 @@ fun ClientAndEmballageHeader(
 }
 
 
-suspend fun updateClientsCredit(
+fun updateClientsCredit(
     clientId: Int,
     clientsTotal: Double,
     clientsPayment: Double,
@@ -845,7 +842,7 @@ suspend fun updateClientsCredit(
     )
 
     try {
-        val documentId = "Bon($dayOfWeek)${formattedDateTime}=${"%.2f".format(clientsTotal)}"
+        val documentId = documentIdClientFireStoreClientCredit()
         firestore.collection("F_ClientsArticlesFireS")
             .document(clientId.toString())
             .collection("Totale et Credit Des Bons")
@@ -862,6 +859,17 @@ suspend fun updateClientsCredit(
     } catch (e: Exception) {
         Log.e("Firestore", "Error updating clients credit: ", e)
     }
+}
+
+fun documentIdClientFireStoreClientCredit(
+): String {
+    val currentDateTime = LocalDateTime.now()
+    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+    val documentId = "Bon($dayOfWeek)${formattedDateTime}"
+    return documentId
 }
 @Entity
 data class ArticlesAcheteModele(
