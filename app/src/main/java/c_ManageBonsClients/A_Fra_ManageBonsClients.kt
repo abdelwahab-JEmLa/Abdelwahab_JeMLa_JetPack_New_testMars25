@@ -27,11 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AllInbox
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -335,9 +331,12 @@ fun ClientsCreditDialog(
     clientsName: String,
     clientsTotal: Double,
     coroutineScope: CoroutineScope,
-    context: Context // Add context parameter
+    context: Context, // Add context parameter
+    onValueChange: (String) -> Unit,
+    clientsPaymentActuelle: String,
+    restCreditDeCetteBon: Double,
+    newBalenceOfCredits: Double
 ) {
-    var clientsPayment by remember { mutableStateOf("") }
     var ancienCredit by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<ClientsInvoiceOther>>(emptyList()) }
@@ -349,7 +348,6 @@ fun ClientsCreditDialog(
 
     LaunchedEffect(showDialog) {
         if (showDialog) {
-            clientsPayment = ""
             fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
                 recentInvoices = invoices
                 ancienCredit = credit
@@ -371,17 +369,15 @@ fun ClientsCreditDialog(
                         Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + clientsTotal)}", color = Color.White)
                         Text("Total of Current Invoice: ${"%.2f".format(clientsTotal)}", color = Color.White)
                         Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
-                        val newCredit = ancienCredit + clientsTotal - paymentAmount
-                        Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
+                        Text("New Credit Balance: ${"%.2f".format(newBalenceOfCredits)}", color = Color.White)
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             OutlinedTextField(
-                                value = clientsPayment,
-                                onValueChange = { clientsPayment = it },
+                                value = clientsPaymentActuelle,
+                                onValueChange = onValueChange,
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
@@ -469,9 +465,15 @@ fun ClientsCreditDialog(
                     onClick = {
                         coroutineScope.launch {
                             clientsId?.let { id ->
-                                val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
+                                val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
                                 try {
-                                    updateClientsCredit(id.toInt(), clientsTotal, paymentAmount, ancienCredit)
+                                    updateClientsCredit(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon= clientsTotal,
+                                        clientsPaymentActuelle=clientsPaymentActuelle.toDouble(),
+                                        restCreditDeCetteBon=restCreditDeCetteBon,
+                                        newBalenceOfCredits=newBalenceOfCredits
+                                    )
                                     fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
                                         recentInvoices = invoices
                                         ancienCredit = credit
@@ -523,7 +525,57 @@ fun ClientsCreditDialog(
     }
 }
 
+fun updateClientsCredit(
+    clientId: Int,
+    clientsTotalDeCeBon: Double,
+    clientsPaymentActuelle: Double,
+    restCreditDeCetteBon: Double,
+    newBalenceOfCredits: Double
+) {
+    val firestore = Firebase.firestore
+    val currentDateTime = LocalDateTime.now()
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
+
+    val data = hashMapOf(
+        "date" to formattedDateTime,
+        "totaleDeCeBon" to clientsTotalDeCeBon,
+        "payeCetteFoit" to clientsPaymentActuelle,
+        "creditFaitDonCeBon" to restCreditDeCetteBon,
+        "ancienCredits" to newBalenceOfCredits
+    )
+
+    try {
+        val documentId = documentIdClientFireStoreClientCredit()
+        firestore.collection("F_ClientsArticlesFireS")
+            .document(clientId.toString())
+            .collection("Totale et Credit Des Bons")
+            .document(documentId)
+            .set(data)
+
+        firestore.collection("F_ClientsArticlesFireS")
+            .document(clientId.toString())
+            .collection("latest Totale et Credit Des Bons")
+            .document("latest")
+            .set(data)
+
+        Log.d("Firestore", "Clients credit updated successfully")
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error updating clients credit: ", e)
+    }
+}
+
+fun documentIdClientFireStoreClientCredit(
+): String {
+    val currentDateTime = LocalDateTime.now()
+    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+    val documentId = "Bon($dayOfWeek)${formattedDateTime}"
+    return documentId
+}
 
 suspend fun fetchRecentInvoices(clientsId: Long?, onFetchComplete: (List<ClientsInvoiceOther>, Double) -> Unit) {
     clientsId?.let { id ->
@@ -669,241 +721,9 @@ data class ClientsTabelle(
     constructor() : this(0)
 }
 
-@Composable
-fun ClientAndEmballageHeader(
-    nomClient: String,
-    typeEmballage: String,
-    onPrintClick: (List<ArticlesAcheteModele>) -> Unit,
-    onToggleActive: () -> Unit,
-    isActive: Boolean,
-    articles: List<ArticlesAcheteModele>,
-    allArticles: List<ArticlesAcheteModele>,
-    clientTotal: Double
-) {
-    val context = LocalContext.current
-
-    var showPrintDialog by remember { mutableStateOf(false) }
-    var showClientsBonUpdateDialog by remember { mutableStateOf(false) }
-    var clientId by remember { mutableStateOf<Long?>(null) }
-    var ancienCredits by remember { mutableStateOf(0.0) }
-    val verifiedCount = allArticles.count { it.nomClient == nomClient && it.verifieState }
-    val clientColor = remember(nomClient) { generateClientColor(nomClient) }
-    val clientProfit = calculateClientProfit(allArticles, nomClient)
-    val coroutineScope = rememberCoroutineScope()
-
-    fun fetchAncienCredits(clientId: Long?, onCreditsFetched: (Double) -> Unit) {
-        if (clientId != null) {
-            val firestore = Firebase.firestore
-            firestore.collection("F_ClientsArticlesFireS")
-                .document(clientId.toString())
-                .collection("latest Totale et Credit Des Bons")
-                .document("latest")
-                .get()
-                .addOnSuccessListener { document ->
-                    val credits = document.getDouble("ancienCredits") ?: 0.0
-                    onCreditsFetched(credits)
-                }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Error fetching ancienCredits: ", e)
-                    onCreditsFetched(0.0)
-                }
-        } else {
-            onCreditsFetched(0.0)
-        }
-    }
-
-    LaunchedEffect(nomClient) {
-        val clientsTableRef = Firebase.database.getReference("G_Clients")
-        clientsTableRef.orderByChild("nomClientsSu").equalTo(nomClient).limitToFirst(1)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val clientData = snapshot.children.first().getValue(ClientsTabelle::class.java)
-                        clientId = clientData?.idClientsSu
-                        fetchAncienCredits(clientId) { credits ->
-                            ancienCredits = credits
-                        }
-                    } else {
-                        // Client doesn't exist, add new client
-                        addNewClient(nomClient) { newClientId ->
-                            clientId = newClientId
-                            fetchAncienCredits(clientId) { credits ->
-                                ancienCredits = credits
-                            }
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("Firebase", "Error fetching client ID: ${error.message}")
-                }
-            })
-    }
 
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(clientColor)
-            .padding(4.dp)
-    ) {
-        Text(
-            text = "$nomClient - $typeEmballage",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.Black,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { showPrintDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Print,
-                        contentDescription = "Print",
-                        tint = Color.Black
-                    )
-                }
-                Text(
-                    text = "A.C:${String.format("%.2f", ancienCredits)}Da",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
-            IconButton(onClick = onToggleActive) {
-                Icon(
-                    imageVector = if (isActive) Icons.Default.Check else Icons.Default.FilterList,
-                    contentDescription = "Toggle Verification and Filter",
-                    tint = Color.Black
-                )
-            }
-            IconButton(onClick = { createEmptyArticle(nomClient) }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Empty Article",
-                    tint = Color.Black
-                )
-            }
-            IconButton(
-                onClick = {
-                    if (clientId != null) {
-                        showClientsBonUpdateDialog = true
-                    } else {
-                        Log.e("ClientAndEmballageHeader", "Client ID is null for $nomClient")
-                    }
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CreditCard,
-                    contentDescription = "Update Client Credit",
-                    tint = Color.Black
-                )
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "${String.format("%.2f", clientProfit)}Da",
-                color = Color.Black,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Total: ${String.format("%.2f", clientTotal)}Da",
-                color = Color.Black,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-
-    if (showPrintDialog) {
-        PrintConfirmationDialog(
-            verifiedCount = verifiedCount,
-            onConfirm = {
-                val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
-                onPrintClick(verifiedClientArticles)
-                coroutineScope.launch {
-                    if (clientId != null) {
-                        updateClientsCredit(clientId!!.toInt(), clientTotal, clientTotal, ancienCredits)
-                    }
-                }
-                showPrintDialog = false
-            },
-            onDismiss = { showPrintDialog = false }
-        )
-    }
-
-    if (showClientsBonUpdateDialog && clientId != null) {
-        ClientsCreditDialog(
-            showDialog = showClientsBonUpdateDialog,
-            onDismiss = { showClientsBonUpdateDialog = false },
-            clientsId = clientId,
-            clientsName = nomClient,
-            clientsTotal = clientTotal,
-            coroutineScope = coroutineScope,
-            context=context
-        )
-    }
-}
-
-
-fun updateClientsCredit(
-    clientId: Int,
-    clientsTotal: Double,
-    clientsPayment: Double,
-    ancienCredit: Double
-) {
-    val firestore = Firebase.firestore
-    val currentDateTime = LocalDateTime.now()
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-
-    val restCreditDeCetteBon = clientsTotal - clientsPayment
-    val newTotalCredit = ancienCredit + restCreditDeCetteBon
-
-    val data = hashMapOf(
-        "date" to formattedDateTime,
-        "totaleDeCeBon" to clientsTotal,
-        "payeCetteFoit" to clientsPayment,
-        "creditFaitDonCeBon" to restCreditDeCetteBon,
-        "ancienCredits" to newTotalCredit
-    )
-
-    try {
-        val documentId = documentIdClientFireStoreClientCredit()
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientId.toString())
-            .collection("Totale et Credit Des Bons")
-            .document(documentId)
-            .set(data)
-
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientId.toString())
-            .collection("latest Totale et Credit Des Bons")
-            .document("latest")
-            .set(data)
-
-        Log.d("Firestore", "Clients credit updated successfully")
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating clients credit: ", e)
-    }
-}
-
-fun documentIdClientFireStoreClientCredit(
-): String {
-    val currentDateTime = LocalDateTime.now()
-    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-
-    val documentId = "Bon($dayOfWeek)${formattedDateTime}"
-    return documentId
-}
 @Entity
 data class ArticlesAcheteModele(
     @PrimaryKey(autoGenerate = true) val vid: Long = 0,

@@ -63,7 +63,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import c_ManageBonsClients.ClientsTabelle
-import c_ManageBonsClients.updateClientsCredit
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -575,7 +574,6 @@ fun ClientsCreditDialog(
                                 val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
                                 val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
                                 try {
-                                    updateClientsCredit(id.toInt(), clientsTotal, adjustedPayment, ancienCredit)
                                     fetchRecentInvoices()
                                     onDismiss()
                                 } catch (e: Exception) {

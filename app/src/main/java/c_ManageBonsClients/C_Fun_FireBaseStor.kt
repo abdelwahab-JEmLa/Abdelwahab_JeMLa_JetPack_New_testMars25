@@ -39,11 +39,12 @@ suspend fun processClientData(context: Context, nomClient: String, clientArticle
 
         val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, dateString, verifiedClientArticles)
 
+        imprimerDonnees(context, texteImprimable.toString(), totaleBon)
+
         exportToFirestore(fireStore, verifiedClientArticles, nomClient, dateString)
 
         updateClientsList(fireStore, nomClient)
 
-        imprimerDonnees(context, texteImprimable.toString(), totaleBon)
 
         Log.d(TAG, "Données imprimées:\n$texteImprimable")
 
