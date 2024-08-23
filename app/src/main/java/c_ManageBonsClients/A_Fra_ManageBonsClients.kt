@@ -52,7 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.room.Entity
@@ -191,7 +190,6 @@ fun DisplayManageBonsClients(
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
-    val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     var isDetailDisplayed by remember { mutableStateOf(false) }
 
@@ -225,11 +223,6 @@ fun DisplayManageBonsClients(
                     ClientAndEmballageHeader(
                         nomClient = nomClient,
                         typeEmballage = typeEmballage,
-                        onPrintClick = { verifiedClientArticles ->
-                            coroutineScope.launch {
-                                processClientData(context, nomClient, verifiedClientArticles)
-                            }
-                        },
                         onToggleActive = {
                             activeClients = if (activeClients.contains(nomClient)) {
                                 activeClients - nomClient
@@ -238,7 +231,6 @@ fun DisplayManageBonsClients(
                             }
                         },
                         isActive = activeClients.contains(nomClient),
-                        articles = clientArticles,
                         allArticles = articles,
                         clientTotal = clientTotals[nomClient] ?: 0.0,
                     )

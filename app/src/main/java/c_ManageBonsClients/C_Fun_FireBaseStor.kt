@@ -7,8 +7,6 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -17,92 +15,11 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
-import kotlin.math.round
 
 // Constants
-const val TAG = "ClientManagement"
 private const val FACTURES_COLLECTION = "HistoriqueDesFactures"
 private const val CLIENTS_COLLECTION = "clientsList"
-private const val DATE_FORMAT = "dd/MM/yyyy"
 private const val PRINT_INTENT = "pe.diegoveloper.printing"
-
-suspend fun processClientData(context: Context, nomClient: String, clientArticles: List<ArticlesAcheteModele>) {
-    val fireStore = Firebase.firestore
-
-    try {
-        // Filter articles for the specific client and with verified state
-        val verifiedClientArticles = clientArticles.filter { it.nomClient == nomClient && it.verifieState }
-
-        // Get the date from the first article (assuming all articles have the same date)
-        val firstArticle = verifiedClientArticles.firstOrNull()
-        val dateString = firstArticle?.dateDachate ?: SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(Date())
-
-        val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, dateString, verifiedClientArticles)
-
-        imprimerDonnees(context, texteImprimable.toString(), totaleBon)
-
-        exportToFirestore(fireStore, verifiedClientArticles, nomClient, dateString)
-
-        updateClientsList(fireStore, nomClient)
-
-
-        Log.d(TAG, "Données imprimées:\n$texteImprimable")
-
-    } catch (e: Exception) {
-        Log.e(TAG, "Erreur lors du traitement des données client", e)
-    }
-}
-
-private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArticles: List<ArticlesAcheteModele>): Pair<StringBuilder, Double> {
-    val texteImprimable = StringBuilder()
-    var totaleBon = 0.0
-    var pageCounter = 0
-
-    texteImprimable.apply {
-        append("<BIG><CENTER>Abdelwahab<BR>")
-        append("<BIG><CENTER>JeMla.Com<BR>")
-        append("<SMALL><CENTER>0553885037<BR>")
-        append("<SMALL><CENTER>Facture<BR>")
-        append("<BR>")
-        append("<SMALL><CENTER>$nomClient                        $dateString<BR>")
-        append("<BR>")
-        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-        append("<SMALL><BOLD>    Quantité      Prix         <NORMAL>Sous-total<BR>")
-        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-    }
-
-    clientArticles.forEachIndexed { index, article ->
-        val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor") article.monPrixVentBM else article.monPrixVentFireStoreBM
-        val arrondi = round(monPrixVentDetermineBM * 10) / 10
-        val subtotal = arrondi * article.totalQuantity
-        if (subtotal != 0.0) {
-            texteImprimable.apply {
-                append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
-                append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
-                append("<MEDIUM1><LEFT>${arrondi}Da   ")
-                append("<SMALL>$subtotal<BR>")
-                append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
-            }
-
-            totaleBon += subtotal
-            if ((index + 1) % 15 == 0) {
-                pageCounter++
-                texteImprimable.append("<BR><CENTER>PAGE $pageCounter<BR><BR><BR>")
-            }
-        }
-    }
-
-    texteImprimable.apply {
-        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
-        append("<BR><BR>")
-        append("<MEDIUM1><CENTER>Total<BR>")
-        append("<MEDIUM3><CENTER>${round(totaleBon * 10) / 10}Da<BR>")
-        append("<CENTER>---------------------<BR>")
-        append("<BR><BR><BR>>")
-    }
-
-    return Pair(texteImprimable, totaleBon)
-}
 
 fun updateTotalProfitInFirestore(totalProfit: Double) {
     val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)

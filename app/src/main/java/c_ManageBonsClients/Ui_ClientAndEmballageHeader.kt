@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,20 +39,25 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
+import kotlin.math.round
+
+const val TAG = "ClientManagement"
 
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
     typeEmballage: String,
-    onPrintClick: (List<ArticlesAcheteModele>) -> Unit,
     onToggleActive: () -> Unit,
     isActive: Boolean,
-    articles: List<ArticlesAcheteModele>,
     allArticles: List<ArticlesAcheteModele>,
-    clientTotal: Double
+    clientTotal: Double,
 ) {
     val context = LocalContext.current
 
@@ -216,8 +222,9 @@ fun ClientAndEmballageHeader(
                 TextButton(
                     onClick = {
                         val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
-                        onPrintClick(verifiedClientArticles)
+
                         coroutineScope.launch {
+                            processClientData(context, nomClient, verifiedClientArticles)
                             if (clientId != null) {
                                 updateClientsCreditFromHeader(
                                     clientId!!.toInt(),
@@ -264,6 +271,86 @@ fun ClientAndEmballageHeader(
     }
 }
 
+
+suspend fun processClientData(context: Context, nomClient: String, clientArticles: List<ArticlesAcheteModele>) {
+    val fireStore = com.google.firebase.ktx.Firebase.firestore
+    try {
+        // Filter articles for the specific client and with verified state
+        val verifiedClientArticles = clientArticles.filter { it.nomClient == nomClient && it.verifieState }
+
+        // Get the date from the first article (assuming all articles have the same date)
+        val firstArticle = verifiedClientArticles.firstOrNull()
+        val dateString = firstArticle?.dateDachate ?: SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(
+            Date()
+        )
+
+        val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, dateString, verifiedClientArticles)
+
+        imprimerDonnees(context, texteImprimable.toString(), totaleBon)
+
+        exportToFirestore(fireStore, verifiedClientArticles, nomClient, dateString)
+
+        updateClientsList(fireStore, nomClient)
+
+
+        Log.d(TAG, "Données imprimées:\n$texteImprimable")
+
+    } catch (e: Exception) {
+        Log.e(TAG, "Erreur lors du traitement des données client", e)
+    }
+}
+
+private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArticles: List<ArticlesAcheteModele>): Pair<StringBuilder, Double> {
+    val texteImprimable = StringBuilder()
+    var totaleBon = 0.0
+    var pageCounter = 0
+
+    texteImprimable.apply {
+        append("<BIG><CENTER>Abdelwahab<BR>")
+        append("<BIG><CENTER>JeMla.Com<BR>")
+        append("<SMALL><CENTER>0553885037<BR>")
+        append("<SMALL><CENTER>Facture<BR>")
+        append("<BR>")
+        append("<SMALL><CENTER>$nomClient                        $dateString<BR>")
+        append("<BR>")
+        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+        append("<SMALL><BOLD>    Quantité      Prix         <NORMAL>Sous-total<BR>")
+        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+    }
+
+    clientArticles.forEachIndexed { index, article ->
+        val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor") article.monPrixVentBM else article.monPrixVentFireStoreBM
+        val arrondi = round(monPrixVentDetermineBM * 10) / 10
+        val subtotal = arrondi * article.totalQuantity
+        if (subtotal != 0.0) {
+            texteImprimable.apply {
+                append("<MEDIUM1><LEFT>${article.nomArticleFinale}<BR>")
+                append("    <MEDIUM1><LEFT>${article.totalQuantity}   ")
+                append("<MEDIUM1><LEFT>${arrondi}Da   ")
+                append("<SMALL>$subtotal<BR>")
+                append("<LEFT><NORMAL><MEDIUM1>---------------------<BR>")
+            }
+
+            totaleBon += subtotal
+            if ((index + 1) % 15 == 0) {
+                pageCounter++
+                texteImprimable.append("<BR><CENTER>PAGE $pageCounter<BR><BR><BR>")
+            }
+        }
+    }
+
+    texteImprimable.apply {
+        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+        append("<BR><BR>")
+        append("<MEDIUM1><CENTER>Total<BR>")
+        append("<MEDIUM3><CENTER>${round(totaleBon * 10) / 10}Da<BR>")
+        //TODO fait que si ancienCredits>0 d ajoute   "Credit Du Compte actuele = "
+        append("<CENTER>---------------------<BR>")
+        append("<BR><BR><BR>>")
+    }
+
+    return Pair(texteImprimable, totaleBon)
+}
 fun updateClientsCreditFromHeader(
     clientId: Int,
     clientsTotalDeCeBon: Double,
