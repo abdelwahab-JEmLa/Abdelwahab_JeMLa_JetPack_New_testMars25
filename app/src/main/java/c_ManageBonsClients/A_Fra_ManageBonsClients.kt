@@ -202,7 +202,9 @@ fun DisplayManageBonsClients(
     val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
     val groupedArticles = sortedArticles.groupBy { it.typeEmballage to it.nomClient }
     val clientTotals = articles.groupBy { it.nomClient }.mapValues { (_, clientArticles) ->
-        clientArticles.filter { !it.nonTrouveState }.sumOf { article ->
+        clientArticles.filter {
+            it.verifieState
+        }.sumOf { article ->
             val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
                 article.monPrixVentBM else article.monPrixVentFireStoreBM
             val arrondi = round(monPrixVentDetermineBM * 10) / 10
@@ -860,12 +862,11 @@ fun updateClientsCredit(
 ) {
     val firestore = Firebase.firestore
     val currentDateTime = LocalDateTime.now()
-    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
     val restCreditDeCetteBon = clientsTotal - clientsPayment
-    val newTotalCredit = ancienCredit + restCreditDeCetteBon
+    val newTotalCredit = ancienCredit - restCreditDeCetteBon
 
     val data = hashMapOf(
         "date" to formattedDateTime,
