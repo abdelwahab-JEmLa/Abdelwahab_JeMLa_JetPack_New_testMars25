@@ -372,8 +372,7 @@ fun ClientsCreditDialog(
                         Text("Total of Current Invoice: ${"%.2f".format(clientsTotal)}", color = Color.White)
                         Spacer(modifier = Modifier.height(8.dp))
                         val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
-                        val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                        val newCredit = ancienCredit - clientsTotal + paymentAmount
+                        val newCredit = ancienCredit + clientsTotal - paymentAmount
                         Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
 
                         Row(
@@ -471,9 +470,8 @@ fun ClientsCreditDialog(
                         coroutineScope.launch {
                             clientsId?.let { id ->
                                 val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
-                                val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
                                 try {
-                                    updateClientsCredit(id.toInt(), clientsTotal, adjustedPayment, ancienCredit)
+                                    updateClientsCredit(id.toInt(), clientsTotal, paymentAmount, ancienCredit)
                                     fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
                                         recentInvoices = invoices
                                         ancienCredit = credit
@@ -484,7 +482,7 @@ fun ClientsCreditDialog(
                                         val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
                                         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
                                         val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-                                        val newCredit  =  "%.2f".format(ancienCredit - paymentAmount)
+                                        val newCredit  =  "%.2f".format(ancienCredit + clientsTotal - paymentAmount)
                                         append("<BR><BR>")
                                         append("<MEDIUM1><CENTER>Abdelwahab<BR>")
                                         append("<MEDIUM1><CENTER>JeMla.Com<BR>")
@@ -866,7 +864,7 @@ fun updateClientsCredit(
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
     val restCreditDeCetteBon = clientsTotal - clientsPayment
-    val newTotalCredit = ancienCredit - restCreditDeCetteBon
+    val newTotalCredit = ancienCredit + restCreditDeCetteBon
 
     val data = hashMapOf(
         "date" to formattedDateTime,
