@@ -102,6 +102,7 @@ private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArt
 
     return Pair(texteImprimable, totaleBon)
 }
+
 fun updateTotalProfitInFirestore(totalProfit: Double) {
     val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
     val db = com.google.firebase.Firebase.firestore

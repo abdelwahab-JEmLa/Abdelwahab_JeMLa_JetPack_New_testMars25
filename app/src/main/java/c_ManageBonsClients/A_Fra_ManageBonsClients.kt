@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -331,7 +332,8 @@ fun ClientsCreditDialog(
     clientsId: Long?,
     clientsName: String,
     clientsTotal: Double,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    context: Context // Add context parameter
 ) {
     var clientsPayment by remember { mutableStateOf("") }
     var ancienCredit by remember { mutableStateOf(0.0) }
@@ -341,6 +343,7 @@ fun ClientsCreditDialog(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val clientsColor = remember(clientsName) { generateClientColor(clientsName) }
+
 
     LaunchedEffect(showDialog) {
         if (showDialog) {
@@ -473,6 +476,28 @@ fun ClientsCreditDialog(
                                         recentInvoices = invoices
                                         ancienCredit = credit
                                     })
+
+                                    val texteImprimable = StringBuilder().apply {
+                                        val currentDateTime = LocalDateTime.now()
+                                        val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
+                                        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                                        val formattedDateTime = currentDateTime.format(dateTimeFormatter)
+
+                                        append("<BR><BR><BR>>")
+                                        append("<BIG><CENTER>Abdelwahab<BR>")
+                                        append("<BIG><CENTER>JeMla.Com<BR>")
+                                        append("<SMALL><CENTER>0553885037<BR>")
+                                        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+                                        append("Date : ($dayOfWeek)${formattedDateTime}")
+                                        append("<BR>")
+                                        append("Versement = $paymentAmount Da")
+                                        append("<BR>")
+                                        append("Totale Rest Du Credit = ${ancienCredit - paymentAmount} Da")
+                                        append("<LEFT><NORMAL><MEDIUM1>=====================<BR>")
+                                        append("<BR><BR><BR>>")
+                                    }.toString()
+
+                                    imprimerDonnees(context, texteImprimable, clientsTotal)
                                     onDismiss()
                                 } catch (e: Exception) {
                                     errorMessage = "Error updating credit: ${e.message}"
@@ -493,6 +518,8 @@ fun ClientsCreditDialog(
         )
     }
 }
+
+
 
 suspend fun fetchRecentInvoices(clientsId: Long?, onFetchComplete: (List<ClientsInvoiceOther>, Double) -> Unit) {
     clientsId?.let { id ->
@@ -649,6 +676,8 @@ fun ClientAndEmballageHeader(
     allArticles: List<ArticlesAcheteModele>,
     clientTotal: Double
 ) {
+    val context = LocalContext.current
+
     var showPrintDialog by remember { mutableStateOf(false) }
     var showClientsBonUpdateDialog by remember { mutableStateOf(false) }
     var clientId by remember { mutableStateOf<Long?>(null) }
@@ -812,7 +841,8 @@ fun ClientAndEmballageHeader(
             clientsId = clientId,
             clientsName = nomClient,
             clientsTotal = clientTotal,
-            coroutineScope = coroutineScope
+            coroutineScope = coroutineScope,
+            context=context
         )
     }
 }
