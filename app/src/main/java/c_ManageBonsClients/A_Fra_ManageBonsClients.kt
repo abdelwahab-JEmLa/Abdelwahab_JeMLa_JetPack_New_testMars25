@@ -373,7 +373,7 @@ fun ClientsCreditDialog(
                         Spacer(modifier = Modifier.height(8.dp))
                         val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
                         val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                        val newCredit = ancienCredit + clientsTotal - adjustedPayment
+                        val newCredit = ancienCredit - clientsTotal + paymentAmount
                         Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
 
                         Row(
