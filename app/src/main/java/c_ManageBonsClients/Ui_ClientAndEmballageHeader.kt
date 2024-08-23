@@ -13,10 +13,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +38,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -64,9 +67,14 @@ fun ClientAndEmballageHeader(
     var restCreditDeCetteBon by remember { mutableDoubleStateOf(0.0) }
     var newBalenceOfCredits by remember { mutableDoubleStateOf(0.0) }
 
-    // Safe parsing function
+    // Safe parsing function with logging
     val safeParseDouble = { s: String ->
-        s.takeIf { it.isNotEmpty() }?.toDoubleOrNull() ?: 0.0
+        try {
+            s.takeIf { it.isNotEmpty() }?.toDoubleOrNull() ?: 0.0
+        } catch (e: Exception) {
+            Log.e("SafeParseDouble", "Error parsing string to double: $s", e)
+            0.0
+        }
     }
 
     fun fetchAncienCredits(clientId: Long?, onCreditsFetched: (Double) -> Unit) {
@@ -117,7 +125,6 @@ fun ClientAndEmballageHeader(
                 }
             })
     }
-
 
     Column(
         modifier = Modifier
@@ -199,6 +206,29 @@ fun ClientAndEmballageHeader(
         }
     }
 
+    if (showPrintDialog) {
+        PrintConfirmationDialog(
+            verifiedCount = verifiedCount,
+            onConfirm = {
+                val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
+                onPrintClick(verifiedClientArticles)
+                coroutineScope.launch {
+                    if (clientId != null) {
+                        updateClientsCreditFromHeader(
+                            clientId!!.toInt(),
+                            clientsTotalDeCeBon=clientTotal,
+                            clientsPaymentActuelle =clientsPaymentActuelle.toDouble(),
+                            restCreditDeCetteBon =restCreditDeCetteBon,
+                            newBalenceOfCredits =newBalenceOfCredits,
+                        )
+                    }
+                }
+                showPrintDialog = false
+            },
+            onDismiss = { showPrintDialog = false }
+        )
+    }
+
     if (showClientsBonUpdateDialog && clientId != null) {
         ClientsCreditDialog(
             showDialog = showClientsBonUpdateDialog,
@@ -211,8 +241,8 @@ fun ClientAndEmballageHeader(
             onValueChange = { input ->
                 clientsPaymentActuelle = input
                 val payment = safeParseDouble(input)
-                restCreditDeCetteBon = clientTotal - payment
-                newBalenceOfCredits = ancienCredits + restCreditDeCetteBon
+                restCreditDeCetteBon = (clientTotal - payment).coerceAtLeast(0.0)
+                newBalenceOfCredits = (ancienCredits + restCreditDeCetteBon).coerceAtLeast(0.0)
             },
             clientsPaymentActuelle = clientsPaymentActuelle,
             restCreditDeCetteBon = restCreditDeCetteBon,
@@ -248,15 +278,47 @@ fun updateClientsCreditFromHeader(
             .collection("Totale et Credit Des Bons")
             .document(documentId)
             .set(data)
-
-        firestore.collection("F_ClientsArticlesFireS")
-            .document(clientId.toString())
-            .collection("latest Totale et Credit Des Bons")
-            .document("latest")
-            .set(data)
-
-        Log.d("Firestore", "Clients credit updated successfully")
+            .addOnSuccessListener {
+                Log.d("Firestore", "Document successfully written!")
+                // Update the latest document
+                firestore.collection("F_ClientsArticlesFireS")
+                    .document(clientId.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .set(data)
+                    .addOnSuccessListener {
+                        Log.d("Firestore", "Latest document successfully updated!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore", "Error updating latest document", e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error writing document", e)
+            }
     } catch (e: Exception) {
         Log.e("Firestore", "Error updating clients credit: ", e)
     }
+}
+@Composable
+fun PrintConfirmationDialog(
+    verifiedCount: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Printing") },
+        text = { Text("There are $verifiedCount verified articles. Do you want to proceed with printing?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
