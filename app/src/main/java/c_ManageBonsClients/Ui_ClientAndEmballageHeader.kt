@@ -207,25 +207,38 @@ fun ClientAndEmballageHeader(
     }
 
     if (showPrintDialog) {
-        PrintConfirmationDialog(
-            verifiedCount = verifiedCount,
-            onConfirm = {
-                val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
-                onPrintClick(verifiedClientArticles)
-                coroutineScope.launch {
-                    if (clientId != null) {
-                        updateClientsCreditFromHeader(
-                            clientId!!.toInt(),
-                            clientsTotalDeCeBon=clientTotal,
-                            clientsPaymentActuelle =clientsPaymentActuelle.toDouble(),
-                            restCreditDeCetteBon =restCreditDeCetteBon,
-                            newBalenceOfCredits =newBalenceOfCredits,
-                        )
+
+        AlertDialog(
+            onDismissRequest = { showPrintDialog = false },
+            title = { Text("Confirm Printing") },
+            text = { Text("There are $verifiedCount verified articles. Do you want to proceed with printing?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
+                        onPrintClick(verifiedClientArticles)
+                        coroutineScope.launch {
+                            if (clientId != null) {
+                                updateClientsCreditFromHeader(
+                                    clientId!!.toInt(),
+                                    clientsTotalDeCeBon=clientTotal,
+                                    clientsPaymentActuelle =clientTotal,
+                                    restCreditDeCetteBon =0.0,
+                                    newBalenceOfCredits =ancienCredits,
+                                )
+                            }
+                        }
+                        showPrintDialog = false
                     }
+                ) {
+                    Text("OK")
                 }
-                showPrintDialog = false
             },
-            onDismiss = { showPrintDialog = false }
+            dismissButton = {
+                TextButton(onClick = { showPrintDialog = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 
@@ -299,26 +312,4 @@ fun updateClientsCreditFromHeader(
     } catch (e: Exception) {
         Log.e("Firestore", "Error updating clients credit: ", e)
     }
-}
-@Composable
-fun PrintConfirmationDialog(
-    verifiedCount: Int,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Confirm Printing") },
-        text = { Text("There are $verifiedCount verified articles. Do you want to proceed with printing?") },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }
