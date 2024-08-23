@@ -2,6 +2,11 @@ package c_ManageBonsClients
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -213,25 +219,31 @@ fun ClientAndEmballageHeader(
     }
 
     if (showPrintDialog) {
-
         AlertDialog(
             onDismissRequest = { showPrintDialog = false },
             title = { Text("Confirm Printing") },
-            text = { Text("There are $verifiedCount verified articles. Do you want to proceed with printing?") },
+            text = {
+                Column {
+                    Text("There are $verifiedCount verified articles. Do you want to proceed with printing?")
+                    if (ancienCredits > 0) {
+                        BlinkingText(text = "Attention: Credit ancien de ${String.format("%.2f", ancienCredits)}Da!")
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
 
                         coroutineScope.launch {
-                            processClientData(context, nomClient, verifiedClientArticles)
+                            processClientData(context, nomClient, verifiedClientArticles, ancienCredits = ancienCredits)
                             if (clientId != null) {
                                 updateClientsCreditFromHeader(
                                     clientId!!.toInt(),
                                     clientsTotalDeCeBon=clientTotal,
-                                    clientsPaymentActuelle =clientTotal,
-                                    restCreditDeCetteBon =0.0,
-                                    newBalenceOfCredits =ancienCredits,
+                                    clientsPaymentActuelle=clientTotal,
+                                    restCreditDeCetteBon=0.0,
+                                    newBalenceOfCredits=ancienCredits,
                                 )
                             }
                         }
@@ -270,9 +282,32 @@ fun ClientAndEmballageHeader(
         )
     }
 }
+@Composable
+fun BlinkingText(text: String) {
+    val infiniteTransition = rememberInfiniteTransition(label = "blinking")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                0.7f at 500
+            },
+            repeatMode = RepeatMode.Reverse
+        ), label = "blinking"
+    )
 
+    Text(
+        text = text,
+        color = Color.Red,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier
+            .padding(4.dp)
+            .alpha(alpha)
+    )
+}
 
-suspend fun processClientData(context: Context, nomClient: String, clientArticles: List<ArticlesAcheteModele>) {
+suspend fun processClientData(context: Context, nomClient: String, clientArticles: List<ArticlesAcheteModele>, ancienCredits: Double) {
     val fireStore = com.google.firebase.ktx.Firebase.firestore
     try {
         // Filter articles for the specific client and with verified state
@@ -284,7 +319,7 @@ suspend fun processClientData(context: Context, nomClient: String, clientArticle
             Date()
         )
 
-        val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, dateString, verifiedClientArticles)
+        val (texteImprimable, totaleBon) = prepareTexteToPrint(nomClient, dateString, verifiedClientArticles, ancienCredits)
 
         imprimerDonnees(context, texteImprimable.toString(), totaleBon)
 
@@ -300,7 +335,7 @@ suspend fun processClientData(context: Context, nomClient: String, clientArticle
     }
 }
 
-private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArticles: List<ArticlesAcheteModele>): Pair<StringBuilder, Double> {
+private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArticles: List<ArticlesAcheteModele>, ancienCredits: Double): Pair<StringBuilder, Double> {
     val texteImprimable = StringBuilder()
     var totaleBon = 0.0
     var pageCounter = 0
@@ -344,7 +379,10 @@ private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArt
         append("<BR><BR>")
         append("<MEDIUM1><CENTER>Total<BR>")
         append("<MEDIUM3><CENTER>${round(totaleBon * 10) / 10}Da<BR>")
-        //TODO fait que si ancienCredits>0 d ajoute   "Credit Du Compte actuele = "
+        if (ancienCredits > 0) {
+            append("<MEDIUM1><CENTER>Credit Du Compte actuel<BR>")
+            append("<MEDIUM2><CENTER>${round(ancienCredits * 10) / 10}Da<BR>")
+        }
         append("<CENTER>---------------------<BR>")
         append("<BR><BR><BR>>")
     }
