@@ -165,7 +165,9 @@ fun ClientsCreditDialog(
                                                 Text("Date: ${invoice.date} (${getDayOfWeekClients(invoice.date)})")
                                                 Text("Total Du Bon: ${"%.2f".format(invoice.totaleDeCeBon)}")
                                                 Text("Versement: ${"%.2f".format(invoice.payeCetteFoit)}")
-                                                Text("Credit fait: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                                val creditFaitDonCeBonIf0 = if (invoice.creditFaitDonCeBon == 0.0) "Paye Le totale du bon"
+                                                else "(Credit fait: ${"%.2f".format(invoice.creditFaitDonCeBon)})"
+                                                Text(creditFaitDonCeBonIf0)
                                                 Text("New Balance After: ${"%.2f".format(invoice.newBalence)}")
                                             }
                                             IconButton(
@@ -295,8 +297,8 @@ fun updateClientsCreditCCD(
     val data = hashMapOf(
         "date" to formattedDateTime,
         "totaleDeCeBon" to clientsTotalDeCeBon,
-        "payeCetteFoit" to clientsPaymentActuelle,
-        "creditFaitDonCeBon" to restCreditDeCetteBon,
+        "payeCetteFoit" to clientsPaymentActuelle.coerceAtLeast(0.0),
+        "creditFaitDonCeBon" to restCreditDeCetteBon.coerceAtLeast(0.0),
         "ancienCredits" to newBalenceOfCredits
     )
 
