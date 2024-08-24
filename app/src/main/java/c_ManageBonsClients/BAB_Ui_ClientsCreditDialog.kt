@@ -207,12 +207,12 @@ fun ClientsCreditDialog(
                                 val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
 
                                 imprimeLeTiquetDuCreditChangement(
-                                    ancienCredit,
-                                    clientsTotal,
-                                    paymentAmount,
-                                    clientsName,
-                                    context,
-                                    onDismiss
+                                    clientsTotalDeCeBon = clientsTotal,
+                                    clientsPaymentActuelle = paymentAmount,
+                                    newBalenceOfCredits = newBalenceOfCredits,
+                                    context = context,
+                                    onDismiss = onDismiss,
+                                    clientsName = clientsName
                                 )
                                 updateClientsCreditCCD(
                                     id.toInt(),
@@ -244,9 +244,9 @@ fun ClientsCreditDialog(
 }
 
 private fun imprimeLeTiquetDuCreditChangement(
-    ancienCredit: Double,
-    clientsTotal: Double,
-    paymentAmount: Double,
+    clientsTotalDeCeBon: Double,
+    clientsPaymentActuelle: Double,
+    newBalenceOfCredits: Double,
     clientsName: String,
     context: Context,
     onDismiss: () -> Unit
@@ -258,7 +258,6 @@ private fun imprimeLeTiquetDuCreditChangement(
         )
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-        val newCredit = "%.2f".format(ancienCredit + clientsTotal - paymentAmount)
         append("<BR><BR>")
         append("<MEDIUM1><CENTER>Abdelwahab<BR>")
         append("<MEDIUM1><CENTER>JeMla.Com<BR>")
@@ -269,17 +268,18 @@ private fun imprimeLeTiquetDuCreditChangement(
         append("<BR>")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Versement : ")
-        append("<BR><BIG><CENTER> $paymentAmount Da")
+        append("<BR><BIG><CENTER> $clientsPaymentActuelle Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Totale Des Credits : ")
-        append("<BR><BIG><CENTER>$newCredit Da")
+        append("<BR><BIG><CENTER>$newBalenceOfCredits Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>=====================<BR>")
         append("<BR><BR><BR>>")
     }.toString()
 
-    imprimerDonnees(context, texteImprimable, clientsTotal)
+    imprimerDonnees(context, texteImprimable, clientsTotalDeCeBon)
     onDismiss()
 }
+
 
 fun updateClientsCreditCCD(
     clientId: Int,

@@ -211,13 +211,14 @@ fun ClientsCreditDialogClientsBoard(
                                 val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
 
                                 imprimeLeTiquetDuCreditChangementCB(
-                                    ancienCredit,
-                                    clientsTotal,
-                                    paymentAmount,
-                                    clientsName,
-                                    context,
-                                    onDismiss
+                                    clientsTotalDeCeBon = clientsTotal,
+                                    clientsPaymentActuelle = paymentAmount,
+                                    newBalenceOfCredits = newBalenceOfCredits,
+                                    context = context,
+                                    onDismiss = onDismiss,
+                                    clientsName = clientsName
                                 )
+
                                 updateClientsCreditCB(
                                     id.toInt(),
                                     clientsTotalDeCeBon = clientsTotal,
@@ -246,11 +247,10 @@ fun ClientsCreditDialogClientsBoard(
         )
     }
 }
-
 private fun imprimeLeTiquetDuCreditChangementCB(
-    ancienCredit: Double,
-    clientsTotal: Double,
-    paymentAmount: Double,
+    clientsTotalDeCeBon: Double,
+    clientsPaymentActuelle: Double,
+    newBalenceOfCredits: Double,
     clientsName: String,
     context: Context,
     onDismiss: () -> Unit
@@ -262,7 +262,6 @@ private fun imprimeLeTiquetDuCreditChangementCB(
         )
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val formattedDateTime = currentDateTime.format(dateTimeFormatter)
-        val newCredit = "%.2f".format(ancienCredit + clientsTotal - paymentAmount)
         append("<BR><BR>")
         append("<MEDIUM1><CENTER>Abdelwahab<BR>")
         append("<MEDIUM1><CENTER>JeMla.Com<BR>")
@@ -273,17 +272,18 @@ private fun imprimeLeTiquetDuCreditChangementCB(
         append("<BR>")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Versement : ")
-        append("<BR><BIG><CENTER> $paymentAmount Da")
+        append("<BR><BIG><CENTER> $clientsPaymentActuelle Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Totale Des Credits : ")
-        append("<BR><BIG><CENTER>$newCredit Da")
+        append("<BR><BIG><CENTER>$newBalenceOfCredits Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>=====================<BR>")
         append("<BR><BR><BR>>")
     }.toString()
 
-    imprimerDonnees(context, texteImprimable, clientsTotal)
+    imprimerDonnees(context, texteImprimable, clientsTotalDeCeBon)
     onDismiss()
 }
+
 
 fun updateClientsCreditCB(
     clientId: Int,
@@ -376,19 +376,24 @@ suspend fun fetchRecentInvoicesCB(clientsId: Long?, onFetchComplete: (List<Clien
 
 suspend fun deleteInvoiceCB(clientsId: Long?, invoiceDate: String) {
     clientsId?.let { id ->
-        val firestore = com.google.firebase.ktx.Firebase.firestore
+        val firestore = Firebase.firestore
         val invoiceRef = firestore.collection("F_ClientsArticlesFireS")
             .document(id.toString())
             .collection("Totale et Credit Des Bons")
             .whereEqualTo("date", invoiceDate)
             .limit(1)
+        val latestDocRef = firestore.collection("F_ClientsArticlesFireS")
+            .document(clientsId.toString())
+            .collection("latest Totale et Credit Des Bons")
+            .document("latest")
 
         try {
             val querySnapshot = invoiceRef.get().await()
             if (!querySnapshot.isEmpty) {
                 val documentToDelete = querySnapshot.documents[0]
+                latestDocRef.collection("ancienCredits")
+
                 documentToDelete.reference.delete().await()
-                updateLatestDocumentCB(id, invoiceDate)
             } else {
                 throw Exception("No matching invoice found for deletion")
             }
@@ -398,33 +403,6 @@ suspend fun deleteInvoiceCB(clientsId: Long?, invoiceDate: String) {
     } ?: throw IllegalArgumentException("Invalid clients ID")
 }
 
-suspend fun updateLatestDocumentCB(clientsId: Long, deletedInvoiceDate: String) {
-    val firestore = com.google.firebase.ktx.Firebase.firestore
-    val latestDocRef = firestore.collection("F_ClientsArticlesFireS")
-        .document(clientsId.toString())
-        .collection("latest Totale et Credit Des Bons")
-        .document("latest")
-
-    val invoicesQuery = firestore.collection("F_ClientsArticlesFireS")
-        .document(clientsId.toString())
-        .collection("Totale et Credit Des Bons")
-        .orderBy("date", Query.Direction.DESCENDING)
-        .limit(1)
-
-    try {
-        val querySnapshot = invoicesQuery.get().await()
-        if (!querySnapshot.isEmpty) {
-            val latestInvoice = querySnapshot.documents[0]
-            latestDocRef.set(latestInvoice.data!!).await()
-        } else {
-            // If no invoices left, set default values or delete the latest document
-            latestDocRef.delete().await()
-        }
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating latest document: ", e)
-        throw e
-    }
-}
 
 data class ClientsInvoiceOtherCB(
     val date: String,
