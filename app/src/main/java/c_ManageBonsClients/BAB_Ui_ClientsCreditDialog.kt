@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,18 +64,19 @@ fun ClientsCreditDialog(
     clientsTotal: Double,
     coroutineScope: CoroutineScope,
     context: Context, // Add context parameter
-    onValueChange: (String) -> Unit,
-    clientsPaymentActuelle: String,
-    restCreditDeCetteBon: Double,
-    newBalenceOfCredits: Double
+
 ) {
-    var ancienCredit by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<ClientsInvoiceOther>>(emptyList()) }
     var isPositive by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val clientsColor = remember(clientsName) { generateClientColor(clientsName) }
+
+    var ancienCredit by remember { mutableDoubleStateOf(0.0) }
+    var clientsPaymentActuelle by remember { mutableStateOf("") }
+    val restCreditDeCetteBon by remember { mutableDoubleStateOf(clientsTotal-clientsPaymentActuelle.toDouble()) }
+    val newBalenceOfCredits by remember { mutableDoubleStateOf(ancienCredit+restCreditDeCetteBon) }
 
 
     LaunchedEffect(showDialog) {
@@ -108,7 +110,8 @@ fun ClientsCreditDialog(
                         ) {
                             OutlinedTextField(
                                 value = clientsPaymentActuelle,
-                                onValueChange = onValueChange,
+                                onValueChange = { newClientsPaymentActuelle ->
+                                    clientsPaymentActuelle = newClientsPaymentActuelle},
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
@@ -198,7 +201,15 @@ fun ClientsCreditDialog(
                             clientsId?.let { id ->
                                 val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
 
-                                updateClientsCreditFromClientCreditDialoge(
+                                imprimeLeTiquetDuCreditChangement(
+                                    ancienCredit,
+                                    clientsTotal,
+                                    paymentAmount,
+                                    clientsName,
+                                    context,
+                                    onDismiss
+                                )
+                                updateClientsCreditCCD(
                                         id.toInt(),
                                         clientsTotalDeCeBon= clientsTotal,
                                         clientsPaymentActuelle=clientsPaymentActuelle.toDouble(),
@@ -211,15 +222,6 @@ fun ClientsCreditDialog(
                                         ancienCredit = credit
                                 })
 
-
-                                ImprimeLeTiquetDuCreditChangement(
-                                    ancienCredit,
-                                    clientsTotal,
-                                    paymentAmount,
-                                    clientsName,
-                                    context,
-                                    onDismiss
-                                )
 
                             }
                         }
@@ -238,7 +240,7 @@ fun ClientsCreditDialog(
     }
 }
 
-private fun ImprimeLeTiquetDuCreditChangement(
+private fun imprimeLeTiquetDuCreditChangement(
     ancienCredit: Double,
     clientsTotal: Double,
     paymentAmount: Double,
@@ -276,7 +278,7 @@ private fun ImprimeLeTiquetDuCreditChangement(
     onDismiss()
 }
 
-fun updateClientsCreditFromClientCreditDialoge(
+fun updateClientsCreditCCD(
     clientId: Int,
     clientsTotalDeCeBon: Double,
     clientsPaymentActuelle: Double,

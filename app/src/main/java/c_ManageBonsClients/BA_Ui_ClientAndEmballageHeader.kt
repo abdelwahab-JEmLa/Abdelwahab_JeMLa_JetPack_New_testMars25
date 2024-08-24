@@ -272,15 +272,6 @@ fun ClientAndEmballageHeader(
             clientsTotal = clientTotal,
             coroutineScope = coroutineScope,
             context = context,
-            onValueChange = { input ->
-                clientsPaymentActuelle = input
-                val payment = safeParseDouble(input)
-                restCreditDeCetteBon = (clientTotal - payment).coerceAtLeast(0.0)
-                newBalenceOfCredits = (ancienCredits + restCreditDeCetteBon).coerceAtLeast(0.0)
-            },
-            clientsPaymentActuelle = clientsPaymentActuelle,
-            restCreditDeCetteBon = restCreditDeCetteBon,
-            newBalenceOfCredits = newBalenceOfCredits,
         )
     }
 }
