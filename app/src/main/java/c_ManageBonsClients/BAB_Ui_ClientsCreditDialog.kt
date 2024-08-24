@@ -67,7 +67,7 @@ fun ClientsCreditDialog(
 
 ) {
     var isLoading by remember { mutableStateOf(true) }
-    var recentInvoices by remember { mutableStateOf<List<ClientsInvoiceOther>>(emptyList()) }
+    var recentInvoices by remember { mutableStateOf<List<ClientsInvoiceOtherCCD>>(emptyList()) }
     var isPositive by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -75,20 +75,12 @@ fun ClientsCreditDialog(
 
     var ancienCredit by remember { mutableDoubleStateOf(0.0) }
     var clientsPaymentActuelle by remember { mutableStateOf("") }
-    val restCreditDeCetteBon by remember {
-        mutableDoubleStateOf(
-            clientsTotal - (clientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
-        )
-    }
-    val newBalenceOfCredits by remember {
-        mutableDoubleStateOf(
-            ancienCredit + restCreditDeCetteBon
-        )
-    }
+    var restCreditDeCetteBon by remember { mutableDoubleStateOf(0.0) }
+    var newBalenceOfCredits by remember { mutableDoubleStateOf(0.0) }
 
     LaunchedEffect(showDialog) {
         if (showDialog) {
-            fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
+            fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
                 recentInvoices = invoices
                 ancienCredit = credit
                 isLoading = false
@@ -118,7 +110,10 @@ fun ClientsCreditDialog(
                             OutlinedTextField(
                                 value = clientsPaymentActuelle,
                                 onValueChange = { newClientsPaymentActuelle ->
-                                    clientsPaymentActuelle = newClientsPaymentActuelle},
+                                    clientsPaymentActuelle = newClientsPaymentActuelle
+                                    restCreditDeCetteBon = clientsTotal - (clientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
+                                    newBalenceOfCredits =ancienCredit + restCreditDeCetteBon
+                                    },
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
@@ -168,17 +163,17 @@ fun ClientsCreditDialog(
                                         ) {
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text("Date: ${invoice.date} (${getDayOfWeekClients(invoice.date)})")
-                                                Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
-                                                Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
-                                                Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
-                                                Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
+                                                Text("Total Du Bon: ${"%.2f".format(invoice.totaleDeCeBon)}")
+                                                Text("Versement: ${"%.2f".format(invoice.payeCetteFoit)}")
+                                                Text("Credit fait: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
+                                                Text("New Balance After: ${"%.2f".format(invoice.newBalence)}")
                                             }
                                             IconButton(
                                                 onClick = {
                                                     coroutineScope.launch {
                                                         try {
                                                             deleteInvoice(clientsId, invoice.date)
-                                                            fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
+                                                            fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
                                                                 recentInvoices = invoices
                                                                 ancienCredit = credit
                                                             })
@@ -225,7 +220,7 @@ fun ClientsCreditDialog(
                                     newBalenceOfCredits = newBalenceOfCredits
                                 )
 
-                                fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
+                                fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
                                     recentInvoices = invoices
                                     ancienCredit = credit
                                 })
@@ -272,7 +267,7 @@ private fun imprimeLeTiquetDuCreditChangement(
         append("<BR>")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Versement : ")
-        append("<BR><BIG><CENTER> -$paymentAmount Da")
+        append("<BR><BIG><CENTER> $paymentAmount Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Totale Des Credits : ")
         append("<BR><BIG><CENTER>$newCredit Da")
@@ -335,8 +330,7 @@ fun documentIdClientFireStoreClientCredit(
     val documentId = "Bon($dayOfWeek)${formattedDateTime}"
     return documentId
 }
-
-suspend fun fetchRecentInvoices(clientsId: Long?, onFetchComplete: (List<ClientsInvoiceOther>, Double) -> Unit) {
+suspend fun fetchRecentInvoicesCCD(clientsId: Long?, onFetchComplete: (List<ClientsInvoiceOtherCCD>, Double) -> Unit) {
     clientsId?.let { id ->
         val firestore = com.google.firebase.ktx.Firebase.firestore
         try {
@@ -357,12 +351,12 @@ suspend fun fetchRecentInvoices(clientsId: Long?, onFetchComplete: (List<Clients
 
             val invoicesSnapshot = invoicesQuery.get().await()
             val recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
-                ClientsInvoiceOther(
+                ClientsInvoiceOtherCCD(
                     date = doc.getString("date") ?: "",
                     totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
                     payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
                     creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
-                    ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
+                    newBalence = doc.getDouble("ancienCredits") ?: 0.0
                 )
             }
             onFetchComplete(recentInvoices, ancienCredit)
@@ -372,6 +366,7 @@ suspend fun fetchRecentInvoices(clientsId: Long?, onFetchComplete: (List<Clients
         }
     }
 }
+
 
 suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
     clientsId?.let { id ->
@@ -424,14 +419,14 @@ suspend fun updateLatestDocument(clientsId: Long, deletedInvoiceDate: String) {
         throw e
     }
 }
-data class ClientsInvoiceOther(
+
+data class ClientsInvoiceOtherCCD(
     val date: String,
     val totaleDeCeBon: Double,
     val payeCetteFoit: Double,
     val creditFaitDonCeBon: Double,
-    val ancienCredits: Double
+    val newBalence: Double
 )
-
 
 fun getDayOfWeekClients(dateString: String): String {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
