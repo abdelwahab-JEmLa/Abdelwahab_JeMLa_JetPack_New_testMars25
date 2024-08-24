@@ -77,6 +77,8 @@ fun ClientsCreditDialogClientsBoard(
 
     var ancienCredit by remember { mutableDoubleStateOf(0.0) }
     var clientsPaymentActuelle by remember { mutableStateOf("") }
+
+    var clientsPaymentActuelleDouble by remember { mutableStateOf(0.0) }
     var restCreditDeCetteBon by remember { mutableDoubleStateOf(0.0) }
     var newBalenceOfCredits by remember { mutableDoubleStateOf(0.0) }
 
@@ -113,12 +115,10 @@ fun ClientsCreditDialogClientsBoard(
                                 value = clientsPaymentActuelle,
                                 onValueChange = { newClientsPaymentActuelle ->
                                     clientsPaymentActuelle = newClientsPaymentActuelle
+                                    clientsPaymentActuelleDouble = (newClientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
+
                                     restCreditDeCetteBon = 0.0
-                                    newBalenceOfCredits = ancienCredit + if (itsPayment) {
-                                        -(newClientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
-                                    } else {
-                                        (newClientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
-                                    }
+                                    newBalenceOfCredits = ancienCredit + (if (itsPayment) clientsPaymentActuelleDouble else -clientsPaymentActuelleDouble)
                                 },
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -133,7 +133,11 @@ fun ClientsCreditDialogClientsBoard(
                             Spacer(modifier = Modifier.width(8.dp))
                             IconToggleButton(
                                 checked = itsPayment,
-                                onCheckedChange = { itsPayment = it },
+                                onCheckedChange = { newItsPayment ->
+                                    itsPayment = newItsPayment
+                                    // Update newBalenceOfCredits based on the new itsPayment value
+                                    newBalenceOfCredits = ancienCredit + (if (newItsPayment) clientsPaymentActuelleDouble else -clientsPaymentActuelleDouble)
+                                },
                                 modifier = Modifier
                                     .size(48.dp)
                                     .background(
@@ -143,7 +147,7 @@ fun ClientsCreditDialogClientsBoard(
                             ) {
                                 Icon(
                                     imageVector = if (itsPayment) Icons.Default.Paid else Icons.Default.CreditScore,
-                                    contentDescription = if (itsPayment) "Add" else "Subtract",
+                                    contentDescription = if (itsPayment) "Payment" else "Credit",
                                     tint = Color.White
                                 )
                             }
