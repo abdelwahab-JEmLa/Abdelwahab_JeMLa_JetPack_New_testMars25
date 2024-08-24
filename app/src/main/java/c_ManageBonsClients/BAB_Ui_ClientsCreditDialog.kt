@@ -75,9 +75,16 @@ fun ClientsCreditDialog(
 
     var ancienCredit by remember { mutableDoubleStateOf(0.0) }
     var clientsPaymentActuelle by remember { mutableStateOf("") }
-    val restCreditDeCetteBon by remember { mutableDoubleStateOf(clientsTotal-clientsPaymentActuelle.toDouble()) }
-    val newBalenceOfCredits by remember { mutableDoubleStateOf(ancienCredit+restCreditDeCetteBon) }
-
+    val restCreditDeCetteBon by remember {
+        mutableDoubleStateOf(
+            clientsTotal - (clientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
+        )
+    }
+    val newBalenceOfCredits by remember {
+        mutableDoubleStateOf(
+            ancienCredit + restCreditDeCetteBon
+        )
+    }
 
     LaunchedEffect(showDialog) {
         if (showDialog) {
@@ -194,6 +201,7 @@ fun ClientsCreditDialog(
                     }
                 }
             },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -210,23 +218,21 @@ fun ClientsCreditDialog(
                                     onDismiss
                                 )
                                 updateClientsCreditCCD(
-                                        id.toInt(),
-                                        clientsTotalDeCeBon= clientsTotal,
-                                        clientsPaymentActuelle=clientsPaymentActuelle.toDouble(),
-                                        restCreditDeCetteBon=restCreditDeCetteBon,
-                                        newBalenceOfCredits=newBalenceOfCredits
-                                    )
+                                    id.toInt(),
+                                    clientsTotalDeCeBon = clientsTotal,
+                                    clientsPaymentActuelle = paymentAmount,
+                                    restCreditDeCetteBon = restCreditDeCetteBon,
+                                    newBalenceOfCredits = newBalenceOfCredits
+                                )
 
                                 fetchRecentInvoices(clientsId, onFetchComplete = { invoices, credit ->
-                                        recentInvoices = invoices
-                                        ancienCredit = credit
+                                    recentInvoices = invoices
+                                    ancienCredit = credit
                                 })
-
-
                             }
                         }
                     },
-                    enabled = !isLoading
+                    enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
                 ) {
                     Text("Save", color = Color.White)
                 }
