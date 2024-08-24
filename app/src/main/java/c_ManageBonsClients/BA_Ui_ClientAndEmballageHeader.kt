@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.animation.core.RepeatMode
@@ -56,6 +57,7 @@ import kotlin.math.round
 
 const val TAG = "ClientManagement"
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
@@ -70,7 +72,7 @@ fun ClientAndEmballageHeader(
     var showPrintDialog by remember { mutableStateOf(false) }
     var showClientsBonUpdateDialog by remember { mutableStateOf(false) }
     var clientId by remember { mutableStateOf<Long?>(null) }
-    var ancienCredits by remember { mutableStateOf(0.0) }
+    var ancienCredits by remember { mutableDoubleStateOf(0.0) }
     val verifiedCount = allArticles.count { it.nomClient == nomClient && it.verifieState }
     val clientColor = remember(nomClient) { generateClientColor(nomClient) }
     val clientProfit = calculateClientProfit(allArticles, nomClient)
