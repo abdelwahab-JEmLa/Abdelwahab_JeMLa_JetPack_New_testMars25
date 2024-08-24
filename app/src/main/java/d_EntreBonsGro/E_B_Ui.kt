@@ -413,9 +413,9 @@ fun ArticleItem(
                             }
                             Text(
                                 text = if (article.uniterCLePlusUtilise) {
-                                    "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
+                                    "${article.ancienPrixOnUniterBG} (${if (priceDifference > 0) "-" else "+"}${String.format("%.2f", abs(priceDifference))})"
                                 } else {
-                                    "${article.ancienPrixBG} (${if (priceDifference > 0) "-" else "+"}${abs(priceDifference).format(2)})"
+                                    "${article.ancienPrixBG} (${if (priceDifference > 0) "-" else "+"}${String.format("%.2f", abs(priceDifference))})"
                                 },
                                 color = if (priceDifference > 0) Color.Red else Color.Green
                             )
@@ -424,9 +424,7 @@ fun ArticleItem(
                                 contentDescription = if (priceDifference > 0) "Price increased" else "Price decreased",
                                 tint = if (priceDifference > 0) Color.Red else Color.Green
                             )
-
                         }
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.Bottom,

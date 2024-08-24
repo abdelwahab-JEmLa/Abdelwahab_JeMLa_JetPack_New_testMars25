@@ -8,11 +8,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -222,7 +239,7 @@ fun ZoomableImage(
                 if (treeCount > 0) {
                     treeCount--
                     if (filteredAndSortedArticles.isNotEmpty()) {
-                        deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG.toString())
+                        deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
                     }
                 }
             }) {
@@ -231,7 +248,7 @@ fun ZoomableImage(
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
                 treeCount++
-                createNewArticle(filteredAndSortedArticles, founisseurIdNowIs, supplierId?.toLong())
+                createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
             }) {
                 Text("+")
             }
@@ -239,11 +256,11 @@ fun ZoomableImage(
     }
 }
 
-fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?, supplierId: Long?) {
+fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Long?) {
     val newVid = (articles.maxOfOrNull { it.vidBG } ?: 0) + 1
     val currentDate = LocalDate.now().toString()
     val maxIdDivider = articles.maxOfOrNull { it.idArticleInSectionsOfImageBG.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
-    val newIdDivider = "$supplierId-$currentDate-${maxIdDivider + 1}"
+    val newIdDivider = "$founisseurIdNowIs-$currentDate-${maxIdDivider + 1}"
 
     val newArticle = EntreBonsGrosTabele(
         vidBG = newVid,
@@ -255,8 +272,8 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?
         quantityAcheteBG = 0,
         quantityUniterBG = 1,
         subTotaleBG = 0.0,
-        grossisstBonN = founisseurNowIs?.toInt() ?: 0,
-        supplierIdBG = supplierId ?: 0,
+        grossisstBonN =  0,
+        supplierIdBG = founisseurIdNowIs ?: 0,
         supplierNameBG = "",
         uniterCLePlusUtilise = false,
         erreurCommentaireBG = "",
@@ -266,7 +283,7 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?
 
     // Insert the new article into Firebase
     val database = FirebaseDatabase.getInstance()
-    val articlesRef = database.getReference("articles")
+    val articlesRef = database.getReference("ArticlesBonsGrosTabele")
 
     newArticle.let {
         articlesRef.child(newVid.toString()).setValue(it)
@@ -279,9 +296,9 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?
     }
 }
 
-fun deleteTheNewArticleIZ(vidBG: Int) {
+fun deleteTheNewArticleIZ(vidBG: Long) {
     val database = FirebaseDatabase.getInstance()
-    val articlesRef = database.getReference("articles")
+    val articlesRef = database.getReference("ArticlesBonsGrosTabele")
 
     articlesRef.child(vidBG.toString()).removeValue()
         .addOnSuccessListener {
