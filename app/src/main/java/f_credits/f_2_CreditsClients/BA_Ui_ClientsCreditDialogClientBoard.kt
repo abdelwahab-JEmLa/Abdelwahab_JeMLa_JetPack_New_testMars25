@@ -336,7 +336,7 @@ fun documentIdClientFireStoreClientCreditCB(
 ): String {
     val currentDateTime = LocalDateTime.now()
     val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
     val documentId = "Bon($dayOfWeek)${formattedDateTime}"
