@@ -1,21 +1,14 @@
 package f_credits.f_2_CreditsClients
 
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
@@ -24,27 +17,22 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,8 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -67,10 +55,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,10 +64,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -265,16 +247,17 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
             }
         )
     }
+    val context = LocalContext.current
 
     if (showCreditDialog) {
-        ClientsCreditDialog(
+        ClientsCreditDialogClientsBoard(
             showDialog = true,
             onDismiss = { showCreditDialog = false },
             clientsId = clients.idClientsSu,
             clientsName = clients.nomClientsSu,
-            clientsTotal = 0.0, // You may want to pass the actual total here
+            clientsTotal = 0.0,
             coroutineScope = rememberCoroutineScope(),
-            clientsColor = backgroundColor // Pass the background color here
+            context = context,
         )
     }
 
@@ -327,288 +310,6 @@ fun EditClientsDialog(clients: ClientsTabelle, onDismiss: () -> Unit, onEditClie
 
 
 
-
-@Composable
-fun ClientsCreditDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    clientsId: Long?,
-    clientsName: String,
-    clientsTotal: Double,
-    coroutineScope: CoroutineScope,
-    clientsColor: Color
-) {
-    var clientsPayment by remember { mutableStateOf("") }
-    var ancienCredit by remember { mutableStateOf(0.0) }
-    var isLoading by remember { mutableStateOf(true) }
-    var recentInvoices by remember { mutableStateOf<List<ClientsInvoice>>(emptyList()) }
-    var isPositive by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // Reset clientsPayment when dialog is opened
-    LaunchedEffect(showDialog) {
-        if (showDialog) {
-            clientsPayment = ""
-            isPositive = true
-            errorMessage = null
-        }
-    }
-
-    suspend fun fetchRecentInvoices() {
-        clientsId?.let { id ->
-            isLoading = true
-            errorMessage = null
-            val firestore = Firebase.firestore
-            try {
-                val latestDoc = firestore.collection("F_ClientsArticlesFireS")
-                    .document(id.toString())
-                    .collection("latest Totale et Credit Des Bons")
-                    .document("latest")
-                    .get()
-                    .await()
-
-                ancienCredit = latestDoc.getDouble("ancienCredits") ?: 0.0
-
-                val invoicesQuery = firestore.collection("F_ClientsArticlesFireS")
-                    .document(id.toString())
-                    .collection("Totale et Credit Des Bons")
-                    .orderBy("date", Query.Direction.DESCENDING)
-                    .limit(3)
-
-                val invoicesSnapshot = invoicesQuery.get().await()
-                recentInvoices = invoicesSnapshot.documents.mapNotNull { doc ->
-                    ClientsInvoice(
-                        date = doc.getString("date") ?: "",
-                        totaleDeCeBon = doc.getDouble("totaleDeCeBon") ?: 0.0,
-                        payeCetteFoit = doc.getDouble("payeCetteFoit") ?: 0.0,
-                        creditFaitDonCeBon = doc.getDouble("creditFaitDonCeBon") ?: 0.0,
-                        ancienCredits = doc.getDouble("ancienCredits") ?: 0.0
-                    )
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error fetching data: ${e.message}"
-                ancienCredit = 0.0
-                recentInvoices = emptyList()
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    suspend fun updateLatestDocument(clientsId: Long, deletedInvoiceDate: String) {
-        val firestore = Firebase.firestore
-        val latestDocRef = firestore.collection("F_ClientsArticlesFireS")
-            .document(clientsId.toString())
-            .collection("latest Totale et Credit Des Bons")
-            .document("latest")
-
-        val invoicesRef = firestore.collection("F_ClientsArticlesFireS")
-            .document(clientsId.toString())
-            .collection("Totale et Credit Des Bons")
-            .orderBy("date", Query.Direction.DESCENDING)
-            .limit(1)
-
-        try {
-            val latestInvoiceSnapshot = invoicesRef.get().await()
-            if (!latestInvoiceSnapshot.isEmpty) {
-                val latestInvoice = latestInvoiceSnapshot.documents[0]
-                latestDocRef.set(latestInvoice.data!!).await()
-            } else {
-                latestDocRef.set(mapOf(
-                    "ancienCredits" to 0.0,
-                    "date" to "",
-                    "totaleDeCeBon" to 0.0,
-                    "payeCetteFoit" to 0.0,
-                    "creditFaitDonCeBon" to 0.0
-                )).await()
-            }
-        } catch (e: Exception) {
-            errorMessage = "Error updating latest document: ${e.message}"
-            throw e
-        }
-    }
-
-    suspend fun deleteInvoice(invoiceDate: String) {
-        clientsId?.let { id ->
-            val firestore = Firebase.firestore
-            val invoiceRef = firestore.collection("F_ClientsArticlesFireS")
-                .document(id.toString())
-                .collection("Totale et Credit Des Bons")
-                .whereEqualTo("date", invoiceDate)
-                .limit(1)
-
-            try {
-                val querySnapshot = invoiceRef.get().await()
-                if (!querySnapshot.isEmpty) {
-                    val documentToDelete = querySnapshot.documents[0]
-                    documentToDelete.reference.delete().await()
-                    updateLatestDocument(id, invoiceDate)
-                } else {
-                    errorMessage = "No matching invoice found for deletion"
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error deleting invoice: ${e.message}"
-                throw e
-            }
-        } ?: run {
-            errorMessage = "Invalid clients ID"
-            throw IllegalArgumentException("Invalid clients ID")
-        }
-    }
-
-    LaunchedEffect(showDialog, clientsId) {
-        if (showDialog && clientsId != null) {
-            fetchRecentInvoices()
-        }
-    }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Manage Clients Credit: $clientsName", color = Color.White) },
-            containerColor = clientsColor,
-            text = {
-                Column {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Color.White)
-                    } else {
-                        Text("Current Credit + New Purchase Total: ${"%.2f".format(ancienCredit + clientsTotal)}", color = Color.White)
-                        Text("Total of Current Invoice: ${"%.2f".format(clientsTotal)}", color = Color.White)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
-                        val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                        val newCredit = ancienCredit + clientsTotal - adjustedPayment
-                        Text("New Credit Balance: ${"%.2f".format(newCredit)}", color = Color.White)
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = clientsPayment,
-                                onValueChange = { clientsPayment = it },
-                                label = { Text("Payment Amount", color = Color.White) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = if (isPositive) Color.Green else Color.Red,
-                                    unfocusedTextColor = if (isPositive) Color.Green.copy(alpha = 0.7f) else Color.Red.copy(alpha = 0.7f),
-                                    focusedBorderColor = if (isPositive) Color.Green else Color.Red,
-                                    unfocusedBorderColor = if (isPositive) Color.Green.copy(alpha = 0.5f) else Color.Red.copy(alpha = 0.5f)
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconToggleButton(
-                                checked = isPositive,
-                                onCheckedChange = { isPositive = it },
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(
-                                        color = if (isPositive) Color.Green else Color.Red,
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                            ) {
-                                Icon(
-                                    imageVector = if (isPositive) Icons.Default.Add else Icons.Default.Remove,
-                                    contentDescription = if (isPositive) "Add" else "Subtract",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Recent Invoices", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        if (recentInvoices.isEmpty()) {
-                            Text("No recent invoices found", color = Color.White)
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.height(200.dp)
-                            ) {
-                                items(recentInvoices) { invoice ->
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text("Date: ${invoice.date} (${getDayOfWeekClients(invoice.date)})")
-                                                Text("Total: ${"%.2f".format(invoice.totaleDeCeBon)}")
-                                                Text("Paid: ${"%.2f".format(invoice.payeCetteFoit)}")
-                                                Text("Credit: ${"%.2f".format(invoice.creditFaitDonCeBon)}")
-                                                Text("Previous Balance: ${"%.2f".format(invoice.ancienCredits)}")
-                                            }
-                                            IconButton(
-                                                onClick = {
-                                                    coroutineScope.launch {
-                                                        try {
-                                                            deleteInvoice(invoice.date)
-                                                            fetchRecentInvoices()
-                                                        } catch (e: Exception) {
-                                                            errorMessage = "Error deleting invoice: ${e.message}"
-                                                        }
-                                                    }
-                                                }
-                                            ) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Delete Invoice")
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        errorMessage?.let {
-                            Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            clientsId?.let { id ->
-                                val paymentAmount = clientsPayment.toDoubleOrNull() ?: 0.0
-                                val adjustedPayment = if (isPositive) paymentAmount else -paymentAmount
-                                try {
-                                    fetchRecentInvoices()
-                                    onDismiss()
-                                } catch (e: Exception) {
-                                    errorMessage = "Error updating credit: ${e.message}"
-                                }
-                            }
-                        }
-                    },
-                    enabled = !isLoading
-                ) {
-                    Text("Save", color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel", color = Color.White)
-                }
-            }
-        )
-    }
-}
-
-fun getDayOfWeekClients(dateString: String): String {
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val dateTime = LocalDateTime.parse(dateString, formatter)
-    return dateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
-}
-
-data class ClientsInvoice(
-    val date: String,
-    val totaleDeCeBon: Double,
-    val payeCetteFoit: Double,
-    val creditFaitDonCeBon: Double,
-    val ancienCredits: Double
-)
 @Composable
 fun AddClientsDialog(onDismiss: () -> Unit, onAddClients: (String) -> Unit) {
     var clientsName by remember { mutableStateOf("") }

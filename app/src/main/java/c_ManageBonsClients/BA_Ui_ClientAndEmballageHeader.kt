@@ -77,19 +77,7 @@ fun ClientAndEmballageHeader(
     val clientColor = remember(nomClient) { generateClientColor(nomClient) }
     val clientProfit = calculateClientProfit(allArticles, nomClient)
     val coroutineScope = rememberCoroutineScope()
-    var clientsPaymentActuelle by remember { mutableStateOf("") }
-    var restCreditDeCetteBon by remember { mutableDoubleStateOf(0.0) }
-    var newBalenceOfCredits by remember { mutableDoubleStateOf(0.0) }
 
-    // Safe parsing function with logging
-    val safeParseDouble = { s: String ->
-        try {
-            s.takeIf { it.isNotEmpty() }?.toDoubleOrNull() ?: 0.0
-        } catch (e: Exception) {
-            Log.e("SafeParseDouble", "Error parsing string to double: $s", e)
-            0.0
-        }
-    }
 
     fun fetchAncienCredits(clientId: Long?, onCreditsFetched: (Double) -> Unit) {
         if (clientId != null) {
