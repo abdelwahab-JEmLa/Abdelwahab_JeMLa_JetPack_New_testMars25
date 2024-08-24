@@ -112,7 +112,7 @@ fun ClientsCreditDialog(
                                 onValueChange = { newClientsPaymentActuelle ->
                                     clientsPaymentActuelle = newClientsPaymentActuelle
                                     restCreditDeCetteBon = clientsTotal - (clientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
-                                    newBalenceOfCredits =ancienCredit + restCreditDeCetteBon
+                                    newBalenceOfCredits =ancienCredit - restCreditDeCetteBon
                                     },
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -272,7 +272,7 @@ private fun imprimeLeTiquetDuCreditChangement(
         append("<BR><BIG><CENTER> $paymentAmount Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Totale Des Credits : ")
-        append("<BR><BIG><CENTER>-$newCredit Da")
+        append("<BR><BIG><CENTER>$newCredit Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>=====================<BR>")
         append("<BR><BR><BR>>")
     }.toString()

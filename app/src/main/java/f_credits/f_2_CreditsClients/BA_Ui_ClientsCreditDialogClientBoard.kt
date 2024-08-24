@@ -276,7 +276,7 @@ private fun imprimeLeTiquetDuCreditChangementCB(
         append("<BR><BIG><CENTER> $paymentAmount Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Totale Des Credits : ")
-        append("<BR><BIG><CENTER>-$newCredit Da")
+        append("<BR><BIG><CENTER>$newCredit Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>=====================<BR>")
         append("<BR><BR><BR>>")
     }.toString()

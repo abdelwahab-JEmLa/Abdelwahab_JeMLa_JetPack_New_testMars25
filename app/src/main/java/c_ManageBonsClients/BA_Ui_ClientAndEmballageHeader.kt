@@ -215,7 +215,7 @@ fun ClientAndEmballageHeader(
             text = {
                 Column {
                     Text("There are $verifiedCount verified articles. Do you want to proceed with printing?")
-                    if (ancienCredits > 0) {
+                    if (ancienCredits < 0) {
                         BlinkingText(text = "Attention: Credit ancien de ${String.format("%.2f", ancienCredits)}Da!")
                     }
                 }
@@ -360,7 +360,7 @@ private fun prepareTexteToPrint(nomClient: String, dateString: String, clientArt
         append("<BR><BR>")
         append("<MEDIUM1><CENTER>Total<BR>")
         append("<MEDIUM3><CENTER>${round(totaleBon * 10) / 10}Da<BR>")
-        if (ancienCredits > 0) {
+        if (ancienCredits < 0) {
             append("<MEDIUM1><CENTER>Credit Du Compte actuel<BR>")
             append("<MEDIUM2><CENTER>${round(ancienCredits * 10) / 10}Da<BR>")
         }
