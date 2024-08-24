@@ -270,7 +270,7 @@ private fun imprimeLeTiquetDuCreditChangement(
         append("<BR><BIG><CENTER> $paymentAmount Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>--------------")
         append("<BR><MEDIUM1><LEFT>Totale Des Credits : ")
-        append("<BR><BIG><CENTER>$newCredit Da")
+        append("<BR><BIG><CENTER>-$newCredit Da")
         append("<BR><LEFT><NORMAL><MEDIUM1>=====================<BR>")
         append("<BR><BR><BR>>")
     }.toString()
@@ -324,7 +324,7 @@ fun documentIdClientFireStoreClientCredit(
 ): String {
     val currentDateTime = LocalDateTime.now()
     val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
     val documentId = "Bon($dayOfWeek)${formattedDateTime}"
