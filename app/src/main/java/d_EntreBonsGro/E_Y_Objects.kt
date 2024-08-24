@@ -8,28 +8,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -47,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.google.firebase.database.FirebaseDatabase
 import java.time.LocalDate
 
 data class ImageZoomState(
@@ -62,9 +46,11 @@ fun ZoomableImage(
     modifier: Modifier = Modifier,
     founisseurIdNowIs: Long?,
     articles: List<EntreBonsGrosTabele>,
-    onArticleAdded: (EntreBonsGrosTabele) -> Unit,
-    onArticleRemoved: (Long) -> Unit
 ) {
+    val filteredAndSortedArticles = articles
+        .filter { it.supplierIdBG == founisseurIdNowIs }
+        .sortedBy { it.idArticleInSectionsOfImageBG }
+
     val zoomStateSaver = Saver<ImageZoomState, List<Float>>(
         save = { listOf(it.scale, it.offsetX, it.offsetY) },
         restore = { ImageZoomState(it[0], it[1], it[2]) }
@@ -77,7 +63,7 @@ fun ZoomableImage(
     var scale by remember { mutableStateOf(zoomState.scale) }
     var offsetX by remember { mutableStateOf(zoomState.offsetX) }
     var offsetY by remember { mutableStateOf(zoomState.offsetY) }
-    var treeCount by remember { mutableStateOf(articles.size) }
+    var treeCount by remember { mutableStateOf(filteredAndSortedArticles.size) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
     val context = LocalContext.current
@@ -154,7 +140,7 @@ fun ZoomableImage(
 
             // Add clickable boxes for each section
             Column(modifier = Modifier.fillMaxSize()) {
-                articles.forEachIndexed { index, article ->
+                filteredAndSortedArticles.forEachIndexed { index, article ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -235,8 +221,8 @@ fun ZoomableImage(
             Button(onClick = {
                 if (treeCount > 0) {
                     treeCount--
-                    if (articles.isNotEmpty()) {
-                        onArticleRemoved(articles.last().vidBG)
+                    if (filteredAndSortedArticles.isNotEmpty()) {
+                        deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG.toString())
                     }
                 }
             }) {
@@ -245,8 +231,7 @@ fun ZoomableImage(
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
                 treeCount++
-                val newArticle = createNewArticle(articles, founisseurIdNowIs, supplierId?.toLong())
-                onArticleAdded(newArticle)
+                createNewArticle(filteredAndSortedArticles, founisseurIdNowIs, supplierId?.toLong())
             }) {
                 Text("+")
             }
@@ -254,15 +239,15 @@ fun ZoomableImage(
     }
 }
 
-fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?, supplierId: Long?): EntreBonsGrosTabele {
+fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?, supplierId: Long?) {
     val newVid = (articles.maxOfOrNull { it.vidBG } ?: 0) + 1
     val currentDate = LocalDate.now().toString()
-    val maxIdDivider = articles.maxOfOrNull { it.idDividersCorrespondont.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
+    val maxIdDivider = articles.maxOfOrNull { it.idArticleInSectionsOfImageBG.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
     val newIdDivider = "$supplierId-$currentDate-${maxIdDivider + 1}"
 
-    return EntreBonsGrosTabele(
+    val newArticle = EntreBonsGrosTabele(
         vidBG = newVid,
-        idDividersCorrespondont = newIdDivider,
+        idArticleInSectionsOfImageBG = newIdDivider,
         idArticleBG = 0,
         nomArticleBG = "",
         ancienPrixBG = 0.0,
@@ -278,4 +263,31 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurNowIs: Long?
         passeToEndStateBG = true,
         dateCreationBG = currentDate
     )
+
+    // Insert the new article into Firebase
+    val database = FirebaseDatabase.getInstance()
+    val articlesRef = database.getReference("articles")
+
+    newArticle.let {
+        articlesRef.child(newVid.toString()).setValue(it)
+            .addOnSuccessListener {
+                println("New article inserted successfully")
+            }
+            .addOnFailureListener { e ->
+                println("Error inserting new article: ${e.message}")
+            }
+    }
+}
+
+fun deleteTheNewArticleIZ(vidBG: Int) {
+    val database = FirebaseDatabase.getInstance()
+    val articlesRef = database.getReference("articles")
+
+    articlesRef.child(vidBG.toString()).removeValue()
+        .addOnSuccessListener {
+            println("Article deleted successfully")
+        }
+        .addOnFailureListener { e ->
+            println("Error deleting article: ${e.message}")
+        }
 }

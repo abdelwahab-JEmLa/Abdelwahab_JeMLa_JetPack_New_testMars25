@@ -2,7 +2,7 @@ package d_EntreBonsGro
 
 data class EntreBonsGrosTabele(
     val vidBG: Long = 0,
-    var idDividersCorrespondont: String = "",
+    var idArticleInSectionsOfImageBG: String = "",
     var idArticleBG: Long = 0,
     var nomArticleBG: String = "",
     var ancienPrixBG: Double = 0.0,
