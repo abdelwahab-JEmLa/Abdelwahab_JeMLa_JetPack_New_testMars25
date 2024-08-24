@@ -1,6 +1,6 @@
 package d_EntreBonsGro
 
-import c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference

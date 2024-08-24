@@ -1,4 +1,4 @@
-package c_ManageBonsClients
+package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
 import android.content.Context
 import android.util.Log
@@ -56,6 +56,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import c_ManageBonsClients.ArticleBoardCard
+import c_ManageBonsClients.ClientAndEmballageHeader
+import c_ManageBonsClients.ClientSelectionDialog
+import c_ManageBonsClients.DisplayDetailleArticle
+import c_ManageBonsClients.updateNonTrouveState
+import c_ManageBonsClients.updateTotalProfitInFirestore
+import c_ManageBonsClients.updateVerifieState
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError

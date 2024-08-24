@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import c_ManageBonsClients.ClientsTabelle
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ClientsTabelle
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase

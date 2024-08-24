@@ -52,7 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
-import c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -336,7 +336,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     ZoomableImage(
                         imagePath = currentImagePath,
                         supplierId = founisseurNowIs,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        founisseurIdNowIs =founisseurIdNowIs,
+                        articles =articlesEntreBonsGrosTabele,
                     )
                 }
                 showSplitView -> {
@@ -344,7 +346,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         ZoomableImage(
                             imagePath = currentImagePath,
                             supplierId = founisseurNowIs,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            founisseurIdNowIs = founisseurIdNowIs,
+                            articles = articlesEntreBonsGrosTabele
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },

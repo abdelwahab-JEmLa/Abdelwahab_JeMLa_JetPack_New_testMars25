@@ -5,8 +5,8 @@ import android.util.Log
 import android.widget.Toast
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
-import c_ManageBonsClients.ArticlesAcheteModele
 import c_ManageBonsClients.roundToOneDecimal
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.FirebaseDatabase

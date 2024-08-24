@@ -36,7 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
-import c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -208,7 +208,7 @@ fun updateArticleIdFromSuggestion(
 
 
 @Composable
-fun VoiceInputButton(//TODO fait que l input vocale ce relence apre 3 seconds
+fun VoiceInputButton(
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     articlesRef: DatabaseReference,
     baseDonneRef: DatabaseReference,
@@ -470,25 +470,3 @@ fun updateSpecificArticle(input: String, article: EntreBonsGrosTabele, articlesR
 }
 
 fun Double.roundToTwoDecimals() = (this * 100).roundToInt() / 100.0
-data class EntreBonsGrosTabele(
-    val vidBG: Long = 0,
-    var idArticleBG: Long = 0,
-    var nomArticleBG: String = "",
-    var ancienPrixBG: Double = 0.0,
-    var ancienPrixOnUniterBG: Double = 0.0,
-    var newPrixAchatBG: Double = 0.0,
-    var quantityAcheteBG: Int = 0,
-    var quantityUniterBG: Int = 0,
-    var subTotaleBG: Double = 0.0,
-    var grossisstBonN: Int = 0,
-    var supplierIdBG: Long = 0,
-    var supplierNameBG: String = "",
-    var uniterCLePlusUtilise: Boolean = false,
-    var erreurCommentaireBG: String = "",
-    var passeToEndStateBG: Boolean = false,
-    var dateCreationBG: String = ""
-
-){
-    // Secondary constructor for Firebase
-    constructor() : this(0)
-}

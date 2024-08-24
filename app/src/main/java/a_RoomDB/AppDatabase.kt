@@ -5,8 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import b_Edite_Base_Donne.ArticleDao
-import c_ManageBonsClients.ArticlesAcheteModele
-import c_ManageBonsClients.ArticlesAcheteModeleDao
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModeleDao
 
 @Database(entities = [BaseDonne::class,
                     ArticlesAcheteModele::class,

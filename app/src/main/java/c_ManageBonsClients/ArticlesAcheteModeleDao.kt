@@ -1,4 +1,4 @@
-package c_ManageBonsClients
+package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
 import androidx.room.Dao
 import androidx.room.Delete

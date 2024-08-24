@@ -38,7 +38,7 @@ import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.MainAppViewModelFactory
-import c_ManageBonsClients.FragmentManageBonsClients
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase

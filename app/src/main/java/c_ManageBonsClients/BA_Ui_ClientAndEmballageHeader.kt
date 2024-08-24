@@ -40,6 +40,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ClientsTabelle
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.addNewClient
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.calculateClientProfit
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.createEmptyArticle
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.generateClientColor
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError

@@ -45,6 +45,8 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.AutoResizedText
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.LoadImageFromPathBC
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import java.io.File

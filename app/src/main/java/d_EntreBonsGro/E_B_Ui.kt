@@ -48,14 +48,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import c_ManageBonsClients.ArticlesAcheteModele
+import coil.compose.AsyncImage
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 import kotlin.math.abs
 
@@ -476,5 +479,58 @@ fun ArticleItem(
     )
 }
 
+@Composable
+fun SingleColorImage(
+    article: ArticlesAcheteModele,
+    allArticles: List<ArticlesAcheteModele>
+) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+            val imagePathWebp = "$imagePathWithoutExt.webp"
+            val imagePathJpg = "$imagePathWithoutExt.jpg"
+            val webpExists = File(imagePathWebp).exists()
+            val jpgExists = File(imagePathJpg).exists()
 
+            when {
+                webpExists || jpgExists -> {
+                    val imagePath = if (webpExists) imagePathWebp else imagePathJpg
+                    AsyncImage(
+                        model = imagePath,
+                        contentDescription = "Article image",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Gray)
+                    )
+                }
+            }
+
+            val totalQuantity = allArticles
+                .filter { it.idArticle == article.idArticle }
+                .sumOf { it.totalQuantity }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .background(Color.White.copy(alpha = 0.6f))
+            ) {
+                Text(
+                    text = "$totalQuantity",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
 

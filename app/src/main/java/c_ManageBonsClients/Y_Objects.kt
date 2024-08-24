@@ -1,4 +1,4 @@
-package c_ManageBonsClients
+package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
