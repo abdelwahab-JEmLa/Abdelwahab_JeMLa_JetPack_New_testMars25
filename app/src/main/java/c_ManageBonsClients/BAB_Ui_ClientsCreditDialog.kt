@@ -372,27 +372,44 @@ suspend fun fetchRecentInvoicesCCD(clientsId: Long?, onFetchComplete: (List<Clie
 
 suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
     clientsId?.let { id ->
-        val firestore = com.google.firebase.ktx.Firebase.firestore
-        val invoiceRef = firestore.collection("F_ClientsArticlesFireS")
-            .document(id.toString())
-            .collection("Totale et Credit Des Bons")
-            .whereEqualTo("date", invoiceDate)
-            .limit(1)
+        val firestore = Firebase.firestore
+        val clientDocRef = firestore.collection("F_ClientsArticlesFireS").document(id.toString())
+        val invoicesCollectionRef = clientDocRef.collection("Totale et Credit Des Bons")
+        val latestDocRef = clientDocRef.collection("latest Totale et Credit Des Bons").document("latest")
 
         try {
-            val querySnapshot = invoiceRef.get().await()
-            if (!querySnapshot.isEmpty) {
+            // First, query for the document to delete
+            val querySnapshot = invoicesCollectionRef
+                .whereEqualTo("date", invoiceDate)
+                .limit(1)
+                .get()
+                .await()
+
+            if (querySnapshot.documents.isNotEmpty()) {
                 val documentToDelete = querySnapshot.documents[0]
-                documentToDelete.reference.delete().await()
-                updateLatestDocument(id, invoiceDate)
+
+                firestore.runTransaction { transaction ->
+                    val snapshot = transaction.get(documentToDelete.reference)
+                    val ancienCredits = snapshot.getDouble("ancienCredits")
+
+                    if (ancienCredits != null) {
+                        // Update the latest document with the ancienCredits from the invoice being deleted
+                        transaction.update(latestDocRef, "ancienCredits", ancienCredits)
+                    }
+
+                    // Delete the invoice document
+                    transaction.delete(documentToDelete.reference)
+                }.await()
             } else {
                 throw Exception("No matching invoice found for deletion")
             }
         } catch (e: Exception) {
+            Log.e("Firestore", "Error deleting invoice: ", e)
             throw e
         }
     } ?: throw IllegalArgumentException("Invalid clients ID")
 }
+
 
 suspend fun updateLatestDocument(clientsId: Long, deletedInvoiceDate: String) {
     val firestore = com.google.firebase.ktx.Firebase.firestore

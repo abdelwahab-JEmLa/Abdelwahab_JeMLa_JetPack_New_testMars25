@@ -17,9 +17,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CreditCardOff
 import androidx.compose.material.icons.filled.CreditScore
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -112,12 +112,14 @@ fun ClientsCreditDialogClientsBoard(
                             OutlinedTextField(
                                 value = clientsPaymentActuelle,
                                 onValueChange = { newClientsPaymentActuelle ->
-                                    clientsPaymentActuelle =  newClientsPaymentActuelle
+                                    clientsPaymentActuelle = newClientsPaymentActuelle
                                     restCreditDeCetteBon = 0.0
-                                    newBalenceOfCredits =ancienCredit -(if (itsPayment)(clientsPaymentActuelle.toDoubleOrNull() ?: 0.0) else (((clientsPaymentActuelle.toDoubleOrNull()
-                                        ?.times(-1))
-                                        ?: 0.0)))
-                                    },
+                                    newBalenceOfCredits = ancienCredit + if (itsPayment) {
+                                        -(newClientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
+                                    } else {
+                                        (newClientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
+                                    }
+                                },
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
@@ -140,7 +142,7 @@ fun ClientsCreditDialogClientsBoard(
                                     )
                             ) {
                                 Icon(
-                                    imageVector = if (itsPayment) Icons.Default.CreditCardOff else Icons.Default.CreditScore,
+                                    imageVector = if (itsPayment) Icons.Default.Paid else Icons.Default.CreditScore,
                                     contentDescription = if (itsPayment) "Add" else "Subtract",
                                     tint = Color.White
                                 )
