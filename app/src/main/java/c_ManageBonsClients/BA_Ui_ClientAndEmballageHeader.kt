@@ -391,7 +391,7 @@ fun updateClientsCreditFromHeader(
     )
 
     try {
-        val documentId = documentIdClientFireStoreClientCredit()
+        val documentId = documentIdClientFireStoreClientCreditCB()
         firestore.collection("F_ClientsArticlesFireS")
             .document(clientId.toString())
             .collection("Totale et Credit Des Bons")

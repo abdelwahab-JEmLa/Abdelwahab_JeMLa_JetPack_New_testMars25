@@ -336,7 +336,7 @@ fun documentIdClientFireStoreClientCreditCB(
 ): String {
     val currentDateTime = LocalDateTime.now()
     val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
     val documentId = "Bon($dayOfWeek)${formattedDateTime}"
@@ -387,24 +387,28 @@ suspend fun deleteInvoiceCB(clientsId: Long?, invoiceDate: String) {
         val latestDocRef = clientDocRef.collection("latest Totale et Credit Des Bons").document("latest")
 
         try {
-            // First, query for the document to delete
+            // Query for the document to delete and the one before it
             val querySnapshot = invoicesCollectionRef
-                .whereEqualTo("date", invoiceDate)
-                .limit(1)
+                .orderBy("date")
+                .endAt(invoiceDate)
+                .limitToLast(2)
                 .get()
                 .await()
 
-            if (querySnapshot.documents.isNotEmpty()) {
-                val documentToDelete = querySnapshot.documents[0]
+            if (querySnapshot.documents.size >= 1) {
+                val documentToDelete = querySnapshot.documents.last()
+                val previousDocument = if (querySnapshot.documents.size == 2) querySnapshot.documents.first() else null
 
                 firestore.runTransaction { transaction ->
-                    val snapshot = transaction.get(documentToDelete.reference)
-                    val ancienCredits = snapshot.getDouble("ancienCredits")
-
-                    if (ancienCredits != null) {
-                        // Update the latest document with the ancienCredits from the invoice being deleted
-                        transaction.update(latestDocRef, "ancienCredits", ancienCredits)
+                    val ancienCredits = if (previousDocument != null) {
+                        previousDocument.getDouble("ancienCredits")
+                    } else {
+                        // If there's no previous document, use 0.0 or another appropriate default value
+                        0.0
                     }
+
+                    // Update the latest document with the ancienCredits from the previous invoice
+                    transaction.update(latestDocRef, "ancienCredits", ancienCredits)
 
                     // Delete the invoice document
                     transaction.delete(documentToDelete.reference)

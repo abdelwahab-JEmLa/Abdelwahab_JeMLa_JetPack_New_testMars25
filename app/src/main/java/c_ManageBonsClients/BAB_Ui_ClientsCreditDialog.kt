@@ -47,6 +47,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
+import f_credits.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -303,7 +304,7 @@ fun updateClientsCreditCCD(
     )
 
     try {
-        val documentId = documentIdClientFireStoreClientCredit()
+        val documentId = documentIdClientFireStoreClientCreditCB()
         firestore.collection("F_ClientsArticlesFireS")
             .document(clientId.toString())
             .collection("Totale et Credit Des Bons")
@@ -322,16 +323,7 @@ fun updateClientsCreditCCD(
     }
 }
 
-fun documentIdClientFireStoreClientCredit(
-): String {
-    val currentDateTime = LocalDateTime.now()
-    val dayOfWeek = currentDateTime.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.FRENCH)
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
-    val documentId = "Bon($dayOfWeek)${formattedDateTime}"
-    return documentId
-}
 suspend fun fetchRecentInvoicesCCD(clientsId: Long?, onFetchComplete: (List<ClientsInvoiceOtherCCD>, Double) -> Unit) {
     clientsId?.let { id ->
         val firestore = com.google.firebase.ktx.Firebase.firestore
@@ -369,7 +361,6 @@ suspend fun fetchRecentInvoicesCCD(clientsId: Long?, onFetchComplete: (List<Clie
     }
 }
 
-
 suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
     clientsId?.let { id ->
         val firestore = Firebase.firestore
@@ -378,24 +369,28 @@ suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
         val latestDocRef = clientDocRef.collection("latest Totale et Credit Des Bons").document("latest")
 
         try {
-            // First, query for the document to delete
+            // Query for the document to delete and the one before it
             val querySnapshot = invoicesCollectionRef
-                .whereEqualTo("date", invoiceDate)
-                .limit(1)
+                .orderBy("date")
+                .endAt(invoiceDate)
+                .limitToLast(2)
                 .get()
                 .await()
 
-            if (querySnapshot.documents.isNotEmpty()) {
-                val documentToDelete = querySnapshot.documents[0]
+            if (querySnapshot.documents.size >= 1) {
+                val documentToDelete = querySnapshot.documents.last()
+                val previousDocument = if (querySnapshot.documents.size == 2) querySnapshot.documents.first() else null
 
                 firestore.runTransaction { transaction ->
-                    val snapshot = transaction.get(documentToDelete.reference)
-                    val ancienCredits = snapshot.getDouble("ancienCredits")
-
-                    if (ancienCredits != null) {
-                        // Update the latest document with the ancienCredits from the invoice being deleted
-                        transaction.update(latestDocRef, "ancienCredits", ancienCredits)
+                    val ancienCredits = if (previousDocument != null) {
+                        previousDocument.getDouble("ancienCredits")
+                    } else {
+                        // If there's no previous document, use 0.0 or another appropriate default value
+                        0.0
                     }
+
+                    // Update the latest document with the ancienCredits from the previous invoice
+                    transaction.update(latestDocRef, "ancienCredits", ancienCredits)
 
                     // Delete the invoice document
                     transaction.delete(documentToDelete.reference)
@@ -410,34 +405,6 @@ suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
     } ?: throw IllegalArgumentException("Invalid clients ID")
 }
 
-
-suspend fun updateLatestDocument(clientsId: Long, deletedInvoiceDate: String) {
-    val firestore = com.google.firebase.ktx.Firebase.firestore
-    val latestDocRef = firestore.collection("F_ClientsArticlesFireS")
-        .document(clientsId.toString())
-        .collection("latest Totale et Credit Des Bons")
-        .document("latest")
-
-    val invoicesQuery = firestore.collection("F_ClientsArticlesFireS")
-        .document(clientsId.toString())
-        .collection("Totale et Credit Des Bons")
-        .orderBy("date", Query.Direction.DESCENDING)
-        .limit(1)
-
-    try {
-        val querySnapshot = invoicesQuery.get().await()
-        if (!querySnapshot.isEmpty) {
-            val latestInvoice = querySnapshot.documents[0]
-            latestDocRef.set(latestInvoice.data!!).await()
-        } else {
-            // If no invoices left, set default values or delete the latest document
-            latestDocRef.delete().await()
-        }
-    } catch (e: Exception) {
-        Log.e("Firestore", "Error updating latest document: ", e)
-        throw e
-    }
-}
 
 data class ClientsInvoiceOtherCCD(
     val date: String,
