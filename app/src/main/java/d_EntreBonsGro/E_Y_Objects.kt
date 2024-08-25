@@ -1,8 +1,14 @@
 package d_EntreBonsGro
 
 
+import android.app.Activity
+import android.content.Intent
 import android.net.Uri
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -44,16 +50,21 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.google.firebase.database.DatabaseReference
+import kotlinx.coroutines.CoroutineScope
 
 @Composable
-fun ZoomableImage(
+fun DessinableImage(
     modifier: Modifier = Modifier,
     founisseurIdNowIs: Long?,
     articles: List<EntreBonsGrosTabele>,
     soquetteBonNowIs: Int?,
     isPortraitLandscap: Boolean,
     showDivider: Boolean,
+    articlesRef: DatabaseReference,
+    coroutineScope: CoroutineScope,
 ) {
+
     val filteredAndSortedArticles = articles
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
@@ -69,6 +80,20 @@ fun ZoomableImage(
     LaunchedEffect(founisseurIdNowIs, isPortraitLandscap) {
         showDialog = true
     }
+
+    var lastLaunchTime by remember { mutableStateOf(0L) }
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText: String? =
+                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            spokenText?.let {
+                updateSpecificArticleDI(it, article, articlesRef, coroutineScope)//TODo regle l article pour qui soit l article click
+            }
+        }
+    }
+
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
         for (imageIndex in 0 until nmbrImagesDuBon) {
@@ -112,6 +137,19 @@ fun ZoomableImage(
                     Box(modifier = Modifier
                         .weight(0.2f)
                         .fillMaxHeight()
+                        .clickable {
+
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastLaunchTime > 1000) {
+                                lastLaunchTime = currentTime
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                }
+                                speechRecognizerLauncher.launch(intent)
+                            }
+                        },
                     ) {
                         Column(
                             modifier = Modifier

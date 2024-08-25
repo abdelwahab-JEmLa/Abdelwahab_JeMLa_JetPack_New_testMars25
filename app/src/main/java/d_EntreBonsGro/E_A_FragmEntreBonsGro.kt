@@ -411,24 +411,29 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
             when {
                 showFullImage -> {
-                    ZoomableImage(
+                    DessinableImage(
                         soquetteBonNowIs = founisseurNowIs,
                         modifier = Modifier.weight(1f),
                         founisseurIdNowIs =founisseurIdNowIs,
                         articles =articlesEntreBonsGrosTabele,
                         isPortraitLandscap=isPortraitLandscap,
                         showDivider=showDivider,
+                         articlesRef = articlesRef,
+                        coroutineScope=coroutineScope,
+
                     )
                 }
                 showSplitView -> {
                     Column(modifier = Modifier.weight(1f)) {
-                        ZoomableImage(
+                        DessinableImage(
                             modifier = Modifier.weight(1f),
                             founisseurIdNowIs = founisseurIdNowIs,
                             articles = articlesEntreBonsGrosTabele,
                             soquetteBonNowIs = founisseurNowIs,
                             isPortraitLandscap = isPortraitLandscap,
-                            showDivider = showDivider
+                            showDivider = showDivider,
+                            articlesRef = articlesRef,
+                            coroutineScope = coroutineScope
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
