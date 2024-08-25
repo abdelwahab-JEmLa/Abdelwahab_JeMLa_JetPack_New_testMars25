@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -93,10 +94,10 @@ fun ZoomableImage(
 
         Column(modifier = Modifier.heightIn(max = maxContentHeight)) {
             // Main content (images and cards)
-            Row(modifier = Modifier.weight(1f, fill = false)) {
-                // Image section (70% of screen width)
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                // Image section (full width)
                 Box(modifier = Modifier
-                    .weight(0.7f)
+                    .fillMaxWidth()
                     .fillMaxHeight()
                 ) {
                     LazyColumn(
@@ -117,7 +118,7 @@ fun ZoomableImage(
                                     contentScale = ContentScale.FillWidth,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .heightIn(max = 1000.dp) // Limit maximum height of each image
+                                        .heightIn(max = 1000.dp)
                                         .onSizeChanged { size ->
                                             imageSize = size.takeIf { it.height <= 10000 } ?: IntSize(size.width, 10000)
                                         }
@@ -151,12 +152,13 @@ fun ZoomableImage(
                                     }
                                 }
 
-                                // Add clickable section to the image
+                                // Add clickable section to the image with red border
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height((imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
                                         .offset(y = (index * imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
+                                        .border(2.dp, Color.Red)
                                         .clickable {
                                             val currentTime = System.currentTimeMillis()
                                             if (currentTime - lastLaunchTime > 1000) {
@@ -175,27 +177,26 @@ fun ZoomableImage(
                     }
                 }
 
-                // Information boxes section (30% of screen width)
-                LazyColumn(
+                // Informationboxessection as a large row overlay
+                Row(
                     modifier = Modifier
-                        .weight(0.3f)
-                        .fillMaxHeight()
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(Color.White.copy(alpha = 0.7f))
                 ) {
-                    itemsIndexed(filteredAndSortedArticles.take(sectionsDonsChaqueImage)) { index, article ->
+                    filteredAndSortedArticles.take(sectionsDonsChaqueImage).forEach { article ->
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height((imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
+                                .weight(1f)
                                 .padding(4.dp)
                         ) {
                             Card(
-                                modifier = Modifier
-                                    .fillMaxSize(),
+                                modifier = Modifier.fillMaxWidth(),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
                                     modifier = Modifier
-                                        .fillMaxSize()
+                                        .fillMaxWidth()
                                         .padding(horizontal = 2.dp, vertical = 4.dp),
                                     verticalArrangement = Arrangement.Center
                                 ) {
@@ -314,6 +315,7 @@ private fun TreeCountControl(
         }
     }
 }
+
 fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Long?) {
     val newVid = (articles.maxOfOrNull { it.vidBG } ?: 0) + 1
     val currentDate = LocalDate.now().toString()
