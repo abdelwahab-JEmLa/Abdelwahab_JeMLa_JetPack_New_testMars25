@@ -111,7 +111,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     var showOutline by remember { mutableStateOf(false) }
-    var showDivider by remember { mutableStateOf(false) }
+    var showDivider by remember { mutableStateOf(true) }
 
 
     LaunchedEffect(Unit) {
@@ -307,7 +307,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         articleDao = articleDao
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
                     // New FloatingActionButton for outline toggle
                     FloatingActionButton(
@@ -318,24 +318,38 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
                         )
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    FloatingActionButton(
+                        onClick = { showDivider = !showDivider }
+                    ) {
+                        Icon(
+                            imageVector = if (showDivider) Icons.Default.Directions else Icons.Default.DinnerDining,
+                            contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
+                        )
+                    }
                 }
             } else {
-                // For non-portrait mode, only show the outline toggle button
-                FloatingActionButton(
-                    onClick = { showOutline = !showOutline }
-                ) {
-                    Icon(
-                        imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Menu,
-                        contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
-                    )
-                }
-                FloatingActionButton(
-                    onClick = { showDivider = !showDivider }
-                ) {
-                    Icon(
-                        imageVector = if (showDivider) Icons.Default.Directions else Icons.Default.DinnerDining,
-                        contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
-                    )
+                Column {
+                    // For non-portrait mode, only show the outline toggle button
+                    FloatingActionButton(
+                        onClick = { showOutline = !showOutline }
+                    ) {
+                        Icon(
+                            imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Menu,
+                            contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    FloatingActionButton(
+                        onClick = { showDivider = !showDivider }
+                    ) {
+                        Icon(
+                            imageVector = if (showDivider) Icons.Default.Directions else Icons.Default.DinnerDining,
+                            contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
+                        )
+                    }
                 }
             }
         },
