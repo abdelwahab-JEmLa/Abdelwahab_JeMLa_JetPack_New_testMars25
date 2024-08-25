@@ -2,11 +2,13 @@ package d_EntreBonsGro
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.net.Uri
 import android.speech.RecognizerIntent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,12 +21,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,14 +36,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.google.firebase.database.FirebaseDatabase
 import java.time.LocalDate
@@ -82,41 +88,74 @@ fun ZoomableImage(
                     .fillMaxHeight()
                 ) {
                     LazyColumn {
-                        items(5) { index ->
+                        itemsIndexed(List(5) { it }) { index, _ ->
                             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${index + 1}).jpg"
-                            val imageUri = remember(imagePath) {
-                                try {
-                                    Uri.parse(imagePath)
-                                } catch (e: Exception) {
-                                    null
-                                }
-                            }
+                            Log.d("ZoomableImage", "Attempting to load image: $imagePath")
 
-                            val painter = rememberAsyncImagePainter(
-                                ImageRequest.Builder(context).data(imageUri).build()
-                            )
-
-                            Image(
-                                painter = painter,
-                                contentDescription = "Image ${index + 1} for supplier $founisseurIdNowIs",
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(screenHeight / 5)
-                            )
-
-                            when (painter.state) {
-                                is AsyncImagePainter.State.Loading -> {
-                                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                            Box {
+                                var imageSize by remember { mutableStateOf(IntSize.Zero) }
+                                SubcomposeAsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(imagePath)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Image ${index + 1} for supplier $founisseurIdNowIs",
+                                    contentScale = ContentScale.FillWidth,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight()
+                                        .onSizeChanged { size -> imageSize = size }
+                                ) {
+                                    when (painter.state) {
+                                        is AsyncImagePainter.State.Loading -> {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(100.dp)
+                                                    .background(Color.LightGray)
+                                            ) {
+                                                CircularProgressIndicator(Modifier.align(Alignment.Center))
+                                            }
+                                        }
+                                        is AsyncImagePainter.State.Error -> {
+                                            val error = (painter.state as AsyncImagePainter.State.Error).result.throwable
+                                            Log.e("ZoomableImage", "Error loading image: ${error.message}", error)
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(100.dp)
+                                                    .background(Color.Red.copy(alpha = 0.3f))
+                                            ) {
+                                                Text(
+                                                    text = "Error loading image",
+                                                    color = Color.White,
+                                                    modifier = Modifier.align(Alignment.Center)
+                                                )
+                                            }
+                                        }
+                                        is AsyncImagePainter.State.Success -> {
+                                            Log.d("ZoomableImage", "Image loaded successfully: $imagePath")
+                                            Image(
+                                                painter = painter,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.FillWidth,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                        else -> {}
+                                    }
                                 }
-                                is AsyncImagePainter.State.Error -> {
-                                    Text(
-                                        text = "Error loading image",
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.align(Alignment.Center)
-                                    )
+
+                                if (index < 4) {
+                                    Canvas(modifier = Modifier.matchParentSize()) {
+                                        drawLine(
+                                            color = Color.Red,
+                                            start = Offset(0f, size.height),
+                                            end = Offset(size.width, size.height),
+                                            strokeWidth = 2.dp.toPx()
+                                        )
+                                    }
                                 }
-                                else -> {} // Do nothing for success state
                             }
                         }
                     }
@@ -128,48 +167,63 @@ fun ZoomableImage(
                         .weight(0.3f)
                         .fillMaxHeight()
                 ) {
-                    filteredAndSortedArticles.forEach { article ->
-                        Card(
+                    filteredAndSortedArticles.forEachIndexed { index, article ->
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(4.dp)
-                                .clickable {
-                                    val currentTime = System.currentTimeMillis()
-                                    if (currentTime - lastLaunchTime > 1000) {
-                                        lastLaunchTime = currentTime
-                                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                            putExtra(
-                                                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                            )
-                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                            putExtra(
-                                                RecognizerIntent.EXTRA_PROMPT,
-                                                "Parlez maintenant pour mettre à jour cet article..."
-                                            )
-                                        }
-                                        speechRecognizerLauncher.launch(intent)
-                                    }
-                                },
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        val currentTime = System.currentTimeMillis()
+                                        if (currentTime - lastLaunchTime > 1000) {
+                                            lastLaunchTime = currentTime
+                                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                            }
+                                            speechRecognizerLauncher.launch(intent)
+                                        }
+                                    },
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
-                                Text(
-                                    "${article.quantityAcheteBG}",
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    " X ${article.newPrixAchatBG}",
-                                    color = if ((article.newPrixAchatBG - article.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    " =(${article.subTotaleBG})",
-                                    textAlign = TextAlign.Center
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "${article.quantityAcheteBG}",
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        " X ${article.newPrixAchatBG}",
+                                        color = if ((article.newPrixAchatBG - article.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        " =(${article.subTotaleBG})",
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+
+                            if (index < filteredAndSortedArticles.size - 1) {
+                                Canvas(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(2.dp)
+                                        .align(Alignment.BottomCenter)
+                                ) {
+                                    drawLine(
+                                        color = Color.Red,
+                                        start = Offset(0f, 0f),
+                                        end = Offset(size.width, 0f),
+                                        strokeWidth = 2.dp.toPx()
+                                    )
+                                }
                             }
                         }
                     }
@@ -238,15 +292,13 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Lon
     val database = FirebaseDatabase.getInstance()
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
 
-    newArticle.let {
-        articlesRef.child(newVid.toString()).setValue(it)
-            .addOnSuccessListener {
-                println("New article inserted successfully")
-            }
-            .addOnFailureListener { e ->
-                println("Error inserting new article: ${e.message}")
-            }
-    }
+    articlesRef.child(newVid.toString()).setValue(newArticle)
+        .addOnSuccessListener {
+            println("New article inserted successfully")
+        }
+        .addOnFailureListener { e ->
+            println("Error inserting new article: ${e.message}")
+        }
 }
 
 fun deleteTheNewArticleIZ(vidBG: Long) {
