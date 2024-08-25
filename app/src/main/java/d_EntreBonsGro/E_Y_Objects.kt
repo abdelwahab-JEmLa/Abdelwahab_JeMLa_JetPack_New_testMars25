@@ -3,8 +3,6 @@ package d_EntreBonsGro
 
 import android.content.res.Configuration
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,13 +71,6 @@ fun ZoomableImage(
         showDialog = true
     }
 
-    var lastLaunchTime by remember { mutableStateOf(0L) }
-    val speechRecognizerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // Handle speech recognition result here
-    }
-
     Column(modifier = modifier.verticalScroll(scrollState)) {
         for (imageIndex in 0 until 3) {
             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
@@ -93,69 +84,51 @@ fun ZoomableImage(
                     .fillMaxWidth()
                     .height(IntrinsicSize.Min)
             ) {
-                Image(
-                    painter = painter,
-                    contentDescription = "Image for supplier section ${imageIndex + 1}",
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                        .onSizeChanged { if (imageIndex == 0) imageSize = it }
-                        .drawWithContent {
-                            drawContent()
-                            val dividerColor = Color.Red
-                            val dividerStrokeWidth = 2f
-                            for (i in 1 until sectionsDonsChaqueImage) {
-                                val y = size.height * i.toFloat() / sectionsDonsChaqueImage
-                                drawLine(
-                                    color = dividerColor,
-                                    start = Offset(0f, y),
-                                    end = Offset(size.width, y),
-                                    strokeWidth = dividerStrokeWidth
-                                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Image(
+                        painter = painter,
+                        contentDescription = "Image for supplier section ${imageIndex + 1}",
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .weight(0.8f)
+                            .height(400.dp)
+                            .onSizeChanged { if (imageIndex == 0) imageSize = it }
+                            .drawWithContent {
+                                drawContent()
+                                val dividerColor = Color.Red
+                                val dividerStrokeWidth = 2f
+                                for (i in 1 until sectionsDonsChaqueImage) {
+                                    val y = size.height * i.toFloat() / sectionsDonsChaqueImage
+                                    drawLine(
+                                        color = dividerColor,
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = dividerStrokeWidth
+                                    )
+                                }
                             }
-                        }
-                )
-                when (painter.state) {
-                    is AsyncImagePainter.State.Loading -> {
-                        CircularProgressIndicator(Modifier.align(Alignment.Center))
-                    }
-                    is AsyncImagePainter.State.Error -> {
-                        Text(
-                            text = "Error loading image",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                    else -> {}
-                }
+                    )
 
-                // Display article information
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
+                    // Information des articles
+                    Box(modifier = Modifier
+                        .weight(0.2f)
+                        .fillMaxHeight()
                     ) {
-                        for (sectionIndex in 0 until sectionsDonsChaqueImage) {
-                            val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
-                            val article = filteredAndSortedArticles.getOrNull(articleIndex)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp)
+                        ) {
+                            for (sectionIndex in 0 until sectionsDonsChaqueImage) {
+                                val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
+                                val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                            ) {
                                 article?.let {
                                     Card(
                                         modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .fillMaxWidth(0.5f)
-                                            .fillMaxHeight(1f)
-                                            .padding(2.dp),
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                            .padding(vertical = 2.dp),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Box(
@@ -174,6 +147,20 @@ fun ZoomableImage(
                             }
                         }
                     }
+                }
+
+                when (painter.state) {
+                    is AsyncImagePainter.State.Loading -> {
+                        CircularProgressIndicator(Modifier.align(Alignment.Center))
+                    }
+                    is AsyncImagePainter.State.Error -> {
+                        Text(
+                            text = "Error loading image",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    else -> {}
                 }
             }
         }
@@ -200,6 +187,7 @@ fun ZoomableImage(
         )
     }
 }
+
 @Composable
 fun AutoResizeText(
     text: String,
