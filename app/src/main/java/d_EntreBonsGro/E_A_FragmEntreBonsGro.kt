@@ -419,12 +419,13 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         founisseurIdNowIs =founisseurIdNowIs,
                         soquetteBonNowIs = founisseurNowIs,
                         isPortraitLandscap=isPortraitLandscap,
-                        showDivider=showDivider,
+                        showDiviseurDesSections=showDivider,
                          articlesRef = articlesRef,
                         baseDonneRef=baseDonneRef,
                         suggestionsList=suggestionsList,
                         articleDao=articleDao,
                         coroutineScope=coroutineScope,
+                        showOutline=showOutline,
                     )
                 }
                 showSplitView -> {
@@ -437,12 +438,13 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             founisseurIdNowIs =founisseurIdNowIs,
                             soquetteBonNowIs = founisseurNowIs,
                             isPortraitLandscap=isPortraitLandscap,
-                            showDivider=showDivider,
+                            showDiviseurDesSections=showDivider,
                             articlesRef = articlesRef,
                             baseDonneRef=baseDonneRef,
                             suggestionsList=suggestionsList,
                             articleDao=articleDao,
                             coroutineScope=coroutineScope,
+                            showOutline = showOutline,
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },

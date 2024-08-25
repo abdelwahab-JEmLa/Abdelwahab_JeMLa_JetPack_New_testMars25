@@ -71,12 +71,13 @@ fun DessinableImage(
     founisseurIdNowIs: Long?,
     soquetteBonNowIs: Int?,
     isPortraitLandscap: Boolean,
-    showDivider: Boolean,
+    showDiviseurDesSections: Boolean,
     articlesRef: DatabaseReference,
     baseDonneRef: DatabaseReference,
     suggestionsList: List<String>,
     articleDao: ArticleDao,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    showOutline: Boolean
 ) {
     val filteredAndSortedArticles = articlesEntreBonsGrosTabele
         .filter { it.supplierIdBG == founisseurIdNowIs }
@@ -102,7 +103,7 @@ fun DessinableImage(
     var isRecognizing by remember { mutableStateOf(false) }
 
     fun processVoiceInput(input: String) {
-        if (input.contains("+")) {
+        if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
             selectedArticle?.let {
                 updateQuantuPrixArticleDI(input, it, articlesRef, coroutineScope)
             }
@@ -324,7 +325,7 @@ fun DessinableImage(
         }
     }
 
-    if (showDivider) {
+    if (showDiviseurDesSections) {
         TreeCountControl(
             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             filteredAndSortedArticles = filteredAndSortedArticles,
