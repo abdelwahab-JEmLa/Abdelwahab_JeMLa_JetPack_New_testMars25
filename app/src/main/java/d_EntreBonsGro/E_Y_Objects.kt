@@ -59,28 +59,26 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
-import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
 fun DessinableImage(
     modifier: Modifier = Modifier,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
     founisseurIdNowIs: Long?,
-    articles: List<EntreBonsGrosTabele>,
     soquetteBonNowIs: Int?,
     isPortraitLandscap: Boolean,
     showDivider: Boolean,
     articlesRef: DatabaseReference,
-    coroutineScope: CoroutineScope,
     baseDonneRef: DatabaseReference,
-    articlesBaseDonne: List<BaseDonne>,
-    suppliersList: List<SupplierTabelle>,
     suggestionsList: List<String>,
-    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    articleDao: ArticleDao
+    articleDao: ArticleDao,
+    coroutineScope: CoroutineScope
 ) {
-    val filteredAndSortedArticles = articles
+    val filteredAndSortedArticles = articlesEntreBonsGrosTabele
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
 
@@ -130,7 +128,7 @@ fun DessinableImage(
                         articlesBaseDonne = articlesBaseDonne,
                         onNameInputComplete = { /* Implement if needed */ },
                         editionPassedMode = false,
-                        articlesEntreBonsGrosTabele = articles,
+                        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
                         coroutineScope = coroutineScope
                     )
                 }
@@ -319,7 +317,7 @@ fun DessinableImage(
                                         articlesBaseDonne = articlesBaseDonne,
                                         onNameInputComplete = { /* Implement if needed */ },
                                         editionPassedMode = false,
-                                        articlesEntreBonsGrosTabele = articles,
+                                        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
                                         coroutineScope = coroutineScope
                                     )
                                     showSuggestions = false

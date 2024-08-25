@@ -412,28 +412,37 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             when {
                 showFullImage -> {
                     DessinableImage(
-                        soquetteBonNowIs = founisseurNowIs,
                         modifier = Modifier.weight(1f),
+                        articlesEntreBonsGrosTabele =articlesEntreBonsGrosTabele,
+                        articlesArticlesAcheteModele=articlesArticlesAcheteModele,
+                        articlesBaseDonne=articlesBaseDonne,
                         founisseurIdNowIs =founisseurIdNowIs,
-                        articles =articlesEntreBonsGrosTabele,
+                        soquetteBonNowIs = founisseurNowIs,
                         isPortraitLandscap=isPortraitLandscap,
                         showDivider=showDivider,
                          articlesRef = articlesRef,
+                        baseDonneRef=baseDonneRef,
+                        suggestionsList=suggestionsList,
+                        articleDao=articleDao,
                         coroutineScope=coroutineScope,
-
                     )
                 }
                 showSplitView -> {
                     Column(modifier = Modifier.weight(1f)) {
                         DessinableImage(
                             modifier = Modifier.weight(1f),
-                            founisseurIdNowIs = founisseurIdNowIs,
-                            articles = articlesEntreBonsGrosTabele,
+                            articlesEntreBonsGrosTabele =articlesEntreBonsGrosTabele,
+                            articlesArticlesAcheteModele=articlesArticlesAcheteModele,
+                            articlesBaseDonne=articlesBaseDonne,
+                            founisseurIdNowIs =founisseurIdNowIs,
                             soquetteBonNowIs = founisseurNowIs,
-                            isPortraitLandscap = isPortraitLandscap,
-                            showDivider = showDivider,
+                            isPortraitLandscap=isPortraitLandscap,
+                            showDivider=showDivider,
                             articlesRef = articlesRef,
-                            coroutineScope = coroutineScope
+                            baseDonneRef=baseDonneRef,
+                            suggestionsList=suggestionsList,
+                            articleDao=articleDao,
+                            coroutineScope=coroutineScope,
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
