@@ -307,16 +307,21 @@ fun DessinableImage(
                                             .weight(1f)
                                             .fillMaxWidth()
                                             .clickable {
-                                                selectedArticle = it
-                                                val currentTime = System.currentTimeMillis()
-                                                if (currentTime - lastLaunchTime > 1000) {
-                                                    lastLaunchTime = currentTime
-                                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                                if (showOutline) {
+                                                    selectedArticle = it
+                                                    showOutlineDialog = true
+                                                } else {
+                                                    selectedArticle = it
+                                                    val currentTime = System.currentTimeMillis()
+                                                    if (currentTime - lastLaunchTime > 1000) {
+                                                        lastLaunchTime = currentTime
+                                                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                                        }
+                                                        speechRecognizerLauncher.launch(intent)
                                                     }
-                                                    speechRecognizerLauncher.launch(intent)
                                                 }
                                             },
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
