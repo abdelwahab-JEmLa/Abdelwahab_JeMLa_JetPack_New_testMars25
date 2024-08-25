@@ -64,7 +64,6 @@ fun DessinableImage(
     articlesRef: DatabaseReference,
     coroutineScope: CoroutineScope,
 ) {
-
     val filteredAndSortedArticles = articles
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
@@ -81,6 +80,7 @@ fun DessinableImage(
         showDialog = true
     }
 
+    var selectedArticle by remember { mutableStateOf<EntreBonsGrosTabele?>(null) }
     var lastLaunchTime by remember { mutableStateOf(0L) }
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -89,11 +89,12 @@ fun DessinableImage(
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
-                updateSpecificArticleDI(it, article, articlesRef, coroutineScope)//TODo regle l article pour qui soit l article click
+                selectedArticle?.let { article ->
+                    updateSpecificArticleDI(it, article, articlesRef, coroutineScope)
+                }
             }
         }
     }
-
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
         for (imageIndex in 0 until nmbrImagesDuBon) {
@@ -133,23 +134,10 @@ fun DessinableImage(
                             }
                     )
 
-                    // Information des articles
-                    Box(modifier = Modifier
-                        .weight(0.2f)
-                        .fillMaxHeight()
-                        .clickable {
-
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastLaunchTime > 1000) {
-                                lastLaunchTime = currentTime
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                }
-                                speechRecognizerLauncher.launch(intent)
-                            }
-                        },
+                    Box(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .fillMaxHeight()
                     ) {
                         Column(
                             modifier = Modifier
@@ -164,7 +152,20 @@ fun DessinableImage(
                                     Card(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .fillMaxWidth(),
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                selectedArticle = it
+                                                val currentTime = System.currentTimeMillis()
+                                                if (currentTime - lastLaunchTime > 1000) {
+                                                    lastLaunchTime = currentTime
+                                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                                    }
+                                                    speechRecognizerLauncher.launch(intent)
+                                                }
+                                            },
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Box(
@@ -201,6 +202,7 @@ fun DessinableImage(
             }
         }
     }
+
     if (showDivider) {
         TreeCountControl(
             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
@@ -211,8 +213,6 @@ fun DessinableImage(
             }
         )
     }
-
-
 
     if (showDialog) {
         ImageCountDialog(
