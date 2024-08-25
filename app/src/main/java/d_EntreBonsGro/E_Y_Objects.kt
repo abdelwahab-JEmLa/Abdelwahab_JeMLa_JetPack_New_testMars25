@@ -10,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -19,11 +20,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -67,12 +70,14 @@ fun ZoomableImage(
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
 
-    var treeCount by remember { mutableStateOf(filteredAndSortedArticles.size) }
+    var sectionsDonsChaqueImage by remember { mutableStateOf(filteredAndSortedArticles.size) }
+    var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         // Handle speech recognition result here
+        // You'll need to implement the logic to update the article based on the speech input
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -87,13 +92,15 @@ fun ZoomableImage(
                     .weight(0.7f)
                     .fillMaxHeight()
                 ) {
-                    LazyColumn {
-                        itemsIndexed(List(5) { it }) { index, _ ->
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = rememberLazyListState()
+                    ) {
+                        itemsIndexed(filteredAndSortedArticles) { index, article ->
                             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${index + 1}).jpg"
                             Log.d("ZoomableImage", "Attempting to load image: $imagePath")
 
                             Box {
-                                var imageSize by remember { mutableStateOf(IntSize.Zero) }
                                 SubcomposeAsyncImage(
                                     model = ImageRequest.Builder(LocalContext.current)
                                         .data(imagePath)
@@ -120,18 +127,6 @@ fun ZoomableImage(
                                         is AsyncImagePainter.State.Error -> {
                                             val error = (painter.state as AsyncImagePainter.State.Error).result.throwable
                                             Log.e("ZoomableImage", "Error loading image: ${error.message}", error)
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(100.dp)
-                                                    .background(Color.Red.copy(alpha = 0.3f))
-                                            ) {
-                                                Text(
-                                                    text = "Error loading image",
-                                                    color = Color.White,
-                                                    modifier = Modifier.align(Alignment.Center)
-                                                )
-                                            }
                                         }
                                         is AsyncImagePainter.State.Success -> {
                                             Log.d("ZoomableImage", "Image loaded successfully: $imagePath")
@@ -141,12 +136,32 @@ fun ZoomableImage(
                                                 contentScale = ContentScale.FillWidth,
                                                 modifier = Modifier.fillMaxWidth()
                                             )
+
+                                            // Add clickable section to the image
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(imageSize.height.dp / filteredAndSortedArticles.size)
+                                                    .offset(y = (index * imageSize.height / filteredAndSortedArticles.size).dp)
+                                                    .clickable {
+                                                        val currentTime = System.currentTimeMillis()
+                                                        if (currentTime - lastLaunchTime > 1000) {
+                                                            lastLaunchTime = currentTime
+                                                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cette section...")
+                                                            }
+                                                            speechRecognizerLauncher.launch(intent)
+                                                        }
+                                                    }
+                                            )
                                         }
                                         else -> {}
                                     }
                                 }
 
-                                if (index < 4) {
+                                if (index < filteredAndSortedArticles.size - 1) {
                                     Canvas(modifier = Modifier.matchParentSize()) {
                                         drawLine(
                                             color = Color.Red,
@@ -161,51 +176,45 @@ fun ZoomableImage(
                     }
                 }
 
-                // Card section (30% of screen width)
-                Column(
+                // Information boxes section (30% of screen width)
+                LazyColumn(
                     modifier = Modifier
                         .weight(0.3f)
                         .fillMaxHeight()
                 ) {
-                    filteredAndSortedArticles.forEachIndexed { index, article ->
+                    itemsIndexed(filteredAndSortedArticles) { index, article ->
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height((imageSize.height / filteredAndSortedArticles.size).dp)
                                 .padding(4.dp)
                         ) {
                             Card(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val currentTime = System.currentTimeMillis()
-                                        if (currentTime - lastLaunchTime > 1000) {
-                                            lastLaunchTime = currentTime
-                                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                            }
-                                            speechRecognizerLauncher.launch(intent)
-                                        }
-                                    },
+                                    .fillMaxSize(),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 2.dp, vertical = 4.dp),
+                                    verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
                                         "${article.quantityAcheteBG}",
-                                        textAlign = TextAlign.Center
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                     Text(
                                         " X ${article.newPrixAchatBG}",
                                         color = if ((article.newPrixAchatBG - article.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                        textAlign = TextAlign.Center
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                     Text(
                                         " =(${article.subTotaleBG})",
-                                        textAlign = TextAlign.Center
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
                             }
@@ -231,33 +240,49 @@ fun ZoomableImage(
             }
 
             // Tree count control (only visible in portrait mode)
-            if (isPortrait) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Tree count: $treeCount")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        if (treeCount > 0) {
-                            treeCount--
-                            if (filteredAndSortedArticles.isNotEmpty()) {
-                                deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
-                            }
-                        }
-                    }) {
-                        Text("-")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        treeCount++
-                        createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
-                    }) {
-                        Text("+")
+            treeCountControl(
+                isPortrait,
+                sectionsDonsChaqueImage,
+                filteredAndSortedArticles,
+                founisseurIdNowIs
+            )
+        }
+    }
+}
+
+@Composable
+private fun treeCountControl(
+    isPortrait: Boolean,
+    sectionsDonsChaqueImage: Int,
+    filteredAndSortedArticles: List<EntreBonsGrosTabele>,
+    founisseurIdNowIs: Long?
+) {
+    var sectionsDonsChaqueImage1 = sectionsDonsChaqueImage
+    if (isPortrait) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("sections count: $sectionsDonsChaqueImage1")
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                if (sectionsDonsChaqueImage1 > 0) {
+                    sectionsDonsChaqueImage1--
+                    if (filteredAndSortedArticles.isNotEmpty()) {
+                        deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
                     }
                 }
+            }) {
+                Text("-")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                sectionsDonsChaqueImage1++
+                createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
+            }) {
+                Text("+")
             }
         }
     }
