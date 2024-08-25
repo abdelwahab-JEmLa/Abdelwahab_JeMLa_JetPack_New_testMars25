@@ -6,7 +6,6 @@ import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,10 +19,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -40,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -84,16 +82,18 @@ fun ZoomableImage(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         // Handle speech recognition result here
-        // You'll need to implement the logic to update the article based on the speech input
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenWidth = maxWidth
         val screenHeight = maxHeight
 
-        Column {
+        // Limit the maximum height of the content
+        val maxContentHeight = remember { 10000.dp } // Adjust this value as needed
+
+        Column(modifier = Modifier.heightIn(max = maxContentHeight)) {
             // Main content (images and cards)
-            Row(modifier = Modifier.weight(1f)) {
+            Row(modifier = Modifier.weight(1f, fill = false)) {
                 // Image section (70% of screen width)
                 Box(modifier = Modifier
                     .weight(0.7f)
@@ -117,8 +117,10 @@ fun ZoomableImage(
                                     contentScale = ContentScale.FillWidth,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .wrapContentHeight()
-                                        .onSizeChanged { size -> imageSize = size }
+                                        .heightIn(max = 1000.dp) // Limit maximum height of each image
+                                        .onSizeChanged { size ->
+                                            imageSize = size.takeIf { it.height <= 10000 } ?: IntSize(size.width, 10000)
+                                        }
                                 ) {
                                     when (painter.state) {
                                         is AsyncImagePainter.State.Loading -> {
@@ -134,6 +136,7 @@ fun ZoomableImage(
                                         is AsyncImagePainter.State.Error -> {
                                             val error = (painter.state as AsyncImagePainter.State.Error).result.throwable
                                             Log.e("ZoomableImage", "Error loading image: ${error.message}", error)
+                                            Text("Error loading image", color = Color.Red)
                                         }
                                         is AsyncImagePainter.State.Success -> {
                                             Log.d("ZoomableImage", "Image loaded successfully: $imagePath")
@@ -143,46 +146,34 @@ fun ZoomableImage(
                                                 contentScale = ContentScale.FillWidth,
                                                 modifier = Modifier.fillMaxWidth()
                                             )
-
-                                            // Add clickable section to the image
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(imageSize.height.dp / filteredAndSortedArticles.size)
-                                                    .offset(y = (index * imageSize.height / filteredAndSortedArticles.size).dp)
-                                                    .clickable {
-                                                        val currentTime = System.currentTimeMillis()
-                                                        if (currentTime - lastLaunchTime > 1000) {
-                                                            lastLaunchTime = currentTime
-                                                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cette section...")
-                                                            }
-                                                            speechRecognizerLauncher.launch(intent)
-                                                        }
-                                                    }
-                                            )
                                         }
                                         else -> {}
                                     }
                                 }
 
-                                if (index < filteredAndSortedArticles.size - 1) {
-                                    Canvas(modifier = Modifier.matchParentSize()) {
-                                        drawLine(
-                                            color = Color.Red,
-                                            start = Offset(0f, size.height),
-                                            end = Offset(size.width, size.height),
-                                            strokeWidth = 2.dp.toPx()
-                                        )
-                                    }
-                                }
+                                // Add clickable section to the image
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height((imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
+                                        .offset(y = (index * imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
+                                        .clickable {
+                                            val currentTime = System.currentTimeMillis()
+                                            if (currentTime - lastLaunchTime > 1000) {
+                                                lastLaunchTime = currentTime
+                                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cette section...")
+                                                }
+                                                speechRecognizerLauncher.launch(intent)
+                                            }
+                                        }
+                                )
                             }
                         }
                     }
                 }
-
 
                 // Information boxes section (30% of screen width)
                 LazyColumn(
@@ -194,7 +185,7 @@ fun ZoomableImage(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height((imageSize.height / filteredAndSortedArticles.size).dp)
+                                .height((imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
                                 .padding(4.dp)
                         ) {
                             Card(
@@ -223,22 +214,6 @@ fun ZoomableImage(
                                         " =(${article.subTotaleBG})",
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-
-                            if (index < filteredAndSortedArticles.size - 1) {
-                                Canvas(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(2.dp)
-                                        .align(Alignment.BottomCenter)
-                                ) {
-                                    drawLine(
-                                        color = Color.Red,
-                                        start = Offset(0f, 0f),
-                                        end = Offset(size.width, 0f),
-                                        strokeWidth = 2.dp.toPx()
                                     )
                                 }
                             }
