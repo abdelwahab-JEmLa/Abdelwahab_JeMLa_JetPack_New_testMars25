@@ -58,7 +58,8 @@ fun ZoomableImage(
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
 
-    var sectionsDonsChaqueImage by remember { mutableStateOf(5) }
+    var nmbrImagesDuBon by remember { mutableStateOf(1) }
+    var sectionsDonsChaqueImage by remember { mutableStateOf(10) }//TODO regle le numbre d images du bon n ai pas le numbre des sections don chaque image
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
     var showDialog by remember { mutableStateOf(false) }
 
@@ -95,8 +96,8 @@ fun ZoomableImage(
                                 drawContent()
                                 val dividerColor = Color.Red
                                 val dividerStrokeWidth = 2f
-                                for (i in 1 until sectionsDonsChaqueImage) {
-                                    val y = size.height * i.toFloat() / sectionsDonsChaqueImage
+                                for (i in 1 until nmbrImagesDuBon) {
+                                    val y = size.height * i.toFloat() / nmbrImagesDuBon
                                     drawLine(
                                         color = dividerColor,
                                         start = Offset(0f, y),
@@ -117,8 +118,8 @@ fun ZoomableImage(
                                 .fillMaxSize()
                                 .padding(4.dp)
                         ) {
-                            for (sectionIndex in 0 until sectionsDonsChaqueImage) {
-                                val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
+                            for (sectionIndex in 0 until nmbrImagesDuBon) {
+                                val articleIndex = imageIndex * nmbrImagesDuBon + sectionIndex
                                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                                 article?.let {
@@ -163,22 +164,21 @@ fun ZoomableImage(
         }
     }
 
-    if (isPortraitLandscap) {
         TreeCountControl(
-            sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+            sectionsDonsChaqueImage = nmbrImagesDuBon,
             filteredAndSortedArticles = filteredAndSortedArticles,
             founisseurIdNowIs = founisseurIdNowIs,
             onCountChange = { newCount ->
-                sectionsDonsChaqueImage = newCount
+                nmbrImagesDuBon = newCount
             }
         )
-    }
+
 
     if (showDialog) {
         ImageCountDialog(
             onDismiss = { showDialog = false },
             onSelectCount = { count ->
-                sectionsDonsChaqueImage = count
+                nmbrImagesDuBon = count
                 showDialog = false
             }
         )

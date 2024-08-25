@@ -16,15 +16,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -104,6 +107,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     val configuration = LocalConfiguration.current
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
+    var showOutline by remember { mutableStateOf(false) }
+
+
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -272,75 +279,111 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         },
         floatingActionButton = {
             if (isPortraitLandscap) {
-                VoiceInputButton(
-                    articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
-                    articlesRef = articlesRef,
-                    baseDonneRef = baseDonneRef,
-                    founisseurNowIs = founisseurNowIs,
-                    articlesBaseDonne = articlesBaseDonne,
-                    suppliersList = suppliersList,
-                    suggestionsList = suggestionsList,
-                    onInputProcessed = { newVid ->
-                        if (newVid != null) {
-                            vidOfLastQuantityInputted = newVid
-                            nowItsNameInputeTime = true
-                        }
-                        inputText = ""
-                    },
-                    updateArticleIdFromSuggestion = ::updateArticleIdFromSuggestion,
-                    vidOfLastQuantityInputted = vidOfLastQuantityInputted,
-                    articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                    editionPassedMode = editionPassedMode,
-                    coroutineScope = coroutineScope,
-                    articleDao = articleDao
-                )
+                Column {
+                    // Existing VoiceInputButton
+                    VoiceInputButton(
+                        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                        articlesRef = articlesRef,
+                        baseDonneRef = baseDonneRef,
+                        founisseurNowIs = founisseurNowIs,
+                        articlesBaseDonne = articlesBaseDonne,
+                        suppliersList = suppliersList,
+                        suggestionsList = suggestionsList,
+                        onInputProcessed = { newVid ->
+                            if (newVid != null) {
+                                vidOfLastQuantityInputted = newVid
+                                nowItsNameInputeTime = true
+                            }
+                            inputText = ""
+                        },
+                        updateArticleIdFromSuggestion = ::updateArticleIdFromSuggestion,
+                        vidOfLastQuantityInputted = vidOfLastQuantityInputted,
+                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                        editionPassedMode = editionPassedMode,
+                        coroutineScope = coroutineScope,
+                        articleDao = articleDao
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // New FloatingActionButton for outline toggle
+                    FloatingActionButton(
+                        onClick = { showOutline = !showOutline }
+                    ) {
+                        Icon(
+                            imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Menu,
+                            contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
+                        )
+                    }
+                }
+            } else {
+                // For non-portrait mode, only show the outline toggle button
+                FloatingActionButton(
+                    onClick = { showOutline = !showOutline }
+                ) {
+                    Icon(
+                        imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Menu,
+                        contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
+                    )
+                }
             }
         },
-        floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End
-    ){ innerPadding ->
+        floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End,
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            OutlineInput(
-                inputText = inputText,
-                onInputChange = { newValue ->
-                    inputText = newValue
-                    if (newValue.endsWith("تغيير")) {
-                        val newArabName = newValue.removeSuffix("تغيير").trim()
-                        coroutineScope.launch {
-                            vidOfLastQuantityInputted?.let { vid ->
-                                // Find the article in articlesEntreBonsGrosTabele by vid
-                                val article = articlesEntreBonsGrosTabele.find { it.vidBG == vid }
-                                article?.let { foundArticle ->
-                                    // Use the idArticleBG to update the corresponding entry in baseDonneRef
-                                    baseDonneRef.child(foundArticle.idArticleBG.toString()).child("nomArab").setValue(newArabName)
+            if (showOutline) {
+                OutlineInput(
+                    inputText = inputText,
+                    onInputChange = { newValue ->
+                        inputText = newValue
+                        if (newValue.endsWith("تغيير")) {
+                            val newArabName = newValue.removeSuffix("تغيير").trim()
+                            coroutineScope.launch {
+                                vidOfLastQuantityInputted?.let { vid ->
+                                    // Find the article in articlesEntreBonsGrosTabele by vid
+                                    val article =
+                                        articlesEntreBonsGrosTabele.find { it.vidBG == vid }
+                                    article?.let { foundArticle ->
+                                        // Use the idArticleBG to update the corresponding entry in baseDonneRef
+                                        baseDonneRef.child(foundArticle.idArticleBG.toString())
+                                            .child("nomArab").setValue(newArabName)
+                                    }
                                 }
                             }
-                        }
-                        inputText = ""
-                    } else if (newValue.contains("+")) {
-                        val newVid = processInputAndInsertData(newValue, articlesEntreBonsGrosTabele, articlesRef, founisseurNowIs, articlesBaseDonne, suppliersList)
-                        if (newVid != null) {
                             inputText = ""
-                            nowItsNameInputeTime = true
-                            vidOfLastQuantityInputted = newVid
+                        } else if (newValue.contains("+")) {
+                            val newVid = processInputAndInsertData(
+                                newValue,
+                                articlesEntreBonsGrosTabele,
+                                articlesRef,
+                                founisseurNowIs,
+                                articlesBaseDonne,
+                                suppliersList
+                            )
+                            if (newVid != null) {
+                                inputText = ""
+                                nowItsNameInputeTime = true
+                                vidOfLastQuantityInputted = newVid
+                            }
                         }
-                    }
-                },
-                nowItsNameInputeTime = nowItsNameInputeTime,
-                onNameInputComplete = { nowItsNameInputeTime = false },
-                articlesList = articlesEntreBonsGrosTabele,
-                suggestionsList = suggestionsList,
-                vidOfLastQuantityInputted = vidOfLastQuantityInputted,
-                articlesRef = articlesRef,
-                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                articlesBaseDonne = articlesBaseDonne,
-                editionPassedMode = editionPassedMode,
-                modifier = Modifier.fillMaxWidth(),
-                coroutineScope = coroutineScope
-            )
+                    },
+                    nowItsNameInputeTime = nowItsNameInputeTime,
+                    onNameInputComplete = { nowItsNameInputeTime = false },
+                    articlesList = articlesEntreBonsGrosTabele,
+                    suggestionsList = suggestionsList,
+                    vidOfLastQuantityInputted = vidOfLastQuantityInputted,
+                    articlesRef = articlesRef,
+                    articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                    articlesBaseDonne = articlesBaseDonne,
+                    editionPassedMode = editionPassedMode,
+                    modifier = Modifier.fillMaxWidth(),
+                    coroutineScope = coroutineScope
+                )
+            }
             when {
                 showFullImage -> {
                     ZoomableImage(
@@ -398,7 +441,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 }
             }
         }
+
     }
+
     ActionsDialog(
         showDialog = showActionsDialog,
         onDismiss = { showActionsDialog = false },
