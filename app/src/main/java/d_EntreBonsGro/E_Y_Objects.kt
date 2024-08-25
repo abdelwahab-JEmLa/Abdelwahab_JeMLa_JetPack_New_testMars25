@@ -175,32 +175,7 @@ fun DessinableImage(
                     .height(IntrinsicSize.Min)
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    Image(
-                        painter = painter,
-                        contentDescription = "Image for supplier section ${imageIndex + 1}",
-                        contentScale = ContentScale.FillWidth,
-                        modifier = Modifier
-                            .weight(0.8f)
-                            .height(400.dp)
-                            .onSizeChanged { if (imageIndex == 0) imageSize = it }
-                            .drawWithContent {
-                                drawContent()
-                                val redColor = Color.Red.copy(alpha = 0.3f)
-                                val blueColor = Color.Blue.copy(alpha = 0.3f)
-                                for (i in 0 until sectionsDonsChaqueImage) {
-                                    val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                                    val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                                    val color = if (i % 2 == 0) redColor else blueColor
-                                    drawRect(
-                                        color = color,
-                                        topLeft = Offset(0f, top),
-                                        size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
-                                    )
-                                }
-                            }
-
-                    )
-
+                    // L Column: Quantity, Price, Subtotal
                     Box(
                         modifier = Modifier
                             .weight(0.2f)
@@ -232,8 +207,7 @@ fun DessinableImage(
                                                     }
                                                     speechRecognizerLauncher.launch(intent)
                                                 }
-                                            }
-                                        ,
+                                            },
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Box(
@@ -252,6 +226,85 @@ fun DessinableImage(
                             }
                         }
                     }
+
+                    // Center: Image
+                    Image(
+                        painter = painter,
+                        contentDescription = "Image for supplier section ${imageIndex + 1}",
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .weight(0.6f)
+                            .height(400.dp)
+                            .onSizeChanged { if (imageIndex == 0) imageSize = it }
+                            .drawWithContent {
+                                drawContent()
+                                val redColor = Color.Red.copy(alpha = 0.3f)
+                                val blueColor = Color.Blue.copy(alpha = 0.3f)
+                                for (i in 0 until sectionsDonsChaqueImage) {
+                                    val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                                    val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                                    val color = if (i % 2 == 0) redColor else blueColor
+                                    drawRect(
+                                        color = color,
+                                        topLeft = Offset(0f, top),
+                                        size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
+                                    )
+
+                                }
+                            }
+                    )
+                    // R Column: Article Names
+                    Box(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .fillMaxHeight()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp)
+                        ) {
+                            for (sectionIndex in 0 until sectionsDonsChaqueImage) {
+                                val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
+                                val article = filteredAndSortedArticles.getOrNull(articleIndex)
+
+                                article?.let {
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                selectedArticle = it
+                                                val currentTime = System.currentTimeMillis()
+                                                if (currentTime - lastLaunchTime > 1000) {
+                                                    lastLaunchTime = currentTime
+                                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                                    }
+                                                    speechRecognizerLauncher.launch(intent)
+                                                }
+                                            },
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            AutoResizeText(
+                                                text = it.nomArticleBG,
+                                                color = Color.Black,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                 }
 
                 when (painter.state) {
@@ -291,6 +344,7 @@ fun DessinableImage(
             }
         )
     }
+
     if (showSuggestions) {
         AlertDialog(
             onDismissRequest = { showSuggestions = false },
@@ -344,6 +398,7 @@ fun DessinableImage(
         )
     }
 }
+
 @Composable
 fun AutoResizeText(
     text: String,
