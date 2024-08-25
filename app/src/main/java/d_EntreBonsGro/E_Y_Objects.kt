@@ -4,7 +4,6 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import android.speech.RecognizerIntent
 import android.widget.Toast
@@ -13,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -45,8 +45,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +58,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -89,38 +86,23 @@ fun DessinableImage(
     suggestionsList: List<String>,
     articleDao: ArticleDao,
     coroutineScope: CoroutineScope,
-    showOutline: Boolean
+    showOutline: Boolean,
+    showDialogeNbrIMGs: Boolean,
+    onDissmiss: () -> Unit
 ) {
     val filteredAndSortedArticles = articlesEntreBonsGrosTabele
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
-
-    var nmbrImagesDuBon by remember { mutableIntStateOf(1) }
+    var nmbrImagesDuBon by remember { mutableIntStateOf(6) }
     var sectionsDonsChaqueImage by remember { mutableIntStateOf(10) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
-    var showDialog by remember { mutableStateOf(false) }
     var showOutlineDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val configuration = LocalConfiguration.current
-    val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    // Add a rotation counter
-    var rotationCounter by remember { mutableIntStateOf(0) }
 
-    // Use DisposableEffect to increment the rotation counter when the configuration changes
-    DisposableEffect(configuration) {
-        rotationCounter++
-        onDispose { }
-    }
 
-    // Modify the LaunchedEffect to use the supplier ID and rotation counter
-    LaunchedEffect(founisseurIdNowIs, rotationCounter) {
-        if (rotationCounter == 1 || founisseurIdNowIs != null) {
-            showDialog = true
-        }
-    }
 
     var selectedArticle by remember { mutableStateOf<EntreBonsGrosTabele?>(null) }
     var lastLaunchTime by remember { mutableStateOf(0L) }
@@ -248,7 +230,7 @@ fun DessinableImage(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             AutoResizeText(
-                                                text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG} = ${it.subTotaleBG}",
+                                                text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}/*todo FAIT que le sutotale soit au bas */ = ${it.subTotaleBG}",
                                                 color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
                                                 textAlign = TextAlign.Center,
                                                 modifier = Modifier.fillMaxWidth()
@@ -306,6 +288,7 @@ fun DessinableImage(
                                         modifier = Modifier
                                             .weight(1f)
                                             .fillMaxWidth()
+                                            .padding(vertical = 2.dp)
                                             .clickable {
                                                 if (showOutline) {
                                                     selectedArticle = it
@@ -326,25 +309,48 @@ fun DessinableImage(
                                             },
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(4.dp),
+                                            verticalArrangement = Arrangement.Center
                                         ) {
+                                            val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == it.idArticleBG }
+
                                             AutoResizeText(
                                                 text = it.nomArticleBG,
                                                 color = Color.Black,
                                                 textAlign = TextAlign.Center,
-                                                modifier = Modifier.fillMaxWidth()
+                                                modifier = Modifier.fillMaxWidth(),
+                                                maxLines = 2
                                             )
+
+                                            relatedArticle?.let { related ->
+                                                AutoResizeText(
+                                                    text = related.nomArab ?: "",
+                                                    color = Color.Gray,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    maxLines = 1
+                                                )
+
+                                                Text(
+                                                    text = "${related.nmbrUnite}",
+                                                    color = Color.Black,
+                                                    textAlign = TextAlign.End,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(top = 2.dp),
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-
                 }
-
                 when (painter.state) {
                     is AsyncImagePainter.State.Loading -> {
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -373,12 +379,12 @@ fun DessinableImage(
         )
     }
 
-    if (showDialog) {
+    if (showDialogeNbrIMGs) {
         ImageCountDialog(
-            onDismiss = { showDialog = false },
+            onDismiss = onDissmiss,
             onSelectCount = { count ->
                 nmbrImagesDuBon = count
-                showDialog = false
+                onDissmiss()
             }
         )
     }
@@ -454,7 +460,7 @@ fun DessinableImage(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showDialog = false }) {
+                TextButton(onClick = onDissmiss) {
                     Text("Fermer")
                 }
             }

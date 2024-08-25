@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DinnerDining
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.ImagesearchRoller
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -112,6 +113,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     var showOutline by remember { mutableStateOf(false) }
     var showDivider by remember { mutableStateOf(true) }
+    var showDialogeNbrIMGs by remember { mutableStateOf(true) }
 
 
     LaunchedEffect(Unit) {
@@ -328,6 +330,16 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
                         )
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    FloatingActionButton(
+                        onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
+                    ) {
+                        Icon(
+                            imageVector = if (showDialogeNbrIMGs) Icons.Default.ImagesearchRoller else Icons.Default.Close,
+                            contentDescription = if (showDialogeNbrIMGs) "Hide Outline" else "Show Outline"
+                        )
+                    }
                 }
             } else {
                 Column {
@@ -419,12 +431,14 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         founisseurIdNowIs =founisseurIdNowIs,
                         soquetteBonNowIs = founisseurNowIs,
                         showDiviseurDesSections=showDivider,
-                         articlesRef = articlesRef,
+                        articlesRef = articlesRef,
                         baseDonneRef=baseDonneRef,
                         suggestionsList=suggestionsList,
                         articleDao=articleDao,
                         coroutineScope=coroutineScope,
                         showOutline=showOutline,
+                        showDialogeNbrIMGs=showDialogeNbrIMGs,
+                        onDissmiss = { showDialogeNbrIMGs = false }
                     )
                 }
                 showSplitView -> {
@@ -443,6 +457,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             articleDao=articleDao,
                             coroutineScope=coroutineScope,
                             showOutline = showOutline,
+                            showDialogeNbrIMGs = showDialogeNbrIMGs,
+                            onDissmiss = { showDialogeNbrIMGs = false },
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
