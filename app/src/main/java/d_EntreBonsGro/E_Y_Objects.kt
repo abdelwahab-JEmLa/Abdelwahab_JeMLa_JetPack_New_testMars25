@@ -1,10 +1,12 @@
 package d_EntreBonsGro
 
 
+import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.speech.RecognizerIntent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -20,15 +22,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,11 +53,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import b_Edite_Base_Donne.ArticleDao
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
+import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun DessinableImage(
@@ -63,6 +73,12 @@ fun DessinableImage(
     showDivider: Boolean,
     articlesRef: DatabaseReference,
     coroutineScope: CoroutineScope,
+    baseDonneRef: DatabaseReference,
+    articlesBaseDonne: List<BaseDonne>,
+    suppliersList: List<SupplierTabelle>,
+    suggestionsList: List<String>,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articleDao: ArticleDao
 ) {
     val filteredAndSortedArticles = articles
         .filter { it.supplierIdBG == founisseurIdNowIs }
@@ -82,17 +98,68 @@ fun DessinableImage(
 
     var selectedArticle by remember { mutableStateOf<EntreBonsGrosTabele?>(null) }
     var lastLaunchTime by remember { mutableStateOf(0L) }
+    var showSuggestions by remember { mutableStateOf(false) }
+    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+
+    var isRecognizing by remember { mutableStateOf(false) }
+
+    fun processVoiceInput(input: String) {
+        if (input.contains("+")) {
+            selectedArticle?.let {
+                updateQuantuPrixArticleDI(input, it, articlesRef, coroutineScope)
+            }
+        } else if (input.contains("تغيير")) {
+            val newArabName = input.substringAfter("تغيير").trim()
+            coroutineScope.launch {
+                selectedArticle?.let { article ->
+                    baseDonneRef.child(article.idArticleBG.toString()).child("nomArab").setValue(newArabName)
+                    articleDao.updateArticleArabName(article.idArticleBG, newArabName)
+                }
+            }
+        } else {
+            val cleanInput = input.replace(".", "").toLowerCase()
+            filteredSuggestions = suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
+
+            when {
+                filteredSuggestions.size == 1 -> {
+                    updateArticleIdFromSuggestionDI(
+                        suggestion = filteredSuggestions[0],
+                        selectedArticle = selectedArticle?.vidBG,
+                        articlesRef = articlesRef,
+                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                        articlesBaseDonne = articlesBaseDonne,
+                        onNameInputComplete = { /* Implement if needed */ },
+                        editionPassedMode = false,
+                        articlesEntreBonsGrosTabele = articles,
+                        coroutineScope = coroutineScope
+                    )
+                }
+                filteredSuggestions.isEmpty() -> {
+                    val filteredSuggestions3Sentence = suggestionsList.filter {
+                        it.replace(".", "").toLowerCase().contains(cleanInput.take(3))
+                    }
+                    showSuggestions = true
+                    filteredSuggestions = filteredSuggestions3Sentence
+                }
+                else -> {
+                    showSuggestions = true
+                }
+            }
+        }
+    }
+
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        isRecognizing = false
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText: String? =
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
-                selectedArticle?.let { article ->
-                    updateQuantuPrixArticleDI(it, article, articlesRef, coroutineScope)
-                }
+                processVoiceInput(it)
             }
+        } else {
+            Toast.makeText(context, "La reconnaissance vocale a échoué. Veuillez réessayer.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -133,6 +200,7 @@ fun DessinableImage(
                                 }
                             }
                     )
+
 
                     Box(
                         modifier = Modifier
@@ -220,6 +288,58 @@ fun DessinableImage(
             onSelectCount = { count ->
                 nmbrImagesDuBon = count
                 showDialog = false
+            }
+        )
+    }
+    if (showSuggestions) {
+        AlertDialog(
+            onDismissRequest = { showSuggestions = false },
+            title = { Text("Suggestions") },
+            text = {
+                LazyColumn {
+                    items(filteredSuggestions) { suggestion ->
+                        val randomColor = Color(
+                            red = (0..255).random(),
+                            green = (0..255).random(),
+                            blue = (0..255).random()
+                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = randomColor
+                            )
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    updateArticleIdFromSuggestionDI(
+                                        suggestion = suggestion,
+                                        selectedArticle = selectedArticle?.vidBG,
+                                        articlesRef = articlesRef,
+                                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                                        articlesBaseDonne = articlesBaseDonne,
+                                        onNameInputComplete = { /* Implement if needed */ },
+                                        editionPassedMode = false,
+                                        articlesEntreBonsGrosTabele = articles,
+                                        coroutineScope = coroutineScope
+                                    )
+                                    showSuggestions = false
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(suggestion)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSuggestions = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }

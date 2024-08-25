@@ -135,7 +135,9 @@ fun updateArticleIdFromSuggestion(
     onNameInputComplete: () -> Unit,
     editionPassedMode: Boolean,
     articlesList: List<EntreBonsGrosTabele>,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    selectedArticle: Long?,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>
 ) {
     val effectiveVid = if (editionPassedMode) {
         articlesList.firstOrNull { it.passeToEndStateBG }?.vidBG ?: vidOfLastQuantityInputted

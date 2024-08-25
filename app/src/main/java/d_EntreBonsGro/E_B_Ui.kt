@@ -169,7 +169,9 @@ fun OutlineInput(
                                 onNameInputComplete,
                                 editionPassedMode,
                                 articlesList,
-                                coroutineScope = coroutineScope
+                                coroutineScope = coroutineScope,
+                                selectedArticle,
+                                articlesEntreBonsGrosTabele
                             )
                             onInputChange("")
                             showDropdown = false
