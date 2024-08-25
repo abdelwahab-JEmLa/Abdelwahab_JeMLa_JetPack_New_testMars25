@@ -155,37 +155,37 @@ fun ZoomableImage(
                     }
             )
 
-            // Add clickable boxes for each section
+
             Column(modifier = Modifier.fillMaxSize()) {
                 filteredAndSortedArticles.forEachIndexed { index, article ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
-                            .clickable {
-                                val currentTime = System.currentTimeMillis()
-                                if (currentTime - lastLaunchTime > 1000) {
-                                    lastLaunchTime = currentTime
-                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                        )
-                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_PROMPT,
-                                            "Parlez maintenant pour mettre à jour cet article..."
-                                        )
-                                    }
-                                    speechRecognizerLauncher.launch(intent)
-                                }
-                            },
-                        contentAlignment = Alignment.TopCenter
+                            .weight(1f),
+                        contentAlignment = Alignment.BottomEnd // Changed to BottomEnd
                     ) {
                         Card(
                             modifier = Modifier
-                                .padding(top = 2.dp)
-                                .wrapContentSize(),
+                                .padding(end = 8.dp, bottom = 2.dp) // Added end padding
+                                .wrapContentSize()
+                                .clickable {
+                                    val currentTime = System.currentTimeMillis()
+                                    if (currentTime - lastLaunchTime > 1000) {
+                                        lastLaunchTime = currentTime
+                                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                            putExtra(
+                                                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                            )
+                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                            putExtra(
+                                                RecognizerIntent.EXTRA_PROMPT,
+                                                "Parlez maintenant pour mettre à jour cet article..."
+                                            )
+                                        }
+                                        speechRecognizerLauncher.launch(intent)
+                                    }
+                                },
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Row(
@@ -210,7 +210,6 @@ fun ZoomableImage(
                     }
                 }
             }
-
             when (painter.state) {
                 is AsyncImagePainter.State.Loading -> {
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
