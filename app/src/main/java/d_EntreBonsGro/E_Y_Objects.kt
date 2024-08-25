@@ -83,6 +83,7 @@ fun ZoomableImage(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         // Handle speech recognition result here
+        // You can add your speech recognition logic here
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -156,8 +157,8 @@ fun ZoomableImage(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height((imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
-                                        .offset(y = (index * imageSize.height / filteredAndSortedArticles.size).dp.coerceAtMost(1000.dp))
+                                        .height((imageSize.height / sectionsDonsChaqueImage).dp.coerceAtMost(1000.dp))
+                                        .offset(y = (index * imageSize.height / sectionsDonsChaqueImage).dp.coerceAtMost(1000.dp))
                                         .border(2.dp, Color.Red)
                                         .clickable {
                                             val currentTime = System.currentTimeMillis()
@@ -173,49 +174,48 @@ fun ZoomableImage(
                                         }
                                 )
                             }
-                        }
-                    }
-                }
 
-                // Informationboxessection as a large row overlay
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(Color.White.copy(alpha = 0.7f))
-                ) {
-                    filteredAndSortedArticles.take(sectionsDonsChaqueImage).forEach { article ->
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(4.dp)
-                        ) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            // Information boxes section as a row overlay
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height((imageSize.height / sectionsDonsChaqueImage).dp.coerceAtMost(1000.dp))
+                                    .offset(y = (index * imageSize.height / sectionsDonsChaqueImage).dp.coerceAtMost(1000.dp))
+                                    .background(Color.White.copy(alpha = 0.7f))
                             ) {
-                                Column(
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 2.dp, vertical = 4.dp),
-                                    verticalArrangement = Arrangement.Center
+                                        .weight(1f)
+                                        .padding(4.dp)
                                 ) {
-                                    Text(
-                                        "${article.quantityAcheteBG}",
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                    Text(
-                                        " X ${article.newPrixAchatBG}",
-                                        color = if ((article.newPrixAchatBG - article.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                    Text(
-                                        " =(${article.subTotaleBG})",
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 2.dp, vertical = 4.dp),
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                "${article.quantityAcheteBG}",
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            Text(
+                                                " X ${article.newPrixAchatBG}",
+                                                color = if ((article.newPrixAchatBG - article.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            Text(
+                                                " =(${article.subTotaleBG})",
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -224,13 +224,15 @@ fun ZoomableImage(
             }
 
             // Tree count control (only visible in portrait mode)
-            TreeCountControl(
-                isPortrait,
-                sectionsDonsChaqueImage,
-                filteredAndSortedArticles,
-                founisseurIdNowIs
-            ) { newCount ->
-                sectionsDonsChaqueImage = newCount
+            if (isPortrait) {
+                TreeCountControl(
+                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                    filteredAndSortedArticles = filteredAndSortedArticles,
+                    founisseurIdNowIs = founisseurIdNowIs,
+                    onCountChange = { newCount ->
+                        sectionsDonsChaqueImage = newCount
+                    }
+                )
             }
         }
 
@@ -247,6 +249,40 @@ fun ZoomableImage(
     }
 }
 
+@Composable
+private fun TreeCountControl(
+    sectionsDonsChaqueImage: Int,
+    filteredAndSortedArticles: List<EntreBonsGrosTabele>,
+    founisseurIdNowIs: Long?,
+    onCountChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("sections count: $sectionsDonsChaqueImage")
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(onClick = {
+            if (sectionsDonsChaqueImage > 1) {
+                onCountChange(sectionsDonsChaqueImage - 1)
+                if (filteredAndSortedArticles.isNotEmpty()) {
+                    deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
+                }
+            }
+        }) {
+            Text("-")
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(onClick = {
+            onCountChange(sectionsDonsChaqueImage + 1)
+            createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
+        }) {
+            Text("+")
+        }
+    }
+}
 @Composable
 fun ImageCountDialog(
     onDismiss: () -> Unit,
