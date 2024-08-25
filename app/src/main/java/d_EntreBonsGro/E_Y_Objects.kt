@@ -201,11 +201,22 @@ fun DessinableImage(
                             }
                     )
 
-
                     Box(
                         modifier = Modifier
                             .weight(0.2f)
                             .fillMaxHeight()
+                            .clickable {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastLaunchTime > 1000) {
+                                    lastLaunchTime = currentTime
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                    }
+                                    speechRecognizerLauncher.launch(intent)
+                                }
+                            }
                     ) {
                         Column(
                             modifier = Modifier
@@ -220,20 +231,7 @@ fun DessinableImage(
                                     Card(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                selectedArticle = it
-                                                val currentTime = System.currentTimeMillis()
-                                                if (currentTime - lastLaunchTime > 1000) {
-                                                    lastLaunchTime = currentTime
-                                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                                    }
-                                                    speechRecognizerLauncher.launch(intent)
-                                                }
-                                            },
+                                            .fillMaxWidth(),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Box(
