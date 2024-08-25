@@ -33,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,12 @@ fun ZoomableImage(
 
     var sectionsDonsChaqueImage by remember { mutableStateOf(filteredAndSortedArticles.size) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    // Trigger dialog when founisseurIdNowIs changes
+    LaunchedEffect(founisseurIdNowIs) {
+        showDialog = true
+    }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -96,7 +103,7 @@ fun ZoomableImage(
                         modifier = Modifier.fillMaxSize(),
                         state = rememberLazyListState()
                     ) {
-                        itemsIndexed(filteredAndSortedArticles) { index, article ->
+                        itemsIndexed(filteredAndSortedArticles.take(sectionsDonsChaqueImage)) { index, article ->
                             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${index + 1}).jpg"
                             Log.d("ZoomableImage", "Attempting to load image: $imagePath")
 
@@ -176,13 +183,14 @@ fun ZoomableImage(
                     }
                 }
 
+
                 // Information boxes section (30% of screen width)
                 LazyColumn(
                     modifier = Modifier
                         .weight(0.3f)
                         .fillMaxHeight()
                 ) {
-                    itemsIndexed(filteredAndSortedArticles) { index, article ->
+                    itemsIndexed(filteredAndSortedArticles.take(sectionsDonsChaqueImage)) { index, article ->
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -240,24 +248,68 @@ fun ZoomableImage(
             }
 
             // Tree count control (only visible in portrait mode)
-            treeCountControl(
+            TreeCountControl(
                 isPortrait,
                 sectionsDonsChaqueImage,
                 filteredAndSortedArticles,
                 founisseurIdNowIs
+            ) { newCount ->
+                sectionsDonsChaqueImage = newCount
+            }
+        }
+
+        // Dialog for selecting the number of images
+        if (showDialog) {
+            ImageCountDialog(
+                onDismiss = { showDialog = false },
+                onSelectCount = { count ->
+                    sectionsDonsChaqueImage = count
+                    showDialog = false
+                }
             )
         }
     }
 }
 
 @Composable
-private fun treeCountControl(
+fun ImageCountDialog(
+    onDismiss: () -> Unit,
+    onSelectCount: (Int) -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Number of Images") },
+        text = {
+            Column {
+                for (count in 1..5) {
+                    Button(
+                        onClick = { onSelectCount(count) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Text("$count")
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun TreeCountControl(
     isPortrait: Boolean,
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
-    founisseurIdNowIs: Long?
+    founisseurIdNowIs: Long?,
+    onCountChange: (Int) -> Unit
 ) {
-    var sectionsDonsChaqueImage1 = sectionsDonsChaqueImage
     if (isPortrait) {
         Row(
             modifier = Modifier
@@ -265,11 +317,11 @@ private fun treeCountControl(
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("sections count: $sectionsDonsChaqueImage1")
+            Text("sections count: $sectionsDonsChaqueImage")
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
-                if (sectionsDonsChaqueImage1 > 0) {
-                    sectionsDonsChaqueImage1--
+                if (sectionsDonsChaqueImage > 1) {
+                    onCountChange(sectionsDonsChaqueImage - 1)
                     if (filteredAndSortedArticles.isNotEmpty()) {
                         deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
                     }
@@ -279,7 +331,7 @@ private fun treeCountControl(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
-                sectionsDonsChaqueImage1++
+                onCountChange(sectionsDonsChaqueImage + 1)
                 createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
             }) {
                 Text("+")
@@ -287,7 +339,6 @@ private fun treeCountControl(
         }
     }
 }
-
 fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Long?) {
     val newVid = (articles.maxOfOrNull { it.vidBG } ?: 0) + 1
     val currentDate = LocalDate.now().toString()
