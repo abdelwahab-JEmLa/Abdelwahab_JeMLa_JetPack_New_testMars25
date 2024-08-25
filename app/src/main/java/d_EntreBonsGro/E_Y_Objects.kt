@@ -90,7 +90,7 @@ fun DessinableImage(
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             spokenText?.let {
                 selectedArticle?.let { article ->
-                    updateSpecificArticleDI(it, article, articlesRef, coroutineScope)
+                    updateQuantuPrixArticleDI(it, article, articlesRef, coroutineScope)
                 }
             }
         }
