@@ -11,7 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -48,7 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -177,59 +175,32 @@ fun DessinableImage(
                     .height(IntrinsicSize.Min)
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    Box(
+                    Image(
+                        painter = painter,
+                        contentDescription = "Image for supplier section ${imageIndex + 1}",
+                        contentScale = ContentScale.FillWidth,
                         modifier = Modifier
                             .weight(0.8f)
                             .height(400.dp)
                             .onSizeChanged { if (imageIndex == 0) imageSize = it }
-                    ) {
-                        Image(
-                            painter = painter,
-                            contentDescription = "Image for supplier section ${imageIndex + 1}",
-                            contentScale = ContentScale.FillWidth,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .drawWithContent {
-                                    drawContent()
-                                    val redColor = Color.Red.copy(alpha = 0.3f)
-                                    val blueColor = Color.Blue.copy(alpha = 0.3f)
-                                    for (i in 0 until sectionsDonsChaqueImage) {
-                                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                                        val color = if (i % 2 == 0) redColor else blueColor
-                                        drawRect(
-                                            color = color,
-                                            topLeft = Offset(0f, top),
-                                            size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
-                                        )
-                                    }
+                            .drawWithContent {
+                                drawContent()
+                                val redColor = Color.Red.copy(alpha = 0.3f)
+                                val blueColor = Color.Blue.copy(alpha = 0.3f)
+                                for (i in 0 until sectionsDonsChaqueImage) {
+                                    val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                                    val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                                    val color = if (i % 2 == 0) redColor else blueColor
+                                    drawRect(
+                                        color = color,
+                                        topLeft = Offset(0f, top),
+                                        size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
+                                    )
                                 }
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .pointerInput(Unit) {
-                                    detectTapGestures { offset ->
-                                        val clickedSectionIndex = (offset.y / size.height * sectionsDonsChaqueImage).toInt()
-                                        val articleIndex = imageIndex * sectionsDonsChaqueImage + clickedSectionIndex
-                                        selectedArticle = filteredAndSortedArticles.getOrNull(articleIndex)
+                            }
 
-                                        selectedArticle?.let {
-                                            val currentTime = System.currentTimeMillis()
-                                            if (currentTime - lastLaunchTime > 1000) {
-                                                lastLaunchTime = currentTime
-                                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                                }
-                                                speechRecognizerLauncher.launch(intent)
-                                            }
-                                        }
-                                    }
-                                }
-                        )
-                    }
+                    )
+
                     Box(
                         modifier = Modifier
                             .weight(0.2f)
