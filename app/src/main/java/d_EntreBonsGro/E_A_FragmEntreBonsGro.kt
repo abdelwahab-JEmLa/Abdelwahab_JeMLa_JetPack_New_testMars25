@@ -174,123 +174,130 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         articlesEntreBonsGrosTabele = updatedList
     }
 
+
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val filteredArticles = articlesEntreBonsGrosTabele
-                            .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
-                        val totalSum = filteredArticles.sumOf { it.subTotaleBG }
-                        val articleCount = filteredArticles.size
-                        val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
-                        val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
-                        Text(
-                            text = "$articleCount articles - $supplierName: %.2f".format(totalSum),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = Color(android.graphics.Color.parseColor(
-                        suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.couleurSu ?: "#FFFFFF"
-                    )),
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-                actions = {}
-            )
+            if (isPortraitLandscap) {
+                TopAppBar(
+                    title = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            val filteredArticles = articlesEntreBonsGrosTabele
+                                .filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs }
+                            val totalSum = filteredArticles.sumOf { it.subTotaleBG }
+                            val articleCount = filteredArticles.size
+                            val supplier = suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }
+                            val supplierName = supplier?.nomSupplierSu ?: "All Suppliers"
+                            Text(
+                                text = "$articleCount articles - $supplierName: %.2f".format(totalSum),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(
+                        containerColor = Color(android.graphics.Color.parseColor(
+                            suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.couleurSu ?: "#FFFFFF"
+                        )),
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    actions = {}
+                )
+            }
         },
         bottomBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        when {
-                            showFullImage -> {
-                                showFullImage = false
-                                showSplitView = true
-                            }
-                            showSplitView -> showSplitView = false
-                            else -> showFullImage = true
-                        }
-                        modeFilterChangesDB = false
-                    },
-                    modifier = Modifier.weight(0.1f)
+            if (isPortraitLandscap) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = when {
-                            showFullImage -> Icons.AutoMirrored.Filled.List
-                            showSplitView -> Icons.AutoMirrored.Filled.List
-                            else -> Icons.Default.Image
+                    IconButton(
+                        onClick = {
+                            when {
+                                showFullImage -> {
+                                    showFullImage = false
+                                    showSplitView = true
+                                }
+                                showSplitView -> showSplitView = false
+                                else -> showFullImage = true
+                            }
+                            modeFilterChangesDB = false
                         },
-                        contentDescription = when {
-                            showFullImage -> "Show Split View"
-                            showSplitView -> "Hide Image"
-                            else -> "Show Image"
-                        },
-                        tint = when {
-                            showFullImage -> Color.Red
-                            showSplitView -> Color.Yellow
-                            else -> MaterialTheme.colorScheme.onPrimary
-                        }
-                    )
-                }
+                        modifier = Modifier.weight(0.1f)
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                showFullImage -> Icons.AutoMirrored.Filled.List
+                                showSplitView -> Icons.AutoMirrored.Filled.List
+                                else -> Icons.Default.Image
+                            },
+                            contentDescription = when {
+                                showFullImage -> "Show Split View"
+                                showSplitView -> "Hide Image"
+                                else -> "Show Image"
+                            },
+                            tint = when {
+                                showFullImage -> Color.Red
+                                showSplitView -> Color.Yellow
+                                else -> MaterialTheme.colorScheme.onPrimary
+                            }
+                        )
+                    }
 
-                OutlineQuichangeLeTotaleProvisoire(
-                    founisseurIdNowIs,
-                    articlesEntreBonsGrosTabele,
-                    founisseurNowIs,
-                    modifier = Modifier.weight(0.7f)
-                )
+                    OutlineQuichangeLeTotaleProvisoire(
+                        founisseurIdNowIs,
+                        articlesEntreBonsGrosTabele,
+                        founisseurNowIs,
+                        modifier = Modifier.weight(0.7f)
+                    )
 
-                IconButton(onClick = { showSupplierDialog = true },
-                    modifier = Modifier.weight(0.1f)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Select Supplier"
-                    )
-                }
-                IconButton(onClick = { showActionsDialog = true },
-                    modifier = Modifier.weight(0.1f)) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More actions"
-                    )
+                    IconButton(onClick = { showSupplierDialog = true },
+                        modifier = Modifier.weight(0.1f)) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.List,
+                            contentDescription = "Select Supplier"
+                        )
+                    }
+                    IconButton(onClick = { showActionsDialog = true },
+                        modifier = Modifier.weight(0.1f)) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More actions"
+                        )
+                    }
                 }
             }
         },
         floatingActionButton = {
-            VoiceInputButton(
-                articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
-                articlesRef = articlesRef,
-                baseDonneRef = baseDonneRef,
-                founisseurNowIs = founisseurNowIs,
-                articlesBaseDonne = articlesBaseDonne,
-                suppliersList = suppliersList,
-                suggestionsList = suggestionsList,
-                onInputProcessed = { newVid ->
-                    if (newVid != null) {
-                        vidOfLastQuantityInputted = newVid
-                        nowItsNameInputeTime = true
-                    }
-                    inputText = ""
-                },
-                updateArticleIdFromSuggestion = ::updateArticleIdFromSuggestion,
-                vidOfLastQuantityInputted = vidOfLastQuantityInputted,
-                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                editionPassedMode = editionPassedMode,
-                coroutineScope = coroutineScope,
-                articleDao = articleDao
-            )
+            if (isPortraitLandscap) {
+                VoiceInputButton(
+                    articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                    articlesRef = articlesRef,
+                    baseDonneRef = baseDonneRef,
+                    founisseurNowIs = founisseurNowIs,
+                    articlesBaseDonne = articlesBaseDonne,
+                    suppliersList = suppliersList,
+                    suggestionsList = suggestionsList,
+                    onInputProcessed = { newVid ->
+                        if (newVid != null) {
+                            vidOfLastQuantityInputted = newVid
+                            nowItsNameInputeTime = true
+                        }
+                        inputText = ""
+                    },
+                    updateArticleIdFromSuggestion = ::updateArticleIdFromSuggestion,
+                    vidOfLastQuantityInputted = vidOfLastQuantityInputted,
+                    articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                    editionPassedMode = editionPassedMode,
+                    coroutineScope = coroutineScope,
+                    articleDao = articleDao
+                )
+            }
         },
-        floatingActionButtonPosition = FabPosition.Start
-    )
-{ innerPadding ->
+        floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End
+    ){ innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
