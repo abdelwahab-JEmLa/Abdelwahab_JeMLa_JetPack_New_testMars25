@@ -1,7 +1,6 @@
 package d_EntreBonsGro
 
 
-import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -37,7 +36,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -52,9 +50,9 @@ fun ZoomableImage(
     founisseurIdNowIs: Long?,
     articles: List<EntreBonsGrosTabele>,
     soquetteBonNowIs: Int?,
+    isPortraitLandscap: Boolean,
 ) {
-    val configuration = LocalConfiguration.current
-    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
 
     val filteredAndSortedArticles = articles
         .filter { it.supplierIdBG == founisseurIdNowIs }
@@ -127,8 +125,7 @@ fun ZoomableImage(
                                     Card(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .fillMaxWidth()
-                                            .padding(vertical = 2.dp),
+                                            .fillMaxWidth(),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Box(
@@ -166,7 +163,7 @@ fun ZoomableImage(
         }
     }
 
-    if (isPortrait) {
+    if (isPortraitLandscap) {
         TreeCountControl(
             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             filteredAndSortedArticles = filteredAndSortedArticles,
