@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -130,41 +131,44 @@ fun ZoomableImage(
                 }
 
                 // Display article information
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(4.dp)
                 ) {
-                    for (sectionIndex in 0 until sectionsDonsChaqueImage) {
-                        val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
-                        val article = filteredAndSortedArticles.getOrNull(articleIndex)
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        for (sectionIndex in 0 until sectionsDonsChaqueImage) {
+                            val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
+                            val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
-                        ) {
-                            article?.let {
-                                Card(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .fillMaxWidth(0.7f) // Utilise 70% de la largeur disponible
-                                        .height(40.dp), // Hauteur fixe pour chaque carte
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                ) {
-                                    Row(
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                            ) {
+                                article?.let {
+                                    Card(
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(horizontal = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                            .align(Alignment.BottomEnd)
+                                            .fillMaxWidth(0.5f)
+                                            .fillMaxHeight(1f)
+                                            .padding(2.dp),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
-                                        AutoResizeText(
-                                            text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG} = ${it.subTotaleBG}",
-                                            color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                            textAlign = TextAlign.End,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            AutoResizeText(
+                                                text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG} = ${it.subTotaleBG}",
+                                                color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
                                     }
                                 }
                             }
