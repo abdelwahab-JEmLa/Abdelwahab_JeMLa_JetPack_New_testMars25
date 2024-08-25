@@ -4,12 +4,14 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,16 +28,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -45,10 +55,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -61,6 +73,7 @@ import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteMode
 import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun DessinableImage(
@@ -70,7 +83,6 @@ fun DessinableImage(
     articlesBaseDonne: List<BaseDonne>,
     founisseurIdNowIs: Long?,
     soquetteBonNowIs: Int?,
-    isPortraitLandscap: Boolean,
     showDiviseurDesSections: Boolean,
     articlesRef: DatabaseReference,
     baseDonneRef: DatabaseReference,
@@ -87,12 +99,27 @@ fun DessinableImage(
     var sectionsDonsChaqueImage by remember { mutableIntStateOf(10) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
     var showDialog by remember { mutableStateOf(false) }
+    var showOutlineDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val configuration = LocalConfiguration.current
+    val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    LaunchedEffect(founisseurIdNowIs, isPortraitLandscap) {
-        showDialog = true
+    // Add a rotation counter
+    var rotationCounter by remember { mutableIntStateOf(0) }
+
+    // Use DisposableEffect to increment the rotation counter when the configuration changes
+    DisposableEffect(configuration) {
+        rotationCounter++
+        onDispose { }
+    }
+
+    // Modify the LaunchedEffect to use the supplier ID and rotation counter
+    LaunchedEffect(founisseurIdNowIs, rotationCounter) {
+        if (rotationCounter == 1 || founisseurIdNowIs != null) {
+            showDialog = true
+        }
     }
 
     var selectedArticle by remember { mutableStateOf<EntreBonsGrosTabele?>(null) }
@@ -197,16 +224,21 @@ fun DessinableImage(
                                             .weight(1f)
                                             .fillMaxWidth()
                                             .clickable {
-                                                selectedArticle = it
-                                                val currentTime = System.currentTimeMillis()
-                                                if (currentTime - lastLaunchTime > 1000) {
-                                                    lastLaunchTime = currentTime
-                                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                                if (showOutline) {
+                                                    selectedArticle = it
+                                                    showOutlineDialog = true
+                                                } else {
+                                                    selectedArticle = it
+                                                    val currentTime = System.currentTimeMillis()
+                                                    if (currentTime - lastLaunchTime > 1000) {
+                                                        lastLaunchTime = currentTime
+                                                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                                        }
+                                                        speechRecognizerLauncher.launch(intent)
                                                     }
-                                                    speechRecognizerLauncher.launch(intent)
                                                 }
                                             },
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -398,8 +430,151 @@ fun DessinableImage(
             }
         )
     }
+    if (showOutlineDialog) {
+        AlertDialog(
+            onDismissRequest = { showOutlineDialog = false },
+            title = { Text("Modifier l'article") },
+            text = {
+                selectedArticle?.let { article ->
+                    OutlineInputDI(
+                        inputText = "",
+                        articlesList = articlesEntreBonsGrosTabele,
+                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                        articlesBaseDonne = articlesBaseDonne,
+                        suggestionsList = suggestionsList,
+                        articlesRef = articlesRef,
+                        coroutineScope = coroutineScope,
+                        selectedArticle = article.vidBG
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Fermer")
+                }
+            }
+        )
+    }
 }
+@Composable
+fun OutlineInputDI(
+    inputText: String,
+    articlesList: List<EntreBonsGrosTabele>,
+    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
+    articlesBaseDonne: List<BaseDonne>,
+    suggestionsList: List<String>,
+    articlesRef: DatabaseReference,
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope,
+    selectedArticle: Long
+) {
+    var showDropdown by remember { mutableStateOf(false) }
+    var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var textFieldFocused by remember { mutableStateOf(false) }
+    var currentInputText by remember { mutableStateOf(inputText) }
 
+    val selectedArticleData = articlesList.find { it.vidBG == selectedArticle }
+
+    Column(modifier = modifier) {
+        Box {
+            OutlinedTextField(
+                value = currentInputText,
+                onValueChange = { newValue ->
+                    currentInputText = newValue
+                    if (newValue.length >= 3) {
+                        val cleanInput = newValue.replace(".", "").toLowerCase()
+                        filteredSuggestions = suggestionsList.asSequence().filter { suggestion ->
+                            val cleanSuggestion = suggestion.replace(".", "").toLowerCase(Locale.ROOT)
+                            if (isArabicDI(cleanInput)) {
+                                cleanSuggestion.contains(cleanInput.take(3))
+                            } else {
+                                cleanSuggestion.contains(cleanInput)
+                            }
+                        }.take(10).toList()
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    } else {
+                        filteredSuggestions = emptyList()
+                        showDropdown = false
+                    }
+                },
+                label = {
+                    Text(
+                        when {
+                            currentInputText.isEmpty() && selectedArticleData != null -> {
+                                val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == selectedArticleData.idArticleBG }
+                                val nomArabe = baseDonneArticle?.nomArab ?: ""
+                                "Quantity: ${selectedArticleData.quantityAcheteBG} x ${selectedArticleData.newPrixAchatBG} (${selectedArticleData.nomArticleBG}) $nomArabe"
+                            }
+                            currentInputText.isEmpty() -> "Entrer quantité et prix"
+                            else -> currentInputText
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        textFieldFocused = focusState.isFocused
+                        showDropdown = filteredSuggestions.isNotEmpty() && textFieldFocused
+                    },
+                trailingIcon = {
+                    if (currentInputText.isNotEmpty()) {
+                        IconButton(onClick = { currentInputText = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear input")
+                        }
+                    }
+                }
+            )
+
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { showDropdown = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                filteredSuggestions.forEach { suggestion ->
+                    DropdownMenuItem(
+                        text = { Text(suggestion) },
+                        onClick = {
+                            updateArticleIdFromSuggestionDI(
+                                suggestion = suggestion,
+                                selectedArticle = selectedArticle,
+                                articlesRef = articlesRef,
+                                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                                articlesBaseDonne = articlesBaseDonne,
+                                onNameInputComplete = {
+                                    currentInputText = ""
+                                    showDropdown = false
+                                },
+                                editionPassedMode = false,
+                                articlesEntreBonsGrosTabele = articlesList,
+                                coroutineScope = coroutineScope
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = {
+                if (selectedArticleData != null) {
+                    updateQuantuPrixArticleDI(currentInputText, selectedArticleData, articlesRef, coroutineScope)
+                    currentInputText = ""
+                }
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Update")
+        }
+    }
+}
+// Helper function to check if a string contains Arabic characters
+fun isArabicDI(text: String): Boolean {
+    return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
+}
 @Composable
 fun AutoResizeText(
     text: String,

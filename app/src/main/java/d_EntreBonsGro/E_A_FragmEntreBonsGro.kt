@@ -360,7 +360,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            if (showOutline) {
+            if (false) {
                 OutlineInput(
                     inputText = inputText,
                     onInputChange = { newValue ->
@@ -418,7 +418,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         articlesBaseDonne=articlesBaseDonne,
                         founisseurIdNowIs =founisseurIdNowIs,
                         soquetteBonNowIs = founisseurNowIs,
-                        isPortraitLandscap=isPortraitLandscap,
                         showDiviseurDesSections=showDivider,
                          articlesRef = articlesRef,
                         baseDonneRef=baseDonneRef,
@@ -437,7 +436,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             articlesBaseDonne=articlesBaseDonne,
                             founisseurIdNowIs =founisseurIdNowIs,
                             soquetteBonNowIs = founisseurNowIs,
-                            isPortraitLandscap=isPortraitLandscap,
                             showDiviseurDesSections=showDivider,
                             articlesRef = articlesRef,
                             baseDonneRef=baseDonneRef,
