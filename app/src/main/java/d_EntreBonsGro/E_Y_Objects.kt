@@ -1,14 +1,11 @@
 package d_EntreBonsGro
 
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
-import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -19,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -84,15 +80,9 @@ fun ZoomableImage(
     }
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
-        for (imageIndex in 0 until 3) { // Assuming 3 images
+        for (imageIndex in 0 until 3) {
             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
-            val imageUri = remember(imagePath) {
-                try {
-                    Uri.parse(imagePath)
-                } catch (e: Exception) {
-                    null
-                }
-            }
+            val imageUri = Uri.parse(imagePath)
             val painter = rememberAsyncImagePainter(
                 ImageRequest.Builder(context).data(imageUri).build()
             )
@@ -105,10 +95,10 @@ fun ZoomableImage(
                 Image(
                     painter = painter,
                     contentDescription = "Image for supplier section ${imageIndex + 1}",
-                    contentScale = ContentScale.Fit,
+                    contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp) // Fixed height, adjust as needed
+                        .height(400.dp)
                         .onSizeChanged { if (imageIndex == 0) imageSize = it }
                         .drawWithContent {
                             drawContent()
@@ -125,7 +115,6 @@ fun ZoomableImage(
                             }
                         }
                 )
-
                 when (painter.state) {
                     is AsyncImagePainter.State.Loading -> {
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -144,6 +133,7 @@ fun ZoomableImage(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(4.dp)
                 ) {
                     for (sectionIndex in 0 until sectionsDonsChaqueImage) {
                         val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
@@ -153,38 +143,28 @@ fun ZoomableImage(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
+                                .padding(vertical = 2.dp)
                         ) {
                             article?.let {
                                 Card(
                                     modifier = Modifier
                                         .align(Alignment.BottomEnd)
-                                        .padding(end = 8.dp, bottom = 2.dp)
-                                        .wrapContentSize()
-                                        .clickable {
-                                            val currentTime = System.currentTimeMillis()
-                                            if (currentTime - lastLaunchTime > 1000) {
-                                                lastLaunchTime = currentTime
-                                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                                }
-                                                speechRecognizerLauncher.launch(intent)
-                                            }
-                                        },
+                                        .fillMaxWidth(0.7f) // Utilise 70% de la largeur disponible
+                                        .height(40.dp), // Hauteur fixe pour chaque carte
                                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp),
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("${it.quantityAcheteBG}", textAlign = TextAlign.Center)
-                                        Text(
-                                            " X ${it.newPrixAchatBG}",
+                                        AutoResizeText(
+                                            text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG} = ${it.subTotaleBG}",
                                             color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                            textAlign = TextAlign.Center
+                                            textAlign = TextAlign.End,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
-                                        Text(" =(${it.subTotaleBG})", textAlign = TextAlign.Center)
                                     }
                                 }
                             }
@@ -215,6 +195,38 @@ fun ZoomableImage(
             }
         )
     }
+}
+@Composable
+fun AutoResizeText(
+    text: String,
+    color: Color,
+    textAlign: TextAlign,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1
+) {
+    val initialTextStyle = MaterialTheme.typography.bodyLarge
+    var scaledTextStyle by remember { mutableStateOf(initialTextStyle) }
+    var readyToDraw by remember { mutableStateOf(false) }
+
+    Text(
+        text = text,
+        color = color,
+        textAlign = textAlign,
+        modifier = modifier.drawWithContent {
+            if (readyToDraw) {
+                drawContent()
+            }
+        },
+        maxLines = maxLines,
+        style = scaledTextStyle,
+        onTextLayout = { textLayoutResult ->
+            if (textLayoutResult.didOverflowHeight) {
+                scaledTextStyle = scaledTextStyle.copy(fontSize = scaledTextStyle.fontSize * 0.9f)
+            } else {
+                readyToDraw = true
+            }
+        }
+    )
 }
 @Composable
 private fun TreeCountControl(
