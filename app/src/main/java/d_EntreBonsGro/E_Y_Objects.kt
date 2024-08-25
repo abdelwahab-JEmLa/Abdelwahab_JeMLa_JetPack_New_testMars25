@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,27 +52,26 @@ fun ZoomableImage(
     articles: List<EntreBonsGrosTabele>,
     soquetteBonNowIs: Int?,
     isPortraitLandscap: Boolean,
+    showDivider: Boolean,
 ) {
-
-
     val filteredAndSortedArticles = articles
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
 
-    var nmbrImagesDuBon by remember { mutableStateOf(1) }
-    var sectionsDonsChaqueImage by remember { mutableStateOf(10) }//TODO regle le numbre d images du bon n ai pas le numbre des sections don chaque image
+    var nmbrImagesDuBon by remember { mutableIntStateOf(1) }
+    var sectionsDonsChaqueImage by remember { mutableIntStateOf(10) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
     var showDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(founisseurIdNowIs) {
+    LaunchedEffect(founisseurIdNowIs, isPortraitLandscap) {
         showDialog = true
     }
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
-        for (imageIndex in 0 until 3) {
+        for (imageIndex in 0 until nmbrImagesDuBon) {
             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
             val imageUri = Uri.parse(imagePath)
             val painter = rememberAsyncImagePainter(
@@ -96,8 +96,8 @@ fun ZoomableImage(
                                 drawContent()
                                 val dividerColor = Color.Red
                                 val dividerStrokeWidth = 2f
-                                for (i in 1 until nmbrImagesDuBon) {
-                                    val y = size.height * i.toFloat() / nmbrImagesDuBon
+                                for (i in 1 until sectionsDonsChaqueImage) {
+                                    val y = size.height * i.toFloat() / sectionsDonsChaqueImage
                                     drawLine(
                                         color = dividerColor,
                                         start = Offset(0f, y),
@@ -118,8 +118,8 @@ fun ZoomableImage(
                                 .fillMaxSize()
                                 .padding(4.dp)
                         ) {
-                            for (sectionIndex in 0 until nmbrImagesDuBon) {
-                                val articleIndex = imageIndex * nmbrImagesDuBon + sectionIndex
+                            for (sectionIndex in 0 until sectionsDonsChaqueImage) {
+                                val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
                                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                                 article?.let {
@@ -163,15 +163,17 @@ fun ZoomableImage(
             }
         }
     }
-
+    if (showDivider) {
         TreeCountControl(
-            sectionsDonsChaqueImage = nmbrImagesDuBon,
+            sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             filteredAndSortedArticles = filteredAndSortedArticles,
             founisseurIdNowIs = founisseurIdNowIs,
             onCountChange = { newCount ->
-                nmbrImagesDuBon = newCount
+                sectionsDonsChaqueImage = newCount
             }
         )
+    }
+
 
 
     if (showDialog) {
@@ -184,7 +186,6 @@ fun ZoomableImage(
         )
     }
 }
-
 @Composable
 fun AutoResizeText(
     text: String,

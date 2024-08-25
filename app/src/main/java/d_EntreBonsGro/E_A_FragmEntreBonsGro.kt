@@ -19,6 +19,8 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DinnerDining
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
@@ -109,6 +111,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     var showOutline by remember { mutableStateOf(false) }
+    var showDivider by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
@@ -326,6 +329,14 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
                     )
                 }
+                FloatingActionButton(
+                    onClick = { showDivider = !showDivider }
+                ) {
+                    Icon(
+                        imageVector = if (showDivider) Icons.Default.Directions else Icons.Default.DinnerDining,
+                        contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
+                    )
+                }
             }
         },
         floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End,
@@ -392,6 +403,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         founisseurIdNowIs =founisseurIdNowIs,
                         articles =articlesEntreBonsGrosTabele,
                         isPortraitLandscap=isPortraitLandscap,
+                        showDivider=showDivider,
                     )
                 }
                 showSplitView -> {
@@ -401,7 +413,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             founisseurIdNowIs = founisseurIdNowIs,
                             articles = articlesEntreBonsGrosTabele,
                             soquetteBonNowIs = founisseurNowIs,
-                            isPortraitLandscap = isPortraitLandscap
+                            isPortraitLandscap = isPortraitLandscap,
+                            showDivider = showDivider
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
