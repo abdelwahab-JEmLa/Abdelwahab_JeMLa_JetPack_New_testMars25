@@ -1,22 +1,25 @@
 package d_EntreBonsGro
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,22 +30,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
@@ -50,124 +45,94 @@ import coil.request.ImageRequest
 import com.google.firebase.database.FirebaseDatabase
 import java.time.LocalDate
 
-data class ImageZoomState(
-    var scale: Float = 1f,
-    var offsetX: Float = 0f,
-    var offsetY: Float = 0f
-)
-
 @Composable
 fun ZoomableImage(
-    imagePath: String,
-    supplierId: Int?,
+    soquetteBonNowIs: Int?,
     modifier: Modifier = Modifier,
     founisseurIdNowIs: Long?,
     articles: List<EntreBonsGrosTabele>,
 ) {
+    val context = LocalContext.current
+    var lastLaunchTime by remember { mutableStateOf(0L) }
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     val filteredAndSortedArticles = articles
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
 
-    val zoomStateSaver = Saver<ImageZoomState, List<Float>>(
-        save = { listOf(it.scale, it.offsetX, it.offsetY) },
-        restore = { ImageZoomState(it[0], it[1], it[2]) }
-    )
-
-    val zoomState = rememberSaveable(saver = zoomStateSaver) {
-        ImageZoomState()
-    }
-
-    var scale by remember { mutableStateOf(zoomState.scale) }
-    var offsetX by remember { mutableStateOf(zoomState.offsetX) }
-    var offsetY by remember { mutableStateOf(zoomState.offsetY) }
     var treeCount by remember { mutableStateOf(filteredAndSortedArticles.size) }
-    var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
-    val context = LocalContext.current
-    val imageUri = remember(imagePath) {
-        try {
-            Uri.parse(imagePath)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(context).data(imageUri).build()
-    )
-
-    var lastLaunchTime by remember { mutableStateOf(0L) }
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         // Handle speech recognition result here
     }
 
-    Column(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .clipToBounds()
-        ) {
-            Image(
-                painter = painter,
-                contentDescription = "Zoomable image for supplier $supplierId",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onSizeChanged { imageSize = it }
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        translationX = offsetX,
-                        translationY = offsetY
-                    )
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(1f, 3f)
-                            val maxX = (size.width * (scale - 1)) / 2
-                            val minX = -maxX
-                            offsetX = (offsetX + pan.x).coerceIn(minX, maxX)
-                            val maxY = (size.height * (scale - 1)) / 2
-                            val minY = -maxY
-                            offsetY = (offsetY + pan.y).coerceIn(minY, maxY)
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val screenWidth = maxWidth
+        val screenHeight = maxHeight
 
-                            zoomState.scale = scale
-                            zoomState.offsetX = offsetX
-                            zoomState.offsetY = offsetY
-                        }
-                    }
-                    .drawWithContent {
-                        drawContent()
-                        if (treeCount > 1) {
-                            val dividerColor = Color.Red
-                            val dividerStrokeWidth = 2f
-                            for (i in 1 until treeCount) {
-                                val y = size.height * i.toFloat() / treeCount
-                                drawLine(
-                                    color = dividerColor,
-                                    start = Offset(0f, y),
-                                    end = Offset(size.width, y),
-                                    strokeWidth = dividerStrokeWidth
-                                )
+        Column {
+            // Main content (images and cards)
+            Row(modifier = Modifier.weight(1f)) {
+                // Image section (70% of screen width)
+                Box(modifier = Modifier
+                    .weight(0.7f)
+                    .fillMaxHeight()
+                ) {
+                    LazyColumn {
+                        items(5) { index ->
+                            val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${index + 1}).jpg"
+                            val imageUri = remember(imagePath) {
+                                try {
+                                    Uri.parse(imagePath)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+
+                            val painter = rememberAsyncImagePainter(
+                                ImageRequest.Builder(context).data(imageUri).build()
+                            )
+
+                            Image(
+                                painter = painter,
+                                contentDescription = "Image ${index + 1} for supplier $founisseurIdNowIs",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(screenHeight / 5)
+                            )
+
+                            when (painter.state) {
+                                is AsyncImagePainter.State.Loading -> {
+                                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                                }
+                                is AsyncImagePainter.State.Error -> {
+                                    Text(
+                                        text = "Error loading image",
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.align(Alignment.Center)
+                                    )
+                                }
+                                else -> {} // Do nothing for success state
                             }
                         }
                     }
-            )
+                }
 
-
-            Column(modifier = Modifier.fillMaxSize()) {
-                filteredAndSortedArticles.forEachIndexed { index, article ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.BottomEnd // Changed to BottomEnd
-                    ) {
+                // Card section (30% of screen width)
+                Column(
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .fillMaxHeight()
+                ) {
+                    filteredAndSortedArticles.forEach { article ->
                         Card(
                             modifier = Modifier
-                                .padding(end = 8.dp, bottom = 2.dp) // Added end padding
-                                .wrapContentSize()
+                                .fillMaxWidth()
+                                .padding(4.dp)
                                 .clickable {
                                     val currentTime = System.currentTimeMillis()
                                     if (currentTime - lastLaunchTime > 1000) {
@@ -210,46 +175,35 @@ fun ZoomableImage(
                     }
                 }
             }
-            when (painter.state) {
-                is AsyncImagePainter.State.Loading -> {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
-                is AsyncImagePainter.State.Error -> {
-                    Text(
-                        text = "Error loading image",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                else -> {} // Do nothing for success state
-            }
-        }
 
-        // Tree count control
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Tree count: $treeCount")
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                if (treeCount > 0) {
-                    treeCount--
-                    if (filteredAndSortedArticles.isNotEmpty()) {
-                        deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
+            // Tree count control (only visible in portrait mode)
+            if (isPortrait) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Tree count: $treeCount")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        if (treeCount > 0) {
+                            treeCount--
+                            if (filteredAndSortedArticles.isNotEmpty()) {
+                                deleteTheNewArticleIZ(filteredAndSortedArticles.last().vidBG)
+                            }
+                        }
+                    }) {
+                        Text("-")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        treeCount++
+                        createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
+                    }) {
+                        Text("+")
                     }
                 }
-            }) {
-                Text("-")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                treeCount++
-                createNewArticle(filteredAndSortedArticles, founisseurIdNowIs)
-            }) {
-                Text("+")
             }
         }
     }

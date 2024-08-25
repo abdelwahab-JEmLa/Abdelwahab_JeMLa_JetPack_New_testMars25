@@ -334,8 +334,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             when {
                 showFullImage -> {
                     ZoomableImage(
-                        imagePath = currentImagePath,
-                        supplierId = founisseurNowIs,
+                        soquetteBonNowIs = founisseurNowIs,
                         modifier = Modifier.weight(1f),
                         founisseurIdNowIs =founisseurIdNowIs,
                         articles =articlesEntreBonsGrosTabele,
@@ -344,8 +343,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 showSplitView -> {
                     Column(modifier = Modifier.weight(1f)) {
                         ZoomableImage(
-                            imagePath = currentImagePath,
-                            supplierId = founisseurNowIs,
+                            soquetteBonNowIs = founisseurNowIs,
                             modifier = Modifier.weight(1f),
                             founisseurIdNowIs = founisseurIdNowIs,
                             articles = articlesEntreBonsGrosTabele
