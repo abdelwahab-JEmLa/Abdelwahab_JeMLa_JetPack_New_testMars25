@@ -113,7 +113,7 @@ fun DessinableImage(
 
     var isRecognizing by remember { mutableStateOf(false) }
 
-    val heightOfImageAndRelated = if (isPortraitLandscap) 255.dp else 550.dp
+    val heightOfImageAndRelated = if (isPortraitLandscap) 260.dp else 550.dp
 
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
@@ -648,7 +648,8 @@ fun ImageCountDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Number of Images") },
         text = {
-            Column {
+            Column {//TODO fait que ca soit comme la selection des dates don calandae on
+                //appye et scroll up
                 for (count in 1..5) {
                     Button(
                         onClick = { onSelectCount(count) },
