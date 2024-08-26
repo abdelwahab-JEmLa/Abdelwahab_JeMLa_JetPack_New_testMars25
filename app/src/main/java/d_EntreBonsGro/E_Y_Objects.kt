@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.AutoResizedText
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -171,7 +172,7 @@ fun DessinableImage(
             Toast.makeText(context, "La reconnaissance vocale a échoué. Veuillez réessayer.", Toast.LENGTH_SHORT).show()
         }
     }
-    val heightOfImageAndRelated = 300.dp
+    val heightOfImageAndRelated = 280.dp
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
         for (imageIndex in 0 until nmbrImagesDuBon) {
@@ -190,7 +191,7 @@ fun DessinableImage(
                            // L Column: Quantity, Price, Subtotal
                     Box(
                         modifier = Modifier
-                            .weight(0.2f)
+                            .weight(0.15f)
                             .height(heightOfImageAndRelated)
                     ) {
                         Column(
@@ -230,8 +231,9 @@ fun DessinableImage(
                                             modifier = Modifier.fillMaxSize(),
                                                 contentAlignment = Alignment.Center
                                             ) {
+
                                             AutoResizedText(
-                                                text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}=${it.subTotaleBG}",
+                                                text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}",
                                                     color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
                                                     textAlign = TextAlign.Center,
                                                     modifier = Modifier.fillMaxWidth()
@@ -248,7 +250,7 @@ fun DessinableImage(
                         contentDescription = "Image for supplier section ${imageIndex + 1}",
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
-                            .weight(0.6f)
+                            .weight(0.55f)
                             .height(heightOfImageAndRelated)
                             .onSizeChanged { if (imageIndex == 0) imageSize = it }
                             .drawWithContent {
@@ -271,7 +273,7 @@ fun DessinableImage(
                     // R Column: Article Names
                     Box(
                         modifier = Modifier
-                            .weight(0.2f)
+                            .weight(0.3f)
                             .height(heightOfImageAndRelated)
                     ) {
                         Column(
@@ -312,14 +314,14 @@ fun DessinableImage(
                                                 .fillMaxSize(),
                                             verticalArrangement = Arrangement.Center
                                             ) {
-
+                                            val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == it.idArticleBG }
+                                            relatedArticle?.let { related ->
                                             AutoResizedText(
-                                                    text = it.nomArticleBG,
+                                                    text = "${it.nomArticleBG} ${related.nomArab?: ""}",
                                                     color = Color.Black,
                                                     textAlign = TextAlign.Center,
                                                     modifier = Modifier.fillMaxWidth(),
-                                                )
-
+                                            )
                                             }
                                         }
                                     }
@@ -343,7 +345,7 @@ fun DessinableImage(
                 }
             }
         }
-
+    }
 
     if (showDiviseurDesSections) {
         TreeCountControl(
