@@ -113,7 +113,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     var showOutline by remember { mutableStateOf(false) }
     var showDivider by remember { mutableStateOf(true) }
-    var showDialogeNbrIMGs by remember { mutableStateOf(true) }
+    var showDialogeNbrIMGs by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
@@ -362,6 +362,17 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
                         )
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    FloatingActionButton(
+                        onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
+                    ) {
+                        Icon(
+                            imageVector = if (showDialogeNbrIMGs) Icons.Default.Directions else Icons.Default.DinnerDining,
+                            contentDescription = if (showDialogeNbrIMGs) "Hide Outline" else "Show Outline"
+                        )
+
+                    }
                 }
             }
         },
@@ -418,7 +429,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     articlesBaseDonne = articlesBaseDonne,
                     editionPassedMode = editionPassedMode,
                     modifier = Modifier.fillMaxWidth(),
-                    coroutineScope = coroutineScope
+                    coroutineScope = coroutineScope,
+
                 )
             }
             when {

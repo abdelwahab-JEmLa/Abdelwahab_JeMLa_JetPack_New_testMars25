@@ -4,6 +4,7 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.speech.RecognizerIntent
 import android.widget.Toast
@@ -25,8 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
@@ -57,6 +57,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -64,7 +65,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import b_Edite_Base_Donne.ArticleDao
-import b_Edite_Base_Donne.AutoResizedText
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -92,6 +92,9 @@ fun DessinableImage(
     showDialogeNbrIMGs: Boolean,
     onDissmiss: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     val filteredAndSortedArticles = articlesEntreBonsGrosTabele
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
@@ -101,10 +104,7 @@ fun DessinableImage(
     var showOutlineDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
-
-
-
+    val lazyListState = rememberLazyListState()
 
     var selectedArticle by remember { mutableStateOf<EntreBonsGrosTabele?>(null) }
     var lastLaunchTime by remember { mutableStateOf(0L) }
@@ -112,6 +112,8 @@ fun DessinableImage(
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
     var isRecognizing by remember { mutableStateOf(false) }
+
+    val heightOfImageAndRelated = if (isPortraitLandscap) 255.dp else 350.dp
 
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
@@ -172,10 +174,12 @@ fun DessinableImage(
             Toast.makeText(context, "La reconnaissance vocale a échoué. Veuillez réessayer.", Toast.LENGTH_SHORT).show()
         }
     }
-    val heightOfImageAndRelated = 255.dp
 
-    Column(modifier = modifier.verticalScroll(scrollState)) {
-        for (imageIndex in 0 until nmbrImagesDuBon) {
+    LazyColumn(
+        state = lazyListState,
+        modifier = modifier
+    ) {
+        items(nmbrImagesDuBon) { imageIndex ->
             val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
             val imageUri = Uri.parse(imagePath)
             val painter = rememberAsyncImagePainter(
@@ -188,25 +192,24 @@ fun DessinableImage(
                     .height(IntrinsicSize.Min)
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
-                           // L Column: Quantity, Price, Subtotal
+                    // L Column: Quantity, Price, Subtotal
                     Box(
                         modifier = Modifier
                             .weight(0.15f)
                             .height(heightOfImageAndRelated)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            for (sectionIndex in 0 until sectionsDonsChaqueImage) {
+                            items(sectionsDonsChaqueImage) { sectionIndex ->
                                 val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
                                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                                 article?.let {
                                     Card(
                                         modifier = Modifier
-                                            .weight(1f)
                                             .fillMaxWidth()
+                                            .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
                                             .clickable {
                                                 if (showOutline) {
                                                     selectedArticle = it
@@ -229,21 +232,20 @@ fun DessinableImage(
                                     ) {
                                         Box(
                                             modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-
-                                            AutoResizedText(
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            AutoResizedTextDI(
                                                 text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}",
-                                                    color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.fillMaxWidth()
-                                                )
-                                            }
+                                                color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
                                         }
                                     }
                                 }
                             }
                         }
+                    }
                     // Center: Image
                     Image(
                         painter = painter,
@@ -266,7 +268,6 @@ fun DessinableImage(
                                         topLeft = Offset(0f, top),
                                         size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
                                     )
-
                                 }
                             }
                     )
@@ -276,19 +277,18 @@ fun DessinableImage(
                             .weight(0.3f)
                             .height(heightOfImageAndRelated)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            for (sectionIndex in 0 until sectionsDonsChaqueImage) {
+                            items(sectionsDonsChaqueImage) { sectionIndex ->
                                 val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
                                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                                 article?.let {
                                     Card(
                                         modifier = Modifier
-                                            .weight(1f)
                                             .fillMaxWidth()
+                                            .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
                                             .clickable {
                                                 if (showOutline) {
                                                     selectedArticle = it
@@ -310,24 +310,23 @@ fun DessinableImage(
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Column(
-                                                modifier = Modifier
-                                                .fillMaxSize(),
+                                            modifier = Modifier.fillMaxSize(),
                                             verticalArrangement = Arrangement.Center
-                                            ) {
+                                        ) {
                                             val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == it.idArticleBG }
                                             relatedArticle?.let { related ->
-                                            AutoResizedText(
-                                                    text = "${it.nomArticleBG} ${related.nomArab?: ""}",
+                                                AutoResizedTextDI(
+                                                    text = "${it.nomArticleBG} ${related.nomArab ?: ""}",
                                                     color = Color.Black,
                                                     textAlign = TextAlign.Center,
                                                     modifier = Modifier.fillMaxWidth(),
-                                            )
+                                                )
                                             }
                                         }
                                     }
                                 }
                             }
-                      }
+                        }
                     }
                 }
                 when (painter.state) {
@@ -338,7 +337,6 @@ fun DessinableImage(
                         Text(
                             text = "Error loading image",
                             color = MaterialTheme.colorScheme.error,
-
                         )
                     }
                     else -> {}
@@ -447,7 +445,7 @@ fun DessinableImage(
     }
 }
 @Composable
-fun AutoResizedText(
+fun AutoResizedTextDI(
     text: String,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
