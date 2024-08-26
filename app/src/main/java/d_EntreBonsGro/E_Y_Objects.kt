@@ -59,9 +59,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isUnspecified
 import b_Edite_Base_Donne.ArticleDao
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
@@ -228,7 +230,7 @@ fun DessinableImage(
                                             modifier = Modifier.fillMaxSize(),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                AutoResizeText(
+                                            AutoResizedText(
                                                 text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}=${it.subTotaleBG}",
                                                     color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
                                                     textAlign = TextAlign.Center,
@@ -315,12 +317,11 @@ fun DessinableImage(
                                             verticalArrangement = Arrangement.Center
                                             ) {
 
-                                                AutoResizeText(//TODO fait que le max line =1
+                                            AutoResizedText(// TODO fait que le max line =1
                                                     text = it.nomArticleBG,
                                                     color = Color.Black,
                                                     textAlign = TextAlign.Center,
                                                     modifier = Modifier.fillMaxWidth(),
-                                                maxLines = 2
                                                 )
 
                                             }
@@ -328,7 +329,7 @@ fun DessinableImage(
                                     }
                                 }
                             }
-                      }
+                        }
                     }
                 }
                 when (painter.state) {
@@ -447,7 +448,46 @@ fun DessinableImage(
         )
     }
 }
+@Composable
+fun AutoResizedText(
+    text: String,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    modifier: Modifier = Modifier,
+    color: Color = style.color,
+    textAlign: TextAlign = TextAlign.Center,
+    bodyLarge: Boolean= false
+) {
+    var resizedTextStyle by remember { mutableStateOf(style) }
+    var shouldDraw by remember { mutableStateOf(false) }
 
+    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
+
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = color,
+            modifier = Modifier.drawWithContent {
+                if (shouldDraw) drawContent()
+            },
+            softWrap = false,
+            style = resizedTextStyle,
+            textAlign = textAlign,
+            onTextLayout = { result ->
+                if (result.didOverflowWidth) {
+                    if (style.fontSize.isUnspecified) {
+                        resizedTextStyle = resizedTextStyle.copy(fontSize = defaultFontSize)
+                    }
+                    resizedTextStyle = resizedTextStyle.copy(fontSize = resizedTextStyle.fontSize * 0.95)
+                } else {
+                    shouldDraw = true
+                }
+            }
+        )
+    }
+}
 @Composable
 fun OutlineInputDI(
     inputText: String,
@@ -567,38 +607,7 @@ fun OutlineInputDI(
 fun isArabicDI(text: String): Boolean {
     return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
 }
-@Composable
-fun AutoResizeText(
-    text: String,
-    color: Color,
-    textAlign: TextAlign,
-    modifier: Modifier = Modifier,
-    maxLines: Int = 1
-) {
-    val initialTextStyle = MaterialTheme.typography.bodyLarge
-    var scaledTextStyle by remember { mutableStateOf(initialTextStyle) }
-    var readyToDraw by remember { mutableStateOf(false) }
 
-    Text(
-        text = text,
-        color = color,
-        textAlign = textAlign,
-        modifier = modifier.drawWithContent {
-            if (readyToDraw) {
-                drawContent()
-            }
-        },
-        maxLines = maxLines,
-        style = scaledTextStyle,
-        onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowHeight) {
-                scaledTextStyle = scaledTextStyle.copy(fontSize = scaledTextStyle.fontSize * 0.9f)
-            } else {
-                readyToDraw = true
-            }
-        }
-    )
-}
 @Composable
 private fun TreeCountControl(
     sectionsDonsChaqueImage: Int,
