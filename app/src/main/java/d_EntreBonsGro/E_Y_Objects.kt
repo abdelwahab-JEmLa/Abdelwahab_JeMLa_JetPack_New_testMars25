@@ -172,7 +172,7 @@ fun DessinableImage(
             Toast.makeText(context, "La reconnaissance vocale a échoué. Veuillez réessayer.", Toast.LENGTH_SHORT).show()
         }
     }
-    val heightOfImageAndRelated = 280.dp
+    val heightOfImageAndRelated = 255.dp
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
         for (imageIndex in 0 until nmbrImagesDuBon) {
