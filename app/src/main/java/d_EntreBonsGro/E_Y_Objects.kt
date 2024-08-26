@@ -59,7 +59,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -225,31 +224,12 @@ fun DessinableImage(
                                             },
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
-                                        Column(
+                                        Box(
                                             modifier = Modifier.fillMaxSize(),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(0.7f)
-                                                    .fillMaxWidth(),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 AutoResizeText(
-                                                    text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}",
-                                                    color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.fillMaxWidth()
-                                                )
-                                            }
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(0.3f)
-                                                    .fillMaxWidth(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                AutoResizeText(
-                                                    text = "= ${it.subTotaleBG}",
+                                                text = "${it.quantityAcheteBG} X ${it.newPrixAchatBG}=${it.subTotaleBG}",
                                                     color = if ((it.newPrixAchatBG - it.ancienPrixBG) == 0.0) Color.Red else Color.Unspecified,
                                                     textAlign = TextAlign.Center,
                                                     modifier = Modifier.fillMaxWidth()
@@ -260,7 +240,6 @@ fun DessinableImage(
                                 }
                             }
                         }
-                    }
 
                     // Center: Image
                     Image(
@@ -330,154 +309,52 @@ fun DessinableImage(
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Column(
-                                            modifier = Modifier.fillMaxSize(),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Box(
                                                 modifier = Modifier
-                                                    .weight(0.7f)
-                                                    .fillMaxWidth(),
-                                                contentAlignment = Alignment.Center
+                                                .fillMaxSize()
+                                                .padding(4.dp),
+                                            verticalArrangement = Arrangement.Center
                                             ) {
-                                                AutoResizeText(
+
+                                                AutoResizeText(//TODO fait que le max line =1
                                                     text = it.nomArticleBG,
                                                     color = Color.Black,
                                                     textAlign = TextAlign.Center,
                                                     modifier = Modifier.fillMaxWidth(),
+                                                maxLines = 2
                                                 )
-                                            }
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(0.3f)
-                                                    .fillMaxWidth(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == it.idArticleBG }
-                                                relatedArticle?.let { related ->
-                                                    AutoResizeText(
-                                                        text = related.nomArab ?: "",
-                                                        color = Color.Gray,
-                                                        textAlign = TextAlign.Center,
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                    )
-                                                }
+
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
+                      }
                     }
                 }
                 when (painter.state) {
                     is AsyncImagePainter.State.Loading -> {
-                        CircularProgressIndicator(Modifier.align(Alignment.Center))
+                        CircularProgressIndicator()
                     }
                     is AsyncImagePainter.State.Error -> {
                         Text(
                             text = "Error loading image",
                             color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.Center)
+
                         )
                     }
                     else -> {}
                 }
             }
         }
-    }
 
-    DialogesControler(
-        showDiviseurDesSections,
-        sectionsDonsChaqueImage,
-        filteredAndSortedArticles,
-        founisseurIdNowIs,
-        showDialogeNbrIMGs,
-        onDissmiss,
-        nmbrImagesDuBon,
-        showSuggestions,
-        filteredSuggestions,
-        selectedArticle,
-        articlesRef,
-        articlesArticlesAcheteModele,
-        articlesBaseDonne,
-        articlesEntreBonsGrosTabele,
-        coroutineScope,
-        showOutlineDialog,
-        suggestionsList
-    )
-}
-@Composable
-fun AutoResizeText(
-    text: String,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
-    modifier: Modifier = Modifier,
-    color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center,
-    bodyLarge: Boolean = false,
-    maxLines: Int = 1
-) {
-    var scaledTextStyle by remember { mutableStateOf(style) }
-    var readyToDraw by remember { mutableStateOf(false) }
 
-    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
-    val initialFontSize = scaledTextStyle.fontSize.value
-    var shrinkingFactor by remember { mutableStateOf(1f) }
-
-    Text(
-        text = text,
-        color = color,
-        textAlign = textAlign,
-        style = scaledTextStyle,
-        softWrap = false,
-        maxLines = maxLines,
-        modifier = modifier.drawWithContent {
-            if (readyToDraw) drawContent()
-        },
-        onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowWidth || textLayoutResult.didOverflowHeight) {
-                if (shrinkingFactor > 0.01f) {
-                    shrinkingFactor *= 0.99f
-                    scaledTextStyle = scaledTextStyle.copy(
-                        fontSize = defaultFontSize * shrinkingFactor
-                    )
-                }
-            } else {
-                readyToDraw = true
-            }
-        }
-    )
-}
-@Composable
-private fun DialogesControler(
-    showDiviseurDesSections: Boolean,
-    sectionsDonsChaqueImage: Int,
-    filteredAndSortedArticles: List<EntreBonsGrosTabele>,
-    founisseurIdNowIs: Long?,
-    showDialogeNbrIMGs: Boolean,
-    onDissmiss: () -> Unit,
-    nmbrImagesDuBon: Int,
-    showSuggestions: Boolean,
-    filteredSuggestions: List<String>,
-    selectedArticle: EntreBonsGrosTabele?,
-    articlesRef: DatabaseReference,
-    articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
-    articlesBaseDonne: List<BaseDonne>,
-    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
-    coroutineScope: CoroutineScope,
-    showOutlineDialog: Boolean,
-    suggestionsList: List<String>
-) {
-    var sectionsDonsChaqueImage1 = sectionsDonsChaqueImage
-    var nmbrImagesDuBon1 = nmbrImagesDuBon
-    var showSuggestions1 = showSuggestions
-    var showOutlineDialog1 = showOutlineDialog
     if (showDiviseurDesSections) {
         TreeCountControl(
-            sectionsDonsChaqueImage = sectionsDonsChaqueImage1,
+            sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             filteredAndSortedArticles = filteredAndSortedArticles,
             founisseurIdNowIs = founisseurIdNowIs,
             onCountChange = { newCount ->
-                sectionsDonsChaqueImage1 = newCount
+                sectionsDonsChaqueImage = newCount
             }
         )
     }
@@ -486,15 +363,15 @@ private fun DialogesControler(
         ImageCountDialog(
             onDismiss = onDissmiss,
             onSelectCount = { count ->
-                nmbrImagesDuBon1 = count
+                nmbrImagesDuBon = count
                 onDissmiss()
             }
         )
     }
 
-    if (showSuggestions1) {
+    if (showSuggestions) {
         AlertDialog(
-            onDismissRequest = { showSuggestions1 = false },
+            onDismissRequest = { showSuggestions = false },
             title = { Text("Suggestions") },
             text = {
                 LazyColumn {
@@ -525,7 +402,7 @@ private fun DialogesControler(
                                         articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
                                         coroutineScope = coroutineScope
                                     )
-                                    showSuggestions1 = false
+                                    showSuggestions = false
                                 },
                                 colors = ButtonDefaults.textButtonColors(
                                     contentColor = Color.White
@@ -538,15 +415,15 @@ private fun DialogesControler(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showSuggestions1 = false }) {
+                TextButton(onClick = { showSuggestions = false }) {
                     Text("Cancel")
                 }
             }
         )
     }
-    if (showOutlineDialog1) {
+    if (showOutlineDialog) {
         AlertDialog(
-            onDismissRequest = { showOutlineDialog1 = false },
+            onDismissRequest = { showOutlineDialog = false },
             title = { Text("Modifier l'article") },
             text = {
                 selectedArticle?.let { article ->
@@ -690,8 +567,38 @@ fun OutlineInputDI(
 fun isArabicDI(text: String): Boolean {
     return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
 }
+@Composable
+fun AutoResizeText(
+    text: String,
+    color: Color,
+    textAlign: TextAlign,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1
+) {
+    val initialTextStyle = MaterialTheme.typography.bodyLarge
+    var scaledTextStyle by remember { mutableStateOf(initialTextStyle) }
+    var readyToDraw by remember { mutableStateOf(false) }
 
-
+    Text(
+        text = text,
+        color = color,
+        textAlign = textAlign,
+        modifier = modifier.drawWithContent {
+            if (readyToDraw) {
+                drawContent()
+            }
+        },
+        maxLines = maxLines,
+        style = scaledTextStyle,
+        onTextLayout = { textLayoutResult ->
+            if (textLayoutResult.didOverflowHeight) {
+                scaledTextStyle = scaledTextStyle.copy(fontSize = scaledTextStyle.fontSize * 0.9f)
+            } else {
+                readyToDraw = true
+            }
+        }
+    )
+}
 @Composable
 private fun TreeCountControl(
     sectionsDonsChaqueImage: Int,
