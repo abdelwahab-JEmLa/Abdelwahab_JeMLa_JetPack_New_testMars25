@@ -113,7 +113,7 @@ fun DessinableImage(
 
     var isRecognizing by remember { mutableStateOf(false) }
 
-    val heightOfImageAndRelated = if (isPortraitLandscap) 255.dp else 350.dp
+    val heightOfImageAndRelated = if (isPortraitLandscap) 255.dp else 550.dp
 
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
