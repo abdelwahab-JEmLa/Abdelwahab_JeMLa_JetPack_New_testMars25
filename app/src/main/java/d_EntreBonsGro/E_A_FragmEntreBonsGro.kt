@@ -90,7 +90,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showActionsDialog by remember { mutableStateOf(false) }
     var showSupplierDialog by remember { mutableStateOf(false) }
-    var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(1) }
+    var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(2) }
     var founisseurIdNowIs by rememberSaveable { mutableStateOf<Long?>(null) }
 
     var modeFilterChangesDB by remember { mutableStateOf(false) }
@@ -330,8 +330,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
                         )
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
 
+                    Spacer(modifier = Modifier.height(2.dp))
                     FloatingActionButton(
                         onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
                     ) {
@@ -430,7 +430,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     editionPassedMode = editionPassedMode,
                     modifier = Modifier.fillMaxWidth(),
                     coroutineScope = coroutineScope,
-
                 )
             }
             when {
