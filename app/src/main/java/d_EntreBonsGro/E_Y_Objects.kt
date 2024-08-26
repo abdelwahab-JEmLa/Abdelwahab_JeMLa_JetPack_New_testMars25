@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -95,7 +94,7 @@ fun DessinableImage(
     val filteredAndSortedArticles = articlesEntreBonsGrosTabele
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
-    var nmbrImagesDuBon by remember { mutableIntStateOf(6) }
+    var nmbrImagesDuBon by remember { mutableIntStateOf(1) }
     var sectionsDonsChaqueImage by remember { mutableIntStateOf(10) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
     var showOutlineDialog by remember { mutableStateOf(false) }
@@ -172,6 +171,7 @@ fun DessinableImage(
             Toast.makeText(context, "La reconnaissance vocale a échoué. Veuillez réessayer.", Toast.LENGTH_SHORT).show()
         }
     }
+    val heightOfImageAndRelated = 300.dp
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
         for (imageIndex in 0 until nmbrImagesDuBon) {
@@ -191,7 +191,7 @@ fun DessinableImage(
                     Box(
                         modifier = Modifier
                             .weight(0.2f)
-                            .fillMaxHeight()
+                            .height(heightOfImageAndRelated)
                     ) {
                         Column(
                             modifier = Modifier
@@ -242,7 +242,6 @@ fun DessinableImage(
                                 }
                             }
                         }
-
                     // Center: Image
                     Image(
                         painter = painter,
@@ -250,7 +249,7 @@ fun DessinableImage(
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
                             .weight(0.6f)
-                            .height(400.dp)
+                            .height(heightOfImageAndRelated)
                             .onSizeChanged { if (imageIndex == 0) imageSize = it }
                             .drawWithContent {
                                 drawContent()
@@ -273,12 +272,11 @@ fun DessinableImage(
                     Box(
                         modifier = Modifier
                             .weight(0.2f)
-                            .fillMaxHeight()
+                            .height(heightOfImageAndRelated)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(4.dp)
                         ) {
                             for (sectionIndex in 0 until sectionsDonsChaqueImage) {
                                 val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
@@ -289,7 +287,6 @@ fun DessinableImage(
                                         modifier = Modifier
                                             .weight(1f)
                                             .fillMaxWidth()
-                                            .padding(vertical = 2.dp)
                                             .clickable {
                                                 if (showOutline) {
                                                     selectedArticle = it
@@ -312,12 +309,11 @@ fun DessinableImage(
                                     ) {
                                         Column(
                                                 modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(4.dp),
+                                                .fillMaxSize(),
                                             verticalArrangement = Arrangement.Center
                                             ) {
 
-                                            AutoResizedText(// TODO fait que le max line =1
+                                            AutoResizedText(
                                                     text = it.nomArticleBG,
                                                     color = Color.Black,
                                                     textAlign = TextAlign.Center,
@@ -329,7 +325,7 @@ fun DessinableImage(
                                     }
                                 }
                             }
-                        }
+                      }
                     }
                 }
                 when (painter.state) {

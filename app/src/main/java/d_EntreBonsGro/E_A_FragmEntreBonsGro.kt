@@ -90,7 +90,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showActionsDialog by remember { mutableStateOf(false) }
     var showSupplierDialog by remember { mutableStateOf(false) }
-    var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(null) }
+    var founisseurNowIs by rememberSaveable { mutableStateOf<Int?>(1) }
     var founisseurIdNowIs by rememberSaveable { mutableStateOf<Long?>(null) }
 
     var modeFilterChangesDB by remember { mutableStateOf(false) }
