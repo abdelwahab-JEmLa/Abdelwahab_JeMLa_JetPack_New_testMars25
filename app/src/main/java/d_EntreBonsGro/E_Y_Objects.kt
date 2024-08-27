@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,7 +64,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -250,10 +250,10 @@ fun ArticleColumn(
                     ) {
                         when (columnType) {
                             ColumnType.QuantityPriceSubtotal -> {
-                                QuantityPriceSubtotalComp(article)
+                                QuantityPriceSubtotalCompos(article)
                             }
                             ColumnType.ArticleNames -> {
-                                ArticleNamesFun(articlesBaseDonne, article)
+                                ArticleNamesCompos(articlesBaseDonne, article)
                             }
                         }
                     }
@@ -264,59 +264,7 @@ fun ArticleColumn(
 }
 
 @Composable
-private fun ArticleNamesFun(
-    articlesBaseDonne: List<BaseDonne>,
-    article: EntreBonsGrosTabele
-) {
-    Row(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val relatedArticle =
-            articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
-        relatedArticle?.let { related ->
-            var imageExist by remember { mutableStateOf(false) }
-            var imageSize by remember { mutableStateOf(Size.Zero) }
-
-            Card(
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(imageSize.width.dp)
-            ) {
-                ImageArticles(
-                    article = article,
-                    onImageExist = { size ->
-                        imageExist = true
-                        imageSize = size
-                    },
-                    onImageNonexist = { imageExist = false }
-                )
-            }
-
-            val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
-            val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
-            val textColor = if (isNewArticle) Color.Red else Color.Black
-
-            Card(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f),
-                colors = CardDefaults.cardColors(containerColor = cardColor)
-            ) {
-                AutoResizedTextDI(
-                    text = "${if (!imageExist) article.nomArticleBG else ""} ${related.nomArab ?: ""}",
-                    color = textColor,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuantityPriceSubtotalComp(article: EntreBonsGrosTabele) {
+private fun QuantityPriceSubtotalCompos(article: EntreBonsGrosTabele) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
@@ -356,15 +304,70 @@ private fun QuantityPriceSubtotalComp(article: EntreBonsGrosTabele) {
 }
 
 @Composable
+private fun ArticleNamesCompos(
+    articlesBaseDonne: List<BaseDonne>,
+    article: EntreBonsGrosTabele
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        val relatedArticle =
+            articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
+        relatedArticle?.let { related ->
+            var imageExist by remember { mutableStateOf(false) }
+
+            // Image Card (30% width)
+            Card(//TODO si l image n exist fait cache le cadre
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                modifier = Modifier
+                    .weight(0.3f)
+                    .aspectRatio(1f) // Make it square
+            ) {
+                ImageArticles(
+                    article = article,
+                    onImageExist = { imageExist = true },
+                    onImageNonexist = { imageExist = false }
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp)) // Add some space between cards
+
+            // Text Card (70% width)
+            val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
+            val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
+            val textColor = if (isNewArticle) Color.Red else Color.Black
+
+            Card(
+                modifier = Modifier
+                    .weight(0.7f)
+                    .fillMaxHeight(),
+                colors = CardDefaults.cardColors(containerColor = cardColor)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AutoResizedTextDI(
+                        text = "${if (!imageExist) article.nomArticleBG else ""} ${related.nomArab ?: ""}",
+                        color = textColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
 fun ImageArticles(
     article: EntreBonsGrosTabele,
-    onImageExist: (Size) -> Unit,
+    onImageExist: () -> Unit,
     onImageNonexist: () -> Unit,
 ) {
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(modifier = Modifier.fillMaxHeight()) {
+        Box(modifier = Modifier.fillMaxSize()) {
             val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleBG}_1"
             val imagePathWebp = "$imagePathWithoutExt.webp"
             val imagePathJpg = "$imagePathWithoutExt.jpg"
@@ -374,18 +377,14 @@ fun ImageArticles(
             when {
                 webpExists || jpgExists -> {
                     val imagePath = if (webpExists) imagePathWebp else imagePathJpg
-                    var imageSize by remember { mutableStateOf(Size.Zero) }
                     AsyncImage(
                         model = imagePath,
                         contentDescription = "Article image",
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .onSizeChanged { size ->
-                                imageSize = Size(size.width.toFloat(), size.height.toFloat())
-                            }
+                            .fillMaxSize()
                             .rotate(90f),
                         contentScale = ContentScale.Fit,
-                        onSuccess = { onImageExist(imageSize) }
+                        onSuccess = { onImageExist() }
                     )
                 }
                 else -> onImageNonexist()
