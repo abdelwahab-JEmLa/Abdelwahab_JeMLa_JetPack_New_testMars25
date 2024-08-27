@@ -275,8 +275,8 @@ private fun QuantityPriceSubtotalCompos(article: EntreBonsGrosTabele) {
         ) {
             val isZeroQuantityOrPrice =
                 article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
-            val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Unspecified
-            val textColor = if (isZeroQuantityOrPrice) Color.Red else Color.Unspecified
+            val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Red
+            val textColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
             val borderColor = if (isZeroQuantityOrPrice) Color.Red else Color.Unspecified
 
             Card(
@@ -314,31 +314,33 @@ private fun ArticleNamesCompos(
         relatedArticle?.let { related ->
             var imageExist by remember { mutableStateOf(false) }
 
-            // Image Card (30% width)
-            Card(//TODO si l image n exist fait cache le cadre
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                modifier = Modifier
-                    .weight(0.3f)
-                    .aspectRatio(1f) // Make it square
-            ) {
-                ImageArticles(
-                    article = article,
-                    onImageExist = { imageExist = true },
-                    onImageNonexist = { imageExist = false }
-                )
+            // Image Card (30% width, only if image exists)
+            if (imageExist) {
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .aspectRatio(1f) // Make it square
+                ) {
+                    ImageArticles(
+                        article = article,
+                        onImageExist = { imageExist = true },
+                        onImageNonexist = { imageExist = false }
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp)) // Add some space between cards
             }
 
-            Spacer(modifier = Modifier.width(8.dp)) // Add some space between cards
-
-            // Text Card (70% width)
+            // Text Card (70% width if image exists, 100% if it doesn't)
             val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
             val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
             val textColor = if (isNewArticle) Color.Red else Color.Black
 
             Card(
                 modifier = Modifier
-                    .weight(0.7f)
+                    .weight(if (imageExist) 0.7f else 1f)
                     .fillMaxHeight(),
                 colors = CardDefaults.cardColors(containerColor = cardColor)
             ) {
