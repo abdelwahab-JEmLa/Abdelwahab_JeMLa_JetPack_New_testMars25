@@ -56,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -188,6 +189,24 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         articlesEntreBonsGrosTabele = updatedList
     }
 
+    val floatingActionButtons = listOf(
+        Triple(
+            Icons.Default.Edit,
+            "Flotin1"
+        ) { heightOfImageAndRelatedDialogEditer = !heightOfImageAndRelatedDialogEditer },
+        Triple(
+            if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
+            if (showOutline) "Hide Outline" else "Show Outline"
+        ) { showOutline = !showOutline },
+        Triple(
+            if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
+            if (showDivider) "Hide Divider" else "Show Divider"
+        ) { showDivider = !showDivider },
+        Triple(
+            if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
+            if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
+        ) { showDialogeNbrIMGs = !showDialogeNbrIMGs }
+    )
 
 
     Scaffold(
@@ -285,99 +304,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
         },
         floatingActionButton = {
-            var showFloatingButtons by remember { mutableStateOf(true) }
-
-            Column {
-                // Toggle button to show/hide other floating action buttons
-                FloatingActionButton(
-                    onClick = { showFloatingButtons = !showFloatingButtons }
-                ) {
-                    Icon(
-                        imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (showFloatingButtons) {
-                    if (isPortraitLandscap) {
-                        Column {
-                            Flotin1 {
-                                heightOfImageAndRelatedDialogEditer = !heightOfImageAndRelatedDialogEditer
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            FloatingActionButton(
-                                onClick = { showOutline = !showOutline }
-                            ) {
-                                Icon(
-                                    imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
-                                    contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            FloatingActionButton(
-                                onClick = { showDivider = !showDivider }
-                            ) {
-                                Icon(
-                                    imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
-                                    contentDescription = if (showDivider) "Hide Divider" else "Show Divider"
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            FloatingActionButton(
-                                onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
-                            ) {
-                                Icon(
-                                    imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
-                                    contentDescription = if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
-                                )
-                            }
-                        }
-                    } else {
-                        Column {
-                            FloatingActionButton(
-                                onClick = { showOutline = !showOutline }
-                            ) {
-                                Icon(
-                                    imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
-                                    contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            FloatingActionButton(
-                                onClick = { showDivider = !showDivider }
-                            ) {
-                                Icon(
-                                    imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
-                                    contentDescription = if (showDivider) "Hide Divider" else "Show Divider"
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            FloatingActionButton(
-                                onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
-                            ) {
-                                Icon(
-                                    imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
-                                    contentDescription = if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            FloatingActionButtonsSection(buttons = floatingActionButtons)
         },
-        floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End
+        floatingActionButtonPosition = FabPosition.Start // or End, depending on your preference
+
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -587,15 +517,39 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         suppliersRef = suppliersRef
     )
 }
-
 @Composable
-private fun Flotin1(function: () -> Unit) {
-    FloatingActionButton(
-        onClick = function,
-    ) {
-        Icon(Icons.Default.Edit, contentDescription = "Adjust Height")
+fun FloatingActionButtonsSection(
+    buttons: List<Triple<ImageVector, String, () -> Unit>>
+) {
+    var showFloatingButtons by remember { mutableStateOf(true) }
+
+    Column {
+        // Toggle button to show/hide other floating action buttons
+        FloatingActionButton(
+            onClick = { showFloatingButtons = !showFloatingButtons }
+        ) {
+            Icon(
+                imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (showFloatingButtons) {
+            buttons.forEach { (icon, contentDescription, onClick) ->
+                FloatingActionButton(onClick = onClick) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = contentDescription
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
     }
 }
+
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)

@@ -122,8 +122,8 @@ fun DessinableImage(
     val filteredAndSortedArticles = articlesEntreBonsGrosTabele
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
-    var nmbrImagesDuBon by remember { mutableStateOf(3) }
-    var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(10) }
+    var nmbrImagesDuBon by remember { mutableStateOf(7) }
+    var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(15) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
     val context = LocalContext.current
