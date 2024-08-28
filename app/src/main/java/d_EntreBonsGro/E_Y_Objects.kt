@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
@@ -307,39 +306,35 @@ private fun ArticleNamesCompos(
     articlesBaseDonne: List<BaseDonne>,
     article: EntreBonsGrosTabele
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        val relatedArticle =
-            articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
-        relatedArticle?.let { related ->
-            var imageExist by remember { mutableStateOf(false) }
+    val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
 
-            // Image Card (30% width, only if image exists)
-            if (imageExist) {//TODo regle pk l image ne sffiche pas comme si la verification ne march passd
-                Card(
-                    shape = RoundedCornerShape(8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    modifier = Modifier
-                        .weight(0.3f)
-                        .aspectRatio(1f) // Make it square
-                ) {
-                    ImageArticles(
-                        article = article,
-                        onImageExist = { imageExist = true },
-                        onImageNonexist = { imageExist = false }
-                    )
-                }
+    relatedArticle?.let { related ->
+        var imageExist by remember { mutableStateOf(false) }
 
-                Spacer(modifier = Modifier.width(8.dp)) // Add some space between cards
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Image Card (30% width)
+            Box(
+                modifier = Modifier
+                    .weight(0.3f)
+                    .aspectRatio(1f)
+            ) {
+                ImageArticles(
+                    article = article,
+                    onImageExist = { imageExist = true },
+                    onImageNonexist = { imageExist = false }
+                )
             }
 
-            // Text Card (70% width if image exists, 100% if it doesn't)
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Text Card (70% width)
             val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
             val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
             val textColor = if (isNewArticle) Color.Red else Color.Black
 
             Card(
                 modifier = Modifier
-                    .weight(if (imageExist) 0.7f else 1f)
+                    .weight(0.7f)
                     .fillMaxHeight(),
                 colors = CardDefaults.cardColors(containerColor = cardColor)
             ) {
@@ -351,14 +346,14 @@ private fun ArticleNamesCompos(
                         text = "${if (!imageExist) article.nomArticleBG else ""} ${related.nomArab ?: ""}",
                         color = textColor,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         }
     }
 }
+
 @Composable
 fun ImageArticles(
     article: EntreBonsGrosTabele,
@@ -385,10 +380,21 @@ fun ImageArticles(
                             .fillMaxSize()
                             .rotate(90f),
                         contentScale = ContentScale.Fit,
-                        onSuccess = { onImageExist() }
+                        onSuccess = { onImageExist() },
+                        onError = { onImageNonexist() }
                     )
                 }
-                else -> onImageNonexist()
+                else -> {
+                    onImageNonexist()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.LightGray),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No Image")
+                    }
+                }
             }
         }
     }
