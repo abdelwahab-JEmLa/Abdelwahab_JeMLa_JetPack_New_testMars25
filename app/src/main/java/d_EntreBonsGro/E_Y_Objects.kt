@@ -113,14 +113,13 @@ fun DessinableImage(
     var nmbrImagesDuBon by remember { mutableStateOf(3) }
     var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(10) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
-    var showOutlineDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val lazyListState = rememberLazyListState()
 
+    var showOutlineDialog by remember { mutableStateOf(false) }
     var selectedArticle by remember { mutableStateOf<EntreBonsGrosTabele?>(null) }
     var lastLaunchTime by remember { mutableStateOf(0L) }
-    var showSuggestions by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
 
@@ -138,12 +137,10 @@ fun DessinableImage(
         articlesArticlesAcheteModele,
         articlesBaseDonne,
         articlesEntreBonsGrosTabele,
-        showSuggestions,
         context
     )
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second
-    showSuggestions = reconnaisanceVocaleLencer.third
 
     LazyColumn(
         state = lazyListState,
@@ -156,7 +153,7 @@ fun DessinableImage(
                 ImageRequest.Builder(context).data(imageUri).build()
             )
 
-            ImageRow(
+            Displayer(
                 imageIndex = imageIndex,
                 painter = painter,
                 sectionsDonsChaqueImage = sectionsDonsChaqueImage,
@@ -193,8 +190,6 @@ fun DessinableImage(
         founisseurIdNowIs = founisseurIdNowIs,
         showDialogeNbrIMGs = showDialogeNbrIMGs,
         onDissmiss = onDissmiss,
-        showSuggestions = showSuggestions,
-        filteredSuggestions = filteredSuggestions,
         selectedArticle = selectedArticle,
         articlesRef = articlesRef,
         articlesArticlesAcheteModele = articlesArticlesAcheteModele,
@@ -209,14 +204,98 @@ fun DessinableImage(
         onImageCountChange = { newCount ->
             nmbrImagesDuBon = newCount
         },
-        onSuggestionsClose = {
-            showSuggestions = false
-        },
         onOutlineDialogClose = {
             showOutlineDialog = false
         }
     )
 }
+
+@Composable
+fun Displayer(
+    imageIndex: Int,
+    painter: AsyncImagePainter,
+    sectionsDonsChaqueImage: Int,
+    filteredAndSortedArticles: List<EntreBonsGrosTabele>,
+    heightOfImageAndRelated: Dp,
+    showOutline: Boolean,
+    onArticleClick: (EntreBonsGrosTabele) -> Unit,
+    articlesBaseDonne: List<BaseDonne>,
+    onImageSizeChanged: (IntSize) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+
+            Column(
+                modifier = Modifier.weight(0.3f),
+            ) {
+                ArticleColumn(
+                    imageIndex = imageIndex,
+                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                    filteredAndSortedArticles = filteredAndSortedArticles,
+                    heightOfImageAndRelated = heightOfImageAndRelated,
+                    onArticleClick = onArticleClick,
+                    articlesBaseDonne = articlesBaseDonne,
+                    columnType = ColumnType.QuantityPriceSubtotal
+                )
+            }
+            Image(//TODO fait que l image peut zoom et dezoom et deplace par mouvments
+                painter = painter,
+                contentDescription = "Image for supplier section",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .weight(0.55f)
+                    .height(heightOfImageAndRelated)
+                    .onSizeChanged(onImageSizeChanged)
+                    .drawWithContent {
+                        drawContent()
+                        val redColor = Color.Red.copy(alpha = 0.3f)
+                        val blueColor = Color.Blue.copy(alpha = 0.3f)
+                        for (i in 0 until sectionsDonsChaqueImage) {
+                            val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                            val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                            val color = if (i % 2 == 0) redColor else blueColor
+                            drawRect(
+                                color = color,
+                                topLeft = Offset(0f, top),
+                                size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
+                            )
+                        }
+                    }
+            )
+
+            Column(
+                modifier = Modifier.weight(0.3f),
+            ) {
+                ArticleColumn(
+                    imageIndex = imageIndex,
+                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                    filteredAndSortedArticles = filteredAndSortedArticles,
+                    heightOfImageAndRelated = heightOfImageAndRelated,
+                    onArticleClick = onArticleClick,
+                    articlesBaseDonne = articlesBaseDonne,
+                    columnType = ColumnType.ArticleNames
+                )
+            }
+        }
+        when (painter.state) {
+            is AsyncImagePainter.State.Loading -> {
+                CircularProgressIndicator()
+            }
+            is AsyncImagePainter.State.Error -> {
+                Text(
+                    text = "Error loading image",
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            else -> {}
+        }
+    }
+}
+
 @Composable
 fun ArticleColumn(
     modifier: Modifier = Modifier,
@@ -399,91 +478,6 @@ fun ImageArticles(
         }
     }
 }
-@Composable
-fun ImageRow(
-    imageIndex: Int,
-    painter: AsyncImagePainter,
-    sectionsDonsChaqueImage: Int,
-    filteredAndSortedArticles: List<EntreBonsGrosTabele>,
-    heightOfImageAndRelated: Dp,
-    showOutline: Boolean,
-    onArticleClick: (EntreBonsGrosTabele) -> Unit,
-    articlesBaseDonne: List<BaseDonne>,
-    onImageSizeChanged: (IntSize) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-
-            Column(
-                modifier = Modifier.weight(0.3f),
-            ) {
-                ArticleColumn(
-                    imageIndex = imageIndex,
-                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                    filteredAndSortedArticles = filteredAndSortedArticles,
-                    heightOfImageAndRelated = heightOfImageAndRelated,
-                    onArticleClick = onArticleClick,
-                    articlesBaseDonne = articlesBaseDonne,
-                    columnType = ColumnType.QuantityPriceSubtotal
-                )
-            }
-            Image(
-                painter = painter,
-                contentDescription = "Image for supplier section",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .weight(0.55f)
-                    .height(heightOfImageAndRelated)
-                    .onSizeChanged(onImageSizeChanged)
-                    .drawWithContent {
-                        drawContent()
-                        val redColor = Color.Red.copy(alpha = 0.3f)
-                        val blueColor = Color.Blue.copy(alpha = 0.3f)
-                        for (i in 0 until sectionsDonsChaqueImage) {
-                            val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                            val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                            val color = if (i % 2 == 0) redColor else blueColor
-                            drawRect(
-                                color = color,
-                                topLeft = Offset(0f, top),
-                                size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
-                            )
-                        }
-                    }
-            )
-
-            Column(
-                modifier = Modifier.weight(0.3f),
-            ) {
-                ArticleColumn(
-                    imageIndex = imageIndex,
-                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                    filteredAndSortedArticles = filteredAndSortedArticles,
-                    heightOfImageAndRelated = heightOfImageAndRelated,
-                    onArticleClick = onArticleClick,
-                    articlesBaseDonne = articlesBaseDonne,
-                    columnType = ColumnType.ArticleNames
-                )
-            }
-        }
-        when (painter.state) {
-            is AsyncImagePainter.State.Loading -> {
-                CircularProgressIndicator()
-            }
-            is AsyncImagePainter.State.Error -> {
-                Text(
-                    text = "Error loading image",
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            else -> {}
-        }
-    }
-}
 
 @Composable
 private fun reconnaisanceVocaleLencer(
@@ -497,11 +491,10 @@ private fun reconnaisanceVocaleLencer(
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     articlesBaseDonne: List<BaseDonne>,
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
-    initialShowSuggestions: Boolean,
     context: Context
-): Triple<ManagedActivityResultLauncher<Intent, ActivityResult>, List<String>, Boolean> {
+): Pair<ManagedActivityResultLauncher<Intent, ActivityResult>, List<String>> {
     var filteredSuggestions by remember { mutableStateOf(initialFilteredSuggestions) }
-    var showSuggestions by remember { mutableStateOf(initialShowSuggestions) }
+    var showSuggestions by remember { mutableStateOf(false) }
 
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
@@ -566,7 +559,27 @@ private fun reconnaisanceVocaleLencer(
             ).show()
         }
     }
-    return Triple(speechRecognizerLauncher, filteredSuggestions, showSuggestions)
+    if (showSuggestions) {
+        SuggestionsDialog(
+            filteredSuggestions = filteredSuggestions,
+            onSuggestionSelected = { suggestion ->
+                updateArticleIdFromSuggestionDI(
+                    suggestion = suggestion,
+                    selectedArticle = selectedArticle?.vidBG,
+                    articlesRef = articlesRef,
+                    articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                    articlesBaseDonne = articlesBaseDonne,
+                    onNameInputComplete = { /* Implement if needed */ },
+                    editionPassedMode = false,
+                    articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                    coroutineScope = coroutineScope
+                )
+                showSuggestions = false
+            },
+            onDismiss = { showSuggestions = false }
+        )
+    }
+    return Pair(speechRecognizerLauncher, filteredSuggestions)
 }
 
 enum class ColumnType {
@@ -621,8 +634,6 @@ private fun DialogsController(
     founisseurIdNowIs: Long?,
     showDialogeNbrIMGs: Boolean,
     onDissmiss: () -> Unit,
-    showSuggestions: Boolean,
-    filteredSuggestions: List<String>,
     selectedArticle: EntreBonsGrosTabele?,
     articlesRef: DatabaseReference,
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
@@ -633,7 +644,6 @@ private fun DialogsController(
     suggestionsList: List<String>,
     onSectionCountChange: (Int) -> Unit,
     onImageCountChange: (Int) -> Unit,
-    onSuggestionsClose: () -> Unit,
     onOutlineDialogClose: () -> Unit
 ) {
     if (showDiviseurDesSections) {
@@ -652,26 +662,7 @@ private fun DialogsController(
         )
     }
 
-    if (showSuggestions) {
-        SuggestionsDialog(
-            filteredSuggestions = filteredSuggestions,
-            onSuggestionSelected = { suggestion ->
-                updateArticleIdFromSuggestionDI(
-                    suggestion = suggestion,
-                    selectedArticle = selectedArticle?.vidBG,
-                    articlesRef = articlesRef,
-                    articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                    articlesBaseDonne = articlesBaseDonne,
-                    onNameInputComplete = { /* Implement if needed */ },
-                    editionPassedMode = false,
-                    articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
-                    coroutineScope = coroutineScope
-                )
-                onSuggestionsClose()
-            },
-            onDismiss = onSuggestionsClose
-        )
-    }
+
 
     if (showOutlineDialog) {
         OutlineDialog(
@@ -686,7 +677,6 @@ private fun DialogsController(
         )
     }
 }
-
 @Composable
 fun SuggestionsDialog(
     filteredSuggestions: List<String>,
