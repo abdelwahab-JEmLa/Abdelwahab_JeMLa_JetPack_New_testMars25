@@ -17,8 +17,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -59,11 +62,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -85,6 +92,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
+
 
 @Composable
 fun DessinableImage(
@@ -230,7 +238,7 @@ fun Displayer(
         Row(modifier = Modifier.fillMaxWidth()) {
 
             Column(
-                modifier = Modifier.weight(0.3f),
+                modifier = Modifier.weight(0.15f),
             ) {
                 ArticleColumn(
                     imageIndex = imageIndex,
@@ -242,29 +250,13 @@ fun Displayer(
                     columnType = ColumnType.QuantityPriceSubtotal
                 )
             }
-            Image(//TODO fait que l image peut zoom et dezoom et deplace par mouvments
-                painter = painter,
-                contentDescription = "Image for supplier section",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .weight(0.55f)
-                    .height(heightOfImageAndRelated)
-                    .onSizeChanged(onImageSizeChanged)
-                    .drawWithContent {
-                        drawContent()
-                        val redColor = Color.Red.copy(alpha = 0.3f)
-                        val blueColor = Color.Blue.copy(alpha = 0.3f)
-                        for (i in 0 until sectionsDonsChaqueImage) {
-                            val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                            val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                            val color = if (i % 2 == 0) redColor else blueColor
-                            drawRect(
-                                color = color,
-                                topLeft = Offset(0f, top),
-                                size = androidx.compose.ui.geometry.Size(size.width, bottom - top)
-                            )
-                        }
-                    }
+
+            ImageDisplayer(
+                painter,
+                heightOfImageAndRelated,
+                onImageSizeChanged,
+                sectionsDonsChaqueImage,
+                modifier = Modifier.weight(0.55f),
             )
 
             Column(
@@ -293,6 +285,65 @@ fun Displayer(
             }
             else -> {}
         }
+    }
+}
+
+@Composable
+private fun ImageDisplayer(
+    painter: AsyncImagePainter,
+    heightOfImageAndRelated: Dp,
+    onImageSizeChanged: (IntSize) -> Unit,
+    sectionsDonsChaqueImage: Int,
+    modifier: Modifier
+) {
+    BoxWithConstraints(
+        modifier = modifier
+            .height(heightOfImageAndRelated)
+            .clip(RectangleShape)
+    ) {
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+
+        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+            scale = (scale * zoomChange).coerceIn(1f, 3f)
+            val maxX = (constraints.maxWidth * (scale - 1)) / 2
+            val maxY = (constraints.maxHeight * (scale - 1)) / 2
+            offset = Offset(
+                x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
+                y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
+            )
+        }
+
+        Image(
+            painter = painter,
+            contentDescription = "Image for supplier section",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+                .transformable(state = state)
+                .onSizeChanged(onImageSizeChanged)
+                .drawWithContent {
+                    drawContent()
+                    val redColor = Color.Red.copy(alpha = 0.3f)
+                    val blueColor = Color.Blue.copy(alpha = 0.3f)
+                    for (i in 0 until sectionsDonsChaqueImage) {
+                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                        val color = if (i % 2 == 0) redColor else blueColor
+                        drawRect(
+                            color = color,
+                            topLeft = Offset(0f, top),
+                            size = Size(size.width, bottom - top)
+                        )
+                    }
+                }
+        )
     }
 }
 
