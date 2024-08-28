@@ -225,7 +225,6 @@ fun ArticleColumn(
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
     heightOfImageAndRelated: Dp,
-    showOutline: Boolean,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
     columnType: ColumnType
@@ -277,7 +276,7 @@ private fun QuantityPriceSubtotalCompos(article: EntreBonsGrosTabele) {
                 article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
             val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Red
             val textColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
-            val borderColor = if (isZeroQuantityOrPrice) Color.Red else Color.Unspecified
+            val borderColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
 
             Card(
                 modifier = Modifier.fillMaxSize(),
@@ -315,7 +314,7 @@ private fun ArticleNamesCompos(
             var imageExist by remember { mutableStateOf(false) }
 
             // Image Card (30% width, only if image exists)
-            if (imageExist) {
+            if (imageExist) {//TODo regle pk l image ne sffiche pas comme si la verification ne march passd
                 Card(
                     shape = RoundedCornerShape(8.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -421,7 +420,6 @@ fun ImageRow(
                     sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                     filteredAndSortedArticles = filteredAndSortedArticles,
                     heightOfImageAndRelated = heightOfImageAndRelated,
-                    showOutline = showOutline,
                     onArticleClick = onArticleClick,
                     articlesBaseDonne = articlesBaseDonne,
                     columnType = ColumnType.QuantityPriceSubtotal
@@ -460,7 +458,6 @@ fun ImageRow(
                     sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                     filteredAndSortedArticles = filteredAndSortedArticles,
                     heightOfImageAndRelated = heightOfImageAndRelated,
-                    showOutline = showOutline,
                     onArticleClick = onArticleClick,
                     articlesBaseDonne = articlesBaseDonne,
                     columnType = ColumnType.ArticleNames
