@@ -19,10 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Directions
-import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.ImagesearchRoller
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
@@ -312,12 +309,11 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     }
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // New FloatingActionButton for outline toggle
                     FloatingActionButton(
                         onClick = { showOutline = !showOutline }
                     ) {
                         Icon(
-                            imageVector = if (showOutline) Icons.Default.Close else Icons.Default.HideImage,
+                            imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
                             contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
                         )
                     }
@@ -327,20 +323,22 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         onClick = { showDivider = !showDivider }
                     ) {
                         Icon(
-                            imageVector = if (showDivider) Icons.Default.Directions else Icons.Default.Close,
+                            imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
                             contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
                         )
                     }
-
                     Spacer(modifier = Modifier.height(2.dp))
+
                     FloatingActionButton(
                         onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
                     ) {
                         Icon(
-                            imageVector = if (showDialogeNbrIMGs) Icons.Default.ImagesearchRoller else Icons.Default.Close,
+                            imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
                             contentDescription = if (showDialogeNbrIMGs) "Hide Outline" else "Show Outline"
                         )
+
                     }
+
                 }
             } else {
                 Column {

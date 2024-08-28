@@ -502,13 +502,19 @@ private fun reconnaisanceVocaleLencer(
                 updateQuantuPrixArticleDI(input, it, articlesRef, coroutineScope)
             }
         } else if (input.contains("تغيير")) {
+            // Fixed: Extract the new Arabic name correctly
             val newArabName = input.substringAfter("تغيير").trim()
-            coroutineScope.launch {
-                selectedArticle?.let { article ->
-                    baseDonneRef.child(article.idArticleBG.toString()).child("nomArab")
-                        .setValue(newArabName)
-                    articleDao.updateArticleArabName(article.idArticleBG, newArabName)
+            if (newArabName.isNotEmpty()) {
+                coroutineScope.launch {
+                    selectedArticle?.let { article ->
+                        baseDonneRef.child(article.idArticleBG.toString()).child("nomArab")
+                            .setValue(newArabName)
+                        articleDao.updateArticleArabName(article.idArticleBG, newArabName)
+                    }
                 }
+            } else {
+                // Handle the case when no new name is provided after "تغيير"
+                Toast.makeText(context, "Veuillez fournir un nouveau nom après 'تغيير'", Toast.LENGTH_SHORT).show()
             }
         } else {
             val cleanInput = input.replace(".", "").toLowerCase()
