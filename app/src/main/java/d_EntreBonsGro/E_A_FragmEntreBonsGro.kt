@@ -19,6 +19,9 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
@@ -112,6 +115,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showOutline by remember { mutableStateOf(false) }
     var showDivider by remember { mutableStateOf(true) }
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
+    var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
@@ -281,101 +285,99 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
         },
         floatingActionButton = {
-            if (isPortraitLandscap) {
-                Column {
-                    if (false){  // Existing VoiceInputButton
-                    VoiceInputButton(
-                        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
-                        articlesRef = articlesRef,
-                        baseDonneRef = baseDonneRef,
-                        founisseurNowIs = founisseurNowIs,
-                        articlesBaseDonne = articlesBaseDonne,
-                        suppliersList = suppliersList,
-                        suggestionsList = suggestionsList,
-                        onInputProcessed = { newVid ->
-                            if (newVid != null) {
-                                vidOfLastQuantityInputted = newVid
-                                nowItsNameInputeTime = true
-                            }
-                            inputText = ""
-                        },
-                        updateArticleIdFromSuggestion = ::updateArticleIdFromSuggestion,
-                        vidOfLastQuantityInputted = vidOfLastQuantityInputted,
-                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                        editionPassedMode = editionPassedMode,
-                        coroutineScope = coroutineScope,
-                        articleDao = articleDao
+            var showFloatingButtons by remember { mutableStateOf(true) }
+
+            Column {
+                // Toggle button to show/hide other floating action buttons
+                FloatingActionButton(
+                    onClick = { showFloatingButtons = !showFloatingButtons }
+                ) {
+                    Icon(
+                        imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
                     )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    FloatingActionButton(
-                        onClick = { showOutline = !showOutline }
-                    ) {
-                        Icon(
-                            imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
-                            contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    FloatingActionButton(
-                        onClick = { showDivider = !showDivider }
-                    ) {
-                        Icon(
-                            imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
-                            contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    FloatingActionButton(
-                        onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
-                    ) {
-                        Icon(
-                            imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
-                            contentDescription = if (showDialogeNbrIMGs) "Hide Outline" else "Show Outline"
-                        )
-
-                    }
-
                 }
-            } else {
-                Column {
-                    // For non-portrait mode, only show the outline toggle button
-                    FloatingActionButton(
-                        onClick = { showOutline = !showOutline }
-                    ) {
-                        Icon(
-                            imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
-                            contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
 
-                    FloatingActionButton(
-                        onClick = { showDivider = !showDivider }
-                    ) {
-                        Icon(
-                            imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
-                            contentDescription = if (showDivider) "Hide Outline" else "Show Outline"
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    FloatingActionButton(
-                        onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
-                    ) {
-                        Icon(
-                            imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
-                            contentDescription = if (showDialogeNbrIMGs) "Hide Outline" else "Show Outline"
-                        )
+                if (showFloatingButtons) {
+                    if (isPortraitLandscap) {
+                        Column {
+                            Flotin1 {
+                                heightOfImageAndRelatedDialogEditer = !heightOfImageAndRelatedDialogEditer
+                            }
 
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            FloatingActionButton(
+                                onClick = { showOutline = !showOutline }
+                            ) {
+                                Icon(
+                                    imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
+                                    contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            FloatingActionButton(
+                                onClick = { showDivider = !showDivider }
+                            ) {
+                                Icon(
+                                    imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
+                                    contentDescription = if (showDivider) "Hide Divider" else "Show Divider"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            FloatingActionButton(
+                                onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
+                            ) {
+                                Icon(
+                                    imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
+                                    contentDescription = if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
+                                )
+                            }
+                        }
+                    } else {
+                        Column {
+                            FloatingActionButton(
+                                onClick = { showOutline = !showOutline }
+                            ) {
+                                Icon(
+                                    imageVector = if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
+                                    contentDescription = if (showOutline) "Hide Outline" else "Show Outline"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            FloatingActionButton(
+                                onClick = { showDivider = !showDivider }
+                            ) {
+                                Icon(
+                                    imageVector = if (showDivider) Icons.Default.Close else Icons.Default.ProductionQuantityLimits,
+                                    contentDescription = if (showDivider) "Hide Divider" else "Show Divider"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            FloatingActionButton(
+                                onClick = { showDialogeNbrIMGs = !showDialogeNbrIMGs }
+                            ) {
+                                Icon(
+                                    imageVector = if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
+                                    contentDescription = if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
+                                )
+                            }
+                        }
                     }
                 }
             }
         },
-        floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End,
+        floatingActionButtonPosition = if (isPortraitLandscap) FabPosition.Start else FabPosition.End
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -448,7 +450,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         coroutineScope=coroutineScope,
                         showOutline=showOutline,
                         showDialogeNbrIMGs=showDialogeNbrIMGs,
-                        onDissmiss = { showDialogeNbrIMGs = false }
+                        onDissmiss = { showDialogeNbrIMGs = false },
+                        heightOfImageAndRelatedDialogEditer=heightOfImageAndRelatedDialogEditer,
                     )
                 }
                 showSplitView -> {
@@ -469,6 +472,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             showOutline = showOutline,
                             showDialogeNbrIMGs = showDialogeNbrIMGs,
                             onDissmiss = { showDialogeNbrIMGs = false },
+                            heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
@@ -582,6 +586,15 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         suppliersList = suppliersList,
         suppliersRef = suppliersRef
     )
+}
+
+@Composable
+private fun Flotin1(function: () -> Unit) {
+    FloatingActionButton(
+        onClick = function,
+    ) {
+        Icon(Icons.Default.Edit, contentDescription = "Adjust Height")
+    }
 }
 
 @Composable

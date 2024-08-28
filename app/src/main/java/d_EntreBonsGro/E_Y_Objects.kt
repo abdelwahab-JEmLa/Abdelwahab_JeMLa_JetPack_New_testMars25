@@ -36,9 +36,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -110,7 +113,8 @@ fun DessinableImage(
     coroutineScope: CoroutineScope,
     showOutline: Boolean,
     showDialogeNbrIMGs: Boolean,
-    onDissmiss: () -> Unit
+    onDissmiss: () -> Unit,
+    heightOfImageAndRelatedDialogEditer: Boolean
 ) {
     val configuration = LocalConfiguration.current
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -130,8 +134,35 @@ fun DessinableImage(
     var lastLaunchTime by remember { mutableStateOf(0L) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
+    var heightAdjustment by remember { mutableStateOf(0) }
+    val baseHeight = if (isPortraitLandscap) 260 else 550
+    val heightOfImageAndRelated = (baseHeight + heightAdjustment).dp
 
-    val heightOfImageAndRelated = if (isPortraitLandscap) 260.dp else 550.dp
+    Box(modifier = modifier.fillMaxSize()) {
+        // Your existing content here
+
+
+        // Floating text for height adjustment
+        if (heightOfImageAndRelatedDialogEditer) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 16.dp)
+                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
+                Row {
+                    IconButton(onClick = { heightAdjustment -= 30 }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                    }
+                    IconButton(onClick = { heightAdjustment += 30 }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                    }
+                }
+            }
+        }
+    }
 
     val reconnaisanceVocaleLencer
     = reconnaisanceVocaleLencer(
