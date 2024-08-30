@@ -138,34 +138,7 @@ fun DessinableImage(
     val baseHeight = if (isPortraitLandscap) 260 else 550
     val heightOfImageAndRelated = (baseHeight + heightAdjustment).dp
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // Your existing content here
-
-
-        // Floating text for height adjustment
-        if (heightOfImageAndRelatedDialogEditer) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp)
-                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
-                Row {
-                    IconButton(onClick = { heightAdjustment -= 30 }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
-                    }
-                    IconButton(onClick = { heightAdjustment += 30 }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase")
-                    }
-                }
-            }
-        }
-    }
-
-    val reconnaisanceVocaleLencer
-    = reconnaisanceVocaleLencer(
+    val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
         articlesRef,
         coroutineScope,
@@ -181,74 +154,126 @@ fun DessinableImage(
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second
 
-    LazyColumn(
-        state = lazyListState,
-        modifier = modifier
-    ) {
-        items(nmbrImagesDuBon) { imageIndex ->
-            val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
-            val imageUri = Uri.parse(imagePath)
-            val painter = rememberAsyncImagePainter(
-                ImageRequest.Builder(context).data(imageUri).build()
-            )
-
-            Displayer(
-                imageIndex = imageIndex,
-                painter = painter,
-                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                filteredAndSortedArticles = filteredAndSortedArticles,
-                heightOfImageAndRelated = heightOfImageAndRelated,
-                showOutline = showOutline,
-                onArticleClick = { article ->
-                    selectedArticle = article
-                    if (showOutline) {
-                        showOutlineDialog = true
-                    } else {
-                        val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastLaunchTime > 1000) {
-                            lastLaunchTime = currentTime
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                            }
-                            speechRecognizerLauncher.launch(intent)
-                        }
+    Box(modifier = modifier.fillMaxSize()) {
+        Column {
+            if (showDiviseurDesSections) {
+                TreeCountControl(
+                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                    filteredAndSortedArticles = filteredAndSortedArticles,
+                    founisseurIdNowIs = founisseurIdNowIs,
+                    onCountChange = { newCount ->
+                        sectionsDonsChaqueImage = newCount
                     }
-                },
-                articlesBaseDonne = articlesBaseDonne,
-                onImageSizeChanged = { if (imageIndex == 0) imageSize = it }
+                )
+            }
+
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.weight(1f)
+            ) {
+                items(nmbrImagesDuBon) { imageIndex ->
+                    val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
+                    val imageUri = Uri.parse(imagePath)
+                    val painter = rememberAsyncImagePainter(
+                        ImageRequest.Builder(context).data(imageUri).build()
+                    )
+
+                    Displayer(
+                        imageIndex = imageIndex,
+                        painter = painter,
+                        sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                        filteredAndSortedArticles = filteredAndSortedArticles,
+                        heightOfImageAndRelated = heightOfImageAndRelated,
+                        showOutline = showOutline,
+                        onArticleClick = { article ->
+                            selectedArticle = article
+                            if (showOutline) {
+                                showOutlineDialog = true
+                            } else {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastLaunchTime > 1000) {
+                                    lastLaunchTime = currentTime
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                    }
+                                    speechRecognizerLauncher.launch(intent)
+                                }
+                            }
+                        },
+                        articlesBaseDonne = articlesBaseDonne,
+                        onImageSizeChanged = { if (imageIndex == 0) imageSize = it }
+                    )
+                }
+            }
+        }
+
+        // Extracted and centered height adjustment controls
+        if (heightOfImageAndRelatedDialogEditer) {
+            HeightAdjustmentControls(
+                heightOfImageAndRelated = heightOfImageAndRelated,
+                onHeightAdjustment = { adjustment -> heightAdjustment += adjustment }
             )
         }
     }
 
-    DialogsController(
-        showDiviseurDesSections = showDiviseurDesSections,
-        sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-        filteredAndSortedArticles = filteredAndSortedArticles,
-        founisseurIdNowIs = founisseurIdNowIs,
-        showDialogeNbrIMGs = showDialogeNbrIMGs,
-        onDissmiss = onDissmiss,
-        selectedArticle = selectedArticle,
-        articlesRef = articlesRef,
-        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-        articlesBaseDonne = articlesBaseDonne,
-        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
-        coroutineScope = coroutineScope,
-        showOutlineDialog = showOutlineDialog,
-        suggestionsList = suggestionsList,
-        onSectionCountChange = { newCount ->
-            sectionsDonsChaqueImage = newCount
-        },
-        onImageCountChange = { newCount ->
-            nmbrImagesDuBon = newCount
-        },
-        onOutlineDialogClose = {
-            showOutlineDialog = false
-        }
-    )
+    // Dialogs
+    if (showDialogeNbrIMGs) {
+        ImageCountDialog(
+            onDismiss = onDissmiss,
+            onSelectCount = { newCount ->
+                nmbrImagesDuBon = newCount
+            }
+        )
+    }
+
+    if (showOutlineDialog) {
+        OutlineDialog(
+            selectedArticle = selectedArticle,
+            articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+            articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+            articlesBaseDonne = articlesBaseDonne,
+            suggestionsList = suggestionsList,
+            articlesRef = articlesRef,
+            coroutineScope = coroutineScope,
+            onDismiss = { showOutlineDialog = false }
+        )
+    }
 }
 
+@Composable
+fun HeightAdjustmentControls(
+    heightOfImageAndRelated: Dp,
+    onHeightAdjustment: (Int) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), shape = RoundedCornerShape(8.dp))
+                .padding(8.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
+                Row {
+                    IconButton(onClick = { onHeightAdjustment(-30) }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                    }
+                    IconButton(onClick = { onHeightAdjustment(30) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 fun Displayer(
     imageIndex: Int,
@@ -1041,4 +1066,3 @@ private fun TreeCountControl(
         }
     }
 }
-

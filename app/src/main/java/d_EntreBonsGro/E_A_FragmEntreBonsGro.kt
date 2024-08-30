@@ -118,7 +118,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
     var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
 
-
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -207,7 +206,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
         ) { showDialogeNbrIMGs = !showDialogeNbrIMGs }
     )
-
 
     Scaffold(
         topBar = {
@@ -517,6 +515,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         suppliersRef = suppliersRef
     )
 }
+
 @Composable
 fun FloatingActionButtonsSection(
     buttons: List<Triple<ImageVector, String, () -> Unit>>
