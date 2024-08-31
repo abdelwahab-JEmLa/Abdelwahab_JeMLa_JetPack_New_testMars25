@@ -44,7 +44,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -54,7 +53,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -399,14 +397,6 @@ fun Displayer(
             )
         }
 
-        // Reset Positions Button
-        ResetPositionsButton(
-            onReset = {
-                // Call callbacks with initial values instead of direct assignment
-                onLeftColumnDrag(0f)
-                onRightColumnDrag(0f)
-            }
-        )
 
         // Loading and error states
         when (painter.state) {
@@ -424,25 +414,7 @@ fun Displayer(
         }
     }
 }
-@Composable
-fun ResetPositionsButton(
-    onReset: () -> Unit
-) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomEnd
-    ) {
-        FloatingActionButton(
-            onClick = onReset,
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "Reset positions"
-            )
-        }
-    }
-}
+
 @Composable
 private fun ImageDisplayer(
     painter: AsyncImagePainter,
@@ -548,7 +520,7 @@ fun ArticleColumn(
                             ColumnType.QuantityPrice -> {
                                 QuantityPrixCompos(article)
                             }
-                            ColumnType.ArticleNames -> {
+                            ColumnType.ArticleNames -> {    //TODO pk le draga fait trop
                                 ArticleNamesCompos(articlesBaseDonne, article)
                             }
                         }
