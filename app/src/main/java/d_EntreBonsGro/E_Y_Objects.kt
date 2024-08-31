@@ -141,8 +141,11 @@ fun DessinableImage(
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
     var heightAdjustment by remember { mutableStateOf(0) }
+    var widthAdjustment by remember { mutableStateOf(0) }
     val baseHeight = if (isPortraitLandscap) 270 else 550
+    val baseWidth = if (isPortraitLandscap) 350 else 700
     val heightOfImageAndRelated = (baseHeight + heightAdjustment).dp
+    val widthOfImageAndRelated = (baseWidth + widthAdjustment).dp
 
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
@@ -190,6 +193,7 @@ fun DessinableImage(
                         sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                         filteredAndSortedArticles = filteredAndSortedArticles,
                         heightOfImageAndRelated = heightOfImageAndRelated,
+                        widthOfImageAndRelated = widthOfImageAndRelated,
                         onArticleClick = { article ->
                             selectedArticle = article
                             if (showOutline) {
@@ -214,11 +218,13 @@ fun DessinableImage(
             }
         }
 
-        // Extracted and centered height adjustment controls
+        // Extracted and centered height and width adjustment controls
         if (heightOfImageAndRelatedDialogEditer) {
-            HeightAdjustmentControls(
+            HeightAndWidthAdjustmentControls(
                 heightOfImageAndRelated = heightOfImageAndRelated,
-                onHeightAdjustment = { adjustment -> heightAdjustment += adjustment }
+                widthOfImageAndRelated = widthOfImageAndRelated,
+                onHeightAdjustment = { adjustment -> heightAdjustment += adjustment },
+                onWidthAdjustment = { adjustment -> widthAdjustment += adjustment }
             )
         }
     }
@@ -248,9 +254,11 @@ fun DessinableImage(
 }
 
 @Composable
-fun HeightAdjustmentControls(
+fun HeightAndWidthAdjustmentControls(
     heightOfImageAndRelated: Dp,
-    onHeightAdjustment: (Int) -> Unit
+    widthOfImageAndRelated: Dp,
+    onHeightAdjustment: (Int) -> Unit,
+    onWidthAdjustment: (Int) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -269,16 +277,27 @@ fun HeightAdjustmentControls(
                 Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
                 Row {
                     IconButton(onClick = { onHeightAdjustment(-10) }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease Height")
                     }
                     IconButton(onClick = { onHeightAdjustment(10) }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                        Icon(Icons.Default.Add, contentDescription = "Increase Height")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Width: ${widthOfImageAndRelated.value.toInt()}dp")
+                Row {
+                    IconButton(onClick = { onWidthAdjustment(-10) }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease Width")
+                    }
+                    IconButton(onClick = { onWidthAdjustment(10) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase Width")
                     }
                 }
             }
         }
     }
 }
+
 @Composable
 fun Displayer(
     imageIndex: Int,
@@ -286,6 +305,7 @@ fun Displayer(
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
     heightOfImageAndRelated: Dp,
+    widthOfImageAndRelated: Dp,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
     onImageSizeChanged: (IntSize) -> Unit
@@ -295,7 +315,7 @@ fun Displayer(
 
     BoxWithConstraints(
         modifier = Modifier
-            .fillMaxWidth()
+            .width(widthOfImageAndRelated)
             .height(heightOfImageAndRelated)
     ) {
         val density = LocalDensity.current
@@ -304,10 +324,10 @@ fun Displayer(
 
         // Image Displayer
         ImageDisplayer(
-            painter,
-            heightOfImageAndRelated,
-            onImageSizeChanged,
-            sectionsDonsChaqueImage,
+            painter = painter,
+            heightOfImageAndRelated = heightOfImageAndRelated,
+            onImageSizeChanged = onImageSizeChanged,  // This line is fixed
+            sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             modifier = Modifier.fillMaxSize(),
         )
 
