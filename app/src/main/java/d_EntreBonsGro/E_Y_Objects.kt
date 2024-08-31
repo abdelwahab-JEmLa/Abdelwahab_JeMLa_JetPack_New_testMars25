@@ -17,13 +17,15 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -31,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -78,9 +81,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
@@ -95,6 +100,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
+import kotlin.math.roundToInt
 
 
 @Composable
@@ -135,7 +141,7 @@ fun DessinableImage(
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
 
     var heightAdjustment by remember { mutableStateOf(0) }
-    val baseHeight = if (isPortraitLandscap) 260 else 550
+    val baseHeight = if (isPortraitLandscap) 270 else 550
     val heightOfImageAndRelated = (baseHeight + heightAdjustment).dp
 
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
@@ -184,7 +190,6 @@ fun DessinableImage(
                         sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                         filteredAndSortedArticles = filteredAndSortedArticles,
                         heightOfImageAndRelated = heightOfImageAndRelated,
-                        showOutline = showOutline,
                         onArticleClick = { article ->
                             selectedArticle = article
                             if (showOutline) {
@@ -263,10 +268,10 @@ fun HeightAdjustmentControls(
             ) {
                 Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
                 Row {
-                    IconButton(onClick = { onHeightAdjustment(-30) }) {
+                    IconButton(onClick = { onHeightAdjustment(-10) }) {
                         Icon(Icons.Default.Remove, contentDescription = "Decrease")
                     }
-                    IconButton(onClick = { onHeightAdjustment(30) }) {
+                    IconButton(onClick = { onHeightAdjustment(10) }) {
                         Icon(Icons.Default.Add, contentDescription = "Increase")
                     }
                 }
@@ -281,20 +286,47 @@ fun Displayer(
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
     heightOfImageAndRelated: Dp,
-    showOutline: Boolean,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
     onImageSizeChanged: (IntSize) -> Unit
 ) {
-    Box(
+    var leftColumnOffset by remember { mutableStateOf(0f) }
+    var rightColumnOffset by remember { mutableStateOf(0f) }
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
+            .height(heightOfImageAndRelated)
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        val density = LocalDensity.current
+        val maxWidthPx = with(density) { maxWidth.toPx() }
+        val columnWidthPx = with(density) { 100.dp.toPx() }
 
-            Column(
-                modifier = Modifier.weight(0.15f),
+        // Image Displayer
+        ImageDisplayer(
+            painter,
+            heightOfImageAndRelated,
+            onImageSizeChanged,
+            sectionsDonsChaqueImage,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        // Floating columns
+        Row(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Left floating column
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
+                    .width(100.dp)
+                    .fillMaxHeight()
+                    .draggable(
+                        orientation = Orientation.Horizontal,
+                        state = rememberDraggableState { delta ->
+                            leftColumnOffset = (leftColumnOffset + delta).coerceIn(0f, maxWidthPx - columnWidthPx)
+                        }
+                    )
             ) {
                 ArticleColumn(
                     imageIndex = imageIndex,
@@ -307,16 +339,20 @@ fun Displayer(
                 )
             }
 
-            ImageDisplayer(
-                painter,
-                heightOfImageAndRelated,
-                onImageSizeChanged,
-                sectionsDonsChaqueImage,
-                modifier = Modifier.weight(0.55f),
-            )
+            Spacer(modifier = Modifier.weight(1f))
 
-            Column(
-                modifier = Modifier.weight(0.3f),
+            // Right floating column
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
+                    .width(100.dp)
+                    .fillMaxHeight()
+                    .draggable(
+                        orientation = Orientation.Horizontal,
+                        state = rememberDraggableState { delta ->
+                            rightColumnOffset = (rightColumnOffset + delta).coerceIn(-(maxWidthPx - columnWidthPx), 0f)
+                        }
+                    )
             ) {
                 ArticleColumn(
                     imageIndex = imageIndex,
@@ -329,21 +365,23 @@ fun Displayer(
                 )
             }
         }
+
+        // Loading and error states
         when (painter.state) {
             is AsyncImagePainter.State.Loading -> {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             is AsyncImagePainter.State.Error -> {
                 Text(
                     text = "Error loading image",
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
             else -> {}
         }
     }
 }
-
 @Composable
 private fun ImageDisplayer(
     painter: AsyncImagePainter,
