@@ -297,7 +297,6 @@ fun HeightAndWidthAdjustmentControls(
         }
     }
 }
-
 @Composable
 fun Displayer(
     imageIndex: Int,
@@ -315,75 +314,78 @@ fun Displayer(
 
     BoxWithConstraints(
         modifier = Modifier
-            .width(widthOfImageAndRelated)
+            .fillMaxWidth()
             .height(heightOfImageAndRelated)
     ) {
         val density = LocalDensity.current
         val maxWidthPx = with(density) { maxWidth.toPx() }
         val columnWidthPx = with(density) { 100.dp.toPx() }
+        val imageWidthPx = with(density) { widthOfImageAndRelated.toPx() }
 
         // Image Displayer
-        ImageDisplayer(
-            painter = painter,
-            heightOfImageAndRelated = heightOfImageAndRelated,
-            onImageSizeChanged = onImageSizeChanged,  // This line is fixed
-            sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        // Floating columns
-        Row(
-            modifier = Modifier.fillMaxSize()
+        Box(
+            modifier = Modifier
+                .width(widthOfImageAndRelated)
+                .height(heightOfImageAndRelated)
+                .align(Alignment.Center)
         ) {
-            // Left floating column
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
-                    .width(100.dp)
-                    .fillMaxHeight()
-                    .draggable(
-                        orientation = Orientation.Horizontal,
-                        state = rememberDraggableState { delta ->
-                            leftColumnOffset = (leftColumnOffset + delta).coerceIn(0f, maxWidthPx - columnWidthPx)
-                        }
-                    )
-            ) {
-                ArticleColumn(
-                    imageIndex = imageIndex,
-                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                    filteredAndSortedArticles = filteredAndSortedArticles,
-                    heightOfImageAndRelated = heightOfImageAndRelated,
-                    onArticleClick = onArticleClick,
-                    articlesBaseDonne = articlesBaseDonne,
-                    columnType = ColumnType.QuantityPriceSubtotal
-                )
-            }
+            ImageDisplayer(
+                painter = painter,
+                heightOfImageAndRelated = heightOfImageAndRelated,
+                onImageSizeChanged = onImageSizeChanged,
+                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Right floating column
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
-                    .width(100.dp)
-                    .fillMaxHeight()
-                    .draggable(
-                        orientation = Orientation.Horizontal,
-                        state = rememberDraggableState { delta ->
-                            rightColumnOffset = (rightColumnOffset + delta).coerceIn(-(maxWidthPx - columnWidthPx), 0f)
-                        }
+        // Left floating column
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
+                .width(100.dp)
+                .fillMaxHeight()
+                .align(Alignment.CenterStart)
+        ) {
+            ArticleColumn(
+                imageIndex = imageIndex,
+                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                filteredAndSortedArticles = filteredAndSortedArticles,
+                heightOfImageAndRelated = heightOfImageAndRelated,
+                onArticleClick = onArticleClick,
+                articlesBaseDonne = articlesBaseDonne,
+                columnType = ColumnType.QuantityPriceSubtotal,
+                onDrag = { delta ->
+                    leftColumnOffset = (leftColumnOffset + delta).coerceIn(
+                        -columnWidthPx,
+                        (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
                     )
-            ) {
-                ArticleColumn(
-                    imageIndex = imageIndex,
-                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                    filteredAndSortedArticles = filteredAndSortedArticles,
-                    heightOfImageAndRelated = heightOfImageAndRelated,
-                    onArticleClick = onArticleClick,
-                    articlesBaseDonne = articlesBaseDonne,
-                    columnType = ColumnType.ArticleNames
-                )
-            }
+                }
+            )
+        }
+
+        // Right floating column
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
+                .width(100.dp)
+                .fillMaxHeight()
+                .align(Alignment.CenterEnd)
+        ) {
+            ArticleColumn(
+                imageIndex = imageIndex,
+                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                filteredAndSortedArticles = filteredAndSortedArticles,
+                heightOfImageAndRelated = heightOfImageAndRelated,
+                onArticleClick = onArticleClick,
+                articlesBaseDonne = articlesBaseDonne,
+                columnType = ColumnType.ArticleNames,
+                onDrag = { delta ->
+                    rightColumnOffset = (rightColumnOffset + delta).coerceIn(
+                        -(maxWidthPx - imageWidthPx) / 2 - columnWidthPx,
+                        columnWidthPx
+                    )
+                }
+            )
         }
 
         // Loading and error states
@@ -470,10 +472,18 @@ fun ArticleColumn(
     heightOfImageAndRelated: Dp,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
-    columnType: ColumnType
+    columnType: ColumnType,
+    onDrag: (Float) -> Unit
 ) {
     Box(
-        modifier = modifier.height(heightOfImageAndRelated)
+        modifier = modifier
+            .height(heightOfImageAndRelated)
+            .draggable(
+                orientation = Orientation.Horizontal,
+                state = rememberDraggableState { delta ->
+                    onDrag(delta)
+                }
+            )
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize()
@@ -504,7 +514,6 @@ fun ArticleColumn(
         }
     }
 }
-
 @Composable
 private fun QuantityPriceSubtotalCompos(article: EntreBonsGrosTabele) {
     Column(
