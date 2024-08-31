@@ -149,6 +149,9 @@ fun DessinableImage(
     val heightOfImageAndRelated = (baseHeight + heightAdjustment).dp
     val widthOfImageAndRelated = (baseWidth + widthAdjustment).dp
 
+    var leftColumnOffset by remember { mutableStateOf(0f) }
+    var rightColumnOffset by remember { mutableStateOf(0f) }
+
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
         articlesRef,
@@ -214,7 +217,15 @@ fun DessinableImage(
                             }
                         },
                         articlesBaseDonne = articlesBaseDonne,
-                        onImageSizeChanged = { if (imageIndex == 0) imageSize = it }
+                        onImageSizeChanged = { if (imageIndex == 0) imageSize = it },
+                        leftColumnOffset = leftColumnOffset,
+                        rightColumnOffset = rightColumnOffset,
+                        onLeftColumnDrag = { delta ->
+                            leftColumnOffset += delta
+                        },
+                        onRightColumnDrag = { delta ->
+                            rightColumnOffset += delta
+                        }
                     )
                 }
             }
@@ -288,10 +299,10 @@ fun HeightAndWidthAdjustmentControls(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Width: ${widthOfImageAndRelated.value.toInt()}dp")
                 Row {
-                    IconButton(onClick = { onWidthAdjustment(-10) }) {
+                    IconButton(onClick = { onWidthAdjustment(-20) }) {
                         Icon(Icons.Default.Remove, contentDescription = "Decrease Width")
                     }
-                    IconButton(onClick = { onWidthAdjustment(10) }) {
+                    IconButton(onClick = { onWidthAdjustment(20) }) {
                         Icon(Icons.Default.Add, contentDescription = "Increase Width")
                     }
                 }
@@ -309,11 +320,12 @@ fun Displayer(
     widthOfImageAndRelated: Dp,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
-    onImageSizeChanged: (IntSize) -> Unit
+    onImageSizeChanged: (IntSize) -> Unit,
+    leftColumnOffset: Float,
+    rightColumnOffset: Float,
+    onLeftColumnDrag: (Float) -> Unit,
+    onRightColumnDrag: (Float) -> Unit
 ) {
-    var leftColumnOffset by remember { mutableStateOf(0f) }
-    var rightColumnOffset by remember { mutableStateOf(0f) }
-
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -356,12 +368,7 @@ fun Displayer(
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
                 columnType = ColumnType.QuantityPrice,
-                onDrag = { delta ->
-                    leftColumnOffset = (leftColumnOffset + delta).coerceIn(
-                        -maxWidthPx + columnWidthPx,
-                        maxWidthPx - columnWidthPx
-                    )
-                }
+                onDrag = onLeftColumnDrag
             )
         }
 
@@ -382,10 +389,12 @@ fun Displayer(
                 articlesBaseDonne = articlesBaseDonne,
                 columnType = ColumnType.ArticleNames,
                 onDrag = { delta ->
-                    rightColumnOffset = (rightColumnOffset + delta).coerceIn(
+                    // Calculate new offset and pass it to the callback
+                    val newOffset = (rightColumnOffset + delta).coerceIn(
                         -(maxWidthPx - columnWidthPx),
                         (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
                     )
+                    onRightColumnDrag(newOffset)
                 }
             )
         }
@@ -393,8 +402,9 @@ fun Displayer(
         // Reset Positions Button
         ResetPositionsButton(
             onReset = {
-                leftColumnOffset = 0f
-                rightColumnOffset = 0f
+                // Call callbacks with initial values instead of direct assignment
+                onLeftColumnDrag(0f)
+                onRightColumnDrag(0f)
             }
         )
 
@@ -492,6 +502,7 @@ private fun ImageDisplayer(
     }
 }
 
+
 @Composable
 fun ArticleColumn(
     modifier: Modifier = Modifier,
@@ -505,9 +516,7 @@ fun ArticleColumn(
     onDrag: (Float) -> Unit
 ) {
     val density = LocalDensity.current
-    val maxWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
     val columnWidth by remember { mutableStateOf(100.dp) }
-    val columnWidthPx = with(density) { columnWidth.toPx() }
 
     Box(
         modifier = modifier
@@ -516,17 +525,7 @@ fun ArticleColumn(
             .draggable(
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta ->
-                    when (columnType) {
-                        ColumnType.QuantityPrice -> onDrag(delta)
-                        ColumnType.ArticleNames -> {
-                            // Limit dragging for ArticleNames column
-                            val newOffset = (columnWidthPx + delta).coerceIn(
-                                -(maxWidthPx - with(density) { 100.dp.toPx() }),
-                                (maxWidthPx - with(density) { 100.dp.toPx() }) / 2
-                            )
-                            onDrag(newOffset - columnWidthPx)
-                        }
-                    }
+                    onDrag(delta)
                 }
             )
     ) {
