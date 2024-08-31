@@ -44,6 +44,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -53,6 +54,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -353,11 +355,11 @@ fun Displayer(
                 heightOfImageAndRelated = heightOfImageAndRelated,
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
-                columnType = ColumnType.QuantityPriceSubtotal,
+                columnType = ColumnType.QuantityPrice,
                 onDrag = { delta ->
                     leftColumnOffset = (leftColumnOffset + delta).coerceIn(
-                        -columnWidthPx,
-                        (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
+                        -maxWidthPx + columnWidthPx,
+                        maxWidthPx - columnWidthPx
                     )
                 }
             )
@@ -381,12 +383,20 @@ fun Displayer(
                 columnType = ColumnType.ArticleNames,
                 onDrag = { delta ->
                     rightColumnOffset = (rightColumnOffset + delta).coerceIn(
-                        -(maxWidthPx - imageWidthPx) / 2 - columnWidthPx,
-                        columnWidthPx
+                        -(maxWidthPx - columnWidthPx),
+                        (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
                     )
                 }
             )
         }
+
+        // Reset Positions Button
+        ResetPositionsButton(
+            onReset = {
+                leftColumnOffset = 0f
+                rightColumnOffset = 0f
+            }
+        )
 
         // Loading and error states
         when (painter.state) {
@@ -401,6 +411,25 @@ fun Displayer(
                 )
             }
             else -> {}
+        }
+    }
+}
+@Composable
+fun ResetPositionsButton(
+    onReset: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingActionButton(
+            onClick = onReset,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Reset positions"
+            )
         }
     }
 }
@@ -475,13 +504,29 @@ fun ArticleColumn(
     columnType: ColumnType,
     onDrag: (Float) -> Unit
 ) {
+    val density = LocalDensity.current
+    val maxWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+    val columnWidth by remember { mutableStateOf(100.dp) }
+    val columnWidthPx = with(density) { columnWidth.toPx() }
+
     Box(
         modifier = modifier
             .height(heightOfImageAndRelated)
+            .width(columnWidth)
             .draggable(
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta ->
-                    onDrag(delta)
+                    when (columnType) {
+                        ColumnType.QuantityPrice -> onDrag(delta)
+                        ColumnType.ArticleNames -> {
+                            // Limit dragging for ArticleNames column
+                            val newOffset = (columnWidthPx + delta).coerceIn(
+                                -(maxWidthPx - with(density) { 100.dp.toPx() }),
+                                (maxWidthPx - with(density) { 100.dp.toPx() }) / 2
+                            )
+                            onDrag(newOffset - columnWidthPx)
+                        }
+                    }
                 }
             )
     ) {
@@ -501,8 +546,8 @@ fun ArticleColumn(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         when (columnType) {
-                            ColumnType.QuantityPriceSubtotal -> {
-                                QuantityPriceSubtotalCompos(article)
+                            ColumnType.QuantityPrice -> {
+                                QuantityPrixCompos(article)
                             }
                             ColumnType.ArticleNames -> {
                                 ArticleNamesCompos(articlesBaseDonne, article)
@@ -515,7 +560,7 @@ fun ArticleColumn(
     }
 }
 @Composable
-private fun QuantityPriceSubtotalCompos(article: EntreBonsGrosTabele) {
+private fun QuantityPrixCompos(article: EntreBonsGrosTabele) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
@@ -763,7 +808,7 @@ private fun reconnaisanceVocaleLencer(
 }
 
 enum class ColumnType {
-    QuantityPriceSubtotal,
+    QuantityPrice,
     ArticleNames
 }
 
