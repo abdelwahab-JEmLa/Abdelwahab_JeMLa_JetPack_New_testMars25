@@ -306,7 +306,7 @@ fun Displayer(
             )
         }
 
-        // Left floating column
+        // Left floating column (ArticleNames)
         Box(
             modifier = Modifier
                 .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
@@ -321,12 +321,11 @@ fun Displayer(
                 heightOfImageAndRelated = heightOfImageAndRelated,
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
-                columnType = ColumnType.QuantityPrice,
                 onDrag = onLeftColumnDrag
             )
         }
 
-        // Right floating column
+        // Right floating column (QuantityPrice)
         Box(
             modifier = Modifier
                 .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
@@ -334,16 +333,14 @@ fun Displayer(
                 .fillMaxHeight()
                 .align(Alignment.CenterEnd)
         ) {
-            ArticleColumn(
+            QuantityPrice(
                 imageIndex = imageIndex,
                 sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                 filteredAndSortedArticles = filteredAndSortedArticles,
                 heightOfImageAndRelated = heightOfImageAndRelated,
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
-                columnType = ColumnType.ArticleNames,
                 onDrag = { delta ->
-                    // Calculate new offset and pass it to the callback
                     val newOffset = (rightColumnOffset + delta).coerceIn(
                         -(maxWidthPx - columnWidthPx),
                         (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
@@ -370,7 +367,7 @@ fun Displayer(
     }
 }
 @Composable
-fun ArticleColumn(
+fun QuantityPrice(
     modifier: Modifier = Modifier,
     imageIndex: Int,
     sectionsDonsChaqueImage: Int,
@@ -378,7 +375,6 @@ fun ArticleColumn(
     heightOfImageAndRelated: Dp,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
-    columnType: ColumnType,
     onDrag: (Float) -> Unit
 ) {
     val density = LocalDensity.current
@@ -410,21 +406,64 @@ fun ArticleColumn(
                             .clickable { onArticleClick(article) },
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        when (columnType) {
-                            ColumnType.QuantityPrice -> {
-                                QuantityPrixCompos(article)
-                            }
-                            ColumnType.ArticleNames -> {    //TODO pk quand je
-                                ArticleNamesCompos(articlesBaseDonne, article)
-                            }
-                        }
+                            QuantityPrixCompos( article)
+
                     }
                 }
             }
         }
     }
 }
+@Composable
+fun ArticleColumn(
+    modifier: Modifier = Modifier,
+    imageIndex: Int,
+    sectionsDonsChaqueImage: Int,
+    filteredAndSortedArticles: List<EntreBonsGrosTabele>,
+    heightOfImageAndRelated: Dp,
+    onArticleClick: (EntreBonsGrosTabele) -> Unit,
+    articlesBaseDonne: List<BaseDonne>,
+    onDrag: (Float) -> Unit
+) {
+    val density = LocalDensity.current
+    val columnWidth by remember { mutableStateOf(100.dp) }
 
+    Box(
+        modifier = modifier
+            .height(heightOfImageAndRelated)
+            .width(columnWidth)
+            .draggable(
+                orientation = Orientation.Horizontal,
+                state = rememberDraggableState { delta ->
+                    onDrag(delta)
+                }
+            )
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(sectionsDonsChaqueImage) { sectionIndex ->
+                val articleIndex = imageIndex * sectionsDonsChaqueImage + sectionIndex
+                val article = filteredAndSortedArticles.getOrNull(articleIndex)
+
+                article?.let {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
+                            .clickable { onArticleClick(article) },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+
+                            ArticleNamesCompos(articlesBaseDonne, article)
+
+
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun QuantityPrixCompos(article: EntreBonsGrosTabele) {
     Column(
@@ -774,14 +813,6 @@ private fun ImageDisplayer(
         )
     }
 }
-
-
-enum class ColumnType {
-    QuantityPrice,
-    ArticleNames
-}
-
-
 
 @Composable
 fun ImageCountDialog(
