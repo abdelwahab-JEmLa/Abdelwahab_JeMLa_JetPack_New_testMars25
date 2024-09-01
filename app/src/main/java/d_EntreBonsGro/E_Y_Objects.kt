@@ -306,25 +306,6 @@ fun Displayer(
             )
         }
 
-        // Left floating column (ArticleNames)
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
-                .width(100.dp)
-                .fillMaxHeight()
-                .align(Alignment.CenterStart)
-        ) {
-            ArticleColumn(
-                imageIndex = imageIndex,
-                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                filteredAndSortedArticles = filteredAndSortedArticles,
-                heightOfImageAndRelated = heightOfImageAndRelated,
-                onArticleClick = onArticleClick,
-                articlesBaseDonne = articlesBaseDonne,
-                onDrag = onLeftColumnDrag
-            )
-        }
-
         // Right floating column (QuantityPrice)
         Box(
             modifier = Modifier
@@ -347,6 +328,25 @@ fun Displayer(
                     )
                     onRightColumnDrag(newOffset)
                 }
+            )
+        }
+
+        // Left floating column (ArticleNames)
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
+                .width(100.dp)
+                .fillMaxHeight()
+                .align(Alignment.CenterStart)
+        ) {
+            nameColumn(
+                imageIndex = imageIndex,
+                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                filteredAndSortedArticles = filteredAndSortedArticles,
+                heightOfImageAndRelated = heightOfImageAndRelated,
+                onArticleClick = onArticleClick,
+                articlesBaseDonne = articlesBaseDonne,
+                onDrag = onLeftColumnDrag
             )
         }
 
@@ -415,7 +415,7 @@ fun QuantityPrice(
     }
 }
 @Composable
-fun ArticleColumn(
+fun nameColumn(
     modifier: Modifier = Modifier,
     imageIndex: Int,
     sectionsDonsChaqueImage: Int,
