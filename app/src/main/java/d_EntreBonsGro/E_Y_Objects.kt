@@ -222,7 +222,8 @@ fun DessinableImage(
                             leftColumnOffset += delta
                         },
                         onRightColumnDrag = { delta ->
-                            rightColumnOffset += delta
+                            rightColumnOffset += delta      //TODO pk quand je drage a gauche elle ce drage
+                            // trop
                         }
                     )
                 }
@@ -261,51 +262,6 @@ fun DessinableImage(
             coroutineScope = coroutineScope,
             onDismiss = { showOutlineDialog = false }
         )
-    }
-}
-
-@Composable
-fun HeightAndWidthAdjustmentControls(
-    heightOfImageAndRelated: Dp,
-    widthOfImageAndRelated: Dp,
-    onHeightAdjustment: (Int) -> Unit,
-    onWidthAdjustment: (Int) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), shape = RoundedCornerShape(8.dp))
-                .padding(8.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
-                Row {
-                    IconButton(onClick = { onHeightAdjustment(-10) }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease Height")
-                    }
-                    IconButton(onClick = { onHeightAdjustment(10) }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase Height")
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Width: ${widthOfImageAndRelated.value.toInt()}dp")
-                Row {
-                    IconButton(onClick = { onWidthAdjustment(-20) }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease Width")
-                    }
-                    IconButton(onClick = { onWidthAdjustment(20) }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase Width")
-                    }
-                }
-            }
-        }
     }
 }
 @Composable
@@ -373,7 +329,12 @@ fun Displayer(
         // Right floating column
         Box(
             modifier = Modifier
-                .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
+                .offset {
+                    IntOffset(
+                        (maxWidthPx - columnWidthPx + rightColumnOffset).roundToInt(),
+                        0
+                    )
+                }
                 .width(100.dp)
                 .fillMaxHeight()
                 .align(Alignment.CenterEnd)
@@ -388,15 +349,14 @@ fun Displayer(
                 columnType = ColumnType.ArticleNames,
                 onDrag = { delta ->
                     // Calculate new offset and pass it to the callback
-                    val newOffset = (rightColumnOffset + delta).coerceIn(
-                        -(maxWidthPx - columnWidthPx),
-                        (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
+                    val newOffset = (rightColumnOffset - delta).coerceIn(
+                        -(maxWidthPx - imageWidthPx) / 2,
+                        0f
                     )
                     onRightColumnDrag(newOffset)
                 }
             )
         }
-
 
         // Loading and error states
         when (painter.state) {
@@ -414,67 +374,6 @@ fun Displayer(
         }
     }
 }
-
-@Composable
-private fun ImageDisplayer(
-    painter: AsyncImagePainter,
-    heightOfImageAndRelated: Dp,
-    onImageSizeChanged: (IntSize) -> Unit,
-    sectionsDonsChaqueImage: Int,
-    modifier: Modifier
-) {
-    BoxWithConstraints(
-        modifier = modifier
-            .height(heightOfImageAndRelated)
-            .clip(RectangleShape)
-    ) {
-        var scale by remember { mutableStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) }
-
-        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-            scale = (scale * zoomChange).coerceIn(1f, 3f)
-            val maxX = (constraints.maxWidth * (scale - 1)) / 2
-            val maxY = (constraints.maxHeight * (scale - 1)) / 2
-            offset = Offset(
-                x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
-                y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
-            )
-        }
-
-        Image(
-            painter = painter,
-            contentDescription = "Image for supplier section",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .transformable(state = state)
-                .onSizeChanged(onImageSizeChanged)
-                .drawWithContent {
-                    drawContent()
-                    val redColor = Color.Red.copy(alpha = 0.3f)
-                    val blueColor = Color.Blue.copy(alpha = 0.3f)
-                    for (i in 0 until sectionsDonsChaqueImage) {
-                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                        val color = if (i % 2 == 0) redColor else blueColor
-                        drawRect(
-                            color = color,
-                            topLeft = Offset(0f, top),
-                            size = Size(size.width, bottom - top)
-                        )
-                    }
-                }
-        )
-    }
-}
-
-
 @Composable
 fun ArticleColumn(
     modifier: Modifier = Modifier,
@@ -520,7 +419,7 @@ fun ArticleColumn(
                             ColumnType.QuantityPrice -> {
                                 QuantityPrixCompos(article)
                             }
-                            ColumnType.ArticleNames -> {    //TODO pk le draga fait trop
+                            ColumnType.ArticleNames -> {
                                 ArticleNamesCompos(articlesBaseDonne, article)
                             }
                         }
@@ -530,6 +429,7 @@ fun ArticleColumn(
         }
     }
 }
+
 @Composable
 private fun QuantityPrixCompos(article: EntreBonsGrosTabele) {
     Column(
@@ -668,7 +568,50 @@ fun ImageArticles(
         }
     }
 }
-
+@Composable
+fun HeightAndWidthAdjustmentControls(
+    heightOfImageAndRelated: Dp,
+    widthOfImageAndRelated: Dp,
+    onHeightAdjustment: (Int) -> Unit,
+    onWidthAdjustment: (Int) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), shape = RoundedCornerShape(8.dp))
+                .padding(8.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Height: ${heightOfImageAndRelated.value.toInt()}dp")
+                Row {
+                    IconButton(onClick = { onHeightAdjustment(-10) }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease Height")
+                    }
+                    IconButton(onClick = { onHeightAdjustment(10) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase Height")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Width: ${widthOfImageAndRelated.value.toInt()}dp")
+                Row {
+                    IconButton(onClick = { onWidthAdjustment(-20) }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease Width")
+                    }
+                    IconButton(onClick = { onWidthAdjustment(20) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase Width")
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun reconnaisanceVocaleLencer(
     selectedArticle: EntreBonsGrosTabele?,
@@ -777,6 +720,66 @@ private fun reconnaisanceVocaleLencer(
     }
     return Pair(speechRecognizerLauncher, filteredSuggestions)
 }
+
+@Composable
+private fun ImageDisplayer(
+    painter: AsyncImagePainter,
+    heightOfImageAndRelated: Dp,
+    onImageSizeChanged: (IntSize) -> Unit,
+    sectionsDonsChaqueImage: Int,
+    modifier: Modifier
+) {
+    BoxWithConstraints(
+        modifier = modifier
+            .height(heightOfImageAndRelated)
+            .clip(RectangleShape)
+    ) {
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+
+        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+            scale = (scale * zoomChange).coerceIn(1f, 3f)
+            val maxX = (constraints.maxWidth * (scale - 1)) / 2
+            val maxY = (constraints.maxHeight * (scale - 1)) / 2
+            offset = Offset(
+                x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
+                y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
+            )
+        }
+
+        Image(
+            painter = painter,
+            contentDescription = "Image for supplier section",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+                .transformable(state = state)
+                .onSizeChanged(onImageSizeChanged)
+                .drawWithContent {
+                    drawContent()
+                    val redColor = Color.Red.copy(alpha = 0.3f)
+                    val blueColor = Color.Blue.copy(alpha = 0.3f)
+                    for (i in 0 until sectionsDonsChaqueImage) {
+                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                        val color = if (i % 2 == 0) redColor else blueColor
+                        drawRect(
+                            color = color,
+                            topLeft = Offset(0f, top),
+                            size = Size(size.width, bottom - top)
+                        )
+                    }
+                }
+        )
+    }
+}
+
 
 enum class ColumnType {
     QuantityPrice,
