@@ -312,7 +312,7 @@ fun Displayer(
                 .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
                 .width(100.dp)
                 .fillMaxHeight()
-                .align(Alignment.CenterEnd)
+                .align(Alignment.CenterStart)
         ) {
             QuantityPrice(
                 imageIndex = imageIndex,
@@ -337,7 +337,7 @@ fun Displayer(
                 .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
                 .width(100.dp)
                 .fillMaxHeight()
-                .align(Alignment.CenterStart)
+                .align(Alignment.CenterEnd)
         ) {
             nameColumn(
                 imageIndex = imageIndex,
