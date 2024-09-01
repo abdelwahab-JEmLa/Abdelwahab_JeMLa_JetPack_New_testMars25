@@ -314,7 +314,7 @@ fun Displayer(
                 .fillMaxHeight()
                 .align(Alignment.CenterStart)
         ) {
-            QuantityPrice(
+            QuantityPrice(          //TODo pk quand je drage au premier foit ca drage mais si je drage la 2 il ce disparaitre
                 imageIndex = imageIndex,
                 sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                 filteredAndSortedArticles = filteredAndSortedArticles,
