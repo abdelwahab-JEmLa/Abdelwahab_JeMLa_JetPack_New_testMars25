@@ -222,7 +222,7 @@ fun DessinableImage(
                             leftColumnOffset += delta
                         },
                         onRightColumnDrag = { delta ->
-                            rightColumnOffset += delta      //TODO pk quand je drage a gauche elle ce drage
+                            rightColumnOffset += delta
                             // trop
                         }
                     )
@@ -329,12 +329,7 @@ fun Displayer(
         // Right floating column
         Box(
             modifier = Modifier
-                .offset {
-                    IntOffset(
-                        (maxWidthPx - columnWidthPx + rightColumnOffset).roundToInt(),
-                        0
-                    )
-                }
+                .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
                 .width(100.dp)
                 .fillMaxHeight()
                 .align(Alignment.CenterEnd)
@@ -349,9 +344,9 @@ fun Displayer(
                 columnType = ColumnType.ArticleNames,
                 onDrag = { delta ->
                     // Calculate new offset and pass it to the callback
-                    val newOffset = (rightColumnOffset - delta).coerceIn(
-                        -(maxWidthPx - imageWidthPx) / 2,
-                        0f
+                    val newOffset = (rightColumnOffset + delta).coerceIn(
+                        -(maxWidthPx - columnWidthPx),
+                        (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
                     )
                     onRightColumnDrag(newOffset)
                 }
@@ -419,7 +414,7 @@ fun ArticleColumn(
                             ColumnType.QuantityPrice -> {
                                 QuantityPrixCompos(article)
                             }
-                            ColumnType.ArticleNames -> {
+                            ColumnType.ArticleNames -> {    //TODO pk quand je
                                 ArticleNamesCompos(articlesBaseDonne, article)
                             }
                         }
