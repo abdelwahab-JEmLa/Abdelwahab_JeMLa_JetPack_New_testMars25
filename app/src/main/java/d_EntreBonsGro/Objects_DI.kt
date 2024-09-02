@@ -52,7 +52,77 @@ import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.util.Locale
 
+@Composable
+fun ImageDisplayer(
+    painter: AsyncImagePainter,
+    heightOfImageAndRelated: Dp,
+    imageOffset: Offset,
+    onImageSizeChanged: (IntSize) -> Unit,
+    sectionsDonsChaqueImage: Int,
+    modifier: Modifier
+) {
+    BoxWithConstraints(
+        modifier = modifier
+            .height(heightOfImageAndRelated)
+            .clip(RectangleShape)
+            .offset { IntOffset(imageOffset.x.toInt(), imageOffset.y.toInt()) }
+    ) {
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
 
+        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+            scale = (scale * zoomChange).coerceIn(0.5f, 3f) // Limite le zoom minimal à 0.5x et maximal à 3x
+
+            // Calculer le décalage maximal basé sur l'échelle et les contraintes
+            val maxX = (constraints.maxWidth * (scale - 1)) / 2
+            val maxY = (constraints.maxHeight * (scale - 1)) / 2
+
+            // Permettre un décalage illimité lorsque l'utilisateur effectue un dézoom (scale < 1)
+            offset = if (scale <= 1) {
+                Offset(
+                    x = offset.x + offsetChange.x, // Pas de restrictions quand dézoomé
+                    y = offset.y + offsetChange.y
+                )
+            } else {
+                Offset(
+                    x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
+                    y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
+                )
+            }
+        }
+
+        Image(
+            painter = painter,
+            contentDescription = "Image for supplier section",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+                .transformable(state = state)
+                .onSizeChanged(onImageSizeChanged)
+                .drawWithContent {
+                    drawContent()
+                    val redColor = Color.Red.copy(alpha = 0.3f)
+                    val blueColor = Color.Blue.copy(alpha = 0.3f)
+                    for (i in 0 until sectionsDonsChaqueImage) {
+                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                        val color = if (i % 2 == 0) redColor else blueColor
+                        drawRect(
+                            color = color,
+                            topLeft = Offset(0f, top),
+                            size = Size(size.width, bottom - top)
+                        )
+                    }
+                }
+        )
+    }
+}
 @Composable
 fun AutoResizedTextDI(
     text: String,

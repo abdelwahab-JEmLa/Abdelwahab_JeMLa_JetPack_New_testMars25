@@ -7,14 +7,11 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.speech.RecognizerIntent
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -46,16 +43,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -262,76 +253,6 @@ fun DessinableImage(
             showOutlineDialog = false
         }
     )
-}@Composable
-fun ImageDisplayer(
-    painter: AsyncImagePainter,
-    heightOfImageAndRelated: Dp,
-    imageOffset: Offset,
-    onImageSizeChanged: (IntSize) -> Unit,
-    sectionsDonsChaqueImage: Int,
-    modifier: Modifier
-) {
-    BoxWithConstraints(
-        modifier = modifier
-            .height(heightOfImageAndRelated)
-            .clip(RectangleShape)
-            .offset { IntOffset(imageOffset.x.toInt(), imageOffset.y.toInt()) }
-    ) {
-        var scale by remember { mutableStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) }
-
-        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-            scale = (scale * zoomChange).coerceIn(0.5f, 3f) // Limite le zoom minimal à 0.5x et maximal à 3x
-
-            // Calculer le décalage maximal basé sur l'échelle et les contraintes
-            val maxX = (constraints.maxWidth * (scale - 1)) / 2
-            val maxY = (constraints.maxHeight * (scale - 1)) / 2
-
-            // Permettre un décalage illimité lorsque l'utilisateur effectue un dézoom (scale < 1)
-            offset = if (scale <= 1) {
-                Offset(
-                    x = offset.x + offsetChange.x, // Pas de restrictions quand dézoomé
-                    y = offset.y + offsetChange.y
-                )
-            } else {
-                Offset(
-                    x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
-                    y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
-                )
-            }
-        }
-
-        Image(
-            painter = painter,
-            contentDescription = "Image for supplier section",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .transformable(state = state)
-                .onSizeChanged(onImageSizeChanged)
-                .drawWithContent {
-                    drawContent()
-                    val redColor = Color.Red.copy(alpha = 0.3f)
-                    val blueColor = Color.Blue.copy(alpha = 0.3f)
-                    for (i in 0 until sectionsDonsChaqueImage) {
-                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                        val color = if (i % 2 == 0) redColor else blueColor
-                        drawRect(
-                            color = color,
-                            topLeft = Offset(0f, top),
-                            size = Size(size.width, bottom - top)
-                        )
-                    }
-                }
-        )
-    }
 }
 @Composable
 fun Displayer(
@@ -378,7 +299,7 @@ fun Displayer(
         }
 
         // Right floating column (QuantityPrice)
-        Box(
+        Box(    //TODO enleve le card soit on transparence
             modifier = Modifier
                 .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
                 .width(100.dp)
@@ -471,7 +392,42 @@ fun QuantityPrice(
                             .clickable { onArticleClick(article) },
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        QuantityPrixCompos(article)
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val isZeroQuantityOrPrice =
+                                    article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
+                                val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Red
+                                val textColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
+                                val borderColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
+
+                                Card(
+                                    modifier = Modifier.fillMaxSize(),
+                                    colors = CardDefaults.cardColors(containerColor = cardColor),
+                                    border = BorderStroke(1.dp, borderColor)
+                                ) {
+                                    if (isZeroQuantityOrPrice) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            contentDescription = "Zero quantity or price",
+                                            tint = Color.Red,
+                                        )
+                                    } else {
+                                        AutoResizedTextDI(
+                                            text = "${article.quantityAcheteBG} X ${article.newPrixAchatBG}",
+                                            color = textColor,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -519,105 +475,60 @@ fun NameColumn(
                             .clickable { onArticleClick(article) },
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        ArticleNamesCompos(articlesBaseDonne, article)
+                        val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
+
+                        relatedArticle?.let { related ->
+                            var imageExist by remember { mutableStateOf(false) }
+
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                // Image Card (30% width)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(0.3f)
+                                        .aspectRatio(1f)
+                                ) {
+                                    ImageArticles(
+                                        article = article,
+                                        onImageExist = { imageExist = true },
+                                        onImageNonexist = { imageExist = false }
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Text Card (70% width)
+                                val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
+                                val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
+                                val textColor = if (isNewArticle) Color.Red else Color.Black
+
+                                Card(
+                                    modifier = Modifier
+                                        .weight(0.7f)
+                                        .fillMaxHeight(),
+                                    colors = CardDefaults.cardColors(containerColor = cardColor)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        AutoResizedTextDI(
+                                            text = "${if (!imageExist) article.nomArticleBG else ""} ${related.nomArab ?: ""}",
+                                            color = textColor,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
-@Composable
-private fun QuantityPrixCompos(article: EntreBonsGrosTabele) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            val isZeroQuantityOrPrice =
-                article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
-            val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Red
-            val textColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
-            val borderColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
 
-            Card(
-                modifier = Modifier.fillMaxSize(),
-                colors = CardDefaults.cardColors(containerColor = cardColor),
-                border = BorderStroke(1.dp, borderColor)
-            ) {
-                if (isZeroQuantityOrPrice) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Zero quantity or price",
-                        tint = Color.Red,
-                    )
-                } else {
-                    AutoResizedTextDI(
-                        text = "${article.quantityAcheteBG} X ${article.newPrixAchatBG}",
-                        color = textColor,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        }
-    }
-}
 
-@Composable
-private fun ArticleNamesCompos(
-    articlesBaseDonne: List<BaseDonne>,
-    article: EntreBonsGrosTabele
-) {
-    val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
-
-    relatedArticle?.let { related ->
-        var imageExist by remember { mutableStateOf(false) }
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            // Image Card (30% width)
-            Box(
-                modifier = Modifier
-                    .weight(0.3f)
-                    .aspectRatio(1f)
-            ) {
-                ImageArticles(
-                    article = article,
-                    onImageExist = { imageExist = true },
-                    onImageNonexist = { imageExist = false }
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Text Card (70% width)
-            val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
-            val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
-            val textColor = if (isNewArticle) Color.Red else Color.Black
-
-            Card(
-                modifier = Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight(),
-                colors = CardDefaults.cardColors(containerColor = cardColor)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AutoResizedTextDI(
-                        text = "${if (!imageExist) article.nomArticleBG else ""} ${related.nomArab ?: ""}",
-                        color = textColor,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun ImageArticles(
