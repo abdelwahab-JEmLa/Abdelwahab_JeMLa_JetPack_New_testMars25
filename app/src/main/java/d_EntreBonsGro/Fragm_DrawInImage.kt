@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -65,7 +67,6 @@ import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import kotlin.math.roundToInt
-
 @Composable
 fun DessinableImage(
     modifier: Modifier = Modifier,
@@ -83,7 +84,9 @@ fun DessinableImage(
     showOutline: Boolean,
     showDialogeNbrIMGs: Boolean,
     onDissmiss: () -> Unit,
-    heightOfImageAndRelatedDialogEditer: Boolean
+    heightOfImageAndRelatedDialogEditer: Boolean,
+    heightAdjustmentGesture: Boolean, // Flag to control height adjustment with drag
+    sectionsDonsChaqueImageGesture: Boolean // Flag to control section count change with drag
 ) {
     val configuration = LocalConfiguration.current
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -92,7 +95,7 @@ fun DessinableImage(
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
     var nmbrImagesDuBon by remember { mutableStateOf(7) }
-    var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(15) }
+    var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(18) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
     val context = LocalContext.current
@@ -130,7 +133,24 @@ fun DessinableImage(
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // Combined gesture modifier to detect both drag and pinch-zoom
+    val gestureModifier = Modifier.pointerInput(Unit) {
+        detectTransformGestures { _, pan, _, _ ->
+            // Handle drag gesture
+            if (heightAdjustmentGesture) {
+                heightAdjustment += pan.y.toInt() // Adjust height with vertical drag
+            }
+            if (sectionsDonsChaqueImageGesture) {
+                sectionsDonsChaqueImage = (sectionsDonsChaqueImage + pan.y.toInt() / 10).coerceIn(1, 100) // Adjust section count based on vertical drag
+            }
+
+            }
+    }
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .then(gestureModifier)
+    ) {
         Column {
             if (showDiviseurDesSections) {
                 TreeCountControl(
@@ -254,6 +274,8 @@ fun DessinableImage(
         }
     )
 }
+
+
 @Composable
 fun Displayer(
     imageIndex: Int,

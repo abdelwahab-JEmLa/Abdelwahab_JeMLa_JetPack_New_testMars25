@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.ImagesearchRoller
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
@@ -118,6 +120,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
     var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
 
+    var heightAdjustmentGesture by remember { mutableStateOf(false) }
+    var sectionsDonsChaqueImageGesture by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -189,6 +194,14 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     }
 
     val floatingActionButtons = listOf(
+        Triple(
+            if (heightAdjustmentGesture) Icons.Default.Close else Icons.Default.Gesture,
+            if (heightAdjustmentGesture) "Hide Divider" else "Show Divider"
+        ) { heightAdjustmentGesture = !heightAdjustmentGesture },
+        Triple(
+            if (sectionsDonsChaqueImageGesture) Icons.Default.Close else Icons.Default.ImagesearchRoller,
+            if (sectionsDonsChaqueImageGesture) "Hide Divider" else "Show Divider"
+        ) { sectionsDonsChaqueImageGesture = !sectionsDonsChaqueImageGesture },
         Triple(
             Icons.Default.Edit,
             "Flotin1"
@@ -380,6 +393,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         showDialogeNbrIMGs=showDialogeNbrIMGs,
                         onDissmiss = { showDialogeNbrIMGs = false },
                         heightOfImageAndRelatedDialogEditer=heightOfImageAndRelatedDialogEditer,
+                        heightAdjustmentGesture   =heightAdjustmentGesture  ,
+                                sectionsDonsChaqueImageGesture             = sectionsDonsChaqueImageGesture   ,
                     )
                 }
                 showSplitView -> {
@@ -401,6 +416,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             showDialogeNbrIMGs = showDialogeNbrIMGs,
                             onDissmiss = { showDialogeNbrIMGs = false },
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
+                            heightAdjustmentGesture   =heightAdjustmentGesture  ,
+                            sectionsDonsChaqueImageGesture             = sectionsDonsChaqueImageGesture   ,
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
