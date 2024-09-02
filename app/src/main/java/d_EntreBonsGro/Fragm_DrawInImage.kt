@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -64,7 +65,6 @@ import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import kotlin.math.roundToInt
-
 
 @Composable
 fun DessinableImage(
@@ -112,6 +112,7 @@ fun DessinableImage(
 
     var leftColumnOffset by remember { mutableStateOf(0f) }
     var rightColumnOffset by remember { mutableStateOf(0f) }
+    var imageOffset by remember { mutableStateOf(0f) }
 
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
@@ -186,19 +187,21 @@ fun DessinableImage(
                         },
                         onRightColumnDrag = { delta ->
                             rightColumnOffset += delta
-                        }
+                        },
+                        imageOffset
                     )
                 }
             }
         }
 
-        // Extracted and centered height and width adjustment controls
+        // Height and width adjustment controls with offset adjustment
         if (heightOfImageAndRelatedDialogEditer) {
             HeightAndWidthAdjustmentControls(
                 heightOfImageAndRelated = heightOfImageAndRelated,
                 widthOfImageAndRelated = widthOfImageAndRelated,
                 onHeightAdjustment = { adjustment -> heightAdjustment += adjustment },
-                onWidthAdjustment = { adjustment -> widthAdjustment += adjustment }
+                onWidthAdjustment = { adjustment -> widthAdjustment += adjustment },
+                onOffsetAdjustment = { adjustment -> imageOffset += adjustment } // Update image offset
             )
         }
     }
@@ -250,8 +253,7 @@ fun DessinableImage(
             showOutlineDialog = false
         }
     )
-}
-@Composable
+}  @Composable
 fun Displayer(
     imageIndex: Int,
     painter: AsyncImagePainter,
@@ -265,7 +267,8 @@ fun Displayer(
     leftColumnOffset: Float,
     rightColumnOffset: Float,
     onLeftColumnDrag: (Float) -> Unit,
-    onRightColumnDrag: (Float) -> Unit
+    onRightColumnDrag: (Float) -> Unit,
+    imageOffset: Float
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -287,6 +290,7 @@ fun Displayer(
             ImageDisplayer(
                 painter = painter,
                 heightOfImageAndRelated = heightOfImageAndRelated,
+                imageOffset = Offset(imageOffset, 0f),  // Correctly pass Offset using x and y
                 onImageSizeChanged = onImageSizeChanged,
                 sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                 modifier = Modifier.fillMaxSize(),
@@ -309,7 +313,6 @@ fun Displayer(
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
                 onDrag = onRightColumnDrag
-
             )
         }
 
@@ -348,6 +351,7 @@ fun Displayer(
         }
     }
 }
+
 
 @Composable
 fun QuantityPrice(

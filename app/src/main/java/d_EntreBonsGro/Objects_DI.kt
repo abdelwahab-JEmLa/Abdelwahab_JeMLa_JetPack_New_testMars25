@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
@@ -41,6 +42,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
@@ -49,12 +51,11 @@ import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteMode
 import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.util.Locale
-
-
-@Composable
+    @Composable
 fun ImageDisplayer(
     painter: AsyncImagePainter,
     heightOfImageAndRelated: Dp,
+    imageOffset: Offset, // Explicitly declare the type as Offset
     onImageSizeChanged: (IntSize) -> Unit,
     sectionsDonsChaqueImage: Int,
     modifier: Modifier
@@ -63,9 +64,10 @@ fun ImageDisplayer(
         modifier = modifier
             .height(heightOfImageAndRelated)
             .clip(RectangleShape)
+            .offset { IntOffset(imageOffset.x.toInt(), imageOffset.y.toInt()) } // Use imageOffset parameter
     ) {
         var scale by remember { mutableStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) }
+        var offset by remember { mutableStateOf(Offset.Zero) } // State for frame offset
 
         val state = rememberTransformableState { zoomChange, offsetChange, _ ->
             scale = (scale * zoomChange).coerceIn(1f, 3f)
