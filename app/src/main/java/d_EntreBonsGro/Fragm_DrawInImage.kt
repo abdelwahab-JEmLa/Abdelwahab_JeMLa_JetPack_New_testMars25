@@ -225,7 +225,31 @@ fun DessinableImage(
             onDismiss = { showOutlineDialog = false }
         )
     }
-   // DialogsController
+    DialogsController(
+        showDiviseurDesSections = showDiviseurDesSections,
+        sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+        filteredAndSortedArticles = filteredAndSortedArticles,
+        founisseurIdNowIs = founisseurIdNowIs,
+        showDialogeNbrIMGs = showDialogeNbrIMGs,
+        onDissmiss = onDissmiss,
+        selectedArticle = selectedArticle,
+        articlesRef = articlesRef,
+        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+        articlesBaseDonne = articlesBaseDonne,
+        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+        coroutineScope = coroutineScope,
+        showOutlineDialog = showOutlineDialog,
+        suggestionsList = suggestionsList,
+        onSectionCountChange = { newCount ->
+            sectionsDonsChaqueImage = newCount
+        },
+        onImageCountChange = { newCount ->
+            nmbrImagesDuBon = newCount
+        },
+        onOutlineDialogClose = {
+            showOutlineDialog = false
+        }
+    )
 }
 @Composable
 fun Displayer(

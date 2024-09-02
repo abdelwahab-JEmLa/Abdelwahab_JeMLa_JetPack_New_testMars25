@@ -179,7 +179,7 @@ fun ImageCountDialog(
 }
 
 @Composable
-private fun DialogsController(
+fun DialogsController(
     showDiviseurDesSections: Boolean,
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
