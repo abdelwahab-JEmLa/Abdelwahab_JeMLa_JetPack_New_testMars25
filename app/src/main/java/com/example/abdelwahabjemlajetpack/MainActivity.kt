@@ -127,7 +127,7 @@ fun MyApp(
         }
         composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, articleDao) }
         composable("C_ManageBonsClients") { FragmentManageBonsClients() }
-        composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao) }
+        composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao, _) }
         composable("FragmentCredits") { FragmentCredits(creditsViewModel) }
         composable("FragmentCreditsClients") { FragmentCreditsClients(creditsClientsViewModel) }
     }

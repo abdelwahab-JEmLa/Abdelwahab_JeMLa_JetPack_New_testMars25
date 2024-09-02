@@ -22,6 +22,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.firestore
+import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -137,8 +138,12 @@ fun reconnaisanceVocaleLencer(
         )
     }
     return Pair(speechRecognizerLauncher, filteredSuggestions)
-}
-fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Long?, sectionsDonsChaqueImage: Int) {
+}fun createNewArticle(
+    articles: List<EntreBonsGrosTabele>,
+    founisseurIdNowIs: Long?,
+    sectionsDonsChaqueImage: Int,
+    supplierList: List<SupplierTabelle>
+) {
     val currentArticleCount = articles.count { it.supplierIdBG == founisseurIdNowIs }
     val targetArticleCount = sectionsDonsChaqueImage * 3 // 3 images
     val articlesToCreate = maxOf(targetArticleCount - currentArticleCount, 1)
@@ -152,6 +157,9 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Lon
         val maxIdDivider = articles.maxOfOrNull { it.idArticleInSectionsOfImageBG.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
         val newIdDivider = "$founisseurIdNowIs-$currentDate-${maxIdDivider + it + 1}"
 
+        // Find the supplier name from the supplierList based on founisseurIdNowIs
+        val supplierName = supplierList.firstOrNull { it.idSupplierSu == founisseurIdNowIs }?.nomSupplierSu ?: ""
+
         val newArticle = EntreBonsGrosTabele(
             vidBG = newVid,
             idArticleInSectionsOfImageBG = newIdDivider,
@@ -164,7 +172,7 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Lon
             subTotaleBG = 0.0,
             grossisstBonN = 0,
             supplierIdBG = founisseurIdNowIs ?: 0,
-            supplierNameBG = "",
+            supplierNameBG = supplierName, // Assign the found supplier name
             uniterCLePlusUtilise = false,
             erreurCommentaireBG = "",
             passeToEndStateBG = true,
@@ -180,6 +188,7 @@ fun createNewArticle(articles: List<EntreBonsGrosTabele>, founisseurIdNowIs: Lon
             }
     }
 }
+
 fun deleteTheNewArticleIZ(vidBG: Long) {
     val database = FirebaseDatabase.getInstance()
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")

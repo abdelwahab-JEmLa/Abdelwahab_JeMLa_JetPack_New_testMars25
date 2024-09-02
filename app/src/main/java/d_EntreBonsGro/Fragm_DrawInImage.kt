@@ -62,6 +62,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
+import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import kotlin.math.roundToInt
@@ -85,6 +86,7 @@ fun DessinableImage(
     showDialogeNbrIMGs: Boolean,
     onDissmiss: () -> Unit,
     heightOfImageAndRelatedDialogEditer: Boolean,
+    supplierList: List<SupplierTabelle>,
 ) {
 
     val configuration = LocalConfiguration.current
@@ -144,7 +146,7 @@ fun DessinableImage(
                     founisseurIdNowIs = founisseurIdNowIs,
                     onCountChange = { newCount ->
                         sectionsDonsChaqueImage = newCount
-                    }
+                    }, supplierList = supplierList
                 )
             }
 
@@ -256,7 +258,7 @@ fun DessinableImage(
         },
         onOutlineDialogClose = {
             showOutlineDialog = false
-        }
+        }, supplierList = supplierList
     )
 }
 

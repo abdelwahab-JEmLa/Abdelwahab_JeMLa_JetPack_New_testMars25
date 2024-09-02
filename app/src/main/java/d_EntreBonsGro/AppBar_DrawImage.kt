@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
+import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -62,14 +63,14 @@ fun DialogsController(
     suggestionsList: List<String>,
     onSectionCountChange: (Int) -> Unit,
     onImageCountChange: (Int) -> Unit,
-    onOutlineDialogClose: () -> Unit
+    onOutlineDialogClose: () -> Unit, supplierList: List<SupplierTabelle>
 ) {
     if (showDiviseurDesSections) {
         TreeCountControl(
             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             filteredAndSortedArticles = filteredAndSortedArticles,
             founisseurIdNowIs = founisseurIdNowIs,
-            onCountChange = onSectionCountChange
+            onCountChange = onSectionCountChange, supplierList = supplierList
         )
     }
 
@@ -273,7 +274,7 @@ fun TreeCountControl(
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
     founisseurIdNowIs: Long?,
-    onCountChange: (Int) -> Unit
+    onCountChange: (Int) -> Unit, supplierList: List<SupplierTabelle>
 ) {
     Row(
         modifier = Modifier
@@ -296,7 +297,11 @@ fun TreeCountControl(
         Spacer(modifier = Modifier.width(8.dp))
         Button(onClick = {
             onCountChange(sectionsDonsChaqueImage + 1)
-            createNewArticle(filteredAndSortedArticles, founisseurIdNowIs, sectionsDonsChaqueImage + 1)
+            createNewArticle(
+                filteredAndSortedArticles,
+                founisseurIdNowIs,
+                sectionsDonsChaqueImage + 1,
+                supplierList,)
         }) {
             Text("+")
         }

@@ -390,6 +390,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         showDialogeNbrIMGs=showDialogeNbrIMGs,
                         onDissmiss = { showDialogeNbrIMGs = false },
                         heightOfImageAndRelatedDialogEditer=heightOfImageAndRelatedDialogEditer,
+                         supplierList = suppliersList,
 
                     )
                 }
@@ -412,6 +413,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             showDialogeNbrIMGs = showDialogeNbrIMGs,
                             onDissmiss = { showDialogeNbrIMGs = false },
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
+                             supplierList = suppliersList,
 
                         )
                         AfficheEntreBonsGro(
