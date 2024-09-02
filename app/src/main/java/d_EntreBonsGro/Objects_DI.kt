@@ -3,10 +3,7 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,35 +58,13 @@ fun ImageDisplayer(
     sectionsDonsChaqueImage: Int,
     modifier: Modifier
 ) {
-    BoxWithConstraints(
+    Box( // Utilisation de Box au lieu de BoxWithConstraints
         modifier = modifier
             .height(heightOfImageAndRelated)
             .clip(RectangleShape)
             .offset { IntOffset(imageOffset.x.toInt(), imageOffset.y.toInt()) }
     ) {
-        var scale by remember { mutableStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
-
-        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-            scale = (scale * zoomChange).coerceIn(0.5f, 3f) // Limite le zoom minimal à 0.5x et maximal à 3x
-
-            // Calculer le décalage maximal basé sur l'échelle et les contraintes
-            val maxX = (constraints.maxWidth * (scale - 1)) / 2
-            val maxY = (constraints.maxHeight * (scale - 1)) / 2
-
-            // Permettre un décalage illimité lorsque l'utilisateur effectue un dézoom (scale < 1)
-            offset = if (scale <= 1) {
-                Offset(
-                    x = offset.x + offsetChange.x, // Pas de restrictions quand dézoomé
-                    y = offset.y + offsetChange.y
-                )
-            } else {
-                Offset(
-                    x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
-                    y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
-                )
-            }
-        }
 
         Image(
             painter = painter,
@@ -98,12 +73,12 @@ fun ImageDisplayer(
             modifier = Modifier
                 .matchParentSize()
                 .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
+                    // Garder l'échelle fixe à 1 pour désactiver le zoom
+                    scaleX = 1f,
+                    scaleY = 1f,
                     translationX = offset.x,
                     translationY = offset.y
                 )
-                .transformable(state = state)
                 .onSizeChanged(onImageSizeChanged)
                 .drawWithContent {
                     drawContent()
@@ -123,6 +98,7 @@ fun ImageDisplayer(
         )
     }
 }
+
 @Composable
 fun AutoResizedTextDI(
     text: String,
