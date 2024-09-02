@@ -186,7 +186,6 @@ fun DessinableImage(
                         },
                         onRightColumnDrag = { delta ->
                             rightColumnOffset += delta
-                            // trop
                         }
                     )
                 }
@@ -278,20 +277,15 @@ fun Displayer(
                 .fillMaxHeight()
                 .align(Alignment.CenterStart)
         ) {
-            QuantityPrice(          //TODo pk quand je drage au premier foit ca drage mais si je drage la 2 il ce disparaitre
+            QuantityPrice(
                 imageIndex = imageIndex,
                 sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                 filteredAndSortedArticles = filteredAndSortedArticles,
                 heightOfImageAndRelated = heightOfImageAndRelated,
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
-                onDrag = { delta ->
-                    val newOffset = (rightColumnOffset + delta).coerceIn(
-                        -(maxWidthPx - columnWidthPx),
-                        (maxWidthPx - imageWidthPx) / 2 + columnWidthPx
-                    )
-                    onRightColumnDrag(newOffset)
-                }
+                onDrag = onRightColumnDrag
+
             )
         }
 
@@ -303,7 +297,7 @@ fun Displayer(
                 .fillMaxHeight()
                 .align(Alignment.CenterEnd)
         ) {
-            nameColumn(
+            NameColumn(
                 imageIndex = imageIndex,
                 sectionsDonsChaqueImage = sectionsDonsChaqueImage,
                 filteredAndSortedArticles = filteredAndSortedArticles,
@@ -330,6 +324,7 @@ fun Displayer(
         }
     }
 }
+
 @Composable
 fun QuantityPrice(
     modifier: Modifier = Modifier,
@@ -370,16 +365,16 @@ fun QuantityPrice(
                             .clickable { onArticleClick(article) },
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                            QuantityPrixCompos( article)
-
+                        QuantityPrixCompos(article)
                     }
                 }
             }
         }
     }
 }
+
 @Composable
-fun nameColumn(
+fun NameColumn(
     modifier: Modifier = Modifier,
     imageIndex: Int,
     sectionsDonsChaqueImage: Int,
@@ -418,10 +413,7 @@ fun nameColumn(
                             .clickable { onArticleClick(article) },
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-
-                            ArticleNamesCompos(articlesBaseDonne, article)
-
-
+                        ArticleNamesCompos(articlesBaseDonne, article)
                     }
                 }
             }
