@@ -8,11 +8,11 @@ import android.net.Uri
 import android.speech.RecognizerIntent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -299,7 +299,7 @@ fun Displayer(
         }
 
         // Right floating column (QuantityPrice)
-        Box(    //TODO enleve le card soit on transparence
+        Box(
             modifier = Modifier
                 .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
                 .width(100.dp)
@@ -351,8 +351,7 @@ fun Displayer(
             else -> {}
         }
     }
-}
-@Composable
+}@Composable
 fun QuantityPrice(
     modifier: Modifier = Modifier,
     imageIndex: Int,
@@ -363,8 +362,7 @@ fun QuantityPrice(
     articlesBaseDonne: List<BaseDonne>,
     onDrag: (Float) -> Unit
 ) {
-    val density = LocalDensity.current
-    val columnWidth by remember { mutableStateOf(100.dp) }
+    val columnWidth = 100.dp
 
     Box(
         modifier = modifier
@@ -385,48 +383,37 @@ fun QuantityPrice(
                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                 article?.let {
-                    Card(
+                    val isZeroQuantityOrPrice =
+                        article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
+
+                    val cardColor = if (isZeroQuantityOrPrice) Color.Red else Color.Transparent
+                    val textColor = if (isZeroQuantityOrPrice) Color.White else Color.Red
+                    val borderColor = if (isZeroQuantityOrPrice) Color.White else Color.Red
+
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
-                            .clickable { onArticleClick(article) },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            .clickable { onArticleClick(article) }
+                            .border(BorderStroke(1.dp, borderColor))
+                            .background(cardColor),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val isZeroQuantityOrPrice =
-                                    article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
-                                val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Red
-                                val textColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
-                                val borderColor = if (isZeroQuantityOrPrice) Color.Red else Color.White
-
-                                Card(
-                                    modifier = Modifier.fillMaxSize(),
-                                    colors = CardDefaults.cardColors(containerColor = cardColor),
-                                    border = BorderStroke(1.dp, borderColor)
-                                ) {
-                                    if (isZeroQuantityOrPrice) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                            contentDescription = "Zero quantity or price",
-                                            tint = Color.Red,
-                                        )
-                                    } else {
-                                        AutoResizedTextDI(
-                                            text = "${article.quantityAcheteBG} X ${article.newPrixAchatBG}",
-                                            color = textColor,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                }
-                            }
+                        if (!isZeroQuantityOrPrice) {
+                            // Afficher le texte quand quantité et prix ne sont pas zéro
+                            AutoResizedTextDI(
+                                text = "${article.quantityAcheteBG} X ${article.newPrixAchatBG}",
+                                color = textColor,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            // Afficher une icône ou tout autre chose
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Zero quantity or price",
+                                tint = Color.Red,
+                            )
                         }
                     }
                 }
@@ -434,7 +421,6 @@ fun QuantityPrice(
         }
     }
 }
-
 @Composable
 fun NameColumn(
     modifier: Modifier = Modifier,
@@ -446,8 +432,7 @@ fun NameColumn(
     articlesBaseDonne: List<BaseDonne>,
     onDrag: (Float) -> Unit
 ) {
-    val density = LocalDensity.current
-    val columnWidth by remember { mutableStateOf(100.dp) }
+    val columnWidth = 100.dp
 
     Box(
         modifier = modifier
@@ -468,57 +453,53 @@ fun NameColumn(
                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                 article?.let {
-                    Card(
+                    val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
+                    var imageExist by remember { mutableStateOf(false) }
+
+                    val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
+                    val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
+                    val textColor = if (isNewArticle) Color.Red else Color.Black
+
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
-                            .clickable { onArticleClick(article) },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            .clickable { onArticleClick(article) }
+                            .border(BorderStroke(1.dp, Color.Gray))
+                            .background(cardColor),
+                        contentAlignment = Alignment.Center
                     ) {
-                        val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Image Card (30% width)
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.3f)
+                                    .aspectRatio(1f)
+                            ) {
+                                ImageArticles(
+                                    article = article,
+                                    onImageExist = { imageExist = true },
+                                    onImageNonexist = { imageExist = false }
+                                )
+                            }
 
-                        relatedArticle?.let { related ->
-                            var imageExist by remember { mutableStateOf(false) }
+                            Spacer(modifier = Modifier.width(8.dp))
 
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                // Image Card (30% width)
-                                Box(
-                                    modifier = Modifier
-                                        .weight(0.3f)
-                                        .aspectRatio(1f)
-                                ) {
-                                    ImageArticles(
-                                        article = article,
-                                        onImageExist = { imageExist = true },
-                                        onImageNonexist = { imageExist = false }
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                // Text Card (70% width)
-                                val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
-                                val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Unspecified
-                                val textColor = if (isNewArticle) Color.Red else Color.Black
-
-                                Card(
-                                    modifier = Modifier
-                                        .weight(0.7f)
-                                        .fillMaxHeight(),
-                                    colors = CardDefaults.cardColors(containerColor = cardColor)
-                                ) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        AutoResizedTextDI(
-                                            text = "${if (!imageExist) article.nomArticleBG else ""} ${related.nomArab ?: ""}",
-                                            color = textColor,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                }
+                            // Text Card (70% width)
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.7f)
+                                    .fillMaxHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AutoResizedTextDI(
+                                    text = "${if (!imageExist) article.nomArticleBG else ""} ${relatedArticle?.nomArab ?: ""}",
+                                    color = textColor,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
@@ -527,8 +508,6 @@ fun NameColumn(
         }
     }
 }
-
-
 
 @Composable
 fun ImageArticles(
@@ -575,6 +554,7 @@ fun ImageArticles(
         }
     }
 }
+
 
 
 
