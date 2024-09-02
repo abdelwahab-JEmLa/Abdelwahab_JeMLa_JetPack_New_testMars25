@@ -386,9 +386,9 @@ fun QuantityPrice(
                     val isZeroQuantityOrPrice =
                         article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
 
-                    val cardColor = if (isZeroQuantityOrPrice) Color.Red else Color.Transparent
-                    val textColor = if (isZeroQuantityOrPrice) Color.White else Color.Red
-                    val borderColor = if (isZeroQuantityOrPrice) Color.White else Color.Red
+                    val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Transparent
+                    val textColor = if (isZeroQuantityOrPrice) Color.White else Color.White
+                    val borderColor = if (isZeroQuantityOrPrice) Color.White else Color.White
 
                     Box(
                         modifier = Modifier
@@ -458,7 +458,7 @@ fun NameColumn(
 
                     val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
                     val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
-                    val textColor = if (isNewArticle) Color.Red else Color.Black
+                    val textColor = if (isNewArticle) Color.White else Color.White
 
                     Box(
                         modifier = Modifier
