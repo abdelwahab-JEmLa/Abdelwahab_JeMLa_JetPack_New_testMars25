@@ -3,6 +3,7 @@ package d_EntreBonsGro
 import a_RoomDB.BaseDonne
 import android.content.res.Configuration
 import android.util.Log
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -290,12 +291,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         )
                     }
 
-                    OutlineQuichangeLeTotaleProvisoire(
-                        founisseurIdNowIs,
-                        articlesEntreBonsGrosTabele,
-                        founisseurNowIs,
-                        modifier = Modifier.weight(0.7f)
-                    )
+
 
                     IconButton(onClick = { showSupplierDialog = true },
                         modifier = Modifier.weight(0.1f)) {
@@ -320,11 +316,23 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         floatingActionButtonPosition = FabPosition.Start // or End, depending on your preference
 
     ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            OutlineQuichangeLeTotaleProvisoire(
+                founisseurIdNowIs,
+                articlesEntreBonsGrosTabele,
+                founisseurNowIs,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd) // Or any other position you prefer
+                    .padding(16.dp)
+            )
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
+
             if (false) {
                 OutlineInput(
                     inputText = inputText,
@@ -456,6 +464,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     )
                 }
             }
+        }
+
         }
 
     }
