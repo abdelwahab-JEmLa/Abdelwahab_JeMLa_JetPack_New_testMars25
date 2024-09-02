@@ -281,20 +281,24 @@ fun ImageDisplayer(
         var offset by remember { mutableStateOf(Offset.Zero) }
 
         val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-            scale = (scale * zoomChange).coerceIn(1f, 3f)
+            scale = (scale * zoomChange).coerceIn(0.5f, 3f) // Limite le zoom minimal à 0.5x et maximal à 3x
 
-            // Calculate maximum offset based on scale and constraints
+            // Calculer le décalage maximal basé sur l'échelle et les contraintes
             val maxX = (constraints.maxWidth * (scale - 1)) / 2
             val maxY = (constraints.maxHeight * (scale - 1)) / 2
 
-            // Calculate the new offset, ensuring it doesn't go beyond the zoomed-in image bounds
-            offset = Offset(
-                x = (offset.x + offsetChange.x).coerceIn(
-                    -maxX + imageOffset.x, // Consider imageOffset for maxX
-                    maxX + imageOffset.x  // Consider imageOffset for minX
-                ),
-                y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
-            )
+            // Permettre un décalage illimité lorsque l'utilisateur effectue un dézoom (scale < 1)
+            offset = if (scale <= 1) {
+                Offset(
+                    x = offset.x + offsetChange.x, // Pas de restrictions quand dézoomé
+                    y = offset.y + offsetChange.y
+                )
+            } else {
+                Offset(
+                    x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
+                    y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
+                )
+            }
         }
 
         Image(
