@@ -23,9 +23,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.ImagesearchRoller
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
@@ -117,12 +115,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     var showOutline by remember { mutableStateOf(false) }
-    var showDivider by remember { mutableStateOf(true) }
+    var showDivider by remember { mutableStateOf(false) }
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
     var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
 
-    var heightAdjustmentGesture by remember { mutableStateOf(false) }
-    var sectionsDonsChaqueImageGesture by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -195,14 +191,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     }
 
     val floatingActionButtons = listOf(
-        Triple(
-            if (heightAdjustmentGesture) Icons.Default.Close else Icons.Default.Gesture,
-            if (heightAdjustmentGesture) "Hide Divider" else "Show Divider"
-        ) { heightAdjustmentGesture = !heightAdjustmentGesture },
-        Triple(
-            if (sectionsDonsChaqueImageGesture) Icons.Default.Close else Icons.Default.ImagesearchRoller,
-            if (sectionsDonsChaqueImageGesture) "Hide Divider" else "Show Divider"
-        ) { sectionsDonsChaqueImageGesture = !sectionsDonsChaqueImageGesture },
+
         Triple(
             Icons.Default.Edit,
             "Flotin1"
@@ -401,8 +390,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         showDialogeNbrIMGs=showDialogeNbrIMGs,
                         onDissmiss = { showDialogeNbrIMGs = false },
                         heightOfImageAndRelatedDialogEditer=heightOfImageAndRelatedDialogEditer,
-                        heightAdjustmentGesture   =heightAdjustmentGesture  ,
-                                sectionsDonsChaqueImageGesture             = sectionsDonsChaqueImageGesture   ,
+
                     )
                 }
                 showSplitView -> {
@@ -424,8 +412,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             showDialogeNbrIMGs = showDialogeNbrIMGs,
                             onDissmiss = { showDialogeNbrIMGs = false },
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
-                            heightAdjustmentGesture   =heightAdjustmentGesture  ,
-                            sectionsDonsChaqueImageGesture             = sectionsDonsChaqueImageGesture   ,
+
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
@@ -544,7 +531,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 }
 
 @Composable
-fun FloatingActionButtonsSection(
+fun FloatingActionButtonsSection(//TODO fait que je peut drage sur les elements
     buttons: List<Triple<ImageVector, String, () -> Unit>>
 ) {
     var showFloatingButtons by remember { mutableStateOf(true) }

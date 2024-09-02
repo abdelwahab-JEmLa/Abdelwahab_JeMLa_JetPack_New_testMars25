@@ -25,14 +25,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.Height
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -67,6 +71,8 @@ import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import kotlin.math.roundToInt
+
+
 @Composable
 fun DessinableImage(
     modifier: Modifier = Modifier,
@@ -85,9 +91,8 @@ fun DessinableImage(
     showDialogeNbrIMGs: Boolean,
     onDissmiss: () -> Unit,
     heightOfImageAndRelatedDialogEditer: Boolean,
-    heightAdjustmentGesture: Boolean, // Flag to control height adjustment with drag
-    sectionsDonsChaqueImageGesture: Boolean // Flag to control section count change with drag
 ) {
+
     val configuration = LocalConfiguration.current
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
@@ -117,6 +122,9 @@ fun DessinableImage(
     var rightColumnOffset by remember { mutableStateOf(0f) }
     var imageOffset by remember { mutableStateOf(0f) }
 
+    var heightAdjustmentGesture by remember { mutableStateOf(true) }
+    var sectionsDonsChaqueImageGesture by remember { mutableStateOf(false) }
+
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
         articlesRef,
@@ -144,7 +152,7 @@ fun DessinableImage(
                 sectionsDonsChaqueImage = (sectionsDonsChaqueImage + pan.y.toInt() / 10).coerceIn(1, 100) // Adjust section count based on vertical drag
             }
 
-            }
+        }
     }
     Box(
         modifier = modifier
@@ -214,6 +222,21 @@ fun DessinableImage(
             }
         }
 
+        // Floating Action Button (FAB) to toggle gestures
+        FloatingActionButton(
+            onClick = {
+                // Toggle between heightAdjustmentGesture and sectionsDonsChaqueImageGesture
+                heightAdjustmentGesture = !heightAdjustmentGesture
+                sectionsDonsChaqueImageGesture = !sectionsDonsChaqueImageGesture
+            },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        ) {
+            Icon(
+                imageVector = if (heightAdjustmentGesture) Icons.Default.Height else Icons.Default.FormatListNumbered,
+                contentDescription = if (heightAdjustmentGesture) "Adjust Height" else "Adjust Sections"
+            )
+        }
+
         // Height and width adjustment controls with offset adjustment
         if (heightOfImageAndRelatedDialogEditer) {
             HeightAndWidthAdjustmentControls(
@@ -274,7 +297,6 @@ fun DessinableImage(
         }
     )
 }
-
 
 @Composable
 fun Displayer(
