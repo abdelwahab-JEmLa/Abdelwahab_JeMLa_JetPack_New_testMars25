@@ -82,6 +82,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
+    var bonArticlesFiltreParDiffrentAuAncien by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var suppliersList by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
@@ -417,7 +418,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
                         )
                         AfficheEntreBonsGro(
-                            articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
+                            articlesEntreBonsGro = bonArticlesFiltreParDiffrentAuAncien,
                             onDeleteArticle = { article ->
                                 coroutineScope.launch {
                                     articlesRef.child(article.vidBG.toString()).removeValue()
@@ -436,7 +437,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 }
                 else -> {
                     AfficheEntreBonsGro(
-                        articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { founisseurNowIs == null || it.grossisstBonN == founisseurNowIs },
+                        articlesEntreBonsGro = bonArticlesFiltreParDiffrentAuAncien,
                         onDeleteArticle = { article ->
                             coroutineScope.launch {
                                 articlesRef.child(article.vidBG.toString()).removeValue()
@@ -476,7 +477,13 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             editionPassedMode = false
             founisseurNowIs = null
             showFullImage = false
-        },
+
+            // Remplace l'ancienne liste avec une nouvelle liste filtrée
+            bonArticlesFiltreParDiffrentAuAncien = articlesEntreBonsGrosTabele.filter { article ->
+                (article.ancienPrixBG - article.newPrixAchatBG) != 0.0 && article.quantityAcheteBG != 0
+            }
+        }
+,
         showMissingArticles = showMissingArticles,
         onExportToFirestore = {
             coroutineScope.launch {
