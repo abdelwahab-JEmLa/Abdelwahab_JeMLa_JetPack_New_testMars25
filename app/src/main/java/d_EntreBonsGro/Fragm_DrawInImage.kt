@@ -7,11 +7,14 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.speech.RecognizerIntent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -43,10 +46,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -253,7 +262,74 @@ fun DessinableImage(
             showOutlineDialog = false
         }
     )
-}  @Composable
+}@Composable
+fun ImageDisplayer(
+    painter: AsyncImagePainter,
+    heightOfImageAndRelated: Dp,
+    imageOffset: Offset,
+    onImageSizeChanged: (IntSize) -> Unit,
+    sectionsDonsChaqueImage: Int,
+    modifier: Modifier
+) {
+    BoxWithConstraints(
+        modifier = modifier
+            .height(heightOfImageAndRelated)
+            .clip(RectangleShape)
+            .offset { IntOffset(imageOffset.x.toInt(), imageOffset.y.toInt()) }
+    ) {
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+
+        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+            scale = (scale * zoomChange).coerceIn(1f, 3f)
+
+            // Calculate maximum offset based on scale and constraints
+            val maxX = (constraints.maxWidth * (scale - 1)) / 2
+            val maxY = (constraints.maxHeight * (scale - 1)) / 2
+
+            // Calculate the new offset, ensuring it doesn't go beyond the zoomed-in image bounds
+            offset = Offset(
+                x = (offset.x + offsetChange.x).coerceIn(
+                    -maxX + imageOffset.x, // Consider imageOffset for maxX
+                    maxX + imageOffset.x  // Consider imageOffset for minX
+                ),
+                y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
+            )
+        }
+
+        Image(
+            painter = painter,
+            contentDescription = "Image for supplier section",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+                .transformable(state = state)
+                .onSizeChanged(onImageSizeChanged)
+                .drawWithContent {
+                    drawContent()
+                    val redColor = Color.Red.copy(alpha = 0.3f)
+                    val blueColor = Color.Blue.copy(alpha = 0.3f)
+                    for (i in 0 until sectionsDonsChaqueImage) {
+                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
+                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+                        val color = if (i % 2 == 0) redColor else blueColor
+                        drawRect(
+                            color = color,
+                            topLeft = Offset(0f, top),
+                            size = Size(size.width, bottom - top)
+                        )
+                    }
+                }
+        )
+    }
+}
+@Composable
 fun Displayer(
     imageIndex: Int,
     painter: AsyncImagePainter,
@@ -351,8 +427,6 @@ fun Displayer(
         }
     }
 }
-
-
 @Composable
 fun QuantityPrice(
     modifier: Modifier = Modifier,

@@ -51,66 +51,6 @@ import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteMode
 import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.util.Locale
-    @Composable
-fun ImageDisplayer(
-    painter: AsyncImagePainter,
-    heightOfImageAndRelated: Dp,
-    imageOffset: Offset, // Explicitly declare the type as Offset
-    onImageSizeChanged: (IntSize) -> Unit,
-    sectionsDonsChaqueImage: Int,
-    modifier: Modifier
-) {
-    BoxWithConstraints(
-        modifier = modifier
-            .height(heightOfImageAndRelated)
-            .clip(RectangleShape)
-            .offset { IntOffset(imageOffset.x.toInt(), imageOffset.y.toInt()) } // Use imageOffset parameter
-    ) {
-        var scale by remember { mutableStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) } // State for frame offset
-
-        val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-            scale = (scale * zoomChange).coerceIn(1f, 3f)
-            val maxX = (constraints.maxWidth * (scale - 1)) / 2
-            val maxY = (constraints.maxHeight * (scale - 1)) / 2
-            offset = Offset(
-                x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
-                y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
-            )
-        }
-
-        Image(
-            painter = painter,
-            contentDescription = "Image for supplier section",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .transformable(state = state)
-                .onSizeChanged(onImageSizeChanged)
-                .drawWithContent {
-                    drawContent()
-                    val redColor = Color.Red.copy(alpha = 0.3f)
-                    val blueColor = Color.Blue.copy(alpha = 0.3f)
-                    for (i in 0 until sectionsDonsChaqueImage) {
-                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                        val color = if (i % 2 == 0) redColor else blueColor
-                        drawRect(
-                            color = color,
-                            topLeft = Offset(0f, top),
-                            size = Size(size.width, bottom - top)
-                        )
-                    }
-                }
-        )
-    }
-}
 
 
 @Composable
