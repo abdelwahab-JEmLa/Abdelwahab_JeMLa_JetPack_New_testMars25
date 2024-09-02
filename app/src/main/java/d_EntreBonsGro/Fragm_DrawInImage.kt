@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
@@ -25,18 +24,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.Height
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -100,7 +94,7 @@ fun DessinableImage(
         .filter { it.supplierIdBG == founisseurIdNowIs }
         .sortedBy { it.idArticleInSectionsOfImageBG }
     var nmbrImagesDuBon by remember { mutableStateOf(7) }
-    var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(18) }
+    var sectionsDonsChaqueImage by rememberSaveable { mutableStateOf(15) }
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
 
     val context = LocalContext.current
@@ -113,7 +107,7 @@ fun DessinableImage(
 
     var heightAdjustment by remember { mutableStateOf(0) }
     var widthAdjustment by remember { mutableStateOf(0) }
-    val baseHeight = if (isPortraitLandscap) 270 else 550
+    val baseHeight = if (isPortraitLandscap) 270 else 420
     val baseWidth = if (isPortraitLandscap) 350 else 700
     val heightOfImageAndRelated = (baseHeight + heightAdjustment).dp
     val widthOfImageAndRelated = (baseWidth + widthAdjustment).dp
@@ -121,9 +115,6 @@ fun DessinableImage(
     var leftColumnOffset by remember { mutableStateOf(0f) }
     var rightColumnOffset by remember { mutableStateOf(0f) }
     var imageOffset by remember { mutableStateOf(0f) }
-
-    var heightAdjustmentGesture by remember { mutableStateOf(true) }
-    var sectionsDonsChaqueImageGesture by remember { mutableStateOf(false) }
 
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
@@ -141,23 +132,9 @@ fun DessinableImage(
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second
 
-    // Combined gesture modifier to detect both drag and pinch-zoom
-    val gestureModifier = Modifier.pointerInput(Unit) {
-        detectTransformGestures { _, pan, _, _ ->
-            // Handle drag gesture
-            if (heightAdjustmentGesture) {
-                heightAdjustment += pan.y.toInt() // Adjust height with vertical drag
-            }
-            if (sectionsDonsChaqueImageGesture) {
-                sectionsDonsChaqueImage = (sectionsDonsChaqueImage + pan.y.toInt() / 10).coerceIn(1, 100) // Adjust section count based on vertical drag
-            }
-
-        }
-    }
     Box(
         modifier = modifier
             .fillMaxSize()
-            .then(gestureModifier)
     ) {
         Column {
             if (showDiviseurDesSections) {
@@ -220,21 +197,6 @@ fun DessinableImage(
                     )
                 }
             }
-        }
-
-        // Floating Action Button (FAB) to toggle gestures
-        FloatingActionButton(
-            onClick = {
-                // Toggle between heightAdjustmentGesture and sectionsDonsChaqueImageGesture
-                heightAdjustmentGesture = !heightAdjustmentGesture
-                sectionsDonsChaqueImageGesture = !sectionsDonsChaqueImageGesture
-            },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        ) {
-            Icon(
-                imageVector = if (heightAdjustmentGesture) Icons.Default.Height else Icons.Default.FormatListNumbered,
-                contentDescription = if (heightAdjustmentGesture) "Adjust Height" else "Adjust Sections"
-            )
         }
 
         // Height and width adjustment controls with offset adjustment
