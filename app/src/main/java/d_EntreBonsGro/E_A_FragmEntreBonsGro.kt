@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -82,7 +83,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
-    var bonArticlesFiltreParDiffrentAuAncien by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var suppliersList by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
@@ -120,6 +120,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
     var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
 
+    var modeVerificationAvantUpdateBD by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         articlesRef.addValueEventListener(object : ValueEventListener {
@@ -192,7 +193,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     }
 
     val floatingActionButtons = listOf(
-
+        Triple(
+            if (modeVerificationAvantUpdateBD) Icons.Default.Close else Icons.Default.ShoppingCart,
+            if (modeVerificationAvantUpdateBD) "Hide Outline" else "Show Outline"
+        ) { modeVerificationAvantUpdateBD = !modeVerificationAvantUpdateBD },
         Triple(
             Icons.Default.Edit,
             "Flotin1"
@@ -391,7 +395,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         showDialogeNbrIMGs=showDialogeNbrIMGs,
                         onDissmiss = { showDialogeNbrIMGs = false },
                         heightOfImageAndRelatedDialogEditer=heightOfImageAndRelatedDialogEditer,
-                         supplierList = suppliersList,
+                        supplierList = suppliersList,
+                        modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD,
 
                     )
                 }
@@ -415,10 +420,12 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             onDissmiss = { showDialogeNbrIMGs = false },
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
                              supplierList = suppliersList,
+                            modeVerificationAvantUpdateBD=modeVerificationAvantUpdateBD
+
 
                         )
                         AfficheEntreBonsGro(
-                            articlesEntreBonsGro = bonArticlesFiltreParDiffrentAuAncien,
+                            articlesEntreBonsGro = articlesEntreBonsGrosTabele,
                             onDeleteArticle = { article ->
                                 coroutineScope.launch {
                                     articlesRef.child(article.vidBG.toString()).removeValue()
@@ -431,13 +438,13 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             onDeleteFromFirestore = {},
                             suppliersList = suppliersList,
                             onSupplierChanged = ::handleSupplierChange ,
-                            suppliersRef=suppliersRef
+                            suppliersRef=suppliersRef   ,
                         )
                     }
                 }
                 else -> {
                     AfficheEntreBonsGro(
-                        articlesEntreBonsGro = bonArticlesFiltreParDiffrentAuAncien,
+                        articlesEntreBonsGro = articlesEntreBonsGrosTabele,
                         onDeleteArticle = { article ->
                             coroutineScope.launch {
                                 articlesRef.child(article.vidBG.toString()).removeValue()
@@ -478,10 +485,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             founisseurNowIs = null
             showFullImage = false
 
-            // Remplace l'ancienne liste avec une nouvelle liste filtrée
-            bonArticlesFiltreParDiffrentAuAncien = articlesEntreBonsGrosTabele.filter { article ->
-                (article.ancienPrixBG - article.newPrixAchatBG) != 0.0 && article.quantityAcheteBG != 0
-            }
+
         }
 ,
         showMissingArticles = showMissingArticles,

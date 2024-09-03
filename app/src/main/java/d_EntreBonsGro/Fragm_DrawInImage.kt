@@ -87,6 +87,7 @@ fun DessinableImage(
     onDissmiss: () -> Unit,
     heightOfImageAndRelatedDialogEditer: Boolean,
     supplierList: List<SupplierTabelle>,
+    modeVerificationAvantUpdateBD: Boolean,
 ) {
 
     val configuration = LocalConfiguration.current
@@ -138,6 +139,18 @@ fun DessinableImage(
         modifier = modifier
             .fillMaxSize()
     ) {
+        if (modeVerificationAvantUpdateBD){
+            Windos_AvantExpo(
+                articlesEntreBonsGro =  articlesEntreBonsGrosTabele.filter { article ->
+                    (article.ancienPrixBG - article.newPrixAchatBG) != 0.0 && article.quantityAcheteBG != 0
+                },
+                articlesRef = articlesRef,
+                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                coroutineScope = coroutineScope,
+            )
+
+        }else{
+
         Column {
             if (showDiviseurDesSections) {
                 TreeCountControl(
@@ -161,42 +174,44 @@ fun DessinableImage(
                         ImageRequest.Builder(context).data(imageUri).build()
                     )
 
-                    Displayer(
-                        imageIndex = imageIndex,
-                        painter = painter,
-                        sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                        filteredAndSortedArticles = filteredAndSortedArticles,
-                        heightOfImageAndRelated = heightOfImageAndRelated,
-                        widthOfImageAndRelated = widthOfImageAndRelated,
-                        onArticleClick = { article ->
-                            selectedArticle = article
-                            if (showOutline) {
-                                showOutlineDialog = true
-                            } else {
-                                val currentTime = System.currentTimeMillis()
-                                if (currentTime - lastLaunchTime > 1000) {
-                                    lastLaunchTime = currentTime
-                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                    }
-                                    speechRecognizerLauncher.launch(intent)
-                                }
-                            }
-                        },
-                        articlesBaseDonne = articlesBaseDonne,
-                        onImageSizeChanged = { if (imageIndex == 0) imageSize = it },
-                        leftColumnOffset = leftColumnOffset,
-                        rightColumnOffset = rightColumnOffset,
-                        onLeftColumnDrag = { delta ->
-                            leftColumnOffset += delta
-                        },
-                        onRightColumnDrag = { delta ->
-                            rightColumnOffset += delta
-                        },
-                        imageOffset
-                    )
+                         Displayer(
+                             imageIndex = imageIndex,
+                             painter = painter,
+                             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                             filteredAndSortedArticles = filteredAndSortedArticles,
+                             heightOfImageAndRelated = heightOfImageAndRelated,
+                             widthOfImageAndRelated = widthOfImageAndRelated,
+                             onArticleClick = { article ->
+                                 selectedArticle = article
+                                 if (showOutline) {
+                                     showOutlineDialog = true
+                                 } else {
+                                     val currentTime = System.currentTimeMillis()
+                                     if (currentTime - lastLaunchTime > 1000) {
+                                         lastLaunchTime = currentTime
+                                         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                             putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                         }
+                                         speechRecognizerLauncher.launch(intent)
+                                     }
+                                 }
+                             },
+                             articlesBaseDonne = articlesBaseDonne,
+                             onImageSizeChanged = { if (imageIndex == 0) imageSize = it },
+                             leftColumnOffset = leftColumnOffset,
+                             rightColumnOffset = rightColumnOffset,
+                             onLeftColumnDrag = { delta ->
+                                 leftColumnOffset += delta
+                             },
+                             onRightColumnDrag = { delta ->
+                                 rightColumnOffset += delta
+                             },
+                             imageOffset
+                         )
+
+                     }
                 }
             }
         }
