@@ -1,5 +1,6 @@
 package d_EntreBonsGro
 
+import a_RoomDB.BaseDonne
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -234,27 +235,38 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
             val snapshotEntreBonsGrosTabele = articlesEntreBonsGrosTabeleRef.get().await()
             val articlesEntreBonsGrosTabele = snapshotEntreBonsGrosTabele.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
 
-            val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
             val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
+            val snapshotBaseDonne = refArticlesAcheteModele.get().await()
+            val articlesBaseDonne = snapshotBaseDonne.children.mapNotNull { it.getValue(BaseDonne::class.java) }
+
+            val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
 
             articlesEntreBonsGrosTabele.forEach { article ->
-                // Calculate the price based on uniterCLePlusUtilise
+                // Calculer le prix en fonction de `uniterCLePlusUtilise`
                 val calculatedPrice = if (article.uniterCLePlusUtilise) {
                     article.newPrixAchatBG * article.quantityUniterBG
                 } else {
                     article.newPrixAchatBG
                 }
 
-                // Update all matching entries in ArticlesAcheteModeleAdapted
-                refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().addOnSuccessListener { snapshot ->
-                    snapshot.children.forEach { childSnapshot ->
-                        childSnapshot.ref.child("prixAchat").setValue(calculatedPrice)
-                    }
+                // Récupération de `monBenfice` et `monPrixVentUniter` correspondant à `idArticleBG`
+                val articleBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == article.idArticleBG }
+                val calculatedPriceVent = calculatedPrice + (articleBaseDonne?.monBenfice ?: 0.0)
+                val calculatedPriceVentUniter = calculatedPrice + (articleBaseDonne?.monPrixVentUniter ?: 0.0)
+
+                // Mise à jour des entrées correspondantes dans `ArticlesAcheteModeleAdapted`
+                refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().await().children.forEach { childSnapshot ->
+                    childSnapshot.ref.child("prixAchat").setValue(calculatedPrice)
+                    childSnapshot.ref.child("monPrixVent").setValue(calculatedPriceVent)
                 }
 
-                // Update e_DBJetPackExport
+                // Mise à jour dans `e_DBJetPackExport`
                 dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
                     .setValue(calculatedPrice)
+                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixVent")
+                    .setValue(calculatedPriceVent)
+                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixVentUniter")
+                    .setValue(calculatedPriceVentUniter)
             }
 
             println("Successfully updated e_DBJetPackExport and all matching entries in ArticlesAcheteModeleAdapted")

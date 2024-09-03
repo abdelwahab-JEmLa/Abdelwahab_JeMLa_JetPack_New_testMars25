@@ -1,6 +1,8 @@
 package com.example.abdelwahabjemlajetpack
 
+import a_RoomDB.BaseDonne
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,8 +39,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.database
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -164,11 +169,63 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                         },
                         tint2 = Color.Yellow
                     )
+                    DialogButton(
+                        text = "Trensfert de BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire A e_DBJetPackExport",     //TODO fait que ca soit 2 line si no espace
+                        icon = Icons.Default.CloudDownload,
+                        onClick = {
+                            coroutineScope.launch {
+                                trensfert(articleDao)
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Yellow
+                    )
+
                 }
             },
         )
     }
 }
+
+private fun trensfert(articleDao: ArticleDao) {
+    val firebase = Firebase.database
+    val dbJetPackExportRefSource = firebase.getReference("BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
+    val dbJetPackExportRefDest = firebase.getReference("e_DBJetPackExport")
+
+    // Lire les données depuis la référence source
+    dbJetPackExportRefSource.get().addOnSuccessListener { snapshot ->
+        if (snapshot.exists()) {
+            // Copier les données à la référence de destination
+            dbJetPackExportRefDest.setValue(snapshot.value).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("Transfert", "Données transférées avec succès!")
+
+                    // Supprimer toutes les entrées de articleDao
+                    CoroutineScope(Dispatchers.IO).launch {
+                        articleDao.deleteAll()
+
+                        // Insérer les nouvelles données dans articleDao
+                        snapshot.children.forEach { child ->
+                            val article = child.getValue(BaseDonne::class.java) // Remplacez par votre classe de données
+                            if (article != null) {
+                                articleDao.insert(article)
+                            }
+                        }
+                        Log.d("Transfert", "Les données ont été mises à jour dans articleDao!")
+                    }
+                } else {
+                    Log.e("Transfert", "Erreur lors du transfert: ${task.exception?.message}")
+                }
+            }
+        } else {
+            Log.e("Transfert", "La source de données est vide ou inexistante.")
+        }
+    }.addOnFailureListener { exception ->
+        Log.e("Transfert", "Erreur lors de la lecture des données: ${exception.message}")
+    }
+}
+
+
 
 @Composable
 private fun Dialog(

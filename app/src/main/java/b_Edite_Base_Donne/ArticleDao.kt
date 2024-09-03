@@ -16,6 +16,9 @@ interface ArticleDao {
 
     @Query("UPDATE articles SET nomArab = :newArabName WHERE idArticle = :idArticle")
     suspend fun updateArticleArabName(idArticle: Long, newArabName: String)
+    // Méthode pour insérer un article
+    @Insert
+    suspend fun insert(article: BaseDonne)
 
     @Update
     suspend fun updateArticle(article: BaseDonne)
