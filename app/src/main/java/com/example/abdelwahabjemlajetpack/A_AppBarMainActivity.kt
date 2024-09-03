@@ -120,6 +120,9 @@ fun TopAppBar(
         coroutineScope,
         articleDao,
         onDismiss = { fenetre_baseDonnePourBakupSiNaissaire = false },
+        onStartImport = { showProgressBar = true },
+        onProgressUpdate = { newProgress -> progress = newProgress },
+        onFinishImport = { showProgressBar = false }
     )
 
 
@@ -141,6 +144,9 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
     coroutineScope: CoroutineScope,
     articleDao: ArticleDao,
     onDismiss: () -> Unit,
+    onStartImport: () -> Unit,
+    onProgressUpdate: (Float) -> Unit,
+    onFinishImport: () -> Unit
 ) {
     if (dialogOpen) {
         AlertDialog(
@@ -174,7 +180,12 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
-                                trensfert(articleDao)
+                                onStartImport()
+                                // Passer onProgressUpdate ici
+                                trensfert(articleDao) { newProgress ->
+                                    onProgressUpdate(newProgress)
+                                }
+                                onFinishImport()
                             }
                             onDismiss()
                         },
@@ -187,29 +198,29 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
     }
 }
 
-private fun trensfert(articleDao: ArticleDao) {
+private fun trensfert(articleDao: ArticleDao, onProgressUpdate: (Float) -> Unit) {
     val firebase = Firebase.database
     val dbJetPackExportRefSource = firebase.getReference("BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
     val dbJetPackExportRefDest = firebase.getReference("e_DBJetPackExport")
 
-    // Lire les données depuis la référence source
     dbJetPackExportRefSource.get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
-            // Copier les données à la référence de destination
+            val totalItems = snapshot.childrenCount
+            var processedItems = 0
+
             dbJetPackExportRefDest.setValue(snapshot.value).addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d("Transfert", "Données transférées avec succès!")
-
-                    // Supprimer toutes les entrées de articleDao
                     CoroutineScope(Dispatchers.IO).launch {
                         articleDao.deleteAll()
 
-                        // Insérer les nouvelles données dans articleDao
                         snapshot.children.forEach { child ->
-                            val article = child.getValue(BaseDonne::class.java) // Remplacez par votre classe de données
+                            val article = child.getValue(BaseDonne::class.java)
                             if (article != null) {
                                 articleDao.insert(article)
                             }
+                            // Mettez à jour le nombre d'éléments traités
+                            processedItems++
+                            onProgressUpdate(processedItems.toFloat() / totalItems)
                         }
                         Log.d("Transfert", "Les données ont été mises à jour dans articleDao!")
                     }
