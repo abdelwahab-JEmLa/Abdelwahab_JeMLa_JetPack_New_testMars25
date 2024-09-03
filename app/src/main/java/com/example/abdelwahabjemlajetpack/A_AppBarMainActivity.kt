@@ -111,10 +111,10 @@ fun TopAppBar(
         }
     }
     Fenetre_baseDonnePourBakupSiNaissaire(
-        dialogOpen,
+        fenetre_baseDonnePourBakupSiNaissaire,
         coroutineScope,
         articleDao,
-        onDismiss = { dialogOpen = false },
+        onDismiss = { fenetre_baseDonnePourBakupSiNaissaire = false },
     )
 
 
@@ -154,15 +154,15 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     DialogButton(
-                        text = "Import d_db_jetPack",
+                        text = "BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire",
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
-                                exportToFireBase(articleDao,refFireBase="baseDonnePourBakupSiNaissaire")
+                                exportToFireBase(articleDao,refFireBase="BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
                             }
                             onDismiss()
                         },
-                        tint2 = Color.Black
+                        tint2 = Color.Yellow
                     )
                 }
             },
