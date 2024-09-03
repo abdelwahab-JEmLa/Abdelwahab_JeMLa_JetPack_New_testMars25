@@ -139,12 +139,13 @@ fun reconnaisanceVocaleLencer(
     }
     return Pair(speechRecognizerLauncher, filteredSuggestions)
 }fun createNewArticle(
-    articles: List<EntreBonsGrosTabele>,
+    articlesClient: List<EntreBonsGrosTabele>,
     founisseurIdNowIs: Long?,
     sectionsDonsChaqueImage: Int,
-    supplierList: List<SupplierTabelle>
+    supplierList: List<SupplierTabelle>,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>
 ) {
-    val currentArticleCount = articles.count { it.supplierIdBG == founisseurIdNowIs }
+    val currentArticleCount = articlesClient.count { it.supplierIdBG == founisseurIdNowIs }
     val targetArticleCount = sectionsDonsChaqueImage * 3 // 3 images
     val articlesToCreate = maxOf(targetArticleCount - currentArticleCount, 1)
 
@@ -152,9 +153,9 @@ fun reconnaisanceVocaleLencer(
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
 
     repeat(articlesToCreate) {
-        val newVid = (articles.maxOfOrNull { it.vidBG } ?: 0) + it + 1
+        val newVid = (articlesEntreBonsGrosTabele.maxOfOrNull { it.vidBG } ?: 0) + it + 1
         val currentDate = LocalDate.now().toString()
-        val maxIdDivider = articles.maxOfOrNull { it.idArticleInSectionsOfImageBG.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
+        val maxIdDivider = articlesClient.maxOfOrNull { it.idArticleInSectionsOfImageBG.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
         val newIdDivider = "$founisseurIdNowIs-$currentDate-${maxIdDivider + it + 1}"
 
         // Find the supplier name from the supplierList based on founisseurIdNowIs

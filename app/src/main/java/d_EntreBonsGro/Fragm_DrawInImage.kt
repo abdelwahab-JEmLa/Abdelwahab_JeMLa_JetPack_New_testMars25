@@ -159,7 +159,8 @@ fun DessinableImage(
                     founisseurIdNowIs = founisseurIdNowIs,
                     onCountChange = { newCount ->
                         sectionsDonsChaqueImage = newCount
-                    }, supplierList = supplierList
+                    }, supplierList = supplierList,
+                    articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele
                 )
             }
 

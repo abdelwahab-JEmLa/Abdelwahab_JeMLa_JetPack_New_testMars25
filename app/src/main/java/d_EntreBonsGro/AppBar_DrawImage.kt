@@ -70,7 +70,10 @@ fun DialogsController(
             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
             filteredAndSortedArticles = filteredAndSortedArticles,
             founisseurIdNowIs = founisseurIdNowIs,
-            onCountChange = onSectionCountChange, supplierList = supplierList
+            onCountChange = onSectionCountChange,
+            supplierList = supplierList,
+            articlesEntreBonsGrosTabele
+
         )
     }
 
@@ -274,7 +277,9 @@ fun TreeCountControl(
     sectionsDonsChaqueImage: Int,
     filteredAndSortedArticles: List<EntreBonsGrosTabele>,
     founisseurIdNowIs: Long?,
-    onCountChange: (Int) -> Unit, supplierList: List<SupplierTabelle>
+    onCountChange: (Int) -> Unit,
+    supplierList: List<SupplierTabelle>,
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>
 ) {
     Row(
         modifier = Modifier
@@ -301,7 +306,9 @@ fun TreeCountControl(
                 filteredAndSortedArticles,
                 founisseurIdNowIs,
                 sectionsDonsChaqueImage + 1,
-                supplierList,)
+                supplierList,
+                articlesEntreBonsGrosTabele=articlesEntreBonsGrosTabele
+                )
         }) {
             Text("+")
         }
