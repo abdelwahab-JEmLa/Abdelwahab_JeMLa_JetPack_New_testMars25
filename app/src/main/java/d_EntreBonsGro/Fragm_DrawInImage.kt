@@ -152,17 +152,6 @@ fun DessinableImage(
         }else{
 
         Column {
-            if (showDiviseurDesSections) {
-                TreeCountControl(
-                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                    filteredAndSortedArticles = filteredAndSortedArticles,
-                    founisseurIdNowIs = founisseurIdNowIs,
-                    onCountChange = { newCount ->
-                        sectionsDonsChaqueImage = newCount
-                    }, supplierList = supplierList,
-                    articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele
-                )
-            }
 
             LazyColumn(
                 state = lazyListState,
