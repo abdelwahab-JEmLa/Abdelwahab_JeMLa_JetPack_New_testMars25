@@ -55,6 +55,8 @@ fun TopAppBar(
     var progress by remember { mutableStateOf(0f) }
     val context = LocalContext.current
 
+    var fenetre_baseDonnePourBakupSiNaissaire by remember { mutableStateOf(false) }
+
     Column {
         androidx.compose.material3.TopAppBar(
             title = { Text("d_db_jetPack") },
@@ -76,6 +78,15 @@ fun TopAppBar(
                         }
                     )
                     DropdownMenuItem(
+                        text = { Text("Export Firebase Data") },
+                        onClick = {
+                            coroutineScope.launch {
+                                exportToFireBase(articleDao, "e_DBJetPackExport")
+                            }
+                            menuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Import Firebase Data") },
                         onClick = {
                             dialogOpen = true
@@ -83,13 +94,11 @@ fun TopAppBar(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Export Firebase Data") },
-                        onClick = {
-                            coroutineScope.launch {
-                                exportToFireBase(articleDao)
-                            }
-                            menuExpanded = false
-                        }
+                            text = { Text("Export Manager") },
+                    onClick = {
+                        fenetre_baseDonnePourBakupSiNaissaire = true
+                        menuExpanded = false
+                    }
                     )
                 }
             }
@@ -101,6 +110,14 @@ fun TopAppBar(
             )
         }
     }
+    Fenetre_baseDonnePourBakupSiNaissaire(
+        dialogOpen,
+        coroutineScope,
+        articleDao,
+        onDismiss = { dialogOpen = false },
+    )
+
+
     Dialog(
         context,
         dialogOpen,
@@ -113,7 +130,45 @@ fun TopAppBar(
         onFinishImport = { showProgressBar = false }
     )
 }
+@Composable
+private fun Fenetre_baseDonnePourBakupSiNaissaire(
+    dialogOpen: Boolean,
+    coroutineScope: CoroutineScope,
+    articleDao: ArticleDao,
+    onDismiss: () -> Unit,
+) {
+    if (dialogOpen) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = {
+                Text(
+                    text = "Firebase Data",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
 
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    DialogButton(
+                        text = "Import d_db_jetPack",
+                        icon = Icons.Default.CloudDownload,
+                        onClick = {
+                            coroutineScope.launch {
+                                exportToFireBase(articleDao,refFireBase="baseDonnePourBakupSiNaissaire")
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Black
+                    )
+                }
+            },
+        )
+    }
+}
 
 @Composable
 private fun Dialog(
@@ -180,7 +235,7 @@ private fun Dialog(
                         tint2 = Color.Black
                     )
                     DialogButton(
-                        text = "Import Depuit REF: [e_DBJetPackExport] ",
+                        text = "Import Depuit REF: [e_DBJetPackExport] ", //TODO fait que ca soit dons un sout dialoge
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {

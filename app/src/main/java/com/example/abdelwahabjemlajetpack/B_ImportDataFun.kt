@@ -84,14 +84,14 @@ suspend fun importFromFirebase(
 }
 
 
-suspend fun exportToFireBase(articleDao: ArticleDao) {
+suspend fun exportToFireBase(articleDao: ArticleDao, refFireBase: String) {
     // Récupérer les articles depuis Room
     val articlesFromRoom = withContext(Dispatchers.IO) {
         articleDao.getAllArticlesOrder()
     }
 
     // Référence Firebase
-    val refFirebase = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
+    val refFirebase = FirebaseDatabase.getInstance().getReference(refFireBase)
 
     // Parcourir les articles et les envoyer à Firebase
     articlesFromRoom.forEach { article ->
