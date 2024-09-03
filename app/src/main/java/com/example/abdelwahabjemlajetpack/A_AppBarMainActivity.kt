@@ -180,7 +180,7 @@ private fun Dialog(
                         tint2 = Color.Black
                     )
                     DialogButton(
-                        text = "Import e_DBJetPackExport",
+                        text = "Import Depuit REF: [e_DBJetPackExport] ",
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
