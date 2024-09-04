@@ -269,7 +269,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
                         nonTrouveState = false,
                         verifieState = false,
                         //Stats
-                        typeEmballage = if (baseDonne?.cartonState == "itsCarton"||baseDonne?.cartonState == "Carton") "Carton" else "Boit",
+                        typeEmballage = if (baseDonne.cartonState == "itsCarton"|| baseDonne.cartonState == "Carton") "Carton" else "Boit",
                         choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
                         //baseDonne
                         monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
