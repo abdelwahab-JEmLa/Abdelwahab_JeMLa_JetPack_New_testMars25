@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Expand
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material.icons.filled.Try
@@ -63,7 +63,6 @@ fun TopAppBar(
     var progress by remember { mutableStateOf(0f) }
     val context = LocalContext.current
 
-    var fenetre_baseDonnePourBakupSiNaissaire by remember { mutableStateOf(false) }
     var windosBakupsManager by remember { mutableStateOf(false) }
 
     var windosDaoToBakup by remember { mutableStateOf(false) }
@@ -241,6 +240,18 @@ private fun WindosDaoToBakup(
                         },
                         tint2 = Color.Red
                     )
+                    DialogButton(
+                        text = "Dao>Bakup3",
+                        icon = Icons.Default.Expand,
+                        onClick = {
+                            coroutineScope.launch {
+                                exportToFireBase(articleDao,refFireBase="BaseDonne_Bakup3")
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Red
+                    )
+
 
 
                 }
@@ -306,6 +317,25 @@ private fun WindosBakupToDao(
                                 onStartImport()
                                 // Passer onProgressUpdate ici
                                 TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup2") { newProgress ->
+                                    onProgressUpdate(newProgress)
+                                }
+                                editeBaseDonneViewModel.initBaseDonneStatTabel()
+                                editeBaseDonneViewModel.initDataBaseDonneForNewByStatInCompos()
+
+                                onFinishImport()
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Blue
+                    )
+                    DialogButton(
+                        text = "Bakup3 >Au> Dao",
+                        icon = Icons.Default.Try,
+                        onClick = {
+                            coroutineScope.launch {
+                                onStartImport()
+                                // Passer onProgressUpdate ici
+                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup3") { newProgress ->
                                     onProgressUpdate(newProgress)
                                 }
                                 editeBaseDonneViewModel.initBaseDonneStatTabel()
@@ -457,7 +487,7 @@ private fun Dialog(
                     )
                     DialogButton(
                         text = "Name List Operations",
-                        icon = Icons.Default.List,
+                        icon = Icons.AutoMirrored.Filled.List,
                         onClick = { showNameListDialog = true },
                         tint2 = Color.Blue
                     )
