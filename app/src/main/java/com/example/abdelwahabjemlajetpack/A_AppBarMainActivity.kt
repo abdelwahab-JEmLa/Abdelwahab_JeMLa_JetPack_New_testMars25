@@ -48,6 +48,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -213,7 +214,7 @@ private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao: Artic
     dbJetPackExportRefSource.get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
             val totalItems = snapshot.childrenCount
-            var processedItems = 0
+            var processedItems = 0L
 
             dbJetPackExportRefDest.setValue(snapshot.value).addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -225,9 +226,11 @@ private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao: Artic
                             if (article != null) {
                                 articleDao.insert(article)
                             }
-                            // Mettez à jour le nombre d'éléments traités
                             processedItems++
-                            onProgressUpdate(processedItems.toFloat() / totalItems)
+                            val progress = processedItems.toFloat() / totalItems
+                            withContext(Dispatchers.Main) {
+                                onProgressUpdate(progress)
+                            }
                         }
                         Log.d("Transfert", "Les données ont été mises à jour dans articleDao!")
                     }
@@ -242,9 +245,6 @@ private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao: Artic
         Log.e("Transfert", "Erreur lors de la lecture des données: ${exception.message}")
     }
 }
-
-
-
 @Composable
 private fun Dialog(
     context: Context,

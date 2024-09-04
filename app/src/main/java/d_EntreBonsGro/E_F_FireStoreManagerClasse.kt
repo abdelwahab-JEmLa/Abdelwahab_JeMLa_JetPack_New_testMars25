@@ -236,10 +236,10 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
             val articlesEntreBonsGrosTabele = snapshotEntreBonsGrosTabele.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
 
             val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
-            val snapshotBaseDonne = refArticlesAcheteModele.get().await()
-            val articlesBaseDonne = snapshotBaseDonne.children.mapNotNull { it.getValue(BaseDonne::class.java) }
 
             val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
+            val snapshotBaseDonne = dbJetPackExportRef.get().await()
+            val articlesBaseDonne = snapshotBaseDonne.children.mapNotNull { it.getValue(BaseDonne::class.java) }
 
             articlesEntreBonsGrosTabele.forEach { article ->
                 // Calculer le prix en fonction de `uniterCLePlusUtilise`
@@ -252,7 +252,7 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
                 // Récupération de `monBenfice` et `monPrixVentUniter` correspondant à `idArticleBG`
                 val articleBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == article.idArticleBG }
                 val calculatedPriceVent = calculatedPrice + (articleBaseDonne?.monBenfice ?: 0.0)
-                val calculatedPriceVentUniter = calculatedPrice + (articleBaseDonne?.monPrixVentUniter ?: 0.0)
+                val calculatedPriceVentUniter = calculatedPrice + ((articleBaseDonne?.monBenfice ?: 0.0)/(articleBaseDonne?.nmbrUnite ?: 1))
 
                 // Mise à jour des entrées correspondantes dans `ArticlesAcheteModeleAdapted`
                 refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().await().children.forEach { childSnapshot ->
