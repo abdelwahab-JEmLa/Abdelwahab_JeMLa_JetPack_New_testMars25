@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Expand
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material.icons.filled.Try
@@ -179,7 +180,7 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                         tint2 = Color.Red
                     )
                     DialogButton(
-                        text = "FireBase.Trensfert de BaseDonnePourBaku.. >Au> e_DBJetPackExport",     //TODO fait que ca soit 2 line si no espace
+                        text = "FireBase.Trensfert de BaseDonnePourBaku.. >Au> e_DBJetPackExport",
                         icon = Icons.Default.Try,
                         onClick = {
                             coroutineScope.launch {
@@ -256,6 +257,8 @@ private fun Dialog(
     onProgressUpdate: (Float) -> Unit,
     onFinishImport: () -> Unit
 ) {
+    var showNameListDialog by remember { mutableStateOf(false) }
+
     if (dialogOpen) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
@@ -295,7 +298,7 @@ private fun Dialog(
                     )
 
                     DialogButton(
-                        text = "Import Depuit REF: [e_DBJetPackExport] Au Dao.BaseDonne ", //TODO fait que ca soit dons un sout dialoge
+                        text = "Import Depuit REF: [e_DBJetPackExport] Au Dao.BaseDonne ",
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
@@ -324,37 +327,17 @@ private fun Dialog(
                                     articleDao,
                                     onProgressUpdate
                                 )
-
                                 onFinishImport()
                             }
                             onDismiss()
                         }
                     )
-                    if (true){//TODO fait que ca soit don un dialoge separe
                     DialogButton(
-                        text = "Export Names List to Firebase",
-                        icon = Icons.Default.Upload,
-                        onClick = {
-                            coroutineScope.launch {
-                                exportNamesListToFirebase(articleDao)
-                            }
-                            onDismiss()
-                        },
+                        text = "Name List Operations",
+                        icon = Icons.Default.List,
+                        onClick = { showNameListDialog = true },
                         tint2 = Color.Blue
                     )
-
-                    DialogButton(
-                        text = "Import Arab Names",
-                        icon = Icons.Default.CloudDownload,
-                        onClick = {
-                            coroutineScope.launch {
-                                importArabNamesToarticleDao(articleDao)
-                            }
-                            onDismiss()
-                        },
-                        tint2 = Color.Green
-                    )
-                    }
                 }
             },
             dismissButton = {
@@ -378,8 +361,82 @@ private fun Dialog(
             }
         )
     }
+
+    if (showNameListDialog) {
+        NameListDialog(
+            coroutineScope = coroutineScope,
+            articleDao = articleDao,
+            onDismiss = { showNameListDialog = false }
+        )
+    }
 }
 
+@Composable
+private fun NameListDialog(
+    coroutineScope: CoroutineScope,
+    articleDao: ArticleDao,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text(
+                text = "Name List Operations",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                DialogButton(
+                    text = "Export Names List to Firebase",
+                    icon = Icons.Default.Upload,
+                    onClick = {
+                        coroutineScope.launch {
+                            exportNamesListToFirebase(articleDao)
+                        }
+                        onDismiss()
+                    },
+                    tint2 = Color.Blue
+                )
+
+                DialogButton(
+                    text = "Import Arab Names",
+                    icon = Icons.Default.CloudDownload,
+                    onClick = {
+                        coroutineScope.launch {
+                            importArabNamesToarticleDao(articleDao)
+                        }
+                        onDismiss()
+                    },
+                    tint2 = Color.Green
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Cancel,
+                    contentDescription = "Cancel",
+                    tint = Color.Gray
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Cancel",
+                    color = Color.Gray,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    )
+}
 suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
     val refFirebase = FirebaseDatabase.getInstance().getReference("tasks").child("arab")
     val snapshot = refFirebase.get().await()
