@@ -437,7 +437,7 @@ private fun NameListDialog(
         }
     )
 }
-suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
+private suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
     val refFirebase = FirebaseDatabase.getInstance().getReference("tasks").child("arab")
     val snapshot = refFirebase.get().await()
     val arabNames = snapshot.getValue(String::class.java)
@@ -455,7 +455,7 @@ suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
     }
 }
 
-suspend fun exportNamesListToFirebase(articleDao: ArticleDao) {
+private suspend fun exportNamesListToFirebase(articleDao: ArticleDao) {
     val articles = articleDao.getAllArticlesOrder()
     val namesList = articles.joinToString(",") { it.nomArticleFinale }
 
