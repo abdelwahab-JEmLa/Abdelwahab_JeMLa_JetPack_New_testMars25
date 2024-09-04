@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.DataUsage
+import androidx.compose.material.icons.filled.Expand
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Transform
+import androidx.compose.material.icons.filled.Try
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -122,7 +123,8 @@ fun TopAppBar(
         onDismiss = { fenetre_baseDonnePourBakupSiNaissaire = false },
         onStartImport = { showProgressBar = true },
         onProgressUpdate = { newProgress -> progress = newProgress },
-        onFinishImport = { showProgressBar = false }
+        onFinishImport = { showProgressBar = false } ,
+        editeBaseDonneViewModel
     )
 
 
@@ -146,7 +148,8 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
     onDismiss: () -> Unit,
     onStartImport: () -> Unit,
     onProgressUpdate: (Float) -> Unit,
-    onFinishImport: () -> Unit
+    onFinishImport: () -> Unit,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel
 ) {
     if (dialogOpen) {
         AlertDialog(
@@ -165,26 +168,29 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     DialogButton(
-                        text = "BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire",
-                        icon = Icons.Default.CloudDownload,
+                        text = "Export Depuit Dao.BaseDonne >Au> BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire",
+                        icon = Icons.Default.Expand,
                         onClick = {
                             coroutineScope.launch {
                                 exportToFireBase(articleDao,refFireBase="BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
                             }
                             onDismiss()
                         },
-                        tint2 = Color.Yellow
+                        tint2 = Color.Red
                     )
                     DialogButton(
-                        text = "Trensfert de BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire A e_DBJetPackExport",     //TODO fait que ca soit 2 line si no espace
-                        icon = Icons.Default.CloudDownload,
+                        text = "FireBase.Trensfert de BaseDonnePourBaku.. >Au> e_DBJetPackExport",     //TODO fait que ca soit 2 line si no espace
+                        icon = Icons.Default.Try,
                         onClick = {
                             coroutineScope.launch {
                                 onStartImport()
                                 // Passer onProgressUpdate ici
-                                trensfert(articleDao) { newProgress ->
+                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao) { newProgress ->
                                     onProgressUpdate(newProgress)
                                 }
+                                editeBaseDonneViewModel.initBaseDonneStatTabel()
+                                editeBaseDonneViewModel.initDataBaseDonneForNewByStatInCompos()
+
                                 onFinishImport()
                             }
                             onDismiss()
@@ -198,7 +204,7 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
     }
 }
 
-private fun trensfert(articleDao: ArticleDao, onProgressUpdate: (Float) -> Unit) {
+private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao: ArticleDao, onProgressUpdate: (Float) -> Unit) {
     val firebase = Firebase.database
     val dbJetPackExportRefSource = firebase.getReference("BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
     val dbJetPackExportRefDest = firebase.getReference("e_DBJetPackExport")
@@ -273,7 +279,7 @@ private fun Dialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     DialogButton(
-                        text = "Import d_db_jetPack",
+                        text = "Import From [d_db_jetPack] >to> Dao.BaseDonne",
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
@@ -287,23 +293,9 @@ private fun Dialog(
                         },
                         tint2 = Color.Black
                     )
+
                     DialogButton(
-                        text = "Import e_DBJetPackExport",
-                        icon = Icons.Default.DataUsage,
-                        onClick = {
-                            coroutineScope.launch {
-                                importFromFirebase(
-                                    refFireBase = "e_DBJetPackExport",
-                                    articleDao,
-                                    editeBaseDonneViewModel
-                                )
-                            }
-                            onDismiss()
-                        },
-                        tint2 = Color.Black
-                    )
-                    DialogButton(
-                        text = "Import Depuit REF: [e_DBJetPackExport] ", //TODO fait que ca soit dons un sout dialoge
+                        text = "Import Depuit REF: [e_DBJetPackExport] Au Dao.BaseDonne ", //TODO fait que ca soit dons un sout dialoge
                         icon = Icons.Default.CloudDownload,
                         onClick = {
                             coroutineScope.launch {
@@ -338,7 +330,7 @@ private fun Dialog(
                             onDismiss()
                         }
                     )
-                    if (false){//TODO fait que ca soit don un dialoge separe
+                    if (true){//TODO fait que ca soit don un dialoge separe
                     DialogButton(
                         text = "Export Names List to Firebase",
                         icon = Icons.Default.Upload,
