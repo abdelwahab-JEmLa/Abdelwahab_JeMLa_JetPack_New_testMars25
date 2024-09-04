@@ -228,25 +228,26 @@ fun findAndAddMissingArticles(
         }
     }
 }
-suspend fun trensfertBonSuppAuDataBaseArticles() {
+suspend fun trensfertBonSuppAuDataBaseArticles(
+    articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
+    articlesBaseDonne: List<BaseDonne>
+) {
     withContext(Dispatchers.IO) {
         try {
             val firebase = Firebase.database
             val articlesEntreBonsGrosTabeleRef = firebase.getReference("ArticlesBonsGrosTabele")
             val snapshotEntreBonsGrosTabele = articlesEntreBonsGrosTabeleRef.get().await()
-            val articlesEntreBonsGrosTabele = snapshotEntreBonsGrosTabele.children.mapNotNull { it.getValue(EntreBonsGrosTabele::class.java) }
 
             val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
 
             val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
             val snapshotBaseDonne = dbJetPackExportRef.get().await()
-            val articlesBaseDonne = snapshotBaseDonne.children.mapNotNull { it.getValue(BaseDonne::class.java) }
 
             // Obtenir la date actuelle au format yyyy/MM/dd
             val dateFormat = SimpleDateFormat("yyyy/MM/dd")
             val dateCreationCategorie = dateFormat.format(Date())
-
-            articlesEntreBonsGrosTabele.forEach { article ->
+            val articlesEntreBonsGrosTabeleChoisi= articlesEntreBonsGrosTabele.filter { it.idArticleBG.toInt() != 0 }
+            articlesEntreBonsGrosTabeleChoisi.forEach { article ->
                 val calculatedPrice = if (article.uniterCLePlusUtilise) {
                     article.newPrixAchatBG * article.quantityUniterBG
                 } else {

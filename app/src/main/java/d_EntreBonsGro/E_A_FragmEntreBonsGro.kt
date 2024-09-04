@@ -81,7 +81,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FragmentEntreBonsGro(articleDao: ArticleDao) {
+fun FragmentEntreBonsGro(articleDao: ArticleDao,onExportToFirestore: () -> Unit) {
     var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
@@ -491,7 +491,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         onExportToFirestore = {
             coroutineScope.launch {
                 exportToFirestore()
-                trensfertBonSuppAuDataBaseArticles()
+                trensfertBonSuppAuDataBaseArticles(articlesEntreBonsGrosTabele,articlesBaseDonne)
+                onExportToFirestore()
             }
         },
         addedArticlesCount = addedArticlesCount,
