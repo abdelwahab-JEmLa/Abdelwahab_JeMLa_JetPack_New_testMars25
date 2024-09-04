@@ -64,6 +64,10 @@ fun TopAppBar(
     val context = LocalContext.current
 
     var fenetre_baseDonnePourBakupSiNaissaire by remember { mutableStateOf(false) }
+    var windosBakupsManager by remember { mutableStateOf(false) }
+
+    var windosDaoToBakup by remember { mutableStateOf(false) }
+    var windosBakupToDao by remember { mutableStateOf(false) }
 
     Column {
         androidx.compose.material3.TopAppBar(
@@ -104,7 +108,7 @@ fun TopAppBar(
                     DropdownMenuItem(
                             text = { Text("Export Manager") },
                     onClick = {
-                        fenetre_baseDonnePourBakupSiNaissaire = true
+                        windosBakupsManager = true
                         menuExpanded = false
                     }
                     )
@@ -118,17 +122,64 @@ fun TopAppBar(
             )
         }
     }
-    Fenetre_baseDonnePourBakupSiNaissaire(
-        fenetre_baseDonnePourBakupSiNaissaire,
+    if (windosBakupsManager) {
+        AlertDialog(
+            onDismissRequest = { windosBakupsManager=false },
+            title = {
+                Text(
+                    text = "Firebase Data",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    DialogButton(
+                        text = "Update.Bakup From Dao.baseDonne >To> BaseDonne_Bakup?? ",
+                        icon = Icons.Default.Expand,
+                        onClick = {windosDaoToBakup=true
+                            windosBakupsManager = false
+                        },
+                        tint2 = Color.Red
+                    )
+                    DialogButton(
+                        text = "Bakup From BaseDonne_Bakup?? >To> Dao.baseDonne ",
+                        icon = Icons.Default.Expand,
+                        onClick = {windosBakupToDao=true
+                            windosBakupsManager = false
+                        },
+                        tint2 = Color.Blue
+                    )
+                }
+            },
+        )
+
+    }
+
+
+
+
+    WindosDaoToBakup(
+        windosDaoToBakup,
         coroutineScope,
         articleDao,
-        onDismiss = { fenetre_baseDonnePourBakupSiNaissaire = false },
+        onDismiss = { windosDaoToBakup = false }
+    )
+
+    WindosBakupToDao(
+        windosBakupToDao,
+        coroutineScope,
+        articleDao,
+        onDismiss = { windosBakupToDao = false },
         onStartImport = { showProgressBar = true },
         onProgressUpdate = { newProgress -> progress = newProgress },
         onFinishImport = { showProgressBar = false } ,
         editeBaseDonneViewModel
     )
-
 
     Dialog(
         context,
@@ -142,17 +193,15 @@ fun TopAppBar(
         onFinishImport = { showProgressBar = false }
     )
 }
+
 @Composable
-private fun Fenetre_baseDonnePourBakupSiNaissaire(
+private fun WindosDaoToBakup(
     dialogOpen: Boolean,
     coroutineScope: CoroutineScope,
     articleDao: ArticleDao,
     onDismiss: () -> Unit,
-    onStartImport: () -> Unit,
-    onProgressUpdate: (Float) -> Unit,
-    onFinishImport: () -> Unit,
-    editeBaseDonneViewModel: EditeBaseDonneViewModel
 ) {
+
     if (dialogOpen) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
@@ -169,25 +218,75 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
                     DialogButton(
-                        text = "Export Depuit Dao.BaseDonne >Au> BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire",
+                        text = "Dao>Bakup1",
                         icon = Icons.Default.Expand,
                         onClick = {
                             coroutineScope.launch {
-                                exportToFireBase(articleDao,refFireBase="BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
+                                exportToFireBase(articleDao,refFireBase="BaseDonne_Bakup1")
                             }
                             onDismiss()
                         },
                         tint2 = Color.Red
                     )
                     DialogButton(
-                        text = "FireBase.Trensfert de BaseDonnePourBaku.. >Au> e_DBJetPackExport",
+                        text = "Dao>Bakup2",
+                        icon = Icons.Default.Expand,
+                        onClick = {
+                            coroutineScope.launch {
+                                exportToFireBase(articleDao,refFireBase="BaseDonne_Bakup2")
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Red
+                    )
+
+
+                }
+            },
+        )
+    }
+
+}
+@Composable
+private fun WindosBakupToDao(
+    dialogOpen: Boolean,
+    coroutineScope: CoroutineScope,
+    articleDao: ArticleDao,
+    onDismiss: () -> Unit,
+    onStartImport: () -> Unit,
+    onProgressUpdate: (Float) -> Unit,
+    onFinishImport: () -> Unit,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel
+) {
+
+
+    if (dialogOpen) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = {
+                Text(
+                    text = "Firebase Data",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    DialogButton(
+                        text = "Bakup1 >Au> Dao",
                         icon = Icons.Default.Try,
                         onClick = {
                             coroutineScope.launch {
                                 onStartImport()
                                 // Passer onProgressUpdate ici
-                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao) { newProgress ->
+                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup1") { newProgress ->
                                     onProgressUpdate(newProgress)
                                 }
                                 editeBaseDonneViewModel.initBaseDonneStatTabel()
@@ -197,18 +296,42 @@ private fun Fenetre_baseDonnePourBakupSiNaissaire(
                             }
                             onDismiss()
                         },
-                        tint2 = Color.Yellow
+                        tint2 = Color.Blue
+                    )
+                    DialogButton(
+                        text = "Bakup2 >Au> Dao",
+                        icon = Icons.Default.Try,
+                        onClick = {
+                            coroutineScope.launch {
+                                onStartImport()
+                                // Passer onProgressUpdate ici
+                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup2") { newProgress ->
+                                    onProgressUpdate(newProgress)
+                                }
+                                editeBaseDonneViewModel.initBaseDonneStatTabel()
+                                editeBaseDonneViewModel.initDataBaseDonneForNewByStatInCompos()
+
+                                onFinishImport()
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Blue
                     )
 
                 }
-            },
+            }
+            ,
         )
     }
-}
 
-private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao: ArticleDao, onProgressUpdate: (Float) -> Unit) {
+}
+private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(
+    articleDao: ArticleDao,
+    refFireBase: String,
+    onProgressUpdate: (Float) -> Unit
+) {
     val firebase = Firebase.database
-    val dbJetPackExportRefSource = firebase.getReference("BaseDonnePourBakupDe_e_DBJetPackExport_SiNaissaire")
+    val dbJetPackExportRefSource = firebase.getReference(refFireBase)
     val dbJetPackExportRefDest = firebase.getReference("e_DBJetPackExport")
 
     dbJetPackExportRefSource.get().addOnSuccessListener { snapshot ->
