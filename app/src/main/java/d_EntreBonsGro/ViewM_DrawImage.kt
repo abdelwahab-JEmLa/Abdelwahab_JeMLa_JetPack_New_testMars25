@@ -55,7 +55,8 @@ fun reconnaisanceVocaleLencer(
             }
         } else if (input.contains("تغيير")) {
             // Fixed: Extract the new Arabic name correctly
-            val newArabName = input.substringAfter("تغيير").trim()
+            val parts = input.split("تغيير")
+            val newArabName = if (parts.size > 1) parts[0].trim() else ""
             if (newArabName.isNotEmpty()) {
                 coroutineScope.launch {
                     selectedArticle?.let { article ->
@@ -65,8 +66,8 @@ fun reconnaisanceVocaleLencer(
                     }
                 }
             } else {
-                // Handle the case when no new name is provided after "تغيير"
-                Toast.makeText(context, "Veuillez fournir un nouveau nom après 'تغيير'", Toast.LENGTH_SHORT).show()
+                // Handle the case when no new name is provided before "تغيير"
+                Toast.makeText(context, "Veuillez fournir un nouveau nom avant 'تغيير'", Toast.LENGTH_SHORT).show()
             }
         } else {
             val cleanInput = input.replace(".", "").toLowerCase()
@@ -138,7 +139,9 @@ fun reconnaisanceVocaleLencer(
         )
     }
     return Pair(speechRecognizerLauncher, filteredSuggestions)
-}fun createNewArticle(
+}
+
+fun createNewArticle(
     articlesClient: List<EntreBonsGrosTabele>,
     founisseurIdNowIs: Long?,
     sectionsDonsChaqueImage: Int,
