@@ -13,7 +13,8 @@ fun Ab_FilterManager(
     showDialog: Boolean,
     isFilterApplied: Boolean,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    onDismiss: () -> Unit
+    onOrderClick: () -> Unit,  // Le type de paramètre doit correspondre à la liste triée
+    onDismiss: () -> Unit,
 ) {
     if (showDialog) {
         FilterDialog(
@@ -35,9 +36,15 @@ fun Ab_FilterManager(
                 editeBaseDonneViewModel.deleteFilteredArticles()
                 onDismiss()
             },
+            orderDateDao = {
+                    onOrderClick()
+                    onDismiss()
+
+            },
         )
     }
 }
+
 
 
 
@@ -49,7 +56,9 @@ fun FilterDialog(
     onOrderByDate: () -> Unit,
     onOrderByIdAndFilterByDiponibility: () -> Unit,
     deletArticlesWher: () -> Unit,
-) {
+    orderDateDao: () -> Unit,
+
+    ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Filtre") },
@@ -93,6 +102,14 @@ fun FilterDialog(
                     )
                 ) {
                     Text("deletArticlesWher")
+                }
+                Button(
+                    onClick = orderDateDao,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Blue
+                    )
+                ) {
+                    Text("Order Par Date par Dao")
                 }
             }
         }

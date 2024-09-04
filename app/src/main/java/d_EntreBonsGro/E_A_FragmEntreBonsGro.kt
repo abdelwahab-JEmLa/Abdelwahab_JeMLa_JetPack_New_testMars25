@@ -486,8 +486,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             showFullImage = false
 
 
-        }
-,
+        },
         showMissingArticles = showMissingArticles,
         onExportToFirestore = {
             coroutineScope.launch {

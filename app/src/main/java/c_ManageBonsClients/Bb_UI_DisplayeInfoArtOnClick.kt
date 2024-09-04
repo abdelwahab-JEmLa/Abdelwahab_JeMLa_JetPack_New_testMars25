@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -293,7 +294,11 @@ private fun RowAutresInfo(
     )
 
     Column(modifier = modifier) {
-        Row {
+        // Utiliser une couleur conditionnelle
+        Row(
+            modifier = Modifier
+                .background(if (article.warningRecentlyChanged) Color.Yellow else Color.Transparent)
+        ) {
             fields.forEach { field ->
                 OutlineTextEditeRegle(
                     columnToChange = field.columnToChange,
@@ -325,7 +330,7 @@ private fun RowAutresInfo(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(67.dp),
-            colore = Color.Red ,
+            colore = Color.Red,
             isText = true,
         )
     }

@@ -89,7 +89,6 @@ fun DessinableImage(
     supplierList: List<SupplierTabelle>,
     modeVerificationAvantUpdateBD: Boolean,
 ) {
-
     val configuration = LocalConfiguration.current
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 

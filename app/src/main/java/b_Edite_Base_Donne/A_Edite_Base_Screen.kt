@@ -74,7 +74,7 @@ fun A_Edite_Base_Screen(
     editeBaseDonneViewModel: EditeBaseDonneViewModel = viewModel(),
     articleDao: ArticleDao,
 ) {
-    val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()
+    val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()  // Utilisez 'val' au lieu de 'var'
     val articlesDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne
     val isFilterApplied by editeBaseDonneViewModel.isFilterApplied.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -87,9 +87,12 @@ fun A_Edite_Base_Screen(
     var searchQuery by remember { mutableStateOf("") }
     var isSearchVisible by remember { mutableStateOf(false) }
 
-    // Explication : Appliquez le filtre par Prix = 0.0
-    Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel) { showDialog = false }
-
+    Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel, onOrderClick = {
+        coroutineScope.launch {
+            val orderedArticles = orderDateDao(articleDao)
+            editeBaseDonneViewModel.updateArticles(orderedArticles)  // Met à jour les articles via le ViewModel
+        }
+    }) { showDialog = false }
     Scaffold(
         topBar = {
             Row(
@@ -169,6 +172,52 @@ fun A_Edite_Base_Screen(
         }
     )
 }
+suspend fun orderDateDao(articleDao: ArticleDao): List<BaseDonneStatTabel> {
+    val baseDonneStatTabelListOrderDate = articleDao.getAllArticlesOrderDate()
+    val filteredAndSortedArticles = baseDonneStatTabelListOrderDate.map {
+        BaseDonneStatTabel(
+            it.idArticle,
+            it.nomArticleFinale,
+            it.classementCate,
+            it.nomArab,
+            it.nmbrCat,
+            it.couleur1,
+            it.couleur2,
+            it.couleur3,
+            it.couleur4,
+            it.nomCategorie2,
+            it.nmbrUnite,
+            it.nmbrCaron,
+            it.affichageUniteState,
+            it.commmentSeVent,
+            it.afficheBoitSiUniter,
+            it.monPrixAchat,
+            it.clienPrixVentUnite,
+            it.minQuan,
+            it.monBenfice,
+            it.monPrixVent,
+            it.diponibilityState,
+            it.neaon2,
+            it.idCategorie,
+            it.funChangeImagsDimention,
+            it.nomCategorie,
+            it.neaon1,
+            it.lastUpdateState,
+            it.cartonState,
+            it.dateCreationCategorie,
+            it.prixDeVentTotaleChezClient,
+            it.benficeTotaleEntreMoiEtClien,
+            it.benificeTotaleEn2,
+            it.monPrixAchatUniter,
+            it.monPrixVentUniter,
+            it.benificeClient,
+            it.monBeneficeUniter,
+        )
+    }
+    return filteredAndSortedArticles.sortedByDescending { it.dateCreationCategorie } // Trier par idArticle dans l'ordre décroissant
+
+}
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ArticlesScreenList(

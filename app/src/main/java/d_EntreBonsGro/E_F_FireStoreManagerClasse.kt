@@ -15,10 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import java.util.Date
 import java.util.Locale
 
 suspend fun exportToFirestore() {
@@ -226,7 +228,6 @@ fun findAndAddMissingArticles(
         }
     }
 }
-
 suspend fun trensfertBonSuppAuDataBaseArticles() {
     withContext(Dispatchers.IO) {
         try {
@@ -241,32 +242,35 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
             val snapshotBaseDonne = dbJetPackExportRef.get().await()
             val articlesBaseDonne = snapshotBaseDonne.children.mapNotNull { it.getValue(BaseDonne::class.java) }
 
+            // Obtenir la date actuelle au format yyyy/MM/dd
+            val dateFormat = SimpleDateFormat("yyyy/MM/dd")
+            val dateCreationCategorie = dateFormat.format(Date())
+
             articlesEntreBonsGrosTabele.forEach { article ->
-                // Calculer le prix en fonction de `uniterCLePlusUtilise`
                 val calculatedPrice = if (article.uniterCLePlusUtilise) {
                     article.newPrixAchatBG * article.quantityUniterBG
                 } else {
                     article.newPrixAchatBG
                 }
 
-                // Récupération de `monBenfice` et `monPrixVentUniter` correspondant à `idArticleBG`
                 val articleBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == article.idArticleBG }
                 val calculatedPriceVent = calculatedPrice + (articleBaseDonne?.monBenfice ?: 0.0)
                 val calculatedPriceVentUniter = calculatedPrice + ((articleBaseDonne?.monBenfice ?: 0.0)/(articleBaseDonne?.nmbrUnite ?: 1))
 
-                // Mise à jour des entrées correspondantes dans `ArticlesAcheteModeleAdapted`
                 refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().await().children.forEach { childSnapshot ->
                     childSnapshot.ref.child("prixAchat").setValue(calculatedPrice)
                     childSnapshot.ref.child("monPrixVent").setValue(calculatedPriceVent)
+                    childSnapshot.ref.child("warningRecentlyChanged").setValue(true)
                 }
 
-                // Mise à jour dans `e_DBJetPackExport`
                 dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
                     .setValue(calculatedPrice)
                 dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixVent")
                     .setValue(calculatedPriceVent)
                 dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixVentUniter")
                     .setValue(calculatedPriceVentUniter)
+                dbJetPackExportRef.child(article.idArticleBG.toString()).child("dateCreationCategorie")
+                    .setValue(dateCreationCategorie)
             }
 
             println("Successfully updated e_DBJetPackExport and all matching entries in ArticlesAcheteModeleAdapted")
@@ -275,7 +279,6 @@ suspend fun trensfertBonSuppAuDataBaseArticles() {
         }
     }
 }
-
 
 fun updateSupplierBon(suppliersRef: DatabaseReference, supplierId: Int, bonNumber: String) {
     suppliersRef.child(supplierId.toString()).child("bonDuSupplierSu").setValue(bonNumber)

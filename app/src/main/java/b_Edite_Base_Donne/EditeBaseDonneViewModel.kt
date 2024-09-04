@@ -59,6 +59,7 @@ class EditeBaseDonneViewModel(
         }
     }
 
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
         filterArticles()
@@ -234,6 +235,9 @@ class EditeBaseDonneViewModel(
                 _baseDonneStatTabel.value = filteredAndSortedArticles
             }
         }
+    }
+    fun updateArticles(newArticles: List<BaseDonneStatTabel>) {
+        _baseDonneStatTabel.value = newArticles
     }
 
     fun updateDataBaseDonne(articleDataBaseDonne: BaseDonne?) {
@@ -648,7 +652,7 @@ class EditeBaseDonneViewModel(
             "monBenfice" -> {
                 newValue?.let {
                     updatedColumns.add(
-                        "monPrixVent" to (it + (article.monPrixAchat ?: 0.0)).toString()
+                        "monPrixVent" to (it + (article.monPrixAchat )).toString()
                     )
                 }
             }
