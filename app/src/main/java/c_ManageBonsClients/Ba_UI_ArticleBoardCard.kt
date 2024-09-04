@@ -101,6 +101,7 @@ fun ArticleBoardCard(
         Box(modifier = modifier.padding(2.dp)) {
             Column {
                 PriceOverlay(
+                    article= article,
                     price = roundToOneDecimal(article.monPrixVentBM),
                     monPrixVentFireStoreBM = roundToOneDecimal(article.monPrixVentFireStoreBM),
                     choisirePrixDepuitFireStoreOuBaseBM = article.choisirePrixDepuitFireStoreOuBaseBM,
@@ -191,7 +192,8 @@ fun PriceOverlay(
     monBenificeFireStoreBM: Double,
     totalQuantity: Int,
     modifier: Modifier = Modifier,
-    achat: Double
+    achat: Double,
+    article: ArticlesAcheteModele
 ) {
     Column(
         modifier = modifier
@@ -204,6 +206,7 @@ fun PriceOverlay(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             PriceWithProfit(
+                article=article,
                 label = "App",
                 price = price,
                 profit = monBenificeBM,
@@ -221,7 +224,8 @@ fun PriceOverlay(
                     totalQuantity = totalQuantity,
                     isSelected = choisirePrixDepuitFireStoreOuBaseBM == "CardFireStor",
                     modifier = Modifier.weight(1f),
-                    achat = achat
+                    achat = achat,
+                    article = article
                 )
             }
         }
@@ -237,11 +241,17 @@ fun PriceWithProfit(
     totalQuantity: Int,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    achat: Double
+    achat: Double,
+    article: ArticlesAcheteModele
 ) {
-    val textColor = if (isSelected) Color.Red else Color.Black
+    val textColor = when {
+        article.warningRecentlyChanged -> Color.White
+        isSelected -> Color.Red
+        else -> Color.Black
+    }
     val customPink = Color(0xFFFFC0CB) // Light pink color
     val backgroundColor = when {
+        article.warningRecentlyChanged -> Color.Red
         isSelected && profit < 0 -> customPink.copy(alpha = 0.3f)
         isSelected -> Color.Yellow.copy(alpha = 0.3f)
         else -> Color.Transparent
@@ -271,14 +281,14 @@ fun PriceWithProfit(
             AutoResizedText(
                 text = "%.1f".format(profit),
                 textAlign = TextAlign.Start,
-                color = if (profit < 0) Color.Red else textColor,
+                color = if (profit < 0 && !article.warningRecentlyChanged) Color.Red else textColor,
                 modifier = Modifier.fillMaxWidth()
             )
             if (totalProfit != profit) {
                 AutoResizedText(
                     text = "Total: %.1f".format(totalProfit),
                     textAlign = TextAlign.Start,
-                    color = if (totalProfit < 0) Color.Red else textColor,
+                    color = if (totalProfit < 0 && !article.warningRecentlyChanged) Color.Red else textColor,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
