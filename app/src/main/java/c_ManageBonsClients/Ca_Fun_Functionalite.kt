@@ -22,7 +22,7 @@ fun createEmptyArticle(nomClient: String) {
             val newId = maxId + 1
 
             val emptyArticle = ArticlesAcheteModele(
-                vid = maxVid,
+                vid = maxVid+1,
                 idArticle = newId+2000,
                 nomArticleFinale = "New Empty Article",
                 nomClient = nomClient,
