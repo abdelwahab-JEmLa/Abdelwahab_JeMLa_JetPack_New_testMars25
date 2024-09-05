@@ -9,21 +9,21 @@ fun createEmptyArticle(nomClient: String) {
     val database = FirebaseDatabase.getInstance()
     val articleRef = database.getReference("ArticlesAcheteModeleAdapted")
 
-    articleRef.orderByChild("nomClient").equalTo(nomClient).limitToFirst(1).get().addOnSuccessListener { clientSnapshot ->
-        val firstClientArticle = clientSnapshot.children.firstOrNull()?.getValue(ArticlesAcheteModele::class.java)
-        val clientDate = firstClientArticle?.dateDachate ?: LocalDate.now().format(
-            DateTimeFormatter.ofPattern(
-                System.DATE_FORMAT
-            ))
+    articleRef.get().addOnSuccessListener { snapshot ->
+        val maxVidPlus = snapshot.children.mapNotNull { it.child("vid").getValue(Long::class.java) }.maxOrNull()?.plus(1) ?: 1
 
-        articleRef.get().addOnSuccessListener { allArticlesSnapshot ->
-            val maxId = allArticlesSnapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
-            val maxVid =allArticlesSnapshot.children.mapNotNull { it.child("vid").getValue(Long::class.java) }.minOrNull() ?: 1
+        articleRef.orderByChild("nomClient").equalTo(nomClient).limitToFirst(1).get().addOnSuccessListener { clientSnapshot ->
+            val firstClientArticle = clientSnapshot.children.firstOrNull()?.getValue(ArticlesAcheteModele::class.java)
+            val clientDate = firstClientArticle?.dateDachate ?: LocalDate.now().format(
+                DateTimeFormatter.ofPattern(
+                    System.DATE_FORMAT
+                ))
+
+            val maxId = snapshot.children.mapNotNull { it.child("idArticle").getValue(Long::class.java) }.maxOrNull() ?: 0
             val newId = maxId + 1
-
             val emptyArticle = ArticlesAcheteModele(
-                vid = maxVid+1,
-                idArticle = newId+2000,
+                vid = maxVidPlus,
+                idArticle = newId + 2000,
                 nomArticleFinale = "New Empty Article",
                 nomClient = nomClient,
                 totalQuantity = 1,
@@ -31,8 +31,7 @@ fun createEmptyArticle(nomClient: String) {
                 typeEmballage = "Boit", // Default value
                 choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
             )
-
-            articleRef.child(maxVid.toString()).setValue(emptyArticle)
+            articleRef.child(maxVidPlus.toString()).setValue(emptyArticle)
         }
     }.addOnFailureListener { exception ->
         // Handle any errors here
