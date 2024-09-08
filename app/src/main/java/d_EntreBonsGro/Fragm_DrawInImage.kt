@@ -140,14 +140,16 @@ fun DessinableImage(
     ) {
         if (modeVerificationAvantUpdateBD){
             Windos_AvantExpo(
-                articlesEntreBonsGro =  articlesEntreBonsGrosTabele.filter { article ->
-                    (article.ancienPrixBG - article.newPrixAchatBG) != 0.0 && article.quantityAcheteBG != 0
+                articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { article ->
+                    (article.ancienPrixBG - article.newPrixAchatBG) != 0.0
+                            && article.quantityAcheteBG != 0
+                            && article.nomArticleBG != ""
+                            && !article.nomArticleBG.contains("New", ignoreCase = true)
                 },
                 articlesRef = articlesRef,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                 coroutineScope = coroutineScope,
             )
-
         }else{
 
         Column {
