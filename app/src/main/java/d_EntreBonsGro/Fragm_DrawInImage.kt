@@ -130,8 +130,8 @@ fun DessinableImage(
         suggestionsList,
         articlesArticlesAcheteModele,
         articlesBaseDonne,
-        articlesEntreBonsGrosTabele,
-        context ,itsImageClick
+        articlesEntreBonsGrosTabele.filter { it.supplierIdBG==founisseurIdNowIs },
+        context ,itsImageClick  ,founisseurIdNowIs
     )
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second

@@ -44,7 +44,8 @@ fun reconnaisanceVocaleLencer(
     articlesBaseDonne: List<BaseDonne>,
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     context: Context,
-    itsImageClick: Boolean
+    itsImageClick: Boolean,
+    founisseurIdNowIs: Long?
 ): Pair<ManagedActivityResultLauncher<Intent, ActivityResult>, List<String>> {
     var filteredSuggestions by remember { mutableStateOf(initialFilteredSuggestions) }
     var showSuggestions by remember { mutableStateOf(false) }
@@ -53,11 +54,16 @@ fun reconnaisanceVocaleLencer(
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
 
-            val selectedArticle=
-                if (itsImageClick ){
-                    articlesEntreBonsGrosTabele.firstOrNull { it.quantityAcheteBG == 0 }
-
+            val selectedArticle =
+                if (itsImageClick) {
+                    val lastIndex = articlesEntreBonsGrosTabele.indexOfLast { it.quantityAcheteBG != 0 }
+                    if (lastIndex != -1 && lastIndex + 1 < articlesEntreBonsGrosTabele.size) {
+                        articlesEntreBonsGrosTabele[lastIndex + 1]
+                    } else {
+                        null
+                    }
                 } else selectedArticleStart
+
             if (selectedArticle != null) {
                 vidDernierArticleouOnaEntreQuantity=  selectedArticle.vidBG
             }
