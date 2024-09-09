@@ -89,7 +89,8 @@ fun ArticleBoardCard(
         article.verifieState -> Color.Yellow
         else -> Color.White
     }
-    val textColor = if (!article.nonTrouveState) Color.Black else Color.White
+
+    val textColor = if (article.nonTrouveState ) Color.Black else Color.White
     var showPackagingDialog by remember { mutableStateOf(false) }
 
     Card(
@@ -488,7 +489,7 @@ fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit
 }
 
 fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.idArticle.toString())
+    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
     val articleUpdate = articleFromFireBase.child("typeEmballage")
     articleUpdate.setValue(newType)
 }

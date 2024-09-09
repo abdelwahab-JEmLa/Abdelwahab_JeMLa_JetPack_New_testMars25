@@ -180,6 +180,7 @@ fun OutlineInput(
         }
     }
 }
+
 // Helper function to check if a string contains Arabic characters
 fun isArabic(text: String): Boolean {
     return text.any { it.code in 0x0600..0x06FF || it.code in 0x0750..0x077F || it.code in 0x08A0..0x08FF }
