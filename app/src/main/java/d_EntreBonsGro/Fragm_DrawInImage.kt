@@ -118,6 +118,8 @@ fun DessinableImage(
     var rightColumnOffset by remember { mutableStateOf(0f) }
     var imageOffset by remember { mutableStateOf(0f) }
 
+    var itsImageClick by remember { mutableStateOf(false) }
+
     val reconnaisanceVocaleLencer = reconnaisanceVocaleLencer(
         selectedArticle,
         articlesRef,
@@ -129,10 +131,11 @@ fun DessinableImage(
         articlesArticlesAcheteModele,
         articlesBaseDonne,
         articlesEntreBonsGrosTabele,
-        context
+        context ,itsImageClick
     )
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second
+
 
     Box(
         modifier = modifier
@@ -154,47 +157,66 @@ fun DessinableImage(
                 modifier = Modifier.weight(1f)
             ) {
                 items(nmbrImagesDuBon) { imageIndex ->
-                    val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
-                    val imageUri = Uri.parse(imagePath)
-                    val painter = rememberAsyncImagePainter(
-                        ImageRequest.Builder(context).data(imageUri).build()
-                    )
+                val imagePath = "file:///storage/emulated/0/Abdelwahab_jeMla.com/Programation/1_BonsGrossisst/(${soquetteBonNowIs ?: 1}.${imageIndex + 1}).jpg"
+                val imageUri = Uri.parse(imagePath)
+                val painter = rememberAsyncImagePainter(
+                    ImageRequest.Builder(context).data(imageUri).build()
+                )
 
-                         Displayer(
-                             imageIndex = imageIndex,
-                             painter = painter,
-                             sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                             filteredAndSortedArticles = filteredAndSortedArticles,
-                             heightOfImageAndRelated = heightOfImageAndRelated,
-                             widthOfImageAndRelated = widthOfImageAndRelated,
-                             onArticleClick = { article ->
-                                 selectedArticle = article
-                                 if (showOutline) {
-                                     showOutlineDialog = true
-                                 } else {
-                                     val currentTime = System.currentTimeMillis()
-                                     if (currentTime - lastLaunchTime > 1000) {
-                                         lastLaunchTime = currentTime
-                                         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                             putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                         }
-                                         speechRecognizerLauncher.launch(intent)
-                                     }
-                                 }
-                             },
-                             articlesBaseDonne = articlesBaseDonne,
-                             onImageSizeChanged = { if (imageIndex == 0) imageSize = it },
-                             leftColumnOffset = leftColumnOffset,
-                             rightColumnOffset = rightColumnOffset,
-                             onLeftColumnDrag = { delta ->
-                                 leftColumnOffset += delta
-                             },
-                             onRightColumnDrag = { delta ->
-                                 rightColumnOffset += delta
-                             },
-                             imageOffset
+                Displayer(
+                    imageIndex = imageIndex,
+                    painter = painter,
+                    sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                    filteredAndSortedArticles = filteredAndSortedArticles,
+                    heightOfImageAndRelated = heightOfImageAndRelated,
+                    widthOfImageAndRelated = widthOfImageAndRelated,
+                    onArticleClick = { article ->
+                        itsImageClick=  false
+                        selectedArticle = article
+                        if (showOutline) {
+                            showOutlineDialog = true
+                        } else {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastLaunchTime > 1000) {
+                                lastLaunchTime = currentTime
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                }
+                                speechRecognizerLauncher.launch(intent)
+                            }
+                        }
+                    },
+                    articlesBaseDonne = articlesBaseDonne,
+                    onImageSizeChanged = { if (imageIndex == 0) imageSize = it },
+                    leftColumnOffset = leftColumnOffset,
+                    rightColumnOffset = rightColumnOffset,
+                    onLeftColumnDrag = { delta ->
+                        leftColumnOffset += delta
+                    },
+                    onRightColumnDrag = { delta ->
+                        rightColumnOffset += delta
+                    },
+                    // Example onImageClick logic that launches the speech recognizer
+                    onImageClick = {
+                        itsImageClick=  true
+                        if (showOutline) {
+                            showOutlineDialog = true
+                        } else {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastLaunchTime > 1000) {
+                                lastLaunchTime = currentTime
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                }
+                                speechRecognizerLauncher.launch(intent)
+                            }
+                        }
+                    },
+                    imageOffset = imageOffset ,
                          )
 
                      }
@@ -281,6 +303,7 @@ fun Displayer(
     heightOfImageAndRelated: Dp,
     widthOfImageAndRelated: Dp,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
+    onImageClick: () -> Unit,
     articlesBaseDonne: List<BaseDonne>,
     onImageSizeChanged: (IntSize) -> Unit,
     leftColumnOffset: Float,
@@ -301,10 +324,12 @@ fun Displayer(
 
         // Image Displayer
         Box(
-            modifier = Modifier
+            modifier = Modifier     
                 .width(widthOfImageAndRelated)
                 .height(heightOfImageAndRelated)
                 .align(Alignment.Center)
+                .clickable { onImageClick() }
+
         ) {
             ImageDisplayer(
                 painter = painter,
@@ -316,26 +341,7 @@ fun Displayer(
             )
         }
 
-        // Right floating column (QuantityPrice)
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
-                .width(100.dp)
-                .fillMaxHeight()
-                .align(Alignment.CenterStart)
-        ) {
-            QuantityPrice(
-                imageIndex = imageIndex,
-                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
-                filteredAndSortedArticles = filteredAndSortedArticles,
-                heightOfImageAndRelated = heightOfImageAndRelated,
-                onArticleClick = onArticleClick,
-                articlesBaseDonne = articlesBaseDonne,
-                onDrag = onRightColumnDrag
-            )
-        }
-
-        // Left floating column (ArticleNames)
+        // Right floating column (ArticleNames)
         Box(
             modifier = Modifier
                 .offset { IntOffset(leftColumnOffset.roundToInt(), 0) }
@@ -351,6 +357,25 @@ fun Displayer(
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
                 onDrag = onLeftColumnDrag
+            )
+        }
+
+        //  Left floating column (QuantityPrice)
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(rightColumnOffset.roundToInt(), 0) }
+                .width(100.dp)
+                .fillMaxHeight()
+                .align(Alignment.CenterStart)
+        ) {
+            QuantityPrice(
+                imageIndex = imageIndex,
+                sectionsDonsChaqueImage = sectionsDonsChaqueImage,
+                filteredAndSortedArticles = filteredAndSortedArticles,
+                heightOfImageAndRelated = heightOfImageAndRelated,
+                onArticleClick = onArticleClick,
+                articlesBaseDonne = articlesBaseDonne,
+                onDrag = onRightColumnDrag
             )
         }
 

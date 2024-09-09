@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun reconnaisanceVocaleLencer(
-    selectedArticle: EntreBonsGrosTabele?,
+    selectedArticleStart: EntreBonsGrosTabele?,
     articlesRef: DatabaseReference,
     coroutineScope: CoroutineScope,
     baseDonneRef: DatabaseReference,
@@ -43,17 +43,33 @@ fun reconnaisanceVocaleLencer(
     articlesArticlesAcheteModele: List<ArticlesAcheteModele>,
     articlesBaseDonne: List<BaseDonne>,
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
-    context: Context
+    context: Context,
+    itsImageClick: Boolean
 ): Pair<ManagedActivityResultLauncher<Intent, ActivityResult>, List<String>> {
     var filteredSuggestions by remember { mutableStateOf(initialFilteredSuggestions) }
     var showSuggestions by remember { mutableStateOf(false) }
+       var vidDernierArticleouOnaEntreQuantity  by remember{ mutableStateOf<Long?>(null) }
 
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
+
+            val selectedArticle=
+                if (itsImageClick ){
+                    articlesEntreBonsGrosTabele.firstOrNull { it.quantityAcheteBG == 0 }
+
+                } else selectedArticleStart
+            if (selectedArticle != null) {
+                vidDernierArticleouOnaEntreQuantity=  selectedArticle.vidBG
+            }
             selectedArticle?.let {
                 updateQuantuPrixArticleDI(input, it, articlesRef, coroutineScope)
             }
         } else if (input.contains("تغيير")) {
+            val selectedArticle=
+                if (itsImageClick ){
+                    articlesEntreBonsGrosTabele.lastOrNull { it.nomArticleBG == "" }
+                } else selectedArticleStart
+
             // Fixed: Extract the new Arabic name correctly
             val parts = input.split("تغيير")
             val newArabName = if (parts.size > 1) parts[0].trim() else ""
@@ -72,6 +88,12 @@ fun reconnaisanceVocaleLencer(
         } else {
             val cleanInput = input.replace(".", "").toLowerCase()
             filteredSuggestions = suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
+
+            val selectedArticle =
+                if (itsImageClick) {
+                    // Utilisez '==' pour la comparaison
+                    articlesEntreBonsGrosTabele.firstOrNull { it.vidBG == vidDernierArticleouOnaEntreQuantity }
+                } else selectedArticleStart
 
             when {
                 filteredSuggestions.size == 1 -> {
@@ -119,6 +141,12 @@ fun reconnaisanceVocaleLencer(
         }
     }
     if (showSuggestions) {
+
+        val selectedArticle =
+            if (itsImageClick) {
+                articlesEntreBonsGrosTabele.firstOrNull { it.vidBG == vidDernierArticleouOnaEntreQuantity }
+            } else selectedArticleStart
+
         SuggestionsDialog(
             filteredSuggestions = filteredSuggestions,
             onSuggestionSelected = { suggestion ->

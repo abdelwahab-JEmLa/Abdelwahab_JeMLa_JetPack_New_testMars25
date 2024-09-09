@@ -242,7 +242,8 @@ suspend fun trensfertBonSuppAuDataBaseArticles(
             val dateFormat = SimpleDateFormat("yyyy/MM/dd")
             val dateCreationCategorie = dateFormat.format(Date())
 
-            val articlesEntreBonsGrosTabeleChoisi = articlesEntreBonsGrosTabele.filter { it.idArticleBG.toInt() != 0 }
+            val articlesEntreBonsGrosTabeleChoisi = articlesEntreBonsGrosTabele.filter { it.idArticleBG.toInt() != 0
+            }
             val totalArticles = articlesEntreBonsGrosTabeleChoisi.size
 
             articlesEntreBonsGrosTabeleChoisi.forEachIndexed { index, article ->

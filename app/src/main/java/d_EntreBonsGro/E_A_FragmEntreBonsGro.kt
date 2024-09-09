@@ -285,8 +285,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                         )
                     }
 
-
-
                     IconButton(onClick = { showSupplierDialog = true },
                         modifier = Modifier.weight(0.1f)) {
                         Icon(
@@ -421,8 +419,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
                              supplierList = suppliersList,
                             modeVerificationAvantUpdateBD=modeVerificationAvantUpdateBD
-
-
                         )
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele,
@@ -659,7 +655,8 @@ fun ActionsDialog(
     var showCreditDialog by remember { mutableStateOf(false) }
     var transferProgress by remember { mutableStateOf(0f) }
     var isTransferring by remember { mutableStateOf(false) }
-    val filterArticlesGrosPourUpdate=filterArticlesGrosPourUpdate(articlesEntreBonsGrosTabele)
+    val filterArticlesGrosPourUpdate=articlesEntreBonsGrosTabele
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -825,6 +822,9 @@ fun ActionsDialog(
             }
         )
     }
+
+    val filterArticlesGrosPourUpdated= filterArticlesGrosPourUpdate(articlesEntreBonsGrosTabele)
+
     if (showExportConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showExportConfirmDialog = false },
@@ -837,7 +837,7 @@ fun ActionsDialog(
                             isTransferring = true
                             exportToFirestore()
                             trensfertBonSuppAuDataBaseArticles(
-                                filterArticlesGrosPourUpdate,
+                                filterArticlesGrosPourUpdated,
                                 articlesBaseDonne
                             ) { progress ->
                                 transferProgress = progress

@@ -56,7 +56,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ArticleName(
     name: String,
-    color: Color,
+    color: Color ,
     onNameClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -69,7 +69,7 @@ fun ArticleName(
             text = name.capitalize(Locale.current),
             modifier = Modifier.padding(vertical = 4.dp),
             textAlign = TextAlign.Center,
-            color = Color.Red
+            color = color
         )
     }
 }
