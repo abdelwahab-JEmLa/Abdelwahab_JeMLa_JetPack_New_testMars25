@@ -347,10 +347,8 @@ private fun WindosBakupToDao(
                         },
                         tint2 = Color.Blue
                     )
-
                 }
-            }
-            ,
+            },
         )
     }
 

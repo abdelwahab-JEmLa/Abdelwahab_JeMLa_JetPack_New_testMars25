@@ -230,24 +230,22 @@ fun findAndAddMissingArticles(
 }
 suspend fun trensfertBonSuppAuDataBaseArticles(
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
-    articlesBaseDonne: List<BaseDonne>
+    articlesBaseDonne: List<BaseDonne>,
+    onProgressUpdate: (Float) -> Unit
 ) {
     withContext(Dispatchers.IO) {
         try {
             val firebase = Firebase.database
-            val articlesEntreBonsGrosTabeleRef = firebase.getReference("ArticlesBonsGrosTabele")
-            val snapshotEntreBonsGrosTabele = articlesEntreBonsGrosTabeleRef.get().await()
-
             val refArticlesAcheteModele = firebase.getReference("ArticlesAcheteModeleAdapted")
-
             val dbJetPackExportRef = firebase.getReference("e_DBJetPackExport")
-            val snapshotBaseDonne = dbJetPackExportRef.get().await()
 
-            // Obtenir la date actuelle au format yyyy/MM/dd
             val dateFormat = SimpleDateFormat("yyyy/MM/dd")
             val dateCreationCategorie = dateFormat.format(Date())
-            val articlesEntreBonsGrosTabeleChoisi= articlesEntreBonsGrosTabele.filter { it.idArticleBG.toInt() != 0 }
-            articlesEntreBonsGrosTabeleChoisi.forEach { article ->
+
+            val articlesEntreBonsGrosTabeleChoisi = articlesEntreBonsGrosTabele.filter { it.idArticleBG.toInt() != 0 }
+            val totalArticles = articlesEntreBonsGrosTabeleChoisi.size
+
+            articlesEntreBonsGrosTabeleChoisi.forEachIndexed { index, article ->
                 val calculatedPrice = if (article.uniterCLePlusUtilise) {
                     article.newPrixAchatBG * article.quantityUniterBG
                 } else {
@@ -264,14 +262,15 @@ suspend fun trensfertBonSuppAuDataBaseArticles(
                     childSnapshot.ref.child("warningRecentlyChanged").setValue(true)
                 }
 
-                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixAchat")
-                    .setValue(calculatedPrice)
-                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixVent")
-                    .setValue(calculatedPriceVent)
-                dbJetPackExportRef.child(article.idArticleBG.toString()).child("monPrixVentUniter")
-                    .setValue(calculatedPriceVentUniter)
-                dbJetPackExportRef.child(article.idArticleBG.toString()).child("dateCreationCategorie")
-                    .setValue(dateCreationCategorie)
+                dbJetPackExportRef.child(article.idArticleBG.toString()).apply {
+                    child("monPrixAchat").setValue(calculatedPrice)
+                    child("monPrixVent").setValue(calculatedPriceVent)
+                    child("monPrixVentUniter").setValue(calculatedPriceVentUniter)
+                    child("dateCreationCategorie").setValue(dateCreationCategorie)
+                }
+
+                // Update progress
+                onProgressUpdate((index + 1).toFloat() / totalArticles)
             }
 
             println("Successfully updated e_DBJetPackExport and all matching entries in ArticlesAcheteModeleAdapted")

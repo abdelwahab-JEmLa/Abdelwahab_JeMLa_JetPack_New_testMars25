@@ -140,12 +140,7 @@ fun DessinableImage(
     ) {
         if (modeVerificationAvantUpdateBD){
             Windos_AvantExpo(
-                articlesEntreBonsGro = articlesEntreBonsGrosTabele.filter { article ->
-                    (article.ancienPrixBG - article.newPrixAchatBG) != 0.0
-                            && article.quantityAcheteBG != 0
-                            && article.nomArticleBG != ""
-                            && !article.nomArticleBG.contains("New", ignoreCase = true)
-                },
+                articlesEntreBonsGro = filterArticlesGrosPourUpdate(articlesEntreBonsGrosTabele),
                 articlesRef = articlesRef,
                 articlesArticlesAcheteModele = articlesArticlesAcheteModele,
                 coroutineScope = coroutineScope,
@@ -267,6 +262,15 @@ fun DessinableImage(
         }, supplierList = supplierList
     )
 }
+
+@Composable
+fun filterArticlesGrosPourUpdate(articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>) =
+    articlesEntreBonsGrosTabele.filter { article ->
+        (article.ancienPrixBG - article.newPrixAchatBG) != 0.0
+                && article.quantityAcheteBG != 0
+                && article.nomArticleBG != ""
+                && !article.nomArticleBG.contains("New", ignoreCase = true)
+    }
 
 @Composable
 fun Displayer(

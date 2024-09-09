@@ -81,7 +81,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FragmentEntreBonsGro(articleDao: ArticleDao,onExportToFirestore: () -> Unit) {
+fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var articlesEntreBonsGrosTabele by remember { mutableStateOf<List<EntreBonsGrosTabele>>(emptyList()) }
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
@@ -484,17 +484,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao,onExportToFirestore: () -> Unit)
             editionPassedMode = false
             founisseurNowIs = null
             showFullImage = false
-
-
         },
         showMissingArticles = showMissingArticles,
-        onExportToFirestore = {
-            coroutineScope.launch {
-                exportToFirestore()
-                trensfertBonSuppAuDataBaseArticles(articlesEntreBonsGrosTabele,articlesBaseDonne)
-                onExportToFirestore()
-            }
-        },
         addedArticlesCount = addedArticlesCount,
         totalMissingArticles = totalMissingArticles,
         onShowMissingArticlesChange = { newValue ->
@@ -513,11 +504,11 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao,onExportToFirestore: () -> Unit)
         onImagePathChange = { newPath ->
             currentImagePath = newPath
         },
-        suppliersList =suppliersList,
-        articlesEntreBonsGrosTabele=articlesEntreBonsGrosTabele,
-        coroutineScope=coroutineScope
+        suppliersList = suppliersList,
+        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+        coroutineScope = coroutineScope,
+        articlesBaseDonne = articlesBaseDonne  // Add this line
     )
-
     DeleteConfirmationDialog(
         showDialog = showDeleteConfirmDialog,
         onDismiss = { showDeleteConfirmDialog = false },
@@ -651,7 +642,6 @@ fun ActionsDialog(
     onEditionPassedModeChange: (Boolean) -> Unit,
     modeFilterChangesDB: Boolean,
     onModeFilterChangesDBChange: (Boolean) -> Unit,
-    onExportToFirestore: () -> Unit,
     showMissingArticles: Boolean,
     onShowMissingArticlesChange: (Boolean) -> Unit,
     addedArticlesCount: Int,
@@ -661,12 +651,15 @@ fun ActionsDialog(
     onImagePathChange: (String) -> Unit,
     suppliersList: List<SupplierTabelle>,
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    articlesBaseDonne: List<BaseDonne>
 ) {
     var showImageSelectDialog by remember { mutableStateOf(false) }
     var showExportConfirmDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
-
+    var transferProgress by remember { mutableStateOf(0f) }
+    var isTransferring by remember { mutableStateOf(false) }
+    val filterArticlesGrosPourUpdate=filterArticlesGrosPourUpdate(articlesEntreBonsGrosTabele)
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -760,6 +753,19 @@ fun ActionsDialog(
                         Spacer(Modifier.width(8.dp))
                         Text("Export to Firestore")
                     }
+
+                    if (isTransferring) {
+                        Column {
+                            Text("Transferring data: ${(transferProgress * 100).toInt()}%")
+                            LinearProgressIndicator(
+                                progress = transferProgress,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                            )
+                        }
+                    }
+
                     TextButton(
                         onClick = { showImageSelectDialog = true }
                     ) {
@@ -776,6 +782,7 @@ fun ActionsDialog(
             }
         )
     }
+
     SupplierCreditDialog(
         showDialog = showCreditDialog,
         onDismiss = { showCreditDialog = false },
@@ -826,7 +833,17 @@ fun ActionsDialog(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onExportToFirestore()
+                        coroutineScope.launch {
+                            isTransferring = true
+                            exportToFirestore()
+                            trensfertBonSuppAuDataBaseArticles(
+                                filterArticlesGrosPourUpdate,
+                                articlesBaseDonne
+                            ) { progress ->
+                                transferProgress = progress
+                            }
+                            isTransferring = false
+                        }
                         showExportConfirmDialog = false
                     }
                 ) {
