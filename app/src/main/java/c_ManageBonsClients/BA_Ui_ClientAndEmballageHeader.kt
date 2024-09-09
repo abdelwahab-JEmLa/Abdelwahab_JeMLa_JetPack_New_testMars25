@@ -233,6 +233,7 @@ fun ClientAndEmballageHeader(
                         val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
 
                         coroutineScope.launch {
+                            updateNonVerifieANonTrouveState(allArticles,nomClient)
                             processClientData(context, nomClient, verifiedClientArticles, ancienCredits = ancienCredits)
                             if (clientId != null) {
                                 updateClientsCreditFromHeader(
@@ -270,6 +271,21 @@ fun ClientAndEmballageHeader(
         )
     }
 }
+fun updateNonVerifieANonTrouveState(allArticles: List<ArticlesAcheteModele>, nomClient: String) {
+    val nonVerifiedClientArticles = allArticles.filter { it.nomClient == nomClient && !it.verifieState }
+
+    nonVerifiedClientArticles.forEach { article ->
+        val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
+        articleRef.child("nonTrouveState").setValue(true)
+            .addOnSuccessListener {
+                Log.d("Firebase", "Article ${article.vid} mis à jour avec succès pour nonTrouveState = true.")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firebase", "Erreur lors de la mise à jour de l'article ${article.vid}: ", e)
+            }
+    }
+}
+
 @Composable
 fun BlinkingText(text: String) {
     val infiniteTransition = rememberInfiniteTransition(label = "blinking")
