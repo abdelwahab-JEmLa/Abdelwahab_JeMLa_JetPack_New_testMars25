@@ -1,9 +1,7 @@
 package f_credits.f_2_CreditsClients
 
-import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -218,14 +216,17 @@ fun ClientsCreditDialogClientsBoard(
             },
 
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            clientsId?.let { id ->
-                                val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+                Row(
+                    modifier = Modifier.padding(end = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount =
+                                        clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
 
-                                val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-                                if (bluetoothAdapter != null && bluetoothAdapter.isEnabled) {
                                     imprimeLeTiquetDuCreditChangementCB(
                                         clientsTotalDeCeBon = clientsTotal,
                                         clientsPaymentActuelle = paymentAmount,
@@ -234,39 +235,69 @@ fun ClientsCreditDialogClientsBoard(
                                         onDismiss = onDismiss,
                                         clientsName = clientsName
                                     )
-                                } else {
-                                    // Handle the case when Bluetooth is not available or disabled
-                                    Toast.makeText(context, "Bluetooth is not available or disabled", Toast.LENGTH_SHORT).show()
+
+                                    updateClientsCreditCB(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCB(
+                                        clientsId,
+                                        onFetchComplete = { invoices, credit ->
+                                            recentInvoices = invoices
+                                            ancienCredit = credit
+                                        })
                                 }
-
-                                updateClientsCreditCB(
-                                    id.toInt(),
-                                    clientsTotalDeCeBon = clientsTotal,
-                                    clientsPaymentActuelle = paymentAmount,
-                                    restCreditDeCetteBon = restCreditDeCetteBon,
-                                    newBalenceOfCredits = newBalenceOfCredits
-                                )
-
-                                fetchRecentInvoicesCB(clientsId, onFetchComplete = { invoices, credit ->
-                                    recentInvoices = invoices
-                                    ancienCredit = credit
-                                })
                             }
-                        }
-                    },
-                    enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
-                ) {
-                    Text("Save", color = Color.White)
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save & Print", color = Color.White)
+                    }
+
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount =
+                                        clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+
+                                    updateClientsCreditCB(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCB(
+                                        clientsId,
+                                        onFetchComplete = { invoices, credit ->
+                                            recentInvoices = invoices
+                                            ancienCredit = credit
+                                        })
+
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save Only", color = Color.White)
+                    }
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
                     Text("Cancel", color = Color.White)
                 }
-            }
-        )
+            })
     }
 }
+
 private fun imprimeLeTiquetDuCreditChangementCB(
     clientsTotalDeCeBon: Double,
     clientsPaymentActuelle: Double,

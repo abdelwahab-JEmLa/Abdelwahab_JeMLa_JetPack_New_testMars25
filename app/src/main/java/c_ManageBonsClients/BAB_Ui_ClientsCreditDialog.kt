@@ -1,9 +1,7 @@
 package c_ManageBonsClients
 
-import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -203,14 +201,13 @@ fun ClientsCreditDialog(
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            clientsId?.let { id ->
-                                val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+                Row {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
 
-                                val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-                                if (bluetoothAdapter != null && bluetoothAdapter.isEnabled) {
                                     imprimeLeTiquetDuCreditChangement(
                                         clientsTotalDeCeBon = clientsTotal,
                                         clientsPaymentActuelle = paymentAmount,
@@ -219,28 +216,55 @@ fun ClientsCreditDialog(
                                         onDismiss = onDismiss,
                                         clientsName = clientsName
                                     )
-                                } else {
-                                    Toast.makeText(context, "Bluetooth is not available or disabled", Toast.LENGTH_SHORT).show()
+                                    updateClientsCreditCCD(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
+                                        recentInvoices = invoices
+                                        ancienCredit = credit
+                                    })
                                 }
-
-                                updateClientsCreditCCD(
-                                    id.toInt(),
-                                    clientsTotalDeCeBon = clientsTotal,
-                                    clientsPaymentActuelle = paymentAmount,
-                                    restCreditDeCetteBon = restCreditDeCetteBon,
-                                    newBalenceOfCredits = newBalenceOfCredits
-                                )
-
-                                fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
-                                    recentInvoices = invoices
-                                    ancienCredit = credit
-                                })
                             }
-                        }
-                    },
-                    enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
-                ) {
-                    Text("Save", color = Color.White)
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save & Print", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+
+                                    updateClientsCreditCCD(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
+                                        recentInvoices = invoices
+                                        ancienCredit = credit
+                                    })
+
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save Only", color = Color.White)
+                    }
                 }
             },
             dismissButton = {
@@ -251,6 +275,7 @@ fun ClientsCreditDialog(
         )
     }
 }
+
 private fun imprimeLeTiquetDuCreditChangement(
     clientsTotalDeCeBon: Double,
     clientsPaymentActuelle: Double,
