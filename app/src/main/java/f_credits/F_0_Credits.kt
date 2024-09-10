@@ -178,10 +178,18 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { viewModel.deleteSupplier(supplier.idSupplierSu) }) {
+            IconButton(
+                onClick = { viewModel.deleteSupplier(supplier.idSupplierSu) },
+                modifier = Modifier.weight(1f)
+            ) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
             }
-            Column {
+
+            Column(
+                modifier = Modifier
+                    .weight(6f)
+                    .padding(start = 8.dp)
+            ) {
                 Text(
                     text = "ID: ${supplier.idSupplierSu}",
                     style = MaterialTheme.typography.bodyLarge.copy(
@@ -208,7 +216,11 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     modifier = Modifier.drawTextWithOutline(Color.Black)
                 )
             }
-            Row {
+
+            Row(
+                modifier = Modifier.weight(3f),
+                horizontalArrangement = Arrangement.End
+            ) {
                 IconButton(onClick = { showCreditDialog = true }) {
                     Icon(Icons.Default.CreditCard, contentDescription = "Credit", tint = Color.White)
                 }
@@ -226,6 +238,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
             }
         }
     }
+
 
     if (showDialog) {
         AlertDialog(
