@@ -200,40 +200,71 @@ fun ClientsCreditDialog(
                     }
                 }
             },
-
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            clientsId?.let { id ->
-                                val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+                Row {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
 
-                                imprimeLeTiquetDuCreditChangement(
-                                    clientsTotalDeCeBon = clientsTotal,
-                                    clientsPaymentActuelle = paymentAmount,
-                                    newBalenceOfCredits = newBalenceOfCredits,
-                                    context = context,
-                                    onDismiss = onDismiss,
-                                    clientsName = clientsName
-                                )
-                                updateClientsCreditCCD(
-                                    id.toInt(),
-                                    clientsTotalDeCeBon = clientsTotal,
-                                    clientsPaymentActuelle = paymentAmount,
-                                    restCreditDeCetteBon = restCreditDeCetteBon,
-                                    newBalenceOfCredits = newBalenceOfCredits
-                                )
+                                    imprimeLeTiquetDuCreditChangement(
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        newBalenceOfCredits = newBalenceOfCredits,
+                                        context = context,
+                                        onDismiss = onDismiss,
+                                        clientsName = clientsName
+                                    )
+                                    updateClientsCreditCCD(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
 
-                                fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
-                                    recentInvoices = invoices
-                                    ancienCredit = credit
-                                })
+                                    fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
+                                        recentInvoices = invoices
+                                        ancienCredit = credit
+                                    })
+                                }
                             }
-                        }
-                    },
-                    enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
-                ) {
-                    Text("Save", color = Color.White)
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save & Print", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+
+                                    updateClientsCreditCCD(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
+                                        recentInvoices = invoices
+                                        ancienCredit = credit
+                                    })
+
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save Only", color = Color.White)
+                    }
                 }
             },
             dismissButton = {

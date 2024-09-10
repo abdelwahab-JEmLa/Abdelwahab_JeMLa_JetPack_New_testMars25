@@ -160,10 +160,17 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { viewModel.deleteClients(clients.idClientsSu) }) {
+            IconButton(
+                onClick = { viewModel.deleteClients(clients.idClientsSu) },
+                modifier = Modifier.weight(1f)
+            ) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
             }
-            Column {
+            Column(
+                modifier = Modifier
+                    .weight(4f)
+                    .padding(horizontal = 8.dp)
+            ) {
                 Text(
                     text = "ID: ${clients.idClientsSu}",
                     style = MaterialTheme.typography.bodyLarge.copy(
@@ -190,7 +197,10 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
                     modifier = Modifier.drawTextWithOutlineClients(Color.Black)
                 )
             }
-            Row {
+            Row(
+                modifier = Modifier.weight(3f),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
                 IconButton(onClick = { showCreditDialog = true }) {
                     Icon(Icons.Default.CreditCard, contentDescription = "Credit", tint = Color.White)
                 }
@@ -208,7 +218,6 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
             }
         }
     }
-
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },

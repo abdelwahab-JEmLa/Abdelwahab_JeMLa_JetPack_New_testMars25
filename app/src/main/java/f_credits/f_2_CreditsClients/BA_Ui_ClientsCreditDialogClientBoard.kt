@@ -185,17 +185,23 @@ fun ClientsCreditDialogClientsBoard(
                                                     coroutineScope.launch {
                                                         try {
                                                             deleteInvoiceCB(clientsId, invoice.date)
-                                                            fetchRecentInvoicesCB(clientsId, onFetchComplete = { invoices, credit ->
-                                                                recentInvoices = invoices
-                                                                ancienCredit = credit
-                                                            })
+                                                            fetchRecentInvoicesCB(
+                                                                clientsId,
+                                                                onFetchComplete = { invoices, credit ->
+                                                                    recentInvoices = invoices
+                                                                    ancienCredit = credit
+                                                                })
                                                         } catch (e: Exception) {
-                                                            errorMessage = "Error deleting invoice: ${e.message}"
+                                                            errorMessage =
+                                                                "Error deleting invoice: ${e.message}"
                                                         }
                                                     }
                                                 }
                                             ) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Delete Invoice")
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Delete Invoice"
+                                                )
                                             }
                                         }
                                     }
@@ -210,49 +216,88 @@ fun ClientsCreditDialogClientsBoard(
             },
 
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            clientsId?.let { id ->
-                                val paymentAmount = clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
-
-                                imprimeLeTiquetDuCreditChangementCB(
-                                    clientsTotalDeCeBon = clientsTotal,
-                                    clientsPaymentActuelle = paymentAmount,
-                                    newBalenceOfCredits = newBalenceOfCredits,
-                                    context = context,
-                                    onDismiss = onDismiss,
-                                    clientsName = clientsName
-                                )
-
-                                updateClientsCreditCB(
-                                    id.toInt(),
-                                    clientsTotalDeCeBon = clientsTotal,
-                                    clientsPaymentActuelle = paymentAmount,
-                                    restCreditDeCetteBon = restCreditDeCetteBon,
-                                    newBalenceOfCredits = newBalenceOfCredits
-                                )
-
-                                fetchRecentInvoicesCB(clientsId, onFetchComplete = { invoices, credit ->
-                                    recentInvoices = invoices
-                                    ancienCredit = credit
-                                })
-                            }
-                        }
-                    },
-                    enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                Row(
+                    modifier = Modifier.padding(end = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Save", color = Color.White)
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount =
+                                        clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+
+                                    imprimeLeTiquetDuCreditChangementCB(
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        newBalenceOfCredits = newBalenceOfCredits,
+                                        context = context,
+                                        onDismiss = onDismiss,
+                                        clientsName = clientsName
+                                    )
+
+                                    updateClientsCreditCB(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCB(
+                                        clientsId,
+                                        onFetchComplete = { invoices, credit ->
+                                            recentInvoices = invoices
+                                            ancienCredit = credit
+                                        })
+                                }
+                            }
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save & Print", color = Color.White)
+                    }
+
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                clientsId?.let { id ->
+                                    val paymentAmount =
+                                        clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+
+                                    updateClientsCreditCB(
+                                        id.toInt(),
+                                        clientsTotalDeCeBon = clientsTotal,
+                                        clientsPaymentActuelle = paymentAmount,
+                                        restCreditDeCetteBon = restCreditDeCetteBon,
+                                        newBalenceOfCredits = newBalenceOfCredits
+                                    )
+
+                                    fetchRecentInvoicesCB(
+                                        clientsId,
+                                        onFetchComplete = { invoices, credit ->
+                                            recentInvoices = invoices
+                                            ancienCredit = credit
+                                        })
+
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                    ) {
+                        Text("Save Only", color = Color.White)
+                    }
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
                     Text("Cancel", color = Color.White)
                 }
-            }
-        )
+            })
     }
 }
+
 private fun imprimeLeTiquetDuCreditChangementCB(
     clientsTotalDeCeBon: Double,
     clientsPaymentActuelle: Double,
