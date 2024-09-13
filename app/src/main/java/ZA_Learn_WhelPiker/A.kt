@@ -20,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,12 +37,85 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
+@Composable
+fun PickerExample() {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val values = remember {
+                (1..15).map { it.toString() } +
+                        (20..25).map { it.toString() } +
+                        listOf("30", "40", "50")
+            }
+            val valuesPickerState = rememberPickerState()
+
+            val baseUnits = remember { listOf("كرتون", "علبة") }
+            var selectedValue by remember { mutableStateOf("1") }
+
+            val units by remember(selectedValue) {
+                derivedStateOf {
+                    baseUnits.map { unit ->
+                        when {
+                            unit == "علبة" && selectedValue.toIntOrNull() in 1..11 -> "علب"    //TODO inverse les mot et //TODO fait la meme chose pour "كرتون" ca devient "كراتين"
+                            else -> unit
+                        }
+                    }
+                }
+            }
+
+            val unitsPickerState = rememberPickerState()
+
+            Text(text = "Example Picker", modifier = Modifier.padding(top = 16.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Picker(
+                    state = unitsPickerState,
+                    items = units,
+                    visibleItemsCount = 3,
+                    modifier = Modifier.weight(0.7f),
+                    textModifier = Modifier.padding(8.dp),
+                    textStyle = TextStyle(fontSize = 32.sp, textAlign = TextAlign.Right)
+                )
+                Picker(
+                    state = valuesPickerState,
+                    items = values,
+                    visibleItemsCount = 3,
+                    modifier = Modifier.weight(0.3f),
+                    textModifier = Modifier.padding(8.dp),
+                    textStyle = TextStyle(fontSize = 32.sp)
+                )
+            }
+
+            LaunchedEffect(valuesPickerState.selectedItem) {
+                selectedValue = valuesPickerState.selectedItem
+            }
+
+            val resultText = buildString {
+                append("العدد: ")
+                append(selectedValue)
+                append(" ")
+                append(unitsPickerState.selectedItem)
+            }
+
+            Text(
+                text = resultText,
+                modifier = Modifier.padding(vertical = 16.dp),
+                textAlign = TextAlign.Right,
+                style = TextStyle(textDirection = TextDirection.Rtl)
+            )
+        }
+    }
+}
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Picker(
@@ -132,48 +206,6 @@ private fun Modifier.fadingEdge(brush: Brush) = this
 private fun pixelsToDp(pixels: Int) = with(LocalDensity.current) { pixels.toDp() }
 
 
-@Composable
-fun PickerExample() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-
-            val values = remember { (1..99).map { it.toString() } }
-            val valuesPickerState = rememberPickerState()
-            val units = remember { listOf("seconds", "minutes", "hours") }
-            val unitsPickerState = rememberPickerState()
-
-            Text(text = "Example Picker", modifier = Modifier.padding(top = 16.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Picker(
-                    state = valuesPickerState,
-                    items = values,
-                    visibleItemsCount = 3,
-                    modifier = Modifier.weight(0.3f),
-                    textModifier = Modifier.padding(8.dp),
-                    textStyle = TextStyle(fontSize = 32.sp)
-                )
-                Picker(
-                    state = unitsPickerState,
-                    items = units,
-                    visibleItemsCount = 3,
-                    modifier = Modifier.weight(0.7f),
-                    textModifier = Modifier.padding(8.dp),
-                    textStyle = TextStyle(fontSize = 32.sp)
-                )
-            }
-
-            Text(
-                text = "Interval: ${valuesPickerState.selectedItem} ${unitsPickerState.selectedItem}",
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-        }
-    }
-}
 
 
 @Composable
