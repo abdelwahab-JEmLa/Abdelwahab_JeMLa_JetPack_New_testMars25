@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
+import ZA_Learn_WhelPiker.PickerExample
 import a_RoomDB.AppDatabase
 import android.Manifest
 import android.app.Application
@@ -16,17 +17,30 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -47,6 +61,7 @@ import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
 import f_credits.f_2_CreditsClients.CreditsClientsViewModel
 import f_credits.f_2_CreditsClients.FragmentCreditsClients
+import java.util.Locale
 
 class MyApplication : Application() {
     override fun onCreate() {
@@ -130,8 +145,11 @@ fun MyApp(
         composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao) }
         composable("FragmentCredits") { FragmentCredits(creditsViewModel) }
         composable("FragmentCreditsClients") { FragmentCreditsClients(creditsClientsViewModel) }
+        composable("PickerExample") { PickerExample() }
     }
 }
+
+
 
 @Composable
 fun MainScreen(
@@ -156,48 +174,64 @@ fun MainScreen(
                 .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
-            LazyVerticalGrid(//TODO Donne a chaque element couleur et text blanche et donne le une icone corespondent fait lagrondire et centre le
-                //TODo le text on bas centre avec majusscule au debut
+            LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(16.dp)
             ) {
                 item {
-                    MenuCard("Edit Base Screen", "A_Edite_Base_Screen", navController)
+                    MenuCard("Edit Base Screen", "A_Edite_Base_Screen", navController, Icons.Default.Edit)
                 }
                 item {
-                    MenuCard("Manage Bons Clients", "C_ManageBonsClients", navController)
+                    MenuCard("Manage Bons Clients", "C_ManageBonsClients", navController, Icons.Default.List)
                 }
                 item {
-                    MenuCard("Entre Bons Gro", "FragmentEntreBonsGro", navController)
+                    MenuCard("Entre Bons Gro", "FragmentEntreBonsGro", navController, Icons.Default.Add)
                 }
                 item {
-                    MenuCard("Credits", "FragmentCredits", navController)
+                    MenuCard("Credits", "FragmentCredits", navController, Icons.Default.MonetizationOn)
                 }
                 item {
-                    MenuCard("CreditsClients", "FragmentCreditsClients", navController)
+                    MenuCard("CreditsClients", "FragmentCreditsClients", navController, Icons.Default.People)
+                }
+                item {
+                    MenuCard("Picker Example", "PickerExample", navController, Icons.Default.DateRange)
                 }
             }
         }
     }
 }
-
 @Composable
-fun MenuCard(title: String, route: String, navController: NavHostController) {
+fun MenuCard(title: String, route: String, navController: NavHostController, icon: ImageVector) {
     Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth()
             .aspectRatio(1f)
             .clickable { navController.navigate(route) },
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(title, style = MaterialTheme.typography.titleLarge)
-        }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier
+                    .size(48.dp)
+                    .padding(bottom = 8.dp)
+            )
+            Text(
+            text = title.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
     }
+}
 }
