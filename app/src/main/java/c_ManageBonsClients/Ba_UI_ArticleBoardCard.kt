@@ -90,7 +90,7 @@ fun ArticleBoardCard(
         else -> Color.White
     }
 
-    val textColor = if (article.nonTrouveState ) Color.Black else Color.White
+    val textColor = if (!article.nonTrouveState ) Color.Black else Color.White
     var showPackagingDialog by remember { mutableStateOf(false) }
 
     Card(
