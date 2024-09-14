@@ -84,7 +84,7 @@ fun PickerExample() {
                     visibleItemsCount = 3,
                     modifier = Modifier.weight(0.7f),
                     textModifier = Modifier.padding(8.dp),
-                    textStyle = TextStyle(fontSize = 32.sp, textAlign = TextAlign.Right)
+                    textStyle = TextStyle(fontSize = 32.sp)
                 )
                 Picker(
                     state = valuesPickerState,

@@ -30,9 +30,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -49,6 +49,7 @@ import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.util.Locale
 
+
 @Composable
 fun ImageDisplayer(
     painter: AsyncImagePainter,
@@ -58,7 +59,7 @@ fun ImageDisplayer(
     sectionsDonsChaqueImage: Int,
     modifier: Modifier
 ) {
-    Box( // Utilisation de Box au lieu de BoxWithConstraints
+    Box(
         modifier = modifier
             .height(heightOfImageAndRelated)
             .clip(RectangleShape)
@@ -73,7 +74,6 @@ fun ImageDisplayer(
             modifier = Modifier
                 .matchParentSize()
                 .graphicsLayer(
-                    // Garder l'échelle fixe à 1 pour désactiver le zoom
                     scaleX = 1f,
                     scaleY = 1f,
                     translationX = offset.x,
@@ -82,23 +82,66 @@ fun ImageDisplayer(
                 .onSizeChanged(onImageSizeChanged)
                 .drawWithContent {
                     drawContent()
-                    val redColor = Color.Red.copy(alpha = 0.3f)
-                    val blueColor = Color.Blue.copy(alpha = 0.3f)
+                    val redColor = Color.Red
+                    val blueColor = Color.Blue
+                    val strokeWidth = 2f
                     for (i in 0 until sectionsDonsChaqueImage) {
-                        val top = size.height * i.toFloat() / sectionsDonsChaqueImage
-                        val bottom = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
-                        val color = if (i % 2 == 0) redColor else blueColor
-                        drawRect(
-                            color = color,
-                            topLeft = Offset(0f, top),
-                            size = Size(size.width, bottom - top)
-                        )
+                        val y = size.height * (i + 1).toFloat() / sectionsDonsChaqueImage
+
+                        if (i % 2 == 0) {
+                            // Red dotted straight line
+                            drawDottedLine(Offset(0f, y), Offset(size.width, y), redColor, strokeWidth)
+                        } else {
+                            // Blue dashed straight line
+                            drawDashedLine(Offset(0f, y), Offset(size.width, y), blueColor, strokeWidth)
+                        }
                     }
                 }
         )
     }
 }
 
+private fun DrawScope.drawDottedLine(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
+    val pathLength = (end - start).getDistance()
+    val dotLength = 5f
+    val gapLength = 5f
+    val intervals = pathLength / (dotLength + gapLength)
+
+    for (i in 0 until intervals.toInt()) {
+        val startX = start.x + i * (dotLength + gapLength)
+        val startY = start.y
+        val endX = (startX + dotLength).coerceAtMost(end.x)
+        val endY = startY
+
+        drawLine(
+            color = color,
+            start = Offset(startX, startY),
+            end = Offset(endX, endY),
+            strokeWidth = strokeWidth
+        )
+    }
+}
+
+private fun DrawScope.drawDashedLine(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
+    val pathLength = (end - start).getDistance()
+    val dashLength = 15f
+    val gapLength = 10f
+    val intervals = pathLength / (dashLength + gapLength)
+
+    for (i in 0 until intervals.toInt()) {
+        val startX = start.x + i * (dashLength + gapLength)
+        val startY = start.y
+        val endX = (startX + dashLength).coerceAtMost(end.x)
+        val endY = startY
+
+        drawLine(
+            color = color,
+            start = Offset(startX, startY),
+            end = Offset(endX, endY),
+            strokeWidth = strokeWidth
+        )
+    }
+}
 @Composable
 fun AutoResizedTextDI(
     text: String,
