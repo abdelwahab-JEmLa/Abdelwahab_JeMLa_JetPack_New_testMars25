@@ -29,11 +29,11 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.VoiceOverOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -123,7 +123,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     var showOutline by remember { mutableStateOf(false) }
-    var showDivider by remember { mutableStateOf(false) }
+    var showDivider by remember { mutableStateOf(true) }
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
     var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
 
@@ -497,7 +497,7 @@ fun FloatingActionButtonsSection(
                     item {
                         FloatingActionButton(onClick = showTotaleBarButton) {
                             Icon(
-                                imageVector = Icons.Default.KeyboardArrowUp,
+                                imageVector = Icons.Default.VoiceOverOff,
                                 contentDescription = "Toggle Totale Bar"
                             )
                         }
