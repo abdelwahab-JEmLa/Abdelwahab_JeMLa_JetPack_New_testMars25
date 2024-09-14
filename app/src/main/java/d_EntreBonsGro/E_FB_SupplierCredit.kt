@@ -36,7 +36,8 @@ fun updateSupplierCredit(
     supplierId: Long,
     supplierTotal: Double,
     supplierPayment: Double,
-    ancienCredit: Double
+    ancienCredit: Double  ,
+    fromeOutlineSupInput :Boolean =false
 ) {
     val firestore = Firebase.firestore
     val currentDateTime = LocalDateTime.now()
@@ -55,7 +56,7 @@ fun updateSupplierCredit(
         "totaleDeCeBon" to supplierTotal,
         "payeCetteFoit" to supplierPayment,
         "creditFaitDonCeBon" to restCreditDeCetteBon,
-        "ancienCredits" to newTotalCredit
+        "ancienCredits" to if (fromeOutlineSupInput) ancienCredit else newTotalCredit
     )
 
 
