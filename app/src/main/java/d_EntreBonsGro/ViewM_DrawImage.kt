@@ -49,11 +49,10 @@ fun reconnaisanceVocaleLencer(
 ): Pair<ManagedActivityResultLauncher<Intent, ActivityResult>, List<String>> {
     var filteredSuggestions by remember { mutableStateOf(initialFilteredSuggestions) }
     var showSuggestions by remember { mutableStateOf(false) }
-       var vidDernierArticleouOnaEntreQuantity  by remember{ mutableStateOf<Long?>(null) }
+    var vidDernierArticleouOnaEntreQuantity by remember { mutableStateOf<Long?>(null) }
 
     fun processVoiceInput(input: String) {
         if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
-
             val selectedArticle =
                 if (itsImageClick) {
                     val lastIndex = articlesEntreBonsGrosTabele.indexOfLast { it.quantityAcheteBG != 0 }
@@ -65,18 +64,23 @@ fun reconnaisanceVocaleLencer(
                 } else selectedArticleStart
 
             if (selectedArticle != null) {
-                vidDernierArticleouOnaEntreQuantity=  selectedArticle.vidBG
+                vidDernierArticleouOnaEntreQuantity = selectedArticle.vidBG
             }
             selectedArticle?.let {
                 updateQuantuPrixArticleDI(input, it, articlesRef, coroutineScope)
             }
         } else if (input.contains("تغيير")) {
-            val selectedArticle=
-                if (itsImageClick ){
-                    articlesEntreBonsGrosTabele.lastOrNull { it.nomArticleBG == "" }
+            val selectedArticle =
+                if (itsImageClick) {
+                    val lastIndex = articlesEntreBonsGrosTabele.indexOfLast { it.quantityAcheteBG != 0 }
+                    if (lastIndex != -1 && lastIndex + 1 < articlesEntreBonsGrosTabele.size) {
+                        articlesEntreBonsGrosTabele[lastIndex + 1]
+                    } else {
+                        null
+                    }
                 } else selectedArticleStart
 
-            // Fixed: Extract the new Arabic name correctly
+            // Extract the new Arabic name correctly
             val parts = input.split("تغيير")
             val newArabName = if (parts.size > 1) parts[0].trim() else ""
             if (newArabName.isNotEmpty()) {
@@ -97,7 +101,6 @@ fun reconnaisanceVocaleLencer(
 
             val selectedArticle =
                 if (itsImageClick) {
-                    // Utilisez '==' pour la comparaison
                     articlesEntreBonsGrosTabele.firstOrNull { it.vidBG == vidDernierArticleouOnaEntreQuantity }
                 } else selectedArticleStart
 
