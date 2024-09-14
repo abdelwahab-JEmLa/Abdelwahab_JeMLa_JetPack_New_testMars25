@@ -101,6 +101,7 @@ fun ImageDisplayer(
     }
 }
 
+
 private fun DrawScope.drawDottedLine(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
     val pathLength = (end - start).getDistance()
     val dotLength = 5f
