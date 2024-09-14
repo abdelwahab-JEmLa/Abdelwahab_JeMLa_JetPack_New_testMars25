@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
@@ -96,10 +95,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var articlesArticlesAcheteModele by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var suppliersList by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
-    var inputText by remember { mutableStateOf("") }
-    var nowItsNameInputeTime by remember { mutableStateOf(false) }
     var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
-    var vidOfLastQuantityInputted by remember { mutableStateOf<Long?>(null) }
     var editionPassedMode by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showActionsDialog by remember { mutableStateOf(false) }
@@ -109,7 +105,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
     var modeFilterChangesDB by remember { mutableStateOf(false) }
     var showFullImage by rememberSaveable { mutableStateOf(true) }
-    var showSplitView by rememberSaveable { mutableStateOf(false) }
+    val showSplitView by rememberSaveable { mutableStateOf(false) }
     var showMissingArticles by remember { mutableStateOf(false) }
     var totalMissingArticles by remember { mutableStateOf(0) }
     var addedArticlesCount by remember { mutableStateOf(0) }
@@ -282,16 +278,10 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         },
         floatingActionButton = {
             Column {
-                FloatingActionButton(
-                    onClick = { showTotaleBar = !showTotaleBar }
-                ) {
-                    Icon(
-                        imageVector = if (showTotaleBar) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                        contentDescription = if (showTotaleBar) "Hide Totale Bar" else "Show Totale Bar"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                FloatingActionButtonsSection(buttons = floatingActionButtons)
+                FloatingActionButtonsSection(
+                    buttons = floatingActionButtons,
+                    showTotaleBarButton = { showTotaleBar = !showTotaleBar }
+                )
             }
         },
         floatingActionButtonPosition = FabPosition.End
@@ -465,7 +455,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 
 @Composable
 fun FloatingActionButtonsSection(
-    buttons: List<Triple<ImageVector, String, () -> Unit>>
+    buttons: List<Triple<ImageVector, String, () -> Unit>>,
+    showTotaleBarButton: () -> Unit
 ) {
     var showFloatingButtons by remember { mutableStateOf(true) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -493,14 +484,24 @@ fun FloatingActionButtonsSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (showFloatingButtons) {
-                buttons.forEach { (icon, contentDescription, onClick) ->
-                    FloatingActionButton(onClick = onClick) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = contentDescription
-                        )
+                LazyColumn {
+                    items(buttons) { (icon, contentDescription, onClick) ->
+                        FloatingActionButton(onClick = onClick) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = contentDescription
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    item {
+                        FloatingActionButton(onClick = showTotaleBarButton) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Toggle Totale Bar"
+                            )
+                        }
+                    }
                 }
             }
         }
