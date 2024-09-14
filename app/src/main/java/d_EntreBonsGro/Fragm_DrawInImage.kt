@@ -441,23 +441,29 @@ fun QuantityPrice(
                             .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
                             .clickable { onArticleClick(article) }
                             .background(cardColor)
-                            .drawWithContent {
-                                drawContent()
-                                // Blue dashed line at the top
-                                drawDashedLine(
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, 0f),
-                                    color = Color.Blue,
-                                    strokeWidth = 2f
-                                )
-                                // Red dotted line at the bottom
-                                drawDottedLine(
-                                    start = Offset(0f, size.height),
-                                    end = Offset(size.width, size.height),
-                                    color = Color.Red,
-                                    strokeWidth = 2f
-                                )
-                            },
+                            .then(
+                                if (!isZeroQuantityOrPrice) {
+                                    Modifier.drawWithContent {
+                                        drawContent()
+                                        // Blue dashed line at the top
+                                        drawDashedLine(
+                                            start = Offset(0f, 0f),
+                                            end = Offset(size.width, 0f),
+                                            color = Color.Blue,
+                                            strokeWidth = 2f
+                                        )
+                                        // Red dotted line at the bottom
+                                        drawDottedLine(
+                                            start = Offset(0f, size.height),
+                                            end = Offset(size.width, size.height),
+                                            color = Color.Red,
+                                            strokeWidth = 2f
+                                        )
+                                    }
+                                } else {
+                                    Modifier
+                                }
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!isZeroQuantityOrPrice) {
@@ -482,8 +488,6 @@ fun QuantityPrice(
         }
     }
 }
-
-
 
 @Composable
 fun NameColumn(
@@ -517,79 +521,90 @@ fun NameColumn(
                 val article = filteredAndSortedArticles.getOrNull(articleIndex)
 
                 article?.let {
-                    val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
-                    var imageExist by remember { mutableStateOf(false) }
+                    val isZeroQuantityOrPrice =
+                        article.quantityAcheteBG.toDouble() == 0.0 || article.newPrixAchatBG == 0.0
 
-                    val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
-                    val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
-                    val textColor = if (isNewArticle) Color.White else Color.White
+                    if (!isZeroQuantityOrPrice) {
+                        val relatedArticle = articlesBaseDonne.find { baseDonne -> baseDonne.idArticle.toLong() == article.idArticleBG }
+                        var imageExist by remember { mutableStateOf(false) }
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
-                            .clickable { onArticleClick(article) }
-                            .border(BorderStroke(1.dp, Color.Gray))
-                            .background(cardColor)
-                            .drawWithContent {
-                                drawContent()
-                                // Blue dashed line at the top
-                                drawDashedLine(
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, 0f),
-                                    color = Color.Blue,
-                                    strokeWidth = 2f
-                                )
-                                // Red dotted line at the bottom
-                                drawDottedLine(
-                                    start = Offset(0f, size.height),
-                                    end = Offset(size.width, size.height),
-                                    color = Color.Red,
-                                    strokeWidth = 2f
-                                )
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
+                        val isNewArticle = article.nomArticleBG.contains("New", ignoreCase = true)
+                        val cardColor = if (isNewArticle) Color.Yellow.copy(alpha = 0.3f) else Color.Transparent
+                        val textColor = if (isNewArticle) Color.White else Color.White
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
+                                .clickable { onArticleClick(article) }
+                                .border(BorderStroke(1.dp, Color.Gray))
+                                .background(cardColor)
+                                .drawWithContent {
+                                    drawContent()
+                                    // Blue dashed line at the top
+                                    drawDashedLine(
+                                        start = Offset(0f, 0f),
+                                        end = Offset(size.width, 0f),
+                                        color = Color.Blue,
+                                        strokeWidth = 2f
+                                    )
+                                    // Red dotted line at the bottom
+                                    drawDottedLine(
+                                        start = Offset(0f, size.height),
+                                        end = Offset(size.width, size.height),
+                                        color = Color.Red,
+                                        strokeWidth = 2f
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            // Image Card (30% width)
-                            Box(
-                                modifier = Modifier
-                                    .weight(0.3f)
-                                    .aspectRatio(1f)
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                ImageArticles(
-                                    article = article,
-                                    onImageExist = { imageExist = true },
-                                    onImageNonexist = { imageExist = false }
-                                )
-                            }
+                                // Image Card (30% width)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(0.3f)
+                                        .aspectRatio(1f)
+                                ) {
+                                    ImageArticles(
+                                        article = article,
+                                        onImageExist = { imageExist = true },
+                                        onImageNonexist = { imageExist = false }
+                                    )
+                                }
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
 
-                            // Text Card (70% width)
-                            Box(
-                                modifier = Modifier
-                                    .weight(0.7f)
-                                    .fillMaxHeight(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                AutoResizedTextDI(
-                                    text = "${if (!imageExist) article.nomArticleBG else ""} ${relatedArticle?.nomArab ?: ""}",
-                                    color = textColor,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                // Text Card (70% width)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(0.7f)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AutoResizedTextDI(
+                                        text = "${if (!imageExist) article.nomArticleBG else ""} ${relatedArticle?.nomArab ?: ""}",
+                                        color = textColor,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         }
+                    } else {
+                        // If isZeroQuantityOrPrice is true, we don't display anything
+                        Spacer(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
+                        )
                     }
                 }
             }
         }
     }
 }
-
 private fun DrawScope.drawDashedLine(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
     val pathLength = (end - start).getDistance()
     val dashLength = 15f
