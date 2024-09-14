@@ -43,9 +43,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -394,7 +396,8 @@ fun Displayer(
             else -> {}
         }
     }
-}@Composable
+}
+@Composable
 fun QuantityPrice(
     modifier: Modifier = Modifier,
     imageIndex: Int,
@@ -431,15 +434,30 @@ fun QuantityPrice(
 
                     val cardColor = if (isZeroQuantityOrPrice) Color.Transparent else Color.Transparent
                     val textColor = if (isZeroQuantityOrPrice) Color.White else Color.White
-                    val borderColor = if (isZeroQuantityOrPrice) Color.White else Color.White
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
                             .clickable { onArticleClick(article) }
-                            .border(BorderStroke(1.dp, borderColor))
-                            .background(cardColor),
+                            .background(cardColor)
+                            .drawWithContent {
+                                drawContent()
+                                // Blue dashed line at the top
+                                drawDashedLine(
+                                    start = Offset(0f, 0f),
+                                    end = Offset(size.width, 0f),
+                                    color = Color.Blue,
+                                    strokeWidth = 2f
+                                )
+                                // Red dotted line at the bottom
+                                drawDottedLine(
+                                    start = Offset(0f, size.height),
+                                    end = Offset(size.width, size.height),
+                                    color = Color.Red,
+                                    strokeWidth = 2f
+                                )
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         if (!isZeroQuantityOrPrice) {
@@ -464,6 +482,9 @@ fun QuantityPrice(
         }
     }
 }
+
+
+
 @Composable
 fun NameColumn(
     modifier: Modifier = Modifier,
@@ -509,7 +530,24 @@ fun NameColumn(
                             .height(heightOfImageAndRelated / sectionsDonsChaqueImage)
                             .clickable { onArticleClick(article) }
                             .border(BorderStroke(1.dp, Color.Gray))
-                            .background(cardColor),
+                            .background(cardColor)
+                            .drawWithContent {
+                                drawContent()
+                                // Blue dashed line at the top
+                                drawDashedLine(
+                                    start = Offset(0f, 0f),
+                                    end = Offset(size.width, 0f),
+                                    color = Color.Blue,
+                                    strokeWidth = 2f
+                                )
+                                // Red dotted line at the bottom
+                                drawDottedLine(
+                                    start = Offset(0f, size.height),
+                                    end = Offset(size.width, size.height),
+                                    color = Color.Red,
+                                    strokeWidth = 2f
+                                )
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -552,6 +590,47 @@ fun NameColumn(
     }
 }
 
+private fun DrawScope.drawDashedLine(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
+    val pathLength = (end - start).getDistance()
+    val dashLength = 15f
+    val gapLength = 10f
+    val intervals = pathLength / (dashLength + gapLength)
+
+    for (i in 0 until intervals.toInt()) {
+        val startX = start.x + i * (dashLength + gapLength)
+        val startY = start.y
+        val endX = (startX + dashLength).coerceAtMost(end.x)
+        val endY = startY
+
+        drawLine(
+            color = color,
+            start = Offset(startX, startY),
+            end = Offset(endX, endY),
+            strokeWidth = strokeWidth
+        )
+    }
+}
+
+private fun DrawScope.drawDottedLine(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
+    val pathLength = (end - start).getDistance()
+    val dotLength = 5f
+    val gapLength = 5f
+    val intervals = pathLength / (dotLength + gapLength)
+
+    for (i in 0 until intervals.toInt()) {
+        val startX = start.x + i * (dotLength + gapLength)
+        val startY = start.y
+        val endX = (startX + dotLength).coerceAtMost(end.x)
+        val endY = startY
+
+        drawLine(
+            color = color,
+            start = Offset(startX, startY),
+            end = Offset(endX, endY),
+            strokeWidth = strokeWidth
+        )
+    }
+}
 @Composable
 fun ImageArticles(
     article: EntreBonsGrosTabele,
