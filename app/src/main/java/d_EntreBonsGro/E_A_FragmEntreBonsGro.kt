@@ -1,8 +1,14 @@
 package d_EntreBonsGro
 
 import a_RoomDB.BaseDonne
+import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
+import android.speech.RecognizerIntent
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,21 +16,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -36,11 +43,9 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -57,11 +62,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import b_Edite_Base_Donne.ArticleDao
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
@@ -78,6 +87,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +113,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showMissingArticles by remember { mutableStateOf(false) }
     var totalMissingArticles by remember { mutableStateOf(0) }
     var addedArticlesCount by remember { mutableStateOf(0) }
+    var showTotaleBar by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val database = Firebase.database
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
@@ -199,7 +210,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         ) { modeVerificationAvantUpdateBD = !modeVerificationAvantUpdateBD },
         Triple(
             Icons.Default.Edit,
-            "Flotin1"
+            "Toggle Image Height"
         ) { heightOfImageAndRelatedDialogEditer = !heightOfImageAndRelatedDialogEditer },
         Triple(
             if (showOutline) Icons.Default.Close else Icons.Default.Keyboard,
@@ -252,7 +263,6 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     IconButton(onClick = { showSupplierDialog = true },
                         modifier = Modifier.weight(0.1f)) {
                         Icon(
@@ -271,122 +281,100 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
             }
         },
         floatingActionButton = {
-            FloatingActionButtonsSection(buttons = floatingActionButtons)
-        },
-        floatingActionButtonPosition = FabPosition.Start // or End, depending on your preference
-
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-
-            OutlineQuichangeLeTotaleProvisoire(
-                founisseurIdNowIs,
-                articlesEntreBonsGrosTabele,
-                founisseurNowIs,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd) // Or any other position you prefer
-            )
-
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-
-            if (false) {
-                OutlineInput(
-                    inputText = inputText,
-                    onInputChange = { newValue ->
-                        inputText = newValue
-                        if (newValue.endsWith("تغيير")) {
-                            val newArabName = newValue.removeSuffix("تغيير").trim()
-                            coroutineScope.launch {
-                                vidOfLastQuantityInputted?.let { vid ->
-                                    // Find the article in articlesEntreBonsGrosTabele by vid
-                                    val article =
-                                        articlesEntreBonsGrosTabele.find { it.vidBG == vid }
-                                    article?.let { foundArticle ->
-                                        // Use the idArticleBG to update the corresponding entry in baseDonneRef
-                                        baseDonneRef.child(foundArticle.idArticleBG.toString())
-                                            .child("nomArab").setValue(newArabName)
-                                    }
-                                }
-                            }
-                            inputText = ""
-                        } else if (newValue.contains("+")) {
-                            val newVid = processInputAndInsertData(
-                                newValue,
-                                articlesEntreBonsGrosTabele,
-                                articlesRef,
-                                founisseurNowIs,
-                                articlesBaseDonne,
-                                suppliersList
-                            )
-                            if (newVid != null) {
-                                inputText = ""
-                                nowItsNameInputeTime = true
-                                vidOfLastQuantityInputted = newVid
-                            }
-                        }
-                    },
-                    nowItsNameInputeTime = nowItsNameInputeTime,
-                    onNameInputComplete = { nowItsNameInputeTime = false },
-                    articlesList = articlesEntreBonsGrosTabele,
-                    suggestionsList = suggestionsList,
-                    vidOfLastQuantityInputted = vidOfLastQuantityInputted,
-                    articlesRef = articlesRef,
-                    articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                    articlesBaseDonne = articlesBaseDonne,
-                    editionPassedMode = editionPassedMode,
-                    modifier = Modifier.fillMaxWidth(),
-                    coroutineScope = coroutineScope,
-                )
-            }
-            when {
-                showFullImage -> {
-                    DessinableImage(
-                        modifier = Modifier.weight(1f),
-                        articlesEntreBonsGrosTabele =articlesEntreBonsGrosTabele,
-                        articlesArticlesAcheteModele=articlesArticlesAcheteModele,
-                        articlesBaseDonne=articlesBaseDonne,
-                        founisseurIdNowIs =founisseurIdNowIs,
-                        soquetteBonNowIs = founisseurNowIs,
-                        showDiviseurDesSections=showDivider,
-                        articlesRef = articlesRef,
-                        baseDonneRef=baseDonneRef,
-                        suggestionsList=suggestionsList,
-                        articleDao=articleDao,
-                        coroutineScope=coroutineScope,
-                        showOutline=showOutline,
-                        showDialogeNbrIMGs=showDialogeNbrIMGs,
-                        onDissmiss = { showDialogeNbrIMGs = false },
-                        heightOfImageAndRelatedDialogEditer=heightOfImageAndRelatedDialogEditer,
-                        supplierList = suppliersList,
-                        modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD,
-
+            Column {
+                FloatingActionButton(
+                    onClick = { showTotaleBar = !showTotaleBar }
+                ) {
+                    Icon(
+                        imageVector = if (showTotaleBar) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                        contentDescription = if (showTotaleBar) "Hide Totale Bar" else "Show Totale Bar"
                     )
                 }
-                showSplitView -> {
-                    Column(modifier = Modifier.weight(1f)) {
+                Spacer(modifier = Modifier.height(8.dp))
+                FloatingActionButtonsSection(buttons = floatingActionButtons)
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+            ) {
+                if (showTotaleBar) {
+                    OutlineQuichangeLeTotaleProvisoire(
+                        founisseurIdNowIs = founisseurIdNowIs,
+                        articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                        founisseurNowIs = founisseurNowIs,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                when {
+                    showFullImage -> {
                         DessinableImage(
                             modifier = Modifier.weight(1f),
-                            articlesEntreBonsGrosTabele =articlesEntreBonsGrosTabele,
-                            articlesArticlesAcheteModele=articlesArticlesAcheteModele,
-                            articlesBaseDonne=articlesBaseDonne,
-                            founisseurIdNowIs =founisseurIdNowIs,
+                            articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                            articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                            articlesBaseDonne = articlesBaseDonne,
+                            founisseurIdNowIs = founisseurIdNowIs,
                             soquetteBonNowIs = founisseurNowIs,
-                            showDiviseurDesSections=showDivider,
+                            showDiviseurDesSections = showDivider,
                             articlesRef = articlesRef,
-                            baseDonneRef=baseDonneRef,
-                            suggestionsList=suggestionsList,
-                            articleDao=articleDao,
-                            coroutineScope=coroutineScope,
+                            baseDonneRef = baseDonneRef,
+                            suggestionsList = suggestionsList,
+                            articleDao = articleDao,
+                            coroutineScope = coroutineScope,
                             showOutline = showOutline,
                             showDialogeNbrIMGs = showDialogeNbrIMGs,
                             onDissmiss = { showDialogeNbrIMGs = false },
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
-                             supplierList = suppliersList,
-                            modeVerificationAvantUpdateBD=modeVerificationAvantUpdateBD
+                            supplierList = suppliersList,
+                            modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD,
                         )
+                    }
+                    showSplitView -> {
+                        Column(modifier = Modifier.weight(1f)) {
+                            DessinableImage(
+                                modifier = Modifier.weight(1f),
+                                articlesEntreBonsGrosTabele = articlesEntreBonsGrosTabele,
+                                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                                articlesBaseDonne = articlesBaseDonne,
+                                founisseurIdNowIs = founisseurIdNowIs,
+                                soquetteBonNowIs = founisseurNowIs,
+                                showDiviseurDesSections = showDivider,
+                                articlesRef = articlesRef,
+                                baseDonneRef = baseDonneRef,
+                                suggestionsList = suggestionsList,
+                                articleDao = articleDao,
+                                coroutineScope = coroutineScope,
+                                showOutline = showOutline,
+                                showDialogeNbrIMGs = showDialogeNbrIMGs,
+                                onDissmiss = { showDialogeNbrIMGs = false },
+                                heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
+                                supplierList = suppliersList,
+                                modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD
+                            )
+                            AfficheEntreBonsGro(
+                                articlesEntreBonsGro = articlesEntreBonsGrosTabele,
+                                onDeleteArticle = { article ->
+                                    coroutineScope.launch {
+                                        articlesRef.child(article.vidBG.toString()).removeValue()
+                                    }
+                                },
+                                articlesRef = articlesRef,
+                                articlesArticlesAcheteModele = articlesArticlesAcheteModele,
+                                modifier = Modifier.weight(1f),
+                                coroutineScope = coroutineScope,
+                                onDeleteFromFirestore = {},
+                                suppliersList = suppliersList,
+                                onSupplierChanged = ::handleSupplierChange,
+                                suppliersRef = suppliersRef,
+                            )
+                        }
+                    }
+                    else -> {
                         AfficheEntreBonsGro(
                             articlesEntreBonsGro = articlesEntreBonsGrosTabele,
                             onDeleteArticle = { article ->
@@ -400,36 +388,14 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             coroutineScope = coroutineScope,
                             onDeleteFromFirestore = {},
                             suppliersList = suppliersList,
-                            onSupplierChanged = ::handleSupplierChange ,
-                            suppliersRef=suppliersRef   ,
+                            onSupplierChanged = ::handleSupplierChange,
+                            suppliersRef = suppliersRef
                         )
                     }
                 }
-                else -> {
-                    AfficheEntreBonsGro(
-                        articlesEntreBonsGro = articlesEntreBonsGrosTabele,
-                        onDeleteArticle = { article ->
-                            coroutineScope.launch {
-                                articlesRef.child(article.vidBG.toString()).removeValue()
-                            }
-                        },
-                        articlesRef = articlesRef,
-                        articlesArticlesAcheteModele = articlesArticlesAcheteModele,
-                        modifier = Modifier.weight(1f),
-                        coroutineScope = coroutineScope,
-                        onDeleteFromFirestore = {},
-                        suppliersList = suppliersList,
-                        onSupplierChanged = ::handleSupplierChange ,
-                        suppliersRef=suppliersRef
-                    )
-                }
             }
         }
-
-        }
-
     }
-
     ActionsDialog(
         showDialog = showActionsDialog,
         onDismiss = { showActionsDialog = false },
@@ -498,39 +464,48 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
 }
 
 @Composable
-fun FloatingActionButtonsSection(//TODO fait que je peut drage sur les elements
+fun FloatingActionButtonsSection(
     buttons: List<Triple<ImageVector, String, () -> Unit>>
 ) {
     var showFloatingButtons by remember { mutableStateOf(true) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
 
-    Column {
-        // Toggle button to show/hide other floating action buttons
-        FloatingActionButton(
-            onClick = { showFloatingButtons = !showFloatingButtons }
-        ) {
-            Icon(
-                imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (showFloatingButtons) {
-            buttons.forEach { (icon, contentDescription, onClick) ->
-                FloatingActionButton(onClick = onClick) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = contentDescription
-                    )
+    Box(
+        modifier = Modifier
+            .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    offset += dragAmount
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+    ) {
+        Column {
+            FloatingActionButton(
+                onClick = { showFloatingButtons = !showFloatingButtons }
+            ) {
+                Icon(
+                    imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (showFloatingButtons) {
+                buttons.forEach { (icon, contentDescription, onClick) ->
+                    FloatingActionButton(onClick = onClick) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = contentDescription
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
     }
 }
-
-
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun OutlineQuichangeLeTotaleProvisoire(
@@ -569,33 +544,77 @@ private fun OutlineQuichangeLeTotaleProvisoire(
         .filter { founisseurNowIs == null || it.supplierIdBG.toLong() == founisseurIdNowIs }
         .sumOf { it.subTotaleBG }
 
-    OutlinedTextField(
-        value = totaleProvisoire,
-        onValueChange = { newVal ->
-            totaleProvisoire = newVal
+    var lastLaunchTime by remember { mutableStateOf(0L) }
+    val context = LocalContext.current
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            totaleProvisoire = spokenText
             if (founisseurIdNowIs != null) {
                 updateSupplierCredit(
-                    supplierId= founisseurIdNowIs,
-                    supplierTotal=  newVal.toDouble(),
-                    supplierPayment= 0.0,
-                    ancienCredit= newVal.toDouble()    ,
+                    supplierId = founisseurIdNowIs,
+                    supplierTotal = spokenText.toDoubleOrNull() ?: 0.0,
+                    supplierPayment = 0.0,
+                    ancienCredit = spokenText.toDoubleOrNull() ?: 0.0,
                     fromeOutlineSupInput = true
                 )
             }
-        },
-        label = {
-            Text(
-                (ancienTotaleDepuitFireStore.minus(totalSumNow)).toString()
-            )
-        },
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = Color.Red,
-            unfocusedBorderColor = Color.Gray
-        ),
-        modifier = modifier
-    )
-}
+        }
+    }
 
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = totaleProvisoire,
+            onValueChange = { newVal ->
+                totaleProvisoire = newVal
+                if (founisseurIdNowIs != null) {
+                    updateSupplierCredit(
+                        supplierId = founisseurIdNowIs,
+                        supplierTotal = newVal.toDoubleOrNull() ?: 0.0,
+                        supplierPayment = 0.0,
+                        ancienCredit = newVal.toDoubleOrNull() ?: 0.0,
+                        fromeOutlineSupInput = true
+                    )
+                }
+            },
+            label = {
+                Text(
+                    (ancienTotaleDepuitFireStore.minus(totalSumNow)).toString()
+                )
+            },
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color.Red,
+                unfocusedBorderColor = Color.Gray
+            ),
+            modifier = Modifier.weight(1f)
+        )
+
+        IconButton(
+            onClick = {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastLaunchTime > 1000) {
+                    lastLaunchTime = currentTime
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                    }
+                    speechRecognizerLauncher.launch(intent)
+                }
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Mic,
+                contentDescription = "Lancer la reconnaissance vocale"
+            )
+        }
+    }
+}
 
 
 @Composable
