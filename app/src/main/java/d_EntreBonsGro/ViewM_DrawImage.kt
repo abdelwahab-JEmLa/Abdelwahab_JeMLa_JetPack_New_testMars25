@@ -52,22 +52,21 @@ fun reconnaisanceVocaleLencer(
     var vidDernierArticleouOnaEntreQuantity by remember { mutableStateOf<Long?>(null) }
 
     fun processVoiceInput(input: String) {
-        if (input.firstOrNull()?.isDigit() == true || input.contains("+") || input.startsWith("-")) {
+        if (input.firstOrNull()?.isDigit() == true || input.contains("+") ) {
+            val parts = input.split("+", limit = 2)
+            val extractidArticleInSectionsOfImageBGFromInput =( parts.firstOrNull()?.trim() ?: "").padStart(3, '0')
+            val extractInputFromVoice = parts.getOrNull(1)?.trim() ?: input.trim()
+
             val selectedArticle =
                 if (itsImageClick) {
-                    val lastIndex = articlesEntreBonsGrosTabele.indexOfLast { it.quantityAcheteBG != 0 }
-                    if (lastIndex != -1 && lastIndex + 1 < articlesEntreBonsGrosTabele.size) {
-                        articlesEntreBonsGrosTabele[lastIndex + 1]
-                    } else {
-                        null
-                    }
+                    articlesEntreBonsGrosTabele.firstOrNull { it.idArticleInSectionsOfImageBG == extractidArticleInSectionsOfImageBGFromInput }
                 } else selectedArticleStart
 
             if (selectedArticle != null) {
                 vidDernierArticleouOnaEntreQuantity = selectedArticle.vidBG
             }
             selectedArticle?.let {
-                updateQuantuPrixArticleDI(input, it, articlesRef, coroutineScope)
+                updateQuantuPrixArticleDI(extractInputFromVoice, it, articlesRef, coroutineScope)
             }
         } else if (input.contains("تغيير")) {
             val selectedArticle =
