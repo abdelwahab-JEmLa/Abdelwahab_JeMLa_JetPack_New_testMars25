@@ -192,18 +192,24 @@ fun createNewArticle(
     val database = FirebaseDatabase.getInstance()
     val articlesRef = database.getReference("ArticlesBonsGrosTabele")
 
-    repeat(articlesToCreate) {
-        val newVid = (articlesEntreBonsGrosTabele.maxOfOrNull { it.vidBG } ?: 0) + it + 1
+    // Find the maximum idArticleInSectionsOfImageBG for the current supplier
+    val maxIdPourCeSupp = articlesClient
+        .filter { it.supplierIdBG == founisseurIdNowIs }
+        .maxOfOrNull { it.idArticleInSectionsOfImageBG.toIntOrNull() ?: 0 } ?: 0
+
+    repeat(articlesToCreate) { index ->
+        val newVid = (articlesEntreBonsGrosTabele.maxOfOrNull { it.vidBG } ?: 0) + index + 1
         val currentDate = LocalDate.now().toString()
-        val maxIdDivider = articlesClient.maxOfOrNull { it.idArticleInSectionsOfImageBG.split("-").lastOrNull()?.toIntOrNull() ?: 0 } ?: 0
-        val newIdDivider = "$founisseurIdNowIs-$currentDate-${maxIdDivider + it + 1}"
+
+        // Increment the ID for each new article
+        val newIdPourCeSupp = (maxIdPourCeSupp + index + 1).toString().padStart(3, '0')
 
         // Find the supplier name from the supplierList based on founisseurIdNowIs
         val supplierName = supplierList.firstOrNull { it.idSupplierSu == founisseurIdNowIs }?.nomSupplierSu ?: ""
 
         val newArticle = EntreBonsGrosTabele(
             vidBG = newVid,
-            idArticleInSectionsOfImageBG = newIdDivider,
+            idArticleInSectionsOfImageBG = newIdPourCeSupp,
             idArticleBG = 0,
             nomArticleBG = "",
             ancienPrixBG = 0.0,
@@ -213,7 +219,7 @@ fun createNewArticle(
             subTotaleBG = 0.0,
             grossisstBonN = 0,
             supplierIdBG = founisseurIdNowIs ?: 0,
-            supplierNameBG = supplierName, // Assign the found supplier name
+            supplierNameBG = supplierName,
             uniterCLePlusUtilise = false,
             erreurCommentaireBG = "",
             passeToEndStateBG = true,
@@ -222,7 +228,7 @@ fun createNewArticle(
 
         articlesRef.child(newVid.toString()).setValue(newArticle)
             .addOnSuccessListener {
-                println("New article inserted successfully: $newVid")
+                println("New article inserted successfully: $newVid with ID: $newIdPourCeSupp")
             }
             .addOnFailureListener { e ->
                 println("Error inserting new article: ${e.message}")

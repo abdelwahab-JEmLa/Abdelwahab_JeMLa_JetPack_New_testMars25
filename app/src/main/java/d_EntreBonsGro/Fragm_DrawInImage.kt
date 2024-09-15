@@ -27,12 +27,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -466,22 +463,14 @@ fun QuantityPrice(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (!isZeroQuantityOrPrice) {
-                            // Afficher le texte quand quantité et prix ne sont pas zéro
+                       val textOf =if (!isZeroQuantityOrPrice) {"${article.quantityAcheteBG} X ${article.newPrixAchatBG}"
+                        } else {article.idArticleInSectionsOfImageBG}
                             AutoResizedTextDI(
-                                text = "${article.quantityAcheteBG} X ${article.newPrixAchatBG}",
+                                text = textOf,
                                 color = textColor,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                        } else {
-                            // Afficher une icône ou tout autre chose
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "Zero quantity or price",
-                                tint = Color.Red,
-                            )
-                        }
                     }
                 }
             }
