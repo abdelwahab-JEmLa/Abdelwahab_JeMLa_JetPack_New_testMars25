@@ -24,7 +24,7 @@ fun createEmptyArticle(nomClient: String) {
             val emptyArticle = ArticlesAcheteModele(
                 vid = maxVidPlus,
                 verifieState=true,
-                idArticle = newId + 2000,
+                idArticle = newId + 4000,
                 nomArticleFinale = "New Empty Article",
                 nomClient = nomClient,
                 totalQuantity = 1,

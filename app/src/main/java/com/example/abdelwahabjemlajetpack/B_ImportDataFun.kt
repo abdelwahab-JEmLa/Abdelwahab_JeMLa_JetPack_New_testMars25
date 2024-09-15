@@ -234,6 +234,15 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
 
         val totalItems = dataMap.size
         var processedItems = 0
+        var maxIdArticle = 0
+
+        // Find the maximum idArticle
+        dataMap.forEach { (_, value) ->
+            val idArticle = (value["idarticle_c"] as? Long) ?: 0
+            if (idArticle > maxIdArticle) {
+                maxIdArticle = idArticle.toInt()
+            }
+        }
 
         dataMap.forEach { (_, value) ->
             val idArticle = (value["idarticle_c"] as? Long) ?: 0
@@ -244,14 +253,20 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
             val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient  }
             val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
 
+            val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
+                    value["nomarticlefinale_c_2"] as? String == "" &&
+                    value["nomarticlefinale_c_3"] as? String == "" &&
+                    value["nomarticlefinale_c_4"] as? String == ""
+           val generatedID=  if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
+
             // Filter entries where totalquantity is empty or null
             val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
             if (totalQuantity != null && totalQuantity > 0) {
                 val article = baseDonne?.let {
                     ArticlesAcheteModele(
                         vid = (value["id"] as? Long) ?: 0,
-                        idArticle = idArticle,
-                        nomArticleFinale = value["nomarticlefinale_c"] as? String ?: "",
+                        idArticle = generatedID.toLong(),
+                        nomArticleFinale = if (itsNewArticleFromeBacKE) (value["nomarticlefinale_c"] as? String)?.uppercase() ?: "" else value["nomarticlefinale_c"] as? String ?: "",
                         prixAchat = it.monPrixAchat,
                         nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
                         clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
@@ -268,12 +283,9 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
                         totalQuantity = totalQuantity,
                         nonTrouveState = false,
                         verifieState = false,
-                        //Stats
                         typeEmballage = if (baseDonne.cartonState == "itsCarton"|| baseDonne.cartonState == "Carton") "Carton" else "Boit",
                         choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
-                        //baseDonne
                         monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
-                        //FireStore
                         monPrixVentFireStoreBM = monPrixVentFireStoreBM
                     ).apply {
                         monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
@@ -282,7 +294,6 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
                         monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
                         totalProfitFireStoreBM =  roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
 
-                        //FireBAse
                         monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
                         monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
                         totalProfitBM = roundToOneDecimal(totalQuantity*monBenificeBM)
