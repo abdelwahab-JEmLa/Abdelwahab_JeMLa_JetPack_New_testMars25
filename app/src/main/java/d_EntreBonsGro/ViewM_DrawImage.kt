@@ -71,12 +71,7 @@ fun reconnaisanceVocaleLencer(
         } else if (input.contains("تغيير")) {
             val selectedArticle =
                 if (itsImageClick) {
-                    val lastIndex = articlesEntreBonsGrosTabele.indexOfLast { it.quantityAcheteBG != 0 }
-                    if (lastIndex != -1 && lastIndex + 1 < articlesEntreBonsGrosTabele.size) {
-                        articlesEntreBonsGrosTabele[lastIndex + 1]
-                    } else {
-                        null
-                    }
+                    articlesEntreBonsGrosTabele.firstOrNull { it.vidBG == vidDernierArticleouOnaEntreQuantity }
                 } else selectedArticleStart
 
             // Extract the new Arabic name correctly
