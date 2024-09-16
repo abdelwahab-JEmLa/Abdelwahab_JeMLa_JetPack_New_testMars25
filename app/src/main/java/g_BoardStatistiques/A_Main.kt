@@ -97,7 +97,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                         )
                         StatisticItem(
                             label = "Total Credits Suppliers",
-                            value = stat.creditsSuppDemiLongTerm
+                            value = stat.totaleCreditsSuppliers
                         )
 
                     }
@@ -158,7 +158,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     private val _statistics = MutableStateFlow<List<Statistiques>>(emptyList())
     val statistics: StateFlow<List<Statistiques>> = _statistics.asStateFlow()
 
-    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    private val currentDate: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     val firestore = Firebase.firestore
 
     init {
@@ -182,11 +182,20 @@ class BoardStatistiquesStatViewModel : ViewModel() {
         _statistics.update { currentStats ->
             currentStats.map { stat ->
                 if (stat.date == currentDate) {
-                    stat.copy(totaleCreditsClients = stat.totaleCreditsClients - clientsPaymentActuelle)
+                    stat.copy(
+                        totaleCreditsClients = stat.totaleCreditsClients - clientsPaymentActuelle,
+                        totaleDonsLacaisse =stat.totaleDonsLacaisse + clientsPaymentActuelle
+                    )
+
                 } else {
                     stat
                 }
             }
+        }
+        // Update Firebase with the new statistic
+        viewModelScope.launch {
+            val updatedStat = _statistics.value.find { it.date == currentDate }
+            updatedStat?.let { updateFireBaseRef(it) }
         }
     }
 
@@ -230,11 +239,11 @@ class BoardStatistiquesStatViewModel : ViewModel() {
         // Update Firebase with the new statistic
         viewModelScope.launch {
             val updatedStat = _statistics.value.find { it.date == currentDate }
-            updatedStat?.let { updateFireBase(it) }
+            updatedStat?.let { updateFireBaseRef(it) }
         }
     }
 
-    private fun updateFireBase(stat: Statistiques) {
+    private fun updateFireBaseRef(stat: Statistiques) {
         viewModelScope.launch {
             G_StatistiquesRef.child(stat.date).setValue(stat)
         }
