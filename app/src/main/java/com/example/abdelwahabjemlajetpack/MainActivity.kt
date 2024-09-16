@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -163,15 +164,40 @@ fun MyApp(
                 NavigationBar {
                     items.forEach { screen ->
                         NavigationBarItem(
-                            icon = { Icon(screen.icon, contentDescription = null) },
-                            label = { Text(screen.title) },
+                            icon = {
+                                Icon(
+                                    screen.icon,
+                                    contentDescription = null,
+                                    tint = if (currentRoute == screen.route)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            label = {
+                                Text(
+                                    screen.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (currentRoute == screen.route)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
                             selected = currentRoute == screen.route,
                             onClick = {
                                 navController.navigate(screen.route) {
                                     popUpTo(navController.graph.startDestinationId)
                                     launchSingleTop = true
                                 }
-                            }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }
@@ -220,9 +246,12 @@ fun MyApp(
                 }
                 composable("PickerExample") { PickerExample() }
             }
+
+
         }
     }
 }
+
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object MainScreen : Screen("main_screen", "Home", Icons.Filled.Home)
@@ -255,27 +284,40 @@ fun MainScreen(
                 .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp)
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                item {
-                    MenuCard("Edit Base Screen", "A_Edite_Base_Screen", navController, Icons.Default.Edit)
-                }
-                item {
-                    MenuCard("Manage Bons Clients", "C_ManageBonsClients", navController, Icons.Default.List)
-                }
-                item {
-                    MenuCard("Entre Bons Gro", "FragmentEntreBonsGro", navController, Icons.Default.Add)
-                }
-                item {
-                    MenuCard("Credits", "FragmentCredits", navController, Icons.Default.MonetizationOn)
-                }
-                item {
-                    MenuCard("CreditsClients", "FragmentCreditsClients", navController, Icons.Default.People)
-                }
-                item {
-                    MenuCard("Picker Example", "PickerExample", navController, Icons.Default.DateRange)
+                Text(
+                    text = "My App",
+                    modifier = Modifier.padding(top = 16.dp, bottom = 16.dp),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    item {
+                        MenuCard("Edit Base Screen", "A_Edite_Base_Screen", navController, Icons.Default.Edit)
+                    }
+                    item {
+                        MenuCard("Manage Bons Clients", "C_ManageBonsClients", navController, Icons.Default.List)
+                    }
+                    item {
+                        MenuCard("Entre Bons Gro", "FragmentEntreBonsGro", navController, Icons.Default.Add)
+                    }
+                    item {
+                        MenuCard("Credits", "FragmentCredits", navController, Icons.Default.MonetizationOn)
+                    }
+                    item {
+                        MenuCard("CreditsClients", "FragmentCreditsClients", navController, Icons.Default.People)
+                    }
+                    item {
+                        MenuCard("Picker Example", "PickerExample", navController, Icons.Default.DateRange)
+                    }
                 }
             }
         }
