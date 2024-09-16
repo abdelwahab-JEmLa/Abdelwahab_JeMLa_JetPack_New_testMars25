@@ -573,7 +573,7 @@ fun NameColumn(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     AutoResizedTextDI(
-                                        text = "${if (!imageExist) article.nomArticleBG else ""} ${relatedArticle?.nomArab ?: ""}",
+                                        text = "${if (!imageExist||article.idArticleBG>2000) article.nomArticleBG else ""} ${if (article.idArticleBG<2000) relatedArticle?.nomArab ?: "" else ""}",
                                         color = textColor,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth()
@@ -667,14 +667,6 @@ fun ImageArticles(
                 }
                 else -> {
                     onImageNonexist()
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.LightGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No Image")
-                    }
                 }
             }
         }

@@ -267,7 +267,7 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
                         vid = (value["id"] as? Long) ?: 0,
                         idArticle = generatedID.toLong(),
                         nomArticleFinale = if (itsNewArticleFromeBacKE) (value["nomarticlefinale_c"] as? String)?.uppercase() ?: "" else value["nomarticlefinale_c"] as? String ?: "",
-                        prixAchat = it.monPrixAchat,
+                        prixAchat = if (itsNewArticleFromeBacKE) 0.0 else it.monPrixAchat,
                         nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
                         clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
                         nomClient = nomClient,

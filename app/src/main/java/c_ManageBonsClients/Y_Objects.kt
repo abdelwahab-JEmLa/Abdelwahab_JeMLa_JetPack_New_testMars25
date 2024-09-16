@@ -30,7 +30,6 @@ fun LoadImageFromPathBC(imagePath: String, modifier: Modifier = Modifier) {
         else -> null
     }
 
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -83,7 +82,7 @@ fun calculateClientProfit(articles: List<ArticlesAcheteModele>, clientName: Stri
             val monPrixVentDetermineBM = if (article.choisirePrixDepuitFireStoreOuBaseBM != "CardFireStor")
                 article.monPrixVentBM else article.monPrixVentFireStoreBM
             val prixVente = round(monPrixVentDetermineBM * 10) / 10
-            val prixAchatC = if (article.prixAchat == 0.0) prixVente else article.prixAchat
+            val prixAchatC = if (article.prixAchat == 0.0||(article.monPrixVentBM == 0.0 && article.monPrixVentFireStoreBM == 0.0)||(article.monBenificeFireStoreBM < 0.0 )) prixVente else article.prixAchat
             val profit = prixVente - prixAchatC
             profit * article.totalQuantity
         }
