@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -144,9 +142,8 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     }
 }
 
-@Entity
 data class Statistiques(
-    @PrimaryKey val vid: Int = 0,
+    val vid: Int = 0,
     var date: String = "",
     var totaleCredits: Double = 0.0,
 ) {
