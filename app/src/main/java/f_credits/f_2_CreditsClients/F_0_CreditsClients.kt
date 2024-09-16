@@ -12,9 +12,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.AlertDialog
@@ -23,6 +27,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,19 +65,24 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FragmentCreditsClients(viewModel: CreditsClientsViewModel = viewModel()) {
+fun FragmentCreditsClients(
+    viewModel: CreditsClientsViewModel = viewModel(),
+    onToggleNavBar: () -> Unit
+) {
     val clients by viewModel.clientsList.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var showMenuDialog by remember { mutableStateOf(false) }
+    var showFloatingButtons by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -87,7 +98,47 @@ fun FragmentCreditsClients(viewModel: CreditsClientsViewModel = viewModel()) {
                     }
                 }
             )
-        }
+        },
+        floatingActionButton = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                if (showFloatingButtons) {
+                    FloatingActionButton(
+                        onClick = { onToggleNavBar() },
+                        containerColor = Color.Red
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Toggle Navigation Bar",
+                            tint = Color.White
+                        )
+                    }
+                    FloatingActionButton(
+                        onClick = { viewModel.toggleFilter() },
+                        containerColor = Color.Red
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Toggle Filter",
+                            tint = Color.White
+                        )
+                    }
+                }
+                FloatingActionButton(
+                    onClick = { showFloatingButtons = !showFloatingButtons },
+                    containerColor = Color.Red
+                ) {
+                    Icon(
+                        imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons",
+                        tint = Color.White
+                    )
+                }
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -132,7 +183,6 @@ fun FragmentCreditsClients(viewModel: CreditsClientsViewModel = viewModel()) {
         )
     }
 }
-
 @Composable
 fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
@@ -359,7 +409,15 @@ fun Modifier.drawTextWithOutlineClients(outlineColor: Color) = this.drawBehind {
 }
 class CreditsClientsViewModel : ViewModel() {
     private val _clientsList = MutableStateFlow<List<ClientsTabelle>>(emptyList())
-    val clientsList: StateFlow<List<ClientsTabelle>> = _clientsList.asStateFlow()
+    private val _showOnlyWithCredit = MutableStateFlow(true) // Changed to true by default
+
+    val clientsList: StateFlow<List<ClientsTabelle>> = combine(_clientsList, _showOnlyWithCredit) { clients, onlyWithCredit ->
+        if (onlyWithCredit) {
+            clients.filter { it.currentCreditBalance != 0.0 }
+        } else {
+            clients
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val database = FirebaseDatabase.getInstance()
     private val clientsRef = database.getReference("G_Clients")
@@ -408,6 +466,7 @@ class CreditsClientsViewModel : ViewModel() {
     fun updateClients(updatedClients: ClientsTabelle) {
         clientsRef.child(updatedClients.idClientsSu.toString()).setValue(updatedClients)
     }
+
     fun updateClientsBon(clientsId: Long, bonNumber: String) {
         clientsRef.child(clientsId.toString()).child("bonDuClientsSu").setValue(bonNumber)
     }
@@ -424,13 +483,13 @@ class CreditsClientsViewModel : ViewModel() {
         clientsRef.child(newClients.idClientsSu.toString()).setValue(newClients)
     }
 
-
     private fun generateRandomTropicalColor(): String {
         val hue = Random.nextFloat() * 360
         val saturation = 0.7f + Random.nextFloat() * 0.3f  // 70-100% saturation
         val value = 0.5f + Random.nextFloat() * 0.3f  // 50-80% value (darker colors)
         return "#%06X".format(0xFFFFFF and android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
     }
+
     fun deleteClients(clientsId: Long) {
         clientsRef.child(clientsId.toString()).removeValue()
     }
@@ -441,6 +500,7 @@ class CreditsClientsViewModel : ViewModel() {
         }
     }
 
+    fun toggleFilter() {
+        _showOnlyWithCredit.value = !_showOnlyWithCredit.value
+    }
 }
-
-
