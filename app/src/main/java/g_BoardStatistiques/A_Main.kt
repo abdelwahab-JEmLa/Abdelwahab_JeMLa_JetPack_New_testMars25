@@ -131,7 +131,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
 
                         StatisticItem(
                             label = "Total Credits Long Terme",
-                            value = (stat.totaleCreditsClients*-1)  ,
+                            value = (stat.creditsSuppDemiLongTerm*-1)  ,
                             onValueChange = { viewModel.sendFromShortToLongSuppCredits(it) }
 
                         )
