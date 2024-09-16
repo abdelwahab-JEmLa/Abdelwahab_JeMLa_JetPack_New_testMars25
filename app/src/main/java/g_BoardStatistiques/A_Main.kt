@@ -67,12 +67,14 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            Row {
             Text(
                 "Board Statistics",
                 style = MaterialTheme.typography.titleSmall,
                 color = Color.White,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+
             )
+
 
             IconButton(
                 onClick = {
@@ -82,7 +84,6 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                         isUpdating = false
                     }
                 },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
                 enabled = !isUpdating
             ) {
                 if (isUpdating) {
@@ -98,11 +99,15 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                     )
                 }
             }
+
+              }
             statistics.lastOrNull()?.let { stat ->
                 Text("Date: ${stat.date}", color = Color.White)
 
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF009688)) // Turquoise card
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -118,31 +123,43 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                         )
                         StatisticItem(
                             label = "Total Credits Clients",
-                            value = stat.totaleCreditsClients,
+                            value = (stat.totaleCreditsClients*-1),
                             onValueChange = { viewModel.updateTotaleProduitBlocke(it) },
                             )
                         StatisticItem(
                             label = "Total Credits Long Terme",
-                            value = stat.creditsSuppDemiLongTerm  ,
+                            value = (stat.totaleCreditsClients*-1)  ,
                             onValueChange = { viewModel.sendFromShortToLongSuppCredits(it) }
 
                         )
                         StatisticItem(
                             label = "Total Credits Suppliers",
-                            value = stat.totaleCreditsSuppliers
+                            value = (stat.totaleCreditsSuppliers*-1)
                         )
 
                     }
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
-                val calculeToTale = (stat.totaleCreditsSuppliers*-1)
-                + (stat.totaleCreditsClients*-1)
-                + stat.totaleProduitBlocke
-                + stat.totaleDonsLacaisse
+                val calculeToTale = (stat.totaleCreditsSuppliers*-1) -
+
+                        ((stat.totaleCreditsClients*-1) +
+                            stat.totaleProduitBlocke  +
+                            stat.totaleDonsLacaisse)
 
                 Text(
-                    "الفائدة الكلية: $${String.format("%.2f",calculeToTale )}",
+                    "الفائدة الكلية للقادم: $${String.format("%.2f",calculeToTale )}",
+                    color = Color.White
+                )
+                val calculeToTaleLong = ((stat.totaleCreditsSuppliers*-1) -
+                        (stat.creditsSuppDemiLongTerm*-1)) +
+
+                        ((stat.totaleCreditsClients*-1) +
+                        stat.totaleProduitBlocke  +
+                        stat.totaleDonsLacaisse)
+
+                Text(
+                    "الفائدة الكلية للبعيد: $${String.format("%.2f",calculeToTaleLong )}",
                     color = Color.White
                 )
             } ?: Text("No statistics available", color = Color.White)
