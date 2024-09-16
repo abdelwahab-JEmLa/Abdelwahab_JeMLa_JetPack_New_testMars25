@@ -93,7 +93,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
                 Text(
-                    "الفائدة الكلية: $${String.format("%.2f", stat.totaleCreditsSuppliers + stat.totaleCreditsClients- stat.totaleProduitBlocke)}",
+                    "الفائدة الكلية: $${String.format("%.2f", (stat.totaleCreditsSuppliers*-1) + (stat.totaleCreditsClients*-1) + stat.totaleProduitBlocke)}",
                     color = Color.White
                 )
             } ?: Text("No statistics available", color = Color.White)

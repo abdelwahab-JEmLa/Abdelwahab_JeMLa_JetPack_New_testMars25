@@ -475,7 +475,7 @@ class CreditsClientsViewModel : ViewModel() {
     fun updateClientsList(idClient: Long, newBalenceOfCredits: Double) {
         _clientsList.update { currentStats ->
             currentStats.map { stat ->
-                if (stat.idClientsSu == idClient) {     //TODO pk l update ne se fait pas
+                if (stat.idClientsSu == idClient) {
                     stat.copy(currentCreditBalance =newBalenceOfCredits )
                 } else {
                     stat
