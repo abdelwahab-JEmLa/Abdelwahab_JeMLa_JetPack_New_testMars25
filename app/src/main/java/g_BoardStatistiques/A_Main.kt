@@ -1,4 +1,5 @@
 package g_BoardStatistiques
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -89,7 +90,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                             label = "Total Credits Clients",
                             value = stat.totaleCreditsClients,
                             onValueChange = { viewModel.updateTotaleProduitBlocke(it) },
-                        )
+                            )
                         StatisticItem(
                             label = "Total Credits Demi Long Terme",
                             value = stat.creditsSuppDemiLongTerm
@@ -153,9 +154,12 @@ fun StatisticItem(label: String, value: Double, onValueChange: ((Double) -> Unit
     }
 }
 class BoardStatistiquesStatViewModel : ViewModel() {
-    private val g_StatistiquesRef = Firebase.database.getReference("G_Statistiques")
+    private val G_StatistiquesRef = Firebase.database.getReference("G_Statistiques")
     private val _statistics = MutableStateFlow<List<Statistiques>>(emptyList())
     val statistics: StateFlow<List<Statistiques>> = _statistics.asStateFlow()
+
+    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val firestore = Firebase.firestore
 
     init {
         observeStatistics()
@@ -163,7 +167,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     }
 
     private fun observeStatistics() {
-        g_StatistiquesRef.addValueEventListener(object : ValueEventListener {
+        G_StatistiquesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 _statistics.value = dataSnapshot.children.mapNotNull { it.getValue(Statistiques::class.java) }
             }
@@ -175,7 +179,6 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     }
 
     fun updateTotaleCreditsClients(clientsPaymentActuelle: Double) {
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         _statistics.update { currentStats ->
             currentStats.map { stat ->
                 if (stat.date == currentDate) {
@@ -189,27 +192,31 @@ class BoardStatistiquesStatViewModel : ViewModel() {
 
     private fun checkAndUpdateStatistics() {
         viewModelScope.launch {
-            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val latestStat = _statistics.value.lastOrNull()
-            if (latestStat == null || latestStat.date != currentDate) {
-                val (totalSuppliers, totalClients) = calculateTotalCredits()
-                updateOrCreateStatistics(currentDate, totalSuppliers, totalClients)
+            try {
+                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val snapshot = G_StatistiquesRef.child(currentDate).get().await()
+
+                if (!snapshot.exists()) {
+                    val (totalSuppliers, totalClients) = calculateTotalCredits()
+                    updateOrCreateStatistics(currentDate, totalSuppliers, totalClients)
+                }
+            } catch (exception: Exception) {
+                // Handle any errors here
+                Log.e("Firebase", "Error checking or updating statistics", exception)
             }
         }
     }
-
     fun updateTotaleProduitBlocke(newValue: Double) {
         viewModelScope.launch {
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val updatedStat = _statistics.value.lastOrNull()?.copy(totaleProduitBlocke = newValue)
                 ?: Statistiques(date = currentDate, totaleProduitBlocke = newValue)
 
-            g_StatistiquesRef.child(currentDate).setValue(updatedStat)
+            G_StatistiquesRef.child(currentDate).setValue(updatedStat)
         }
     }
 
     fun updateTotaleCaisse(newValue: Double) {
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         _statistics.update { currentStats ->
             currentStats.map { stat ->
                 if (stat.date == currentDate) {
@@ -229,12 +236,11 @@ class BoardStatistiquesStatViewModel : ViewModel() {
 
     private fun updateFireBase(stat: Statistiques) {
         viewModelScope.launch {
-            g_StatistiquesRef.child(stat.date).setValue(stat)
+            G_StatistiquesRef.child(stat.date).setValue(stat)
         }
     }
 
     private suspend fun calculateTotalCredits(): Pair<Double, Double> {
-        val firestore = Firebase.firestore
         return coroutineScope {
             val suppliersDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS") }
             val clientsDeferred = async { calculateCreditForCollection(firestore, "F_ClientsArticlesFireS") }
@@ -260,7 +266,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             totaleCreditsSuppliers = totalSuppliers,
             totaleCreditsClients = totalClients
         )
-        g_StatistiquesRef.child(date).setValue(newStat).await()
+        G_StatistiquesRef.child(date).setValue(newStat).await()
         _statistics.value = listOf(newStat)
     }
 }
