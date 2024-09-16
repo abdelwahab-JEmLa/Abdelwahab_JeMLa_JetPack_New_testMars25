@@ -76,24 +76,35 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         StatisticItem(
+                            label = "Total Don La Caisse",
+                            value = stat.totaleDonsLacaisse,
+                            onValueChange = { viewModel.updateTotaleCaisse(it) },
+                        )
+                        StatisticItem(
                             label = "Total Produit Blocke",
                             value = stat.totaleProduitBlocke,
                             onValueChange = { viewModel.updateTotaleProduitBlocke(it) },
                         )
                         StatisticItem(
-                            label = "Total Credits Suppliers",
-                            value = stat.totaleCreditsSuppliers
+                            label = "Total Credits Clients",
+                            value = stat.totaleCreditsClients,
+                            onValueChange = { viewModel.updateTotaleProduitBlocke(it) },
                         )
                         StatisticItem(
-                            label = "Total Credits Clients",
-                            value = stat.totaleCreditsClients
+                            label = "Total Credits Demi Long Terme",
+                            value = stat.creditsSuppDemiLongTerm
                         )
+                        StatisticItem(
+                            label = "Total Credits Suppliers",
+                            value = stat.creditsSuppDemiLongTerm
+                        )
+
                     }
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
                 Text(
-                    "الفائدة الكلية: $${String.format("%.2f", (stat.totaleCreditsSuppliers*-1) + (stat.totaleCreditsClients*-1) + stat.totaleProduitBlocke)}",
+                    "الفائدة الكلية: $${String.format("%.2f", (stat.totaleCreditsSuppliers*-1) + (stat.totaleCreditsClients*-1) + stat.totaleProduitBlocke + stat.totaleDonsLacaisse)}",
                     color = Color.White
                 )
             } ?: Text("No statistics available", color = Color.White)
@@ -162,6 +173,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             }
         })
     }
+
     fun updateTotaleCreditsClients(clientsPaymentActuelle: Double) {
         val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         _statistics.update { currentStats ->
@@ -174,7 +186,6 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             }
         }
     }
-
 
     private fun checkAndUpdateStatistics() {
         viewModelScope.launch {
@@ -194,6 +205,31 @@ class BoardStatistiquesStatViewModel : ViewModel() {
                 ?: Statistiques(date = currentDate, totaleProduitBlocke = newValue)
 
             g_StatistiquesRef.child(currentDate).setValue(updatedStat)
+        }
+    }
+
+    fun updateTotaleCaisse(newValue: Double) {
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        _statistics.update { currentStats ->
+            currentStats.map { stat ->
+                if (stat.date == currentDate) {
+                    stat.copy(totaleDonsLacaisse = newValue)
+                } else {
+                    stat
+                }
+            }
+        }
+
+        // Update Firebase with the new statistic
+        viewModelScope.launch {
+            val updatedStat = _statistics.value.find { it.date == currentDate }
+            updatedStat?.let { updateFireBase(it) }
+        }
+    }
+
+    private fun updateFireBase(stat: Statistiques) {
+        viewModelScope.launch {
+            g_StatistiquesRef.child(stat.date).setValue(stat)
         }
     }
 
@@ -235,4 +271,7 @@ data class Statistiques(
     var totaleCreditsSuppliers: Double = 0.0,
     var totaleCreditsClients: Double = 0.0    ,
     var totaleProduitBlocke: Double = 0.0,
-)
+    var totaleDonsLacaisse: Double = 0.0,
+    var creditsSuppDemiLongTerm: Double = 0.0,
+
+    )
