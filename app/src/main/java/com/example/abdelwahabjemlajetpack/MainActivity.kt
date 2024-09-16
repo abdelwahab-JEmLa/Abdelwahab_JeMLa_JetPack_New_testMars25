@@ -297,15 +297,10 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                        CardBoardStatistiques(boardStatistiquesStatViewModel)
 
-                }
+
+               CardBoardStatistiques(boardStatistiquesStatViewModel)
+
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),

@@ -225,7 +225,7 @@ fun ClientsCreditDialogClientsBoard(
                             coroutineScope.launch {
                                 clientsId?.let { id ->
                                     val paymentAmount =
-                                        clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+                                        clientsPaymentActuelle.toDoubleOrNull() ?: ancienCredit
 
                                     imprimeLeTiquetDuCreditChangementCB(
                                         clientsTotalDeCeBon = clientsTotal,
@@ -253,7 +253,7 @@ fun ClientsCreditDialogClientsBoard(
                                 }
                             }
                         },
-                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                        enabled = !isLoading
                     ) {
                         Text("Save & Print", color = Color.White)
                     }
@@ -263,7 +263,7 @@ fun ClientsCreditDialogClientsBoard(
                             coroutineScope.launch {
                                 clientsId?.let { id ->
                                     val paymentAmount =
-                                        clientsPaymentActuelle.toDoubleOrNull() ?: 0.0
+                                        clientsPaymentActuelle.toDoubleOrNull() ?: ancienCredit
 
                                     updateClientsCreditCB(
                                         id.toInt(),
@@ -284,7 +284,7 @@ fun ClientsCreditDialogClientsBoard(
                                 }
                             }
                         },
-                        enabled = !isLoading && clientsPaymentActuelle.isNotEmpty()
+                        enabled = !isLoading
                     ) {
                         Text("Save Only", color = Color.White)
                     }
