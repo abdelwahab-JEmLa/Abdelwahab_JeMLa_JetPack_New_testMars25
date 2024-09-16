@@ -39,6 +39,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
@@ -161,6 +162,19 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             }
         })
     }
+    fun updateTotaleCreditsClients(clientsPaymentActuelle: Double) {
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        _statistics.update { currentStats ->
+            currentStats.map { stat ->
+                if (stat.date == currentDate) {
+                    stat.copy(totaleCreditsClients = stat.totaleCreditsClients - clientsPaymentActuelle)
+                } else {
+                    stat
+                }
+            }
+        }
+    }
+
 
     private fun checkAndUpdateStatistics() {
         viewModelScope.launch {

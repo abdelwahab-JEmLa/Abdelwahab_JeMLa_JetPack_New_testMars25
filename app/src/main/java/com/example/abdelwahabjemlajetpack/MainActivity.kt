@@ -147,7 +147,7 @@ fun MyApp(
     articleDao: ArticleDao,
     creditsViewModel: CreditsViewModel,
     creditsClientsViewModel: CreditsClientsViewModel,
-    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -249,7 +249,8 @@ fun MyApp(
                 composable("FragmentCreditsClients") {
                     FragmentCreditsClients(
                         creditsClientsViewModel,
-                        onToggleNavBar = { isNavBarVisible = !isNavBarVisible }
+                        onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
+                        boardStatistiquesStatViewModel = boardStatistiquesStatViewModel
                     )
                 }
                 composable("PickerExample") { PickerExample() }

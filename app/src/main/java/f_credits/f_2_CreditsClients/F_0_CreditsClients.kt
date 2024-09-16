@@ -63,6 +63,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import g_BoardStatistiques.BoardStatistiquesStatViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -78,7 +79,7 @@ import kotlin.random.Random
 @Composable
 fun FragmentCreditsClients(
     viewModel: CreditsClientsViewModel = viewModel(),
-    onToggleNavBar: () -> Unit
+    onToggleNavBar: () -> Unit, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     val clients by viewModel.clientsList.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -147,7 +148,7 @@ fun FragmentCreditsClients(
                 .padding(innerPadding)
         ) {
             items(clients) { clients ->
-                ClientsItem(clients, viewModel)
+                ClientsItem(clients, viewModel, boardStatistiquesStatViewModel)
             }
         }
     }
@@ -185,7 +186,9 @@ fun FragmentCreditsClients(
     }
 }
 @Composable
-fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
+fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
+                boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
+) {
     var showDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -318,6 +321,7 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel) {
             clientsTotal = 0.0,
             coroutineScope = rememberCoroutineScope(),
             context = context,
+            boardStatistiquesStatViewModel,
         )
     }
 

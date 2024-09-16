@@ -45,25 +45,24 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.imprimerDonnees
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.generateClientColor
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.firestore
-import com.google.firebase.firestore.ktx.firestore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.database.ktx.database
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
-import java.text.SimpleDateFormat
-import java.util.*
+import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import g_BoardStatistiques.BoardStatistiquesStatViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ClientsCreditDialogClientsBoard(
@@ -74,8 +73,9 @@ fun ClientsCreditDialogClientsBoard(
     clientsTotal: Double,
     coroutineScope: CoroutineScope,
     context: Context, // Add context parameter
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 
-) {
+    ) {
     var isLoading by remember { mutableStateOf(true) }
     var recentInvoices by remember { mutableStateOf<List<ClientsInvoiceOtherCB>>(emptyList()) }
     var itsPayment by remember { mutableStateOf(true) }
@@ -249,9 +249,9 @@ fun ClientsCreditDialogClientsBoard(
                                         clientsTotalDeCeBon = clientsTotal,
                                         clientsPaymentActuelle = paymentAmount,
                                         restCreditDeCetteBon = restCreditDeCetteBon,
-                                        newBalenceOfCredits = newBalenceOfCredits
+                                        newBalenceOfCredits = newBalenceOfCredits ,
+                                        boardStatistiquesStatViewModel
                                     )
-
                                     fetchRecentInvoicesCB(
                                         clientsId,
                                         onFetchComplete = { invoices, credit ->
@@ -278,7 +278,8 @@ fun ClientsCreditDialogClientsBoard(
                                         clientsTotalDeCeBon = clientsTotal,
                                         clientsPaymentActuelle = paymentAmount,
                                         restCreditDeCetteBon = restCreditDeCetteBon,
-                                        newBalenceOfCredits = newBalenceOfCredits
+                                        newBalenceOfCredits = newBalenceOfCredits,
+                                        boardStatistiquesStatViewModel
                                     )
 
                                     fetchRecentInvoicesCB(
@@ -349,7 +350,8 @@ fun updateClientsCreditCB(
     clientsTotalDeCeBon: Double,
     clientsPaymentActuelle: Double,
     restCreditDeCetteBon: Double,
-    newBalenceOfCredits: Double
+    newBalenceOfCredits: Double,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     val firestore = Firebase.firestore
     val currentDateTime = LocalDateTime.now()
@@ -381,6 +383,9 @@ fun updateClientsCreditCB(
         // Firebase Realtime Database update
         val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val g_StatistiquesRef = Firebase.database.getReference("G_Statistiques")
+
+        // Update _statistics in BoardStatistiquesStatViewModel
+        boardStatistiquesStatViewModel.updateTotaleCreditsClients(clientsPaymentActuelle)
 
         g_StatistiquesRef.child(currentDate).runTransaction(object : Transaction.Handler {
             override fun doTransaction(mutableData: MutableData): Transaction.Result {
