@@ -45,7 +45,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.imprimerDonnees
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.generateClientColor
-import com.google.firebase.Firebase
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
@@ -56,6 +55,15 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.database.ktx.database
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
+import java.text.SimpleDateFormat
+import java.util.*
+import com.google.firebase.ktx.Firebase
 
 @Composable
 fun ClientsCreditDialogClientsBoard(
@@ -348,7 +356,6 @@ fun updateClientsCreditCB(
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formattedDateTime = currentDateTime.format(dateTimeFormatter)
 
-
     val data = hashMapOf(
         "date" to formattedDateTime,
         "totaleDeCeBon" to clientsTotalDeCeBon,
@@ -370,6 +377,30 @@ fun updateClientsCreditCB(
             .collection("latest Totale et Credit Des Bons")
             .document("latest")
             .set(data)
+
+        // Firebase Realtime Database update
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val g_StatistiquesRef = Firebase.database.getReference("G_Statistiques")
+
+        g_StatistiquesRef.child(currentDate).runTransaction(object : Transaction.Handler {
+            override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                val currentValue = mutableData.getValue(Double::class.java) ?: 0.0
+                mutableData.value = currentValue - clientsPaymentActuelle
+                return Transaction.success(mutableData)
+            }
+
+            override fun onComplete(
+                error: DatabaseError?,
+                committed: Boolean,
+                currentData: DataSnapshot?
+            ) {
+                if (committed) {
+                    Log.d("Firebase", "G_Statistiques updated successfully")
+                } else {
+                    Log.e("Firebase", "Error updating G_Statistiques: ${error?.message}")
+                }
+            }
+        })
 
         Log.d("Firestore", "Clients credit updated successfully")
     } catch (e: Exception) {

@@ -16,7 +16,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,8 +27,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +49,6 @@ import java.util.Locale
 fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
     val statistics by viewModel.statistics.collectAsState()
 
-    LaunchedEffect(viewModel) { viewModel.checkAndUpdateStatistics() }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -136,11 +141,28 @@ fun StatisticItem(label: String, value: Double, onValueChange: ((Double) -> Unit
     }
 }
 class BoardStatistiquesStatViewModel : ViewModel() {
-    private val firestore = Firebase.firestore
+    private val g_StatistiquesRef = Firebase.database.getReference("G_Statistiques")
     private val _statistics = MutableStateFlow<List<Statistiques>>(emptyList())
     val statistics: StateFlow<List<Statistiques>> = _statistics.asStateFlow()
 
-    fun checkAndUpdateStatistics() {
+    init {
+        observeStatistics()
+        checkAndUpdateStatistics()
+    }
+
+    private fun observeStatistics() {
+        g_StatistiquesRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                _statistics.value = dataSnapshot.children.mapNotNull { it.getValue(Statistiques::class.java) }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+            }
+        })
+    }
+
+    private fun checkAndUpdateStatistics() {
         viewModelScope.launch {
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val latestStat = _statistics.value.lastOrNull()
@@ -157,37 +179,39 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             val updatedStat = _statistics.value.lastOrNull()?.copy(totaleProduitBlocke = newValue)
                 ?: Statistiques(date = currentDate, totaleProduitBlocke = newValue)
 
-            firestore.collection("G_Statistiques").document(currentDate)
-                .set(updatedStat)
-                .await()
-
-            _statistics.value = listOf(updatedStat)
+            g_StatistiquesRef.child(currentDate).setValue(updatedStat)
         }
     }
+
     private suspend fun calculateTotalCredits(): Pair<Double, Double> {
-        var totalSuppliers = 0.0
-        var totalClients = 0.0
-        for (i in 1..20) {
-            totalSuppliers += getCredit("F_SupplierArticlesFireS", i.toLong())
-            totalClients += getCredit("F_ClientsArticlesFireS", i.toLong())
+        val firestore = Firebase.firestore
+        return coroutineScope {
+            val suppliersDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS") }
+            val clientsDeferred = async { calculateCreditForCollection(firestore, "F_ClientsArticlesFireS") }
+            Pair(suppliersDeferred.await(), clientsDeferred.await())
         }
-        return Pair(totalSuppliers, totalClients)
     }
 
-    private suspend fun getCredit(collection: String, id: Long): Double =
-        firestore.collection(collection)
-            .document(id.toString())
-            .collection("latest Totale et Credit Des Bons")
-            .document("latest")
-            .get()
-            .await()
-            .getDouble("ancienCredits") ?: 0.0
+    private suspend fun calculateCreditForCollection(firestore: FirebaseFirestore, collection: String): Double {
+        return (1..20).sumOf { id ->
+            firestore.collection(collection)
+                .document(id.toString())
+                .collection("latest Totale et Credit Des Bons")
+                .document("latest")
+                .get()
+                .await()
+                .getDouble("ancienCredits") ?: 0.0
+        }
+    }
 
     private suspend fun updateOrCreateStatistics(date: String, totalSuppliers: Double, totalClients: Double) {
-        firestore.collection("G_Statistiques").document(date)
-            .set(Statistiques(date = date, totaleCreditsSuppliers = totalSuppliers, totaleCreditsClients = totalClients))
-            .await()
-        _statistics.value = listOf(Statistiques(date = date, totaleCreditsSuppliers = totalSuppliers, totaleCreditsClients = totalClients))
+        val newStat = Statistiques(
+            date = date,
+            totaleCreditsSuppliers = totalSuppliers,
+            totaleCreditsClients = totalClients
+        )
+        g_StatistiquesRef.child(date).setValue(newStat).await()
+        _statistics.value = listOf(newStat)
     }
 }
 
