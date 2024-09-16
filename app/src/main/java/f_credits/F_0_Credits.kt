@@ -45,6 +45,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -83,6 +85,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -202,8 +205,7 @@ fun FragmentCredits(
             }
         )
     }
-}
-@Composable
+}@Composable
 fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
@@ -242,14 +244,31 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     .weight(6f)
                     .padding(start = 8.dp)
             ) {
-                Text(
-                    text = "ID: ${supplier.idSupplierSu}",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.drawTextWithOutline(Color.Black)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "ID: ${supplier.idSupplierSu}",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.drawTextWithOutline(Color.Black)
+                    )
+                    Switch(
+                        checked = supplier.isLongTermCredit,
+                        onCheckedChange = { isChecked ->
+                            viewModel.updateSupplierList(supplier.idSupplierSu, isChecked)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Green,
+                            uncheckedThumbColor = Color.Red,
+                            checkedTrackColor = Color.Green.copy(alpha = 0.5f),
+                            uncheckedTrackColor = Color.Red.copy(alpha = 0.5f)
+                        )
+                    )
+                }
                 Text(
                     text = "Name: ${supplier.nomSupplierSu}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
@@ -290,8 +309,6 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
             }
         }
     }
-
-
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -676,7 +693,8 @@ data class SupplierTabelle(
     var nomSupplierSu: String = "",
     var bonDuSupplierSu: String = "",
     val couleurSu: String = "#FFFFFF", // Default color
-    var currentCreditBalance: Double = 0.0 // New field for current credit balance
+    var currentCreditBalance: Double = 0.0, // New field for current credit balance
+    var isLongTermCredit : Boolean = false
 ) {
     constructor() : this(0)
 }
@@ -755,7 +773,9 @@ class CreditsViewModel : ViewModel() {
                 val newList = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
                 viewModelScope.launch {
                     newList.forEach { supplier ->
-                        supplier.currentCreditBalance = getCurrentCreditBalance(supplier.idSupplierSu)
+                        val (balance, isLongTerm) = getCurrentCreditBalance(supplier.idSupplierSu)
+                        supplier.currentCreditBalance = balance
+                        supplier.isLongTermCredit = isLongTerm
                     }
                     _supplierList.value = newList
                 }
@@ -767,7 +787,9 @@ class CreditsViewModel : ViewModel() {
         })
     }
 
-    private suspend fun getCurrentCreditBalance(supplierId: Long): Double {
+    private data class CreditInfo(val balance: Double, val isLongTerm: Boolean)
+
+    private suspend fun getCurrentCreditBalance(supplierId: Long): CreditInfo {
         return withContext(Dispatchers.IO) {
             try {
                 val firestore = Firebase.firestore
@@ -778,11 +800,38 @@ class CreditsViewModel : ViewModel() {
                     .get()
                     .await()
 
-                latestDoc.getDouble("ancienCredits") ?: 0.0
+                val balance = latestDoc.getDouble("ancienCredits") ?: 0.0
+                val isLongTerm = latestDoc.getBoolean("longTermCredit") ?: false
+
+                CreditInfo(balance, isLongTerm)
             } catch (e: Exception) {
                 Log.e("Firestore", "Error fetching current credit balance: ", e)
-                0.0
+                CreditInfo(0.0, false)
             }
+        }
+    }
+    private fun updateSupplierFireBaseRef(supplier: SupplierTabelle) {
+        viewModelScope.launch {
+            suppliersRef.child(supplier.idSupplierSu.toString()).setValue(supplier)
+        }
+    }
+    fun updateSupplierList(idSupplierSu: Long, isChecked: Boolean) {
+        _supplierList.update { currentSupps ->
+            currentSupps.map { supplier ->
+                if (supplier.idSupplierSu == idSupplierSu) {
+                    supplier.copy(
+                        isLongTermCredit = isChecked
+                    )
+
+                } else {
+                    supplier
+                }
+            }
+        }
+        // Update Firebase with the new statistic
+        viewModelScope.launch {
+            val updatedStat = _supplierList.value.find { it.idSupplierSu == idSupplierSu }
+            updatedStat?.let { updateSupplierFireBaseRef(it) }
         }
     }
 
@@ -802,6 +851,7 @@ class CreditsViewModel : ViewModel() {
             nomSupplierSu = name,
             bonDuSupplierSu = "",
             couleurSu = generateRandomTropicalColor()
+
         )
         suppliersRef.child(newSupplier.idSupplierSu.toString()).setValue(newSupplier)
     }

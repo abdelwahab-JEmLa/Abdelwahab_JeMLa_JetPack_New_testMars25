@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +55,8 @@ import java.util.Locale
 fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
     val statistics by viewModel.statistics.collectAsState()
 
+    val scope = rememberCoroutineScope()
+    var isUpdating by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -68,6 +74,26 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
+            Button(
+                onClick = {
+                    scope.launch {
+                        isUpdating = true
+                        viewModel.checkAndUpdateStatistics(updateDirectly=true)
+                        isUpdating = false
+                    }
+                },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                enabled = !isUpdating
+            ) {
+                if (isUpdating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Update Statistics")
+                }
+            }
             statistics.lastOrNull()?.let { stat ->
                 Text("Date: ${stat.date}", color = Color.White)
 
@@ -106,8 +132,13 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
+                val calculeToTale = (stat.totaleCreditsSuppliers*-1)
+                + (stat.totaleCreditsClients*-1)
+                + stat.totaleProduitBlocke
+                + stat.totaleDonsLacaisse
+
                 Text(
-                    "الفائدة الكلية: $${String.format("%.2f", (stat.totaleCreditsSuppliers*-1) + (stat.totaleCreditsClients*-1) + stat.totaleProduitBlocke + stat.totaleDonsLacaisse)}",
+                    "الفائدة الكلية: $${String.format("%.2f",calculeToTale )}",
                     color = Color.White
                 )
             } ?: Text("No statistics available", color = Color.White)
@@ -157,6 +188,8 @@ fun StatisticItem(label: String, value: Double, onValueChange: ((Double) -> Unit
 }
 class BoardStatistiquesStatViewModel : ViewModel() {
     private val G_StatistiquesRef = Firebase.database.getReference("G_Statistiques")
+    private val suppliersRef = Firebase.database.getReference("F_Suppliers")
+
     private val _statistics = MutableStateFlow<List<Statistiques>>(emptyList())
     val statistics: StateFlow<List<Statistiques>> = _statistics.asStateFlow()
 
@@ -180,15 +213,15 @@ class BoardStatistiquesStatViewModel : ViewModel() {
         })
     }
 
-    private fun checkAndUpdateStatistics() {
+    fun checkAndUpdateStatistics(updateDirectly: Boolean=false) {
         viewModelScope.launch {
             try {
                 val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
                 val snapshot = G_StatistiquesRef.child(currentDate).get().await()
 
-                if (!snapshot.exists()) {
-                    val (totalSuppliers, totalClients) = calculateTotalCredits()
-                    updateOrCreateStatistics(currentDate, totalSuppliers, totalClients)
+                if (!snapshot.exists()||updateDirectly) {
+                    val (totalSuppliers, totalClients,totaleLong) = calculateTotalCredits()
+                    updateOrCreateStatistics(currentDate, totalSuppliers, totalClients,totaleLong)
                 }
             } catch (exception: Exception) {
                 // Handle any errors here
@@ -272,32 +305,45 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     }
 
 
-
-    private suspend fun calculateTotalCredits(): Pair<Double, Double> {
+    private suspend fun calculateTotalCredits(): Triple<Double, Double, Double> {
         return coroutineScope {
-            val suppliersDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS") }
-            val clientsDeferred = async { calculateCreditForCollection(firestore, "F_ClientsArticlesFireS") }
-            Pair(suppliersDeferred.await(), clientsDeferred.await())
+            val suppliersDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS", isLongTerm = false) }
+            val clientsDeferred = async { calculateCreditForCollection(firestore, "F_ClientsArticlesFireS", isLongTerm = false) }
+            val suppliersLongDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS", isLongTerm = true) }
+
+            Triple(suppliersDeferred.await(), clientsDeferred.await(), suppliersLongDeferred.await())
         }
     }
 
-    private suspend fun calculateCreditForCollection(firestore: FirebaseFirestore, collection: String): Double {
+    private suspend fun calculateCreditForCollection(firestore: FirebaseFirestore, collection: String, isLongTerm: Boolean): Double {
         return (1..20).sumOf { id ->
-            firestore.collection(collection)
-                .document(id.toString())
-                .collection("latest Totale et Credit Des Bons")
-                .document("latest")
-                .get()
-                .await()
-                .getDouble("ancienCredits") ?: 0.0
+            val supplierRef = suppliersRef.child(id.toString())
+            val isLongTermSupplier = supplierRef.child("F_SupplierArticlesFireS").get().await().getValue(Boolean::class.java) ?: false
+
+            if ((isLongTerm && isLongTermSupplier) || (!isLongTerm && !isLongTermSupplier)) {
+                firestore.collection(collection)
+                    .document(id.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+                    .getDouble("ancienCredits") ?: 0.0
+            } else {
+                0.0
+            }
         }
     }
-
-    private suspend fun updateOrCreateStatistics(date: String, totalSuppliers: Double, totalClients: Double) {
+    suspend fun updateOrCreateStatistics(
+        date: String,
+        totalSuppliers: Double,
+        totalClients: Double,
+        totaleLong: Double
+    ) {
         val newStat = Statistiques(
             date = date,
             totaleCreditsSuppliers = totalSuppliers,
-            totaleCreditsClients = totalClients
+            totaleCreditsClients = totalClients   ,
+            creditsSuppDemiLongTerm = totaleLong
         )
         G_StatistiquesRef.child(date).setValue(newStat).await()
         _statistics.value = listOf(newStat)

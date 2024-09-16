@@ -226,6 +226,7 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
                     .weight(4f)
                     .padding(horizontal = 8.dp)
             ) {
+
                 Text(
                     text = "ID: ${clients.idClientsSu}",
                     style = MaterialTheme.typography.bodyLarge.copy(

@@ -303,7 +303,7 @@ fun addNewClient(name: String, onComplete: (Long) -> Unit) {
                 idClientsSu = maxId + 1,
                 nomClientsSu = name,
                 bonDuClientsSu = "",
-                couleurSu = generateRandomTropicalColor()
+                couleurSu = generateRandomTropicalColor()  ,
             )
             clientsTableRef.child((maxId + 1).toString()).setValue(newClients)
                 .addOnSuccessListener {
@@ -333,7 +333,7 @@ data class ClientsTabelle(
     var nomClientsSu: String = "",
     var bonDuClientsSu: String = "",
     val couleurSu: String = "#FFFFFF", // Default color
-    var currentCreditBalance: Double = 0.0 // New field for current credit balance
+    var currentCreditBalance: Double = 0.0, // New field for current credit balance
 ) {
     constructor() : this(0)
 }
