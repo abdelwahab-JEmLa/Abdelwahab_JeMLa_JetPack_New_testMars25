@@ -126,12 +126,16 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                             value = (stat.totaleCreditsClients*-1),
                             onValueChange = { viewModel.updateTotaleProduitBlocke(it) },
                             )
+                        if (stat.creditsSuppDemiLongTerm!=0.0){
+
+
                         StatisticItem(
                             label = "Total Credits Long Terme",
                             value = (stat.totaleCreditsClients*-1)  ,
                             onValueChange = { viewModel.sendFromShortToLongSuppCredits(it) }
 
                         )
+                        }
                         StatisticItem(
                             label = "Total Credits Suppliers",
                             value = (stat.totaleCreditsSuppliers*-1)
@@ -141,7 +145,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
-                val calculeToTale = (stat.totaleCreditsSuppliers*-1) -
+                val calculeToTale = (stat.totaleCreditsSuppliers*-1) +
 
                         ((stat.totaleCreditsClients*-1) +
                             stat.totaleProduitBlocke  +
@@ -151,17 +155,18 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                     "الفائدة الكلية للقادم: $${String.format("%.2f",calculeToTale )}",
                     color = Color.White
                 )
-                val calculeToTaleLong = ((stat.totaleCreditsSuppliers*-1) -
-                        (stat.creditsSuppDemiLongTerm*-1)) +
+                val calculeToTaleLong = ((stat.totaleCreditsSuppliers +
+                        stat.creditsSuppDemiLongTerm)*-1) +
 
                         ((stat.totaleCreditsClients*-1) +
                         stat.totaleProduitBlocke  +
                         stat.totaleDonsLacaisse)
-
-                Text(
-                    "الفائدة الكلية للبعيد: $${String.format("%.2f",calculeToTaleLong )}",
-                    color = Color.White
-                )
+                if (stat.creditsSuppDemiLongTerm!=0.0){
+                    Text(
+                        "الفائدة الكلية للبعيد: $${String.format("%.2f", calculeToTaleLong)}",
+                        color = Color.White
+                    )
+                }
             } ?: Text("No statistics available", color = Color.White)
         }
     }
@@ -385,7 +390,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             }
         }
     }
-    suspend fun updateOrCreateStatistics(
+    private suspend fun updateOrCreateStatistics(
         date: String,
         totalSuppliers: Double,
         totalClients: Double,
