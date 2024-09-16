@@ -74,7 +74,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            Button(
+            Button(    //TODO fait que ca soit un petit icon button
                 onClick = {
                     scope.launch {
                         isUpdating = true
@@ -221,7 +221,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
 
                 if (!snapshot.exists()||updateDirectly) {
                     val (totalSuppliers, totalClients,totaleLong) = calculateTotalCredits()
-                    updateOrCreateStatistics(currentDate, totalSuppliers, totalClients,totaleLong)
+                    updateOrCreateStatistics(currentDate, totalSuppliers, totalClients,totaleLong,snapshot)
                 }
             } catch (exception: Exception) {
                 // Handle any errors here
@@ -307,20 +307,51 @@ class BoardStatistiquesStatViewModel : ViewModel() {
 
     private suspend fun calculateTotalCredits(): Triple<Double, Double, Double> {
         return coroutineScope {
-            val suppliersDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS", isLongTerm = false) }
-            val clientsDeferred = async { calculateCreditForCollection(firestore, "F_ClientsArticlesFireS", isLongTerm = false) }
-            val suppliersLongDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS", isLongTerm = true) }
+            val suppliersDeferred = async { calculateCreditForCollection(firestore, "F_SupplierArticlesFireS") }
+            val clientsDeferred = async { calculateCreditClients(firestore, "F_ClientsArticlesFireS") }
+            val suppliersLongDeferred = async { calculateCreditLongForCollection(firestore, "F_SupplierArticlesFireS") }
 
             Triple(suppliersDeferred.await(), clientsDeferred.await(), suppliersLongDeferred.await())
         }
     }
-
-    private suspend fun calculateCreditForCollection(firestore: FirebaseFirestore, collection: String, isLongTerm: Boolean): Double {
+    private suspend fun calculateCreditLongForCollection(firestore: FirebaseFirestore, collection: String): Double {
         return (1..20).sumOf { id ->
             val supplierRef = suppliersRef.child(id.toString())
-            val isLongTermSupplier = supplierRef.child("F_SupplierArticlesFireS").get().await().getValue(Boolean::class.java) ?: false
+            val isLongTermSupplier = supplierRef.child("longTermCredit").get().await().getValue(Boolean::class.java) ?: false
 
-            if ((isLongTerm && isLongTermSupplier) || (!isLongTerm && !isLongTermSupplier)) {
+            if ( isLongTermSupplier) {
+                firestore.collection(collection)
+                    .document(id.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+                    .getDouble("ancienCredits") ?: 0.0
+            } else {
+                0.0
+            }
+        }
+    }
+    private suspend fun calculateCreditClients(firestore: FirebaseFirestore, collection: String): Double {
+        return (1..20).sumOf { id ->
+
+                firestore.collection(collection)
+                    .document(id.toString())
+                    .collection("latest Totale et Credit Des Bons")
+                    .document("latest")
+                    .get()
+                    .await()
+                    .getDouble("ancienCredits") ?: 0.0
+
+        }
+    }
+
+    private suspend fun calculateCreditForCollection(firestore: FirebaseFirestore, collection: String): Double {
+        return (1..20).sumOf { id ->
+            val supplierRef = suppliersRef.child(id.toString())
+            val isLongTermSupplier = supplierRef.child("longTermCredit").get().await().getValue(Boolean::class.java) ?: false
+
+            if (!isLongTermSupplier ) {
                 firestore.collection(collection)
                     .document(id.toString())
                     .collection("latest Totale et Credit Des Bons")
@@ -337,13 +368,16 @@ class BoardStatistiquesStatViewModel : ViewModel() {
         date: String,
         totalSuppliers: Double,
         totalClients: Double,
-        totaleLong: Double
+        totaleLong: Double,
+        snapshot: DataSnapshot
     ) {
         val newStat = Statistiques(
             date = date,
             totaleCreditsSuppliers = totalSuppliers,
-            totaleCreditsClients = totalClients   ,
-            creditsSuppDemiLongTerm = totaleLong
+            totaleCreditsClients = totalClients,
+            creditsSuppDemiLongTerm = totaleLong,
+            totaleDonsLacaisse = snapshot.child("totaleDonsLacaisse").getValue(Double::class.java) ?: 0.0,
+            totaleProduitBlocke = snapshot.child("totaleProduitBlocke").getValue(Double::class.java) ?: 0.0
         )
         G_StatistiquesRef.child(date).setValue(newStat).await()
         _statistics.value = listOf(newStat)
