@@ -74,6 +74,8 @@ import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
 import f_credits.f_2_CreditsClients.CreditsClientsViewModel
 import f_credits.f_2_CreditsClients.FragmentCreditsClients
+import g_BoardStatistiques.BoardStatistiquesStatViewModel
+import g_BoardStatistiques.CardBoardStatistiques
 import java.util.Locale
 
 class MyApplication : Application() {
@@ -92,6 +94,7 @@ class MainActivity : ComponentActivity() {
     }
     private val creditsViewModel: CreditsViewModel by viewModels()
     private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
+    private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,7 +107,8 @@ class MainActivity : ComponentActivity() {
                     viewModel,
                     database.articleDao(),
                     creditsViewModel,
-                    creditsClientsViewModel
+                    creditsClientsViewModel ,
+                    boardStatistiquesStatViewModel,
                 )
             }
         }
@@ -142,7 +146,8 @@ fun MyApp(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
     creditsViewModel: CreditsViewModel,
-    creditsClientsViewModel: CreditsClientsViewModel
+    creditsClientsViewModel: CreditsClientsViewModel,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -177,7 +182,7 @@ fun MyApp(
                             label = {
                                 Text(
                                     screen.title,
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelSmall,//TODO fait que ca soit plus petite
                                     color = if (currentRoute == screen.route)
                                         MaterialTheme.colorScheme.primary
                                     else
@@ -231,7 +236,8 @@ fun MyApp(
                     MainScreen(
                         navController = navController,
                         editeBaseDonneViewModel = editeBaseDonneViewModel,
-                        articleDao = articleDao
+                        articleDao = articleDao   ,
+                        boardStatistiquesStatViewModel,
                     )
                 }
                 composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, articleDao) }
@@ -265,7 +271,8 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 fun MainScreen(
     navController: NavHostController,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    articleDao: ArticleDao
+    articleDao: ArticleDao,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -288,12 +295,23 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "My App",
-                    modifier = Modifier.padding(top = 16.dp, bottom = 16.dp),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Statistiques",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        CardBoardStatistiques(boardStatistiquesStatViewModel)
+                    }
+                }
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
