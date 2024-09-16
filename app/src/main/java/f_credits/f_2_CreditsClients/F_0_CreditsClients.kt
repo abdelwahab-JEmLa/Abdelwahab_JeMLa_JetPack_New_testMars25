@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -322,6 +323,7 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
             coroutineScope = rememberCoroutineScope(),
             context = context,
             boardStatistiquesStatViewModel,
+            viewModel
         )
     }
 
@@ -470,7 +472,17 @@ class CreditsClientsViewModel : ViewModel() {
             }
         }
     }
-
+    fun updateClientsList(idClient: Long, newBalenceOfCredits: Double) {
+        _clientsList.update { currentStats ->
+            currentStats.map { stat ->
+                if (stat.idClientsSu == idClient) {     //TODO pk l update ne se fait pas
+                    stat.copy(currentCreditBalance =newBalenceOfCredits )
+                } else {
+                    stat
+                }
+            }
+        }
+    }
     fun updateClients(updatedClients: ClientsTabelle) {
         clientsRef.child(updatedClients.idClientsSu.toString()).setValue(updatedClients)
     }

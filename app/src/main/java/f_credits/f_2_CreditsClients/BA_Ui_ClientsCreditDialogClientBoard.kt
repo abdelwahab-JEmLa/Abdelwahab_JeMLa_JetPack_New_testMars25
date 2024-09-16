@@ -74,6 +74,8 @@ fun ClientsCreditDialogClientsBoard(
     coroutineScope: CoroutineScope,
     context: Context, // Add context parameter
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    viewModel: CreditsClientsViewModel,
+
 
     ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -243,7 +245,7 @@ fun ClientsCreditDialogClientsBoard(
                                         onDismiss = onDismiss,
                                         clientsName = clientsName
                                     )
-
+                                    viewModel.updateClientsList(idClient=id,newBalenceOfCredits)
                                     updateClientsCreditCB(
                                         id.toInt(),
                                         clientsTotalDeCeBon = clientsTotal,
@@ -281,6 +283,7 @@ fun ClientsCreditDialogClientsBoard(
                                         newBalenceOfCredits = newBalenceOfCredits,
                                         boardStatistiquesStatViewModel
                                     )
+                                    viewModel.updateClientsList(idClient=id,newBalenceOfCredits)
 
                                     fetchRecentInvoicesCB(
                                         clientsId,
