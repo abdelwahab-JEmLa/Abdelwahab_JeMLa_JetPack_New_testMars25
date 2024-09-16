@@ -1,9 +1,7 @@
 package g_BoardStatistiques
-
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +20,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -32,29 +28,17 @@ import java.util.Locale
 fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
     val statistics by viewModel.statistics.collectAsState()
 
-    LaunchedEffect(key1 = viewModel) {
+    LaunchedEffect(viewModel) {
         viewModel.checkAndUpdateStatistics()
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Board Statistics",
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text("Board Statistics", style = MaterialTheme.typography.titleSmall)
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-        statistics.lastOrNull()?.let { latestStat ->
-            Text(
-                text = "Date: ${latestStat.date}",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
-            Text(
-                text = "Total Credits: $${String.format("%.2f", latestStat.totaleCredits)}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+        statistics.lastOrNull()?.let { stat ->
+            Text("Date: ${stat.date}")
+            Text("Total Credits: $${String.format("%.2f", stat.totaleCredits)}")
         } ?: Text("No statistics available")
     }
 }
@@ -67,86 +51,42 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     fun checkAndUpdateStatistics() {
         viewModelScope.launch(Dispatchers.IO) {
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val statisticsRef = firestore.collection("G_Statistiques").document(currentDate)
-
-            try {
-                val docSnapshot = statisticsRef.get().await()
-                if (!docSnapshot.exists()) {
-                    val totalCredits = calculateTotalCredits()
-                    updateOrCreateStatistics(totalCredits)
-                } else {
-                    fetchLatestStatistics()
-                }
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error checking statistics: ", e)
-            }
+            val totalCredits = calculateTotalCredits()
+            updateOrCreateStatistics(currentDate, totalCredits)
         }
     }
 
-    private suspend fun calculateTotalCredits(): Double {
-        return withContext(Dispatchers.IO) {
-            (1..9).sumOf { supplierId ->
-                getCurrentCreditBalance(supplierId.toLong())
-            }
-        }
+    private suspend fun calculateTotalCredits(): Double =
+        (1..9).sumOf { getCurrentCreditBalance(it.toLong()) }
+
+    private suspend fun getCurrentCreditBalance(supplierId: Long): Double =
+        firestore.collection("F_SupplierArticlesFireS")
+            .document(supplierId.toString())
+            .collection("latest Totale et Credit Des Bons")
+            .document("latest")
+            .get()
+            .await()
+            .getDouble("ancienCredits") ?: 0.0
+
+    private suspend fun updateOrCreateStatistics(date: String, totalCredits: Double) {
+        firestore.collection("G_Statistiques").document(date)
+            .set(Statistiques(date = date, totaleCredits = totalCredits))
+            .await()
+        fetchLatestStatistics()
     }
 
-    private suspend fun getCurrentCreditBalance(supplierId: Long): Double {
-        return withContext(Dispatchers.IO) {
-            try {
-                val latestDoc = firestore.collection("F_SupplierArticlesFireS")
-                    .document(supplierId.toString())
-                    .collection("latest Totale et Credit Des Bons")
-                    .document("latest")
-                    .get()
-                    .await()
-
-                latestDoc.getDouble("ancienCredits") ?: 0.0
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error fetching current credit balance: ", e)
-                0.0
-            }
-        }
-    }
-
-    private fun updateOrCreateStatistics(totalCredits: Double) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val statisticsRef = firestore.collection("G_Statistiques").document(currentDate)
-
-            try {
-                val newStatistics = Statistiques(date = currentDate, totaleCredits = totalCredits)
-                statisticsRef.set(newStatistics).await()
-                fetchLatestStatistics() // Refresh the statistics after updating
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error updating or creating statistics: ", e)
-            }
-        }
-    }
-
-    private fun fetchLatestStatistics() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val latestStats = firestore.collection("G_Statistiques")
-                    .orderBy("date", Query.Direction.DESCENDING)
-                    .limit(1)
-                    .get()
-                    .await()
-                    .toObjects(Statistiques::class.java)
-
-                _statistics.value = latestStats
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error fetching latest statistics: ", e)
-            }
-        }
+    private suspend fun fetchLatestStatistics() {
+        _statistics.value = firestore.collection("G_Statistiques")
+            .orderBy("date", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .limit(1)
+            .get()
+            .await()
+            .toObjects(Statistiques::class.java)
     }
 }
 
 data class Statistiques(
     val vid: Int = 0,
     var date: String = "",
-    var totaleCredits: Double = 0.0,
-) {
-    // No-argument constructor for Firebase
-    constructor() : this(0)
-}
+    var totaleCredits: Double = 0.0
+)
