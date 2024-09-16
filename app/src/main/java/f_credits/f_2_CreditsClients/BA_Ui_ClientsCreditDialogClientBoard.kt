@@ -123,10 +123,10 @@ fun ClientsCreditDialogClientsBoard(
                                 value = clientsPaymentActuelle,
                                 onValueChange = { newClientsPaymentActuelle ->
                                     clientsPaymentActuelle = newClientsPaymentActuelle
-                                    clientsPaymentActuelleDouble = (newClientsPaymentActuelle.toDoubleOrNull() ?: 0.0)
+                                    clientsPaymentActuelleDouble = (newClientsPaymentActuelle.toDoubleOrNull() ?:ancienCredit )
 
                                     restCreditDeCetteBon = 0.0
-                                    newBalenceOfCredits = ancienCredit + (if (itsPayment) clientsPaymentActuelleDouble else -clientsPaymentActuelleDouble)
+                                    newBalenceOfCredits = ancienCredit + (if (itsPayment) clientsPaymentActuelleDouble else - clientsPaymentActuelleDouble)
                                 },
                                 label = { Text("Payment Amount", color = Color.White) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -361,7 +361,7 @@ fun updateClientsCreditCB(
     val data = hashMapOf(
         "date" to formattedDateTime,
         "totaleDeCeBon" to clientsTotalDeCeBon,
-        "payeCetteFoit" to clientsPaymentActuelle.coerceAtLeast(0.0),
+        "payeCetteFoit" to clientsPaymentActuelle*-1,
         "creditFaitDonCeBon" to restCreditDeCetteBon.coerceAtLeast(0.0),
         "ancienCredits" to newBalenceOfCredits
     )
