@@ -775,7 +775,6 @@ class CreditsViewModel : ViewModel() {
                     newList.forEach { supplier ->
                         val (balance, isLongTerm) = getCurrentCreditBalance(supplier.idSupplierSu)
                         supplier.currentCreditBalance = balance
-                        supplier.isLongTermCredit = isLongTerm
                     }
                     _supplierList.value = newList
                 }
@@ -820,7 +819,7 @@ class CreditsViewModel : ViewModel() {
             currentSupps.map { supplier ->
                 if (supplier.idSupplierSu == idSupplierSu) {
                     supplier.copy(
-                        isLongTermCredit = isChecked
+                        isLongTermCredit = ! supplier. isLongTermCredit
                     )
 
                 } else {
