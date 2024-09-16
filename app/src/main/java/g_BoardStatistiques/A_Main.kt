@@ -1,7 +1,7 @@
 package g_BoardStatistiques
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,13 +32,17 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
         viewModel.checkAndUpdateStatistics()
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Board Statistics", style = MaterialTheme.typography.titleSmall)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+    Column(modifier = Modifier) {
+        Text(
+            "Board Statistics",
+            style = MaterialTheme.typography.labelSmall // TODO center
+        )
+        HorizontalDivider(modifier = Modifier.padding(vertical = 3.dp))
 
         statistics.lastOrNull()?.let { stat ->
             Text("Date: ${stat.date}")
-            Text("Total Credits: $${String.format("%.2f", stat.totaleCredits)}")
+            Text("Total Credits Suppliers: $${String.format("%.2f", stat.totaleCreditsSuppliers)}")
+            Text("Total Credits Clients: $${String.format("%.2f", stat.totaleCreditsClients)}")
         } ?: Text("No statistics available")
     }
 }
@@ -51,13 +55,14 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     fun checkAndUpdateStatistics() {
         viewModelScope.launch(Dispatchers.IO) {
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val totalCredits = calculateTotalCredits()
-            updateOrCreateStatistics(currentDate, totalCredits)
+            val totalCreditsSuppliers = calculateTotalCreditsSuppliers()
+            val totalCreditsClients = calculateTotalCreditsClients()
+            updateOrCreateStatistics(currentDate, totalCreditsSuppliers, totalCreditsClients)
         }
     }
 
-    private suspend fun calculateTotalCredits(): Double =
-        (1..9).sumOf { getCurrentCreditBalance(it.toLong()) }
+    private suspend fun calculateTotalCreditsSuppliers(): Double =
+        (1..20).sumOf { getCurrentCreditBalance(it.toLong()) }
 
     private suspend fun getCurrentCreditBalance(supplierId: Long): Double =
         firestore.collection("F_SupplierArticlesFireS")
@@ -68,9 +73,20 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             .await()
             .getDouble("ancienCredits") ?: 0.0
 
-    private suspend fun updateOrCreateStatistics(date: String, totalCredits: Double) {
+    private suspend fun calculateTotalCreditsClients(): Double =
+        firestore.collection("F_ClientsArticlesFireS")
+            .get()
+            .await()
+            .documents
+            .sumOf { it.getDouble("ancienCredits") ?: 0.0 }
+
+    private suspend fun updateOrCreateStatistics(date: String, totalCreditsSuppliers: Double, totalCreditsClients: Double) {
         firestore.collection("G_Statistiques").document(date)
-            .set(Statistiques(date = date, totaleCredits = totalCredits))
+            .set(Statistiques(
+                date = date,
+                totaleCreditsSuppliers = totalCreditsSuppliers,
+                totaleCreditsClients = totalCreditsClients
+            ))
             .await()
         fetchLatestStatistics()
     }
@@ -88,5 +104,6 @@ class BoardStatistiquesStatViewModel : ViewModel() {
 data class Statistiques(
     val vid: Int = 0,
     var date: String = "",
-    var totaleCredits: Double = 0.0
+    var totaleCreditsSuppliers: Double = 0.0,
+    var totaleCreditsClients: Double = 0.0
 )

@@ -243,7 +243,9 @@ fun MyApp(
                 composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, articleDao) }
                 composable("C_ManageBonsClients") { FragmentManageBonsClients() }
                 composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao) }
-                composable("FragmentCredits") { FragmentCredits(creditsViewModel) }
+                composable("FragmentCredits") { FragmentCredits(creditsViewModel,
+                    onToggleNavBar = { isNavBarVisible = !isNavBarVisible }
+                ) }
                 composable("FragmentCreditsClients") {
                     FragmentCreditsClients(
                         creditsClientsViewModel,
@@ -301,16 +303,8 @@ fun MainScreen(
                         .padding(16.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Statistiques",
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
                         CardBoardStatistiques(boardStatistiquesStatViewModel)
-                    }
+
                 }
 
                 LazyVerticalGrid(

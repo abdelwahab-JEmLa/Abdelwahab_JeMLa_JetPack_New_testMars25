@@ -22,6 +22,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Remove
@@ -32,6 +36,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -73,8 +79,10 @@ import d_EntreBonsGro.updateSupplierCredit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -84,12 +92,17 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.random.Random
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
+fun FragmentCredits(
+    viewModel: CreditsViewModel = viewModel(),
+    onToggleNavBar: () -> Unit
+) {
     val suppliers by viewModel.supplierList.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var showMenuDialog by remember { mutableStateOf(false) }
+    var showFloatingButtons by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -105,7 +118,47 @@ fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
                     }
                 }
             )
-        }
+        },
+        floatingActionButton = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                if (showFloatingButtons) {
+                    FloatingActionButton(
+                        onClick = { onToggleNavBar() },
+                        containerColor = Color.Red
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Toggle Navigation Bar",
+                            tint = Color.White
+                        )
+                    }
+                    FloatingActionButton(
+                        onClick = { viewModel.toggleFilter() },
+                        containerColor = Color.Red
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Toggle Filter",
+                            tint = Color.White
+                        )
+                    }
+                }
+                FloatingActionButton(
+                    onClick = { showFloatingButtons = !showFloatingButtons },
+                    containerColor = Color.Red
+                ) {
+                    Icon(
+                        imageVector = if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (showFloatingButtons) "Hide Buttons" else "Show Buttons",
+                        tint = Color.White
+                    )
+                }
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -150,7 +203,6 @@ fun FragmentCredits(viewModel: CreditsViewModel = viewModel()) {
         )
     }
 }
-
 @Composable
 fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
@@ -674,15 +726,27 @@ fun AddSupplierDialog(onDismiss: () -> Unit, onAddSupplier: (String) -> Unit) {
 fun Modifier.drawTextWithOutline(outlineColor: Color) = this.drawBehind {
     drawRect(outlineColor, style = Stroke(width = 3f))
 }
+
 class CreditsViewModel : ViewModel() {
     private val _supplierList = MutableStateFlow<List<SupplierTabelle>>(emptyList())
-    val supplierList: StateFlow<List<SupplierTabelle>> = _supplierList.asStateFlow()
-
+    private val _showOnlyWithCredit = MutableStateFlow(true)
     private val database = FirebaseDatabase.getInstance()
     private val suppliersRef = database.getReference("F_Suppliers")
 
+    val supplierList: StateFlow<List<SupplierTabelle>> = combine(_supplierList, _showOnlyWithCredit) { suppliers, onlyWithCredit ->
+        if (onlyWithCredit) {
+            suppliers.filter { it.currentCreditBalance != 0.0 }
+        } else {
+            suppliers
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     init {
         loadSuppliers()
+    }
+
+    fun toggleFilter() {
+        _showOnlyWithCredit.value = !_showOnlyWithCredit.value
     }
 
     private fun loadSuppliers() {
@@ -698,7 +762,7 @@ class CreditsViewModel : ViewModel() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                println("Error loading suppliers: ${error.message}")
+                Log.e("CreditsViewModel", "Error loading suppliers: ${error.message}")
             }
         })
     }
@@ -725,6 +789,7 @@ class CreditsViewModel : ViewModel() {
     fun updateSupplier(updatedSupplier: SupplierTabelle) {
         suppliersRef.child(updatedSupplier.idSupplierSu.toString()).setValue(updatedSupplier)
     }
+
     fun updateSupplierBon(supplierId: Long, bonNumber: String) {
         suppliersRef.child(supplierId.toString()).child("bonDuSupplierSu").setValue(bonNumber)
     }
@@ -741,13 +806,13 @@ class CreditsViewModel : ViewModel() {
         suppliersRef.child(newSupplier.idSupplierSu.toString()).setValue(newSupplier)
     }
 
-
     private fun generateRandomTropicalColor(): String {
         val hue = Random.nextFloat() * 360
         val saturation = 0.7f + Random.nextFloat() * 0.3f  // 70-100% saturation
         val value = 0.5f + Random.nextFloat() * 0.3f  // 50-80% value (darker colors)
         return "#%06X".format(0xFFFFFF and android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
     }
+
     fun deleteSupplier(supplierId: Long) {
         suppliersRef.child(supplierId.toString()).removeValue()
     }
@@ -757,7 +822,5 @@ class CreditsViewModel : ViewModel() {
             suppliersRef.child(supplier.idSupplierSu.toString()).child("bonDuSupplierSu").setValue("")
         }
     }
-
 }
-
 

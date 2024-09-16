@@ -411,6 +411,8 @@ fun Modifier.drawTextWithOutlineClients(outlineColor: Color) = this.drawBehind {
 class CreditsClientsViewModel : ViewModel() {
     private val _clientsList = MutableStateFlow<List<ClientsTabelle>>(emptyList())
     private val _showOnlyWithCredit = MutableStateFlow(true) // Changed to true by default
+    private val database = FirebaseDatabase.getInstance()
+    private val clientsRef = database.getReference("G_Clients")
 
     val clientsList: StateFlow<List<ClientsTabelle>> = combine(_clientsList, _showOnlyWithCredit) { clients, onlyWithCredit ->
         if (onlyWithCredit) {
@@ -420,13 +422,14 @@ class CreditsClientsViewModel : ViewModel() {
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val database = FirebaseDatabase.getInstance()
-    private val clientsRef = database.getReference("G_Clients")
 
     init {
         loadClients()
     }
 
+    fun toggleFilter() {
+        _showOnlyWithCredit.value = !_showOnlyWithCredit.value
+    }
     private fun loadClients() {
         clientsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -501,7 +504,4 @@ class CreditsClientsViewModel : ViewModel() {
         }
     }
 
-    fun toggleFilter() {
-        _showOnlyWithCredit.value = !_showOnlyWithCredit.value
-    }
 }
