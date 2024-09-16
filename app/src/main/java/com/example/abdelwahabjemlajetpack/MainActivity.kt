@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.People
@@ -184,7 +183,7 @@ fun MyApp(
                     onClick = { isNavBarVisible = !isNavBarVisible }
                 ) {
                     Icon(
-                        if (isNavBarVisible) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp,
+                        if (isNavBarVisible) Icons.Filled.KeyboardArrowDown else Icons.Filled.Home,
                         contentDescription = "Toggle Navigation Bar"
                     )
                 }
