@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,11 +74,11 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            Button(    //TODO fait que ca soit un petit icon button
+            IconButton(
                 onClick = {
-                    scope.launch {
+                    viewModel.viewModelScope.launch {
                         isUpdating = true
-                        viewModel.checkAndUpdateStatistics(updateDirectly=true)
+                        viewModel.checkAndUpdateStatistics(updateDirectly = true)
                         isUpdating = false
                     }
                 },
@@ -88,10 +88,14 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                 if (isUpdating) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = Color.White
                     )
                 } else {
-                    Text("Update Statistics")
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Update Statistics",
+                        tint = Color.White
+                    )
                 }
             }
             statistics.lastOrNull()?.let { stat ->
