@@ -338,6 +338,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
     }
 }
 
+
 data class Statistiques(
     val vid: Int = 0,
     var date: String = "",
