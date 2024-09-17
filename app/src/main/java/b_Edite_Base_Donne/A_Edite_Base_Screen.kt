@@ -290,6 +290,7 @@ fun ArticlesScreenList(
         }
     }
 }
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ArticleBoardCard(
@@ -315,7 +316,8 @@ fun ArticleBoardCard(
     LaunchedEffect(Unit) {
         suppliersRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val suppliersList = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
+                val suppliersList =
+                    snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
                 suppliers = suppliersList
             }
 
@@ -368,7 +370,8 @@ fun ArticleBoardCard(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.height(230.dp)
                 ) {
-                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                    val imagePath =
+                        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                     LoadImageFromPath(
                         imagePath = imagePath,
                         modifier = Modifier.clickable {
@@ -384,7 +387,11 @@ fun ArticleBoardCard(
                             if (updatedArticle != null) {
                                 editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
                             }
-                            editeBaseDonneViewModel.updateBaseDonneStatTabel("diponibilityState", article, newDisponibilityState)
+                            editeBaseDonneViewModel.updateBaseDonneStatTabel(
+                                "diponibilityState",
+                                article,
+                                newDisponibilityState
+                            )
                         }
                     )
 
@@ -405,6 +412,7 @@ fun ArticleBoardCard(
                                 )
                             }
                         }
+
                         "NonForNewsClients" -> {
                             Box(
                                 modifier = Modifier
@@ -438,7 +446,12 @@ fun ArticleBoardCard(
                             val articlemonBenfice = article.monPrixVent - article.monPrixAchat
                             val monBeneficeUniter = articlemonBenfice / article.nmbrUnite
                             AutoResizedText(
-                                text = "Be>${if (articlesDataBaseDonne?.affichageUniteState == false) String.format("%.1f", articlemonBenfice) else String.format("%.1f", monBeneficeUniter)}",
+                                text = "Be>${
+                                    if (articlesDataBaseDonne?.affichageUniteState == false) String.format(
+                                        "%.1f",
+                                        articlemonBenfice
+                                    ) else String.format("%.1f", monBeneficeUniter)
+                                }",
                                 textAlign = TextAlign.Center,
                                 color = DarkGreen,
                             )
@@ -450,31 +463,19 @@ fun ArticleBoardCard(
                                 .padding(0.dp)
                         ) {
                             AutoResizedText(
-                                text = "Pv>${if (articlesDataBaseDonne?.affichageUniteState == false) String.format("%.1f", article.monPrixVent) else String.format("%.1f", article.monPrixVentUniter)}",
+                                text = "Pv>${
+                                    if (articlesDataBaseDonne?.affichageUniteState == false) String.format(
+                                        "%.1f",
+                                        article.monPrixVent
+                                    ) else String.format("%.1f", article.monPrixVentUniter)
+                                }",
                                 textAlign = TextAlign.Center,
                                 color = Color.Red,
                             )
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(7.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
 
-
-                IconButton(
-                    onClick = { showDialog = true },
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "More Info"
-                    )
-                }
                 AutoResizedText(
                     text = capitalizeFirstLetter(article.nomArticleFinale),
                     modifier = Modifier
@@ -485,17 +486,35 @@ fun ArticleBoardCard(
                     textAlign = TextAlign.Center,
                     color = Color.Red
                 )
-                }
-                AutoResizedText(
-                    text = capitalizeFirstLetter(article.nomCategorie),
+                Row(
                     modifier = Modifier
-                        .padding(vertical = 0.dp)
-                        .clickable {
-                            onArticleSelect(article)
-                        },
-                    textAlign = TextAlign.Center,
-                    color = Pink80
-                )
+                        .fillMaxWidth()
+                        .padding(7.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+
+                    IconButton(
+                        onClick = { showDialog = true },
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "More Info"
+                        )
+                    }
+                    AutoResizedText(
+                        text = capitalizeFirstLetter(article.nomCategorie),
+                        modifier = Modifier
+                            .padding(vertical = 0.dp)
+                            .clickable {
+                                onArticleSelect(article)
+                            },
+                        textAlign = TextAlign.Center,
+                        color = Pink80
+                    )
+                }
             }
             if (articlesDataBaseDonne != null) {
                 IconButton(
@@ -530,7 +549,11 @@ fun ArticleBoardCard(
                             ),
                             modifier = Modifier.padding(4.dp)
                         ) {
-                            Text(supplier.nomSupplierSu, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                supplier.nomSupplierSu,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
