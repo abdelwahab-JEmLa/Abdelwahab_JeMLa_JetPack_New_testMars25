@@ -262,25 +262,23 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             G_StatistiquesRef.child(stat.date).setValue(stat)
         }
     }
-    fun updateTotaleCreditsClients(clientsPaymentActuelle: Double? =null, clientTotal: Double? =null) {
+    fun updateTotaleCreditsClients(clientsPaymentActuelle: Double? = null, clientTotal: Double? = null) {
         _statistics.update { currentStats ->
             currentStats.map { stat ->
                 if (stat.date == currentDate) {
                     stat.copy(
-                        totaleCreditsClients = stat.totaleCreditsClients - clientsPaymentActuelle!!,
-                        totaleDonsLacaisse =stat.totaleDonsLacaisse + (clientTotal
-                            ?: clientsPaymentActuelle)
+                        totaleCreditsClients = stat.totaleCreditsClients - (clientsPaymentActuelle ?: 0.0),
+                        totaleDonsLacaisse = stat.totaleDonsLacaisse + (clientsPaymentActuelle ?: clientTotal ?: 0.0)
                     )
-
                 } else {
                     stat
                 }
             }
         }
+
         // Update Firebase with the new statistic
         viewModelScope.launch {
-            val updatedStat = _statistics.value.find { it.date == currentDate }
-            updatedStat?.let { updateFireBaseRef(it) }
+            _statistics.value.find { it.date == currentDate }?.let { updateFireBaseRef(it) }
         }
     }
     fun sendFromShortToLongSuppCredits(amontSended: Double) {

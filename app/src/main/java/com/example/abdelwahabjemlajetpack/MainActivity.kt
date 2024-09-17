@@ -182,7 +182,7 @@ fun MyApp(
                             label = {
                                 Text(
                                     screen.title,
-                                    style = MaterialTheme.typography.labelSmall,//TODO fait que ca soit plus petite
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = if (currentRoute == screen.route)
                                         MaterialTheme.colorScheme.primary
                                     else
@@ -196,7 +196,7 @@ fun MyApp(
                                     launchSingleTop = true
                                 }
                             },
-                            colors = NavigationBarItemDefaults.colors(
+                            colors = NavigationBarItemDefaults.colors(   //TODO fait cree des couleurs aleatoire
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
                                 indicatorColor = MaterialTheme.colorScheme.secondaryContainer,

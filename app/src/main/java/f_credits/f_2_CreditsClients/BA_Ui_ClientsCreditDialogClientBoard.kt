@@ -377,7 +377,7 @@ fun updateClientsCreditCB(
             .set(data)
 
         // Update _statistics in BoardStatistiquesStatViewModel
-        boardStatistiquesStatViewModel.updateTotaleCreditsClients(clientsPaymentActuelle)
+        boardStatistiquesStatViewModel.updateTotaleCreditsClients(clientsPaymentActuelle=clientsPaymentActuelle)
 
 
 
