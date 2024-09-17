@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
                     database.articleDao(),
                     creditsViewModel,
                     creditsClientsViewModel ,
-                    boardStatistiquesStatViewModel, _,
+                    boardStatistiquesStatViewModel,
                 )
             }
         }
@@ -147,7 +147,6 @@ fun MyApp(
     articleDao: ArticleDao,
     creditsViewModel: CreditsViewModel,
     creditsClientsViewModel: CreditsClientsViewModel,
-    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 ) {
     val navController = rememberNavController()
