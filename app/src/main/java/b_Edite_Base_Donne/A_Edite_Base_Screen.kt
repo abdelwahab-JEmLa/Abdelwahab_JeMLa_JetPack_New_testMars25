@@ -84,6 +84,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -308,7 +310,7 @@ fun ArticleBoardCard(
     var updateStatus by remember { mutableStateOf<String?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
-
+    val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     // Fetch suppliers when the component is first composed
     LaunchedEffect(Unit) {
         suppliersRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -330,9 +332,12 @@ fun ArticleBoardCard(
             try {
                 val batch = firestore.batch()
                 val lineData = hashMapOf<String, Any>(
+                    "idArticle" to (article.idArticle ?: ""),
                     "nomArticleFinale" to (article.nomArticleFinale ?: ""),
                     "diponibilityState" to (article.diponibilityState ?: ""),
-                )
+                    "lastUpdateState" to (currentDate),
+
+                    )
                 val docId = "${article.idArticle}"
                 val docRef = supplierArticlesRef
                     .document(supplier.idSupplierSu.toString())

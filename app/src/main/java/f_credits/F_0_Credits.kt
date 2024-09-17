@@ -304,7 +304,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                                         onCheckedChange = { isChecked ->
                                             viewModel.updateSupplierList(supplier.idSupplierSu, "ignoreItProdects")
                                             coroutineScope.launch {
-                                                viewModel.updateSupplierArticlesWithNonDispo(supplier.idSupplierSu, if (isChecked) "Non Dispo" else "")
+                                                viewModel.updateSupplierArticlesWithNonDispo(supplier.idSupplierSu, if (isChecked) "Non Dispo" else null)
                                             }
                                         }
                                     ){
@@ -887,7 +887,7 @@ class CreditsViewModel : ViewModel() {
             updatedStat?.let { updateSupplierFireBaseRef(it) }
         }
     }
-    suspend fun updateSupplierArticlesWithNonDispo(idSupplierSu: Long, newVal: String) {
+    suspend fun updateSupplierArticlesWithNonDispo(idSupplierSu: Long, newVal: String?) {
         val firestore = Firebase.firestore
         val realtimeDB = FirebaseDatabase.getInstance()
 
@@ -900,13 +900,18 @@ class CreditsViewModel : ViewModel() {
 
         // Iterate through all documents and update their availability state in Realtime Database
         for (document in querySnapshot.documents) {
-            val documentId = document.id
-            realtimeDB.reference
-                .child("e_DBJetPackExport")
-                .child(documentId)
-                .child("diponibilityState")
-                .setValue(newVal)
-                .await()
+            val documentId = document.getString("idArticle")
+            val currentDisponibilityState = document.getString("diponibilityState")
+
+            // Only update if idArticle and diponibilityState are not empty
+            if (!documentId.isNullOrEmpty() && !currentDisponibilityState.isNullOrEmpty()) {
+                realtimeDB.reference
+                    .child("e_DBJetPackExport")
+                    .child(documentId)
+                    .child("diponibilityState")
+                    .setValue(newVal ?: currentDisponibilityState)
+                    .await()
+            }
         }
     }
     fun updateSupplier(updatedSupplier: SupplierTabelle) {
