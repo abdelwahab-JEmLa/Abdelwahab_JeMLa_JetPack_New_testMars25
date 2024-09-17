@@ -29,9 +29,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Loop
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -169,18 +170,6 @@ fun A_Edite_Base_Screen(
                     val updatedArticle = baseDonne.copy(funChangeImagsDimention = !baseDonne.funChangeImagsDimention)
                     editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
                 },
-                onImageArtClick = { article ->
-                    val updatedArticle = articlesDataBaseDonne.find { it.idArticle == article.idArticle }?.copy(
-                        diponibilityState = if (article.diponibilityState == "") "Non Dispo" else ""
-                    )
-                    if (updatedArticle != null) {
-                        editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
-                    }
-
-                        editeBaseDonneViewModel.updateBaseDonneStatTabel("diponibilityState", article,if (article.diponibilityState == "") "Non Dispo" else "")
-
-
-                }
             )
         }
     )
@@ -245,7 +234,6 @@ fun ArticlesScreenList(
     function: (String) -> Unit,
     function1: (BaseDonne?) -> Unit,
     onClickImageDimentionChangeur: (BaseDonne) -> Unit,
-    onImageArtClick: (BaseDonneStatTabel) -> Unit,
 ) {
 
     LazyColumn(
@@ -276,7 +264,8 @@ fun ArticlesScreenList(
                             articlesDataBaseDonne = relatedBaseDonne,
                             onClickImageDimentionChangeur = onClickImageDimentionChangeur,
                             onArticleSelect = onArticleSelect,
-                            onImageArtClick
+                            editeBaseDonneViewModel =editeBaseDonneViewModel
+
                         )
                     }
                 }
@@ -284,14 +273,13 @@ fun ArticlesScreenList(
         }
     }
 }
-
 @Composable
 fun ArticleBoardCard(
     article: BaseDonneStatTabel,
     articlesDataBaseDonne: BaseDonne?,
     onClickImageDimentionChangeur: (BaseDonne) -> Unit,
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
-    onImageArtClick: (BaseDonneStatTabel) -> Unit
+    editeBaseDonneViewModel: EditeBaseDonneViewModel
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -311,24 +299,53 @@ fun ArticleBoardCard(
                     LoadImageFromPath(
                         imagePath = imagePath,
                         modifier = Modifier.clickable {
-                            onImageArtClick(article)
+                            val newDisponibilityState = when (article.diponibilityState) {
+                                "" -> "Non Dispo"
+                                "Non Dispo" -> "NonForNewsClients"
+                                "NonForNewsClients" -> ""
+                                else -> ""
+                            }
+                            val updatedArticle = articlesDataBaseDonne?.copy(
+                                diponibilityState = newDisponibilityState
+                            )
+                            if (updatedArticle != null) {
+                                editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
+                            }
+                            editeBaseDonneViewModel.updateBaseDonneStatTabel("diponibilityState", article, newDisponibilityState)
                         }
                     )
 
-                    // Check if the article is not available
-                    if (articlesDataBaseDonne?.diponibilityState == "Non Dispo") {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.5f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Loop,
-                                contentDescription = "Not Available",
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.White
-                            )
+                    // Check if the article is not available or not for new clients
+                    when (articlesDataBaseDonne?.diponibilityState) {
+                        "Non Dispo" -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.TextDecrease,
+                                    contentDescription = "Not Available For all",
+                                    modifier = Modifier.size(64.dp),
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                        "NonForNewsClients" -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Gray.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Not Available For New Clients",
+                                    modifier = Modifier.size(64.dp),
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
 
@@ -369,15 +386,21 @@ fun ArticleBoardCard(
                 }
                 AutoResizedText(
                     text = capitalizeFirstLetter(article.nomArticleFinale),
-                    modifier = Modifier.padding(vertical = 0.dp).clickable {
-                        onArticleSelect(article)
-                    },
+                    modifier = Modifier
+                        .padding(vertical = 0.dp)
+                        .clickable {
+                            onArticleSelect(article)
+                        },
                     textAlign = TextAlign.Center,
                     color = Color.Red
                 )
                 AutoResizedText(
                     text = capitalizeFirstLetter(article.nomCategorie),
-                    modifier = Modifier.padding(vertical = 0.dp),
+                    modifier = Modifier
+                        .padding(vertical = 0.dp)
+                        .clickable {
+                            onArticleSelect(article)
+                        },
                     textAlign = TextAlign.Center,
                     color = Pink80
                 )
@@ -398,8 +421,6 @@ fun ArticleBoardCard(
         }
     }
 }
-
-
 @Composable
 fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
