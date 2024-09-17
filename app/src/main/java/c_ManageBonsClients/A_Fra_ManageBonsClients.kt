@@ -49,13 +49,14 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import g_BoardStatistiques.BoardStatistiquesStatViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.round
 import kotlin.random.Random
 
 @Composable
-fun FragmentManageBonsClients() {
+fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel) {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var clientsData by remember { mutableStateOf<List<ClientsTabelle>>(emptyList()) }
 
@@ -131,6 +132,7 @@ fun FragmentManageBonsClients() {
                 coroutineScope = coroutineScope,
                 listState = listState,
                 paddingValues = PaddingValues(0.dp),
+                boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
             )
         }
     }
@@ -166,7 +168,7 @@ fun DisplayManageBonsClients(
     onArticleSelect: (Long?) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
-    paddingValues: PaddingValues,
+    paddingValues: PaddingValues, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
@@ -213,6 +215,7 @@ fun DisplayManageBonsClients(
                         isActive = activeClients.contains(nomClient),
                         allArticles = articles,
                         clientTotal = clientTotals[nomClient] ?: 0.0,
+                        boardStatistiquesStatViewModel,
                     )
                 }
 

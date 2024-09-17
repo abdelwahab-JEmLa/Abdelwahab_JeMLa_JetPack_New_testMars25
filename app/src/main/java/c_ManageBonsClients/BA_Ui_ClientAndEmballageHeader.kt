@@ -54,6 +54,7 @@ import com.google.firebase.database.database
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import f_credits.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
+import g_BoardStatistiques.BoardStatistiquesStatViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -73,7 +74,9 @@ fun ClientAndEmballageHeader(
     isActive: Boolean,
     allArticles: List<ArticlesAcheteModele>,
     clientTotal: Double,
-) {
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+
+    ) {
     val context = LocalContext.current
 
     var showPrintDialog by remember { mutableStateOf(false) }
@@ -244,6 +247,8 @@ fun ClientAndEmballageHeader(
                                     newBalenceOfCredits=ancienCredits,
                                 )
                             }
+                            boardStatistiquesStatViewModel.updateTotaleCreditsClients(clientTotal =clientTotal)
+
                         }
                         showPrintDialog = false
                     }

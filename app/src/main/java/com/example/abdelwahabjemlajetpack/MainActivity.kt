@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
                     database.articleDao(),
                     creditsViewModel,
                     creditsClientsViewModel ,
-                    boardStatistiquesStatViewModel,
+                    boardStatistiquesStatViewModel, _,
                 )
             }
         }
@@ -147,6 +147,7 @@ fun MyApp(
     articleDao: ArticleDao,
     creditsViewModel: CreditsViewModel,
     creditsClientsViewModel: CreditsClientsViewModel,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 ) {
     val navController = rememberNavController()
@@ -241,7 +242,9 @@ fun MyApp(
                     )
                 }
                 composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, articleDao) }
-                composable("C_ManageBonsClients") { FragmentManageBonsClients() }
+                composable("C_ManageBonsClients") { FragmentManageBonsClients(
+                    boardStatistiquesStatViewModel
+                ) }
                 composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao) }
                 composable("FragmentCredits") { FragmentCredits(creditsViewModel,
                     onToggleNavBar = { isNavBarVisible = !isNavBarVisible }

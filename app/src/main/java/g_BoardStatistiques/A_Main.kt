@@ -262,13 +262,14 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             G_StatistiquesRef.child(stat.date).setValue(stat)
         }
     }
-    fun updateTotaleCreditsClients(clientsPaymentActuelle: Double) {
+    fun updateTotaleCreditsClients(clientsPaymentActuelle: Double? =null, clientTotal: Double? =null) {
         _statistics.update { currentStats ->
             currentStats.map { stat ->
                 if (stat.date == currentDate) {
                     stat.copy(
-                        totaleCreditsClients = stat.totaleCreditsClients - clientsPaymentActuelle,
-                        totaleDonsLacaisse =stat.totaleDonsLacaisse + clientsPaymentActuelle
+                        totaleCreditsClients = stat.totaleCreditsClients - clientsPaymentActuelle!!,
+                        totaleDonsLacaisse =stat.totaleDonsLacaisse + (clientTotal
+                            ?: clientsPaymentActuelle)
                     )
 
                 } else {
