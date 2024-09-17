@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,10 +31,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TextDecrease
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,6 +50,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -67,7 +73,16 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.abdelwahabjemlajetpack.R
 import com.example.abdelwahabjemlajetpack.ui.theme.DarkGreen
 import com.example.abdelwahabjemlajetpack.ui.theme.Pink80
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import f_credits.SupplierTabelle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.File
 
 
@@ -421,6 +436,8 @@ fun ArticleBoardCard(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
@@ -430,6 +447,58 @@ fun DisplayDetailleArticle(
     function: (String) -> Unit,
     function1: (BaseDonne?) -> Unit,
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    val database = FirebaseDatabase.getInstance()
+    val suppliersRef = database.getReference("F_Suppliers")
+    var suppliers by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
+    var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
+    val firestore = Firebase.firestore
+
+    val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    // Fetch suppliers when the component is first composed
+    LaunchedEffect(Unit) {
+        suppliersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val suppliersList = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
+                suppliers = suppliersList
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+    }
+
+    // Function to update the supplier article and close the dialog
+    fun updateSupplierArticle(supplier: SupplierTabelle) {
+        showDialog = false  // Close the dialog immediately
+        coroutineScope.launch {
+            try {
+                val batch = firestore.batch()
+                val lineData = hashMapOf<String, Any>(
+                    "nomArticleFinale" to (article.nomArticleFinale ?: ""),
+                    // Add other relevant properties from BaseDonneStatTabel here
+                )
+                val docId = "${supplier.idSupplierSu}_${article.nomArticleFinale}"
+                val docRef = supplierArticlesRef
+                    .document(supplier.idSupplierSu.toString())
+                    .collection("historiquesAchats")
+                    .document(docId)
+                batch.set(docRef, lineData)
+
+                batch.commit().await()
+                updateStatus = "Update successful for ${supplier.nomSupplierSu}"
+                selectedSupplier = supplier
+            } catch (e: Exception) {
+                updateStatus = "Error: ${e.message}"
+            }
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -448,37 +517,68 @@ fun DisplayDetailleArticle(
             )
             Row(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DisplayColorsCards(article, Modifier.weight(0.38f))
-                DisplayArticleInformations(
-                    editeBaseDonneViewModel = editeBaseDonneViewModel,
-                    article = article,
-                    articlesDataBaseDonne= articlesDataBaseDonne,
-                    modifier = Modifier.weight(0.62f),
-                    function = function,
-                    currentChangingField = currentChangingField,
-                    function1 =function1,
-                )
-            }
-            Box(
-                modifier = Modifier
                     .fillMaxWidth()
                     .padding(7.dp),
-                contentAlignment = Alignment.Center
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = capitalizeFirstLetter(article.nomArticleFinale),
                     fontSize = 25.sp,
                     textAlign = TextAlign.Center,
-                    color = Color.Red
+                    color = Color.Red,
+                    modifier = Modifier.weight(1f)
                 )
+                IconButton(
+                    onClick = { showDialog = true },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "More Info"
+                    )
+                }
             }
         }
     }
-}
 
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Select a Supplier to Update") },
+            text = {
+                FlowRow(
+                    maxItemsInEachRow = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    suppliers.forEach { supplier ->
+                        Button(
+                            onClick = { updateSupplierArticle(supplier) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            ),
+                            modifier = Modifier.padding(4.dp)
+                        ) {
+                            Text(supplier.nomSupplierSu, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            },
+            confirmButton = {}  // No confirm button needed as dialog closes on selection
+        )
+    }
+
+    // Show a snackbar or some other UI element to display the update status
+    updateStatus?.let { status ->
+        LaunchedEffect(status) {
+            // You can replace this with a Snackbar or some other UI component to show the status
+            println(status)
+            delay(3000) // Show for 3 seconds
+            updateStatus = null
+        }
+    }
+}
 fun capitalizeFirstLetter(text: String): String {
     return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
