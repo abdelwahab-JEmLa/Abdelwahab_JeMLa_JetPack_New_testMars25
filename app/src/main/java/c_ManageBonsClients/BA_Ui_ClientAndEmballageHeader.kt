@@ -75,8 +75,6 @@ fun ClientAndEmballageHeader(
     allArticles: List<ArticlesAcheteModele>,
     clientTotal: Double,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-
     ) {
     val context = LocalContext.current
 
