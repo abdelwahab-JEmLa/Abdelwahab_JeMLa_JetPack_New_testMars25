@@ -900,7 +900,7 @@ class CreditsViewModel : ViewModel() {
 
         // Iterate through all documents and update their availability state in Realtime Database
         for (document in querySnapshot.documents) {
-            val documentId = document.getString("idArticle")
+            val documentId = document.get("idArticle")?.toString() // Change here
             val currentDisponibilityState = document.getString("diponibilityState")
 
             // Only update if idArticle and diponibilityState are not empty
