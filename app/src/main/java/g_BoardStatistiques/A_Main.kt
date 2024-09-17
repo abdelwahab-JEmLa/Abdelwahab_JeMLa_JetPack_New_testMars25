@@ -126,6 +126,10 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
                             value = (stat.totaleCreditsClients*-1),
                             onValueChange = { viewModel.updateTotaleProduitBlocke(it) },
                             )
+                        StatisticItem(
+                            label = "Total Credits للقادم",
+                            value = (stat.totaleCreditsSuppliers*-1)
+                        )
                         if (stat.creditsSuppDemiLongTerm!=0.0){
 
 
@@ -136,10 +140,7 @@ fun CardBoardStatistiques(viewModel: BoardStatistiquesStatViewModel) {
 
                         )
                         }
-                        StatisticItem(
-                            label = "Total Credits Suppliers",
-                            value = (stat.totaleCreditsSuppliers*-1)
-                        )
+
 
                     }
                 }
