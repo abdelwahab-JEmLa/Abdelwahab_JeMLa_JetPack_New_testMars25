@@ -267,7 +267,7 @@ class BoardStatistiquesStatViewModel : ViewModel() {
             currentStats.map { stat ->
                 if (stat.date == currentDate) {
                     stat.copy(
-                        totaleCreditsClients = stat.totaleCreditsClients - (clientsPaymentActuelle ?: 0.0),
+                        totaleCreditsClients = stat.totaleCreditsClients + (clientsPaymentActuelle ?: 0.0),
                         totaleDonsLacaisse = stat.totaleDonsLacaisse + (clientsPaymentActuelle ?: clientTotal ?: 0.0)
                     )
                 } else {
