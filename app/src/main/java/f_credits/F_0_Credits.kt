@@ -891,27 +891,39 @@ class CreditsViewModel : ViewModel() {
         val firestore = Firebase.firestore
         val realtimeDB = FirebaseDatabase.getInstance()
 
-        // Get all documents from the 'historiquesAchats' subcollection
-        val querySnapshot = firestore.collection("F_SupplierArticlesFireS")
-            .document(idSupplierSu.toString())
-            .collection("historiquesAchats")
-            .get()
-            .await()
+        try {
+            val querySnapshot = firestore.collection("F_SupplierArticlesFireS")
+                .document(idSupplierSu.toString())
+                .collection("historiquesAchats")
+                .get()
+                .await()
 
-        // Iterate through all documents and update their availability state in Realtime Database
-        for (document in querySnapshot.documents) {
-            val documentId = document.get("idArticle")?.toString() // Change here
-            val currentDisponibilityState = document.getString("diponibilityState")
+            println("Number of documents: ${querySnapshot.size()}")
 
-            // Only update if idArticle and diponibilityState are not empty
-            if (!documentId.isNullOrEmpty() && !currentDisponibilityState.isNullOrEmpty()) {
-                realtimeDB.reference
-                    .child("e_DBJetPackExport")
-                    .child(documentId)
-                    .child("diponibilityState")
-                    .setValue(newVal ?: currentDisponibilityState)
-                    .await()
+            for (document in querySnapshot.documents) {
+                println("Document data: ${document.data}")
+                println("Document fields: ${document.data?.keys}")
+
+                val documentId = document.get("idArticle")?.toString() ?: document.get("idArticleBG")?.toString()
+                println("documentId: $documentId")
+
+                val currentDisponibilityState = document.getString("diponibilityState")
+
+                if (!documentId.isNullOrEmpty()) {
+                    realtimeDB.reference
+                        .child("e_DBJetPackExport")
+                        .child(documentId)
+                        .child("diponibilityState")
+                        .setValue(newVal ?: currentDisponibilityState ?: "")
+                        .await()
+                    println("Updated document with id: $documentId")
+                } else {
+                    println("Skipping document due to null or empty idArticle and idArticleBG")
+                }
             }
+        } catch (e: Exception) {
+            println("Error in updateSupplierArticlesWithNonDispo: ${e.message}")
+            e.printStackTrace()
         }
     }
     fun updateSupplier(updatedSupplier: SupplierTabelle) {

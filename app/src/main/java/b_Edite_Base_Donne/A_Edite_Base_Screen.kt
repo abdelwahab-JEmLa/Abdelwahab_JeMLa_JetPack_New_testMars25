@@ -332,7 +332,7 @@ fun ArticleBoardCard(
             try {
                 val batch = firestore.batch()
                 val lineData = hashMapOf<String, Any>(
-                    "idArticle" to (article.idArticle ?: ""),
+                    "idArticleBG" to (article.idArticle ?: ""),
                     "nomArticleFinale" to (article.nomArticleFinale ?: ""),
                     "diponibilityState" to (article.diponibilityState ?: ""),
                     "lastUpdateState" to (currentDate),
