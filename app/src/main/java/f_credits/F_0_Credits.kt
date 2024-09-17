@@ -2,6 +2,7 @@ package f_credits
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -77,6 +80,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import d_EntreBonsGro.SupplierInvoice
 import d_EntreBonsGro.updateSupplierCredit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -259,7 +263,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     Switch(
                         checked = supplier.isLongTermCredit,
                         onCheckedChange = { isChecked ->
-                            viewModel.updateSupplierList(supplier.idSupplierSu, isChecked)
+                            viewModel.updateSupplierList(supplier.idSupplierSu,"isLongTermCredit")
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.Green,
@@ -269,11 +273,53 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                         )
                     )
                 }
+
+                var showNameDialog by remember { mutableStateOf(false) }
+
                 Text(
                     text = "Name: ${supplier.nomSupplierSu}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                    modifier = Modifier.drawTextWithOutline(Color.Black)
+                    modifier = Modifier
+                        .drawTextWithOutline(Color.Black)
+                        .clickable { showNameDialog = true }
                 )
+
+                if (showNameDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showNameDialog = false },
+                        title = { Text("Supplier Details") },
+                        text = {
+                            Column {
+                                Text("Name: ${supplier.nomSupplierSu}")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text("Ignore Products:")
+                                    IconToggleButton(
+                                        checked = supplier.ignoreItProdects,
+                                        onCheckedChange = { isChecked ->
+                                            viewModel.updateSupplierList(supplier.idSupplierSu, "ignoreItProdects")
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = if (supplier.ignoreItProdects)
+                                                Icons.Filled.CheckBox
+                                            else
+                                                Icons.Filled.CheckBoxOutlineBlank,
+                                            contentDescription = "Toggle Ignore Products"
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showNameDialog = false }) {
+                                Text("Close")
+                            }
+                        }
+                    )
+                }
                 if (supplier.bonDuSupplierSu.isNotBlank()) {
                     Text(
                         text = "Bon N°: ${supplier.bonDuSupplierSu}",
@@ -307,8 +353,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
                 }
             }
-        }
-    }
+        }}
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -694,8 +739,10 @@ data class SupplierTabelle(
     var bonDuSupplierSu: String = "",
     val couleurSu: String = "#FFFFFF", // Default color
     var currentCreditBalance: Double = 0.0, // New field for current credit balance
-    var isLongTermCredit : Boolean = false
-) {
+    var isLongTermCredit : Boolean = false     ,
+    var ignoreItProdects : Boolean = false     ,
+
+    ) {
     constructor() : this(0)
 }
 
@@ -814,14 +861,15 @@ class CreditsViewModel : ViewModel() {
             suppliersRef.child(supplier.idSupplierSu.toString()).setValue(supplier)
         }
     }
-    fun updateSupplierList(idSupplierSu: Long, isChecked: Boolean) {
+    // ViewModel function
+    fun updateSupplierList(idSupplierSu: Long, keyName: String = "") {
         _supplierList.update { currentSupps ->
             currentSupps.map { supplier ->
                 if (supplier.idSupplierSu == idSupplierSu) {
                     supplier.copy(
-                        isLongTermCredit = ! supplier. isLongTermCredit
+                        isLongTermCredit = if (keyName == "isLongTermCredit") !supplier.isLongTermCredit else supplier.isLongTermCredit,
+                        ignoreItProdects = if (keyName == "ignoreItProdects") !supplier.ignoreItProdects else supplier.ignoreItProdects
                     )
-
                 } else {
                     supplier
                 }
@@ -833,7 +881,6 @@ class CreditsViewModel : ViewModel() {
             updatedStat?.let { updateSupplierFireBaseRef(it) }
         }
     }
-
     fun updateSupplier(updatedSupplier: SupplierTabelle) {
         suppliersRef.child(updatedSupplier.idSupplierSu.toString()).setValue(updatedSupplier)
     }
