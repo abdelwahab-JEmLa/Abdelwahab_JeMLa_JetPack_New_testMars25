@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -74,7 +76,7 @@ fun A_Edite_Base_Screen(
     editeBaseDonneViewModel: EditeBaseDonneViewModel = viewModel(),
     articleDao: ArticleDao,
 ) {
-    val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()  // Utilisez 'val' au lieu de 'var'
+    val articles by editeBaseDonneViewModel.baseDonneStatTabel.collectAsState()
     val articlesDataBaseDonne = editeBaseDonneViewModel.dataBaseDonne
     val isFilterApplied by editeBaseDonneViewModel.isFilterApplied.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -90,23 +92,37 @@ fun A_Edite_Base_Screen(
     Ab_FilterManager(showDialog, isFilterApplied, editeBaseDonneViewModel, onOrderClick = {
         coroutineScope.launch {
             val orderedArticles = orderDateDao(articleDao)
-            editeBaseDonneViewModel.updateArticles(orderedArticles)  // Met à jour les articles via le ViewModel
+            editeBaseDonneViewModel.updateArticles(orderedArticles)
         }
     }) { showDialog = false }
+
     Scaffold(
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Articles List",
-                )
-                IconButton(onClick = { showDialog = true }) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Articles List")
+                    IconButton(onClick = { showDialog = true }) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Filter")
+                    }
+                }
+                if (isSearchVisible) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            searchQuery = it
+                            editeBaseDonneViewModel.updateSearchQuery(it)
+                        },
+                        label = { Text("Search Articles") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
             }
         },
@@ -121,54 +137,51 @@ fun A_Edite_Base_Screen(
             }
         },
         content = { paddingValues ->
-            Column {
-                if (isSearchVisible) {//TODO pk ca ne s affiche pas au bas de app ar row
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = {
-                            searchQuery = it
-                            editeBaseDonneViewModel.updateSearchQuery(it)
-                        },
-                        label = { Text("Search Articles") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
+            ArticlesScreenList(
+                editeBaseDonneViewModel = editeBaseDonneViewModel,
+                articlesDataBaseDonne = articlesDataBaseDonne,
+                articlesBaseDonneStatTabel = articles,
+                selectedArticle = selectedArticle,
+                onArticleSelect = { article ->
+                    val index = articles.indexOf(article)
+                    focusManager.clearFocus()
+                    selectedArticle = article
+                    coroutineScope.launch {
+                        if (index >= 0) {
+                            listState.scrollToItem(index / 2)
+                        }
+                    }
+                    currentChangingField = ""
+                    articleDataBaseDonne =
+                        articlesDataBaseDonne.find { it.idArticle == article.idArticle }
+                },
+                listState = listState,
+                currentChangingField = currentChangingField,
+                paddingValues = paddingValues,
+                function = { currentChangingField = it },
+                function1 = { articlesDataBaseDonne ->
+                    if (articlesDataBaseDonne != null) {
+                        articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
+                        editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
+                    }
+                },
+                onClickImageDimentionChangeur = { baseDonne ->
+                    val updatedArticle = baseDonne.copy(funChangeImagsDimention = !baseDonne.funChangeImagsDimention)
+                    editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
+                },
+                onImageArtClick = { article ->
+                    val updatedArticle = articlesDataBaseDonne.find { it.idArticle == article.idArticle }?.copy(
+                        diponibilityState = if (article.diponibilityState == "") "Non Dispo" else ""
                     )
-                }
-                ArticlesScreenList(
-                    editeBaseDonneViewModel = editeBaseDonneViewModel,
-                    articlesDataBaseDonne = articlesDataBaseDonne,
-                    articlesBaseDonneStatTabel = articles,
-                    selectedArticle = selectedArticle,
-                    onArticleSelect = { article ->
-                        val index = articles.indexOf(article)
-                        focusManager.clearFocus()
-                        selectedArticle = article
-                        coroutineScope.launch {
-                            if (index >= 0) {
-                                listState.scrollToItem(index / 2)
-                            }
-                        }
-                        currentChangingField = ""
-                        articleDataBaseDonne =
-                            articlesDataBaseDonne.find { it.idArticle == article.idArticle }
-                    },
-                    listState = listState,
-                    currentChangingField = currentChangingField,
-                    paddingValues = paddingValues,
-                    function = { currentChangingField = it },
-                    function1 = { articlesDataBaseDonne ->
-                        if (articlesDataBaseDonne != null) {
-                            articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
-                            editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
-                        }
-                    },
-                    onClickImageDimentionChangeur = { baseDonne ->
-                        val updatedArticle = baseDonne.copy(funChangeImagsDimention = !baseDonne.funChangeImagsDimention)
+                    if (updatedArticle != null) {
                         editeBaseDonneViewModel.updateDataBaseDonne(updatedArticle)
                     }
-                )
-            }
+
+                        editeBaseDonneViewModel.updateBaseDonneStatTabel("diponibilityState", article,if (article.diponibilityState == "") "Non Dispo" else "")
+
+
+                }
+            )
         }
     )
 }
@@ -232,6 +245,7 @@ fun ArticlesScreenList(
     function: (String) -> Unit,
     function1: (BaseDonne?) -> Unit,
     onClickImageDimentionChangeur: (BaseDonne) -> Unit,
+    onImageArtClick: (BaseDonneStatTabel) -> Unit,
 ) {
 
     LazyColumn(
@@ -261,7 +275,8 @@ fun ArticlesScreenList(
                             article = article,
                             articlesDataBaseDonne = relatedBaseDonne,
                             onClickImageDimentionChangeur = onClickImageDimentionChangeur,
-                            onArticleSelect = onArticleSelect
+                            onArticleSelect = onArticleSelect,
+                            onImageArtClick
                         )
                     }
                 }
@@ -275,15 +290,12 @@ fun ArticleBoardCard(
     article: BaseDonneStatTabel,
     articlesDataBaseDonne: BaseDonne?,
     onClickImageDimentionChangeur: (BaseDonne) -> Unit,
-    onArticleSelect: (BaseDonneStatTabel) -> Unit
+    onArticleSelect: (BaseDonneStatTabel) -> Unit,
+    onImageArtClick: (BaseDonneStatTabel) -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .width(170.dp)
-            .clickable {
-                onArticleSelect(article)
-            },
+        modifier = Modifier.width(170.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -296,7 +308,29 @@ fun ArticleBoardCard(
                     modifier = Modifier.height(230.dp)
                 ) {
                     val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                    LoadImageFromPath(imagePath = imagePath)
+                    LoadImageFromPath(
+                        imagePath = imagePath,
+                        modifier = Modifier.clickable {
+                            onImageArtClick(article)
+                        }
+                    )
+
+                    // Check if the article is not available
+                    if (articlesDataBaseDonne?.diponibilityState == "Non Dispo") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Loop,
+                                contentDescription = "Not Available",
+                                modifier = Modifier.size(64.dp),
+                                tint = Color.White
+                            )
+                        }
+                    }
 
                     Row(
                         modifier = Modifier
@@ -335,7 +369,9 @@ fun ArticleBoardCard(
                 }
                 AutoResizedText(
                     text = capitalizeFirstLetter(article.nomArticleFinale),
-                    modifier = Modifier.padding(vertical = 0.dp),
+                    modifier = Modifier.padding(vertical = 0.dp).clickable {
+                        onArticleSelect(article)
+                    },
                     textAlign = TextAlign.Center,
                     color = Color.Red
                 )

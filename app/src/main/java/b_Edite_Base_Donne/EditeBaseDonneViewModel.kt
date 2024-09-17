@@ -64,10 +64,7 @@ class EditeBaseDonneViewModel(
         _searchQuery.value = query
         filterArticles()
     }
-    fun resetFilter() {
-        _isFilterApplied.value = false
-        _baseDonneStatTabel.value = _originalBaseDonneStatTabel
-    }
+
 
     private fun filterArticles() {
         val query = _searchQuery.value.lowercase()
@@ -750,7 +747,7 @@ class EditeBaseDonneViewModel(
     }
 
 
-    private fun updateBaseDonneStatTabel(
+    fun updateBaseDonneStatTabel(
         columnToChangeInString: String,
         article: BaseDonneStatTabel,
         newValue: String?
