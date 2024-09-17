@@ -49,6 +49,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import f_credits.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
+import g_BoardStatistiques.BoardStatistiquesStatViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -65,7 +66,7 @@ fun ClientsCreditDialog(
     clientsName: String,
     clientsTotal: Double,
     coroutineScope: CoroutineScope,
-    context: Context, // Add context parameter
+    context: Context, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel, // Add context parameter
 
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -176,7 +177,11 @@ fun ClientsCreditDialog(
                                                 onClick = {
                                                     coroutineScope.launch {
                                                         try {
-                                                            deleteInvoice(clientsId, invoice.date)
+                                                            deleteInvoice(
+                                                                clientsId,
+                                                                invoice.date,
+                                                                boardStatistiquesStatViewModel
+                                                            )
                                                             fetchRecentInvoicesCCD(clientsId, onFetchComplete = { invoices, credit ->
                                                                 recentInvoices = invoices
                                                                 ancienCredit = credit
@@ -393,7 +398,11 @@ suspend fun fetchRecentInvoicesCCD(clientsId: Long?, onFetchComplete: (List<Clie
     }
 }
 
-suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
+suspend fun deleteInvoice(
+    clientsId: Long?,
+    invoiceDate: String,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
+) {
     clientsId?.let { id ->
         val firestore = Firebase.firestore
         val clientDocRef = firestore.collection("F_ClientsArticlesFireS").document(id.toString())
@@ -420,6 +429,15 @@ suspend fun deleteInvoice(clientsId: Long?, invoiceDate: String) {
                         // If there's no previous document, use 0.0 or another appropriate default value
                         0.0
                     }
+                    val payeCetteFoit = if (previousDocument != null) {
+                        previousDocument.getDouble("payeCetteFoit")?.times(-1)
+                    } else {
+                        // If there's no previous document, use 0.0 or another appropriate default value
+                        0.0
+                    }
+
+                        boardStatistiquesStatViewModel.updateTotaleCreditsClients(enleveDeLaCaisse =payeCetteFoit)
+
 
                     // Update the latest document with the ancienCredits from the previous invoice
                     transaction.update(latestDocRef, "ancienCredits", ancienCredits)

@@ -75,6 +75,7 @@ fun ClientAndEmballageHeader(
     allArticles: List<ArticlesAcheteModele>,
     clientTotal: Double,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 
     ) {
     val context = LocalContext.current
@@ -272,7 +273,7 @@ fun ClientAndEmballageHeader(
             clientsName = nomClient,
             clientsTotal = clientTotal,
             coroutineScope = coroutineScope,
-            context = context,
+            context = context, boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
         )
     }
 }
