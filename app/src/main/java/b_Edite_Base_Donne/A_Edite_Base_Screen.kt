@@ -288,6 +288,7 @@ fun ArticlesScreenList(
         }
     }
 }
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ArticleBoardCard(
     article: BaseDonneStatTabel,
@@ -296,6 +297,58 @@ fun ArticleBoardCard(
     onArticleSelect: (BaseDonneStatTabel) -> Unit,
     editeBaseDonneViewModel: EditeBaseDonneViewModel
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    val database = FirebaseDatabase.getInstance()
+    val suppliersRef = database.getReference("F_Suppliers")
+    var suppliers by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
+    var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
+    val firestore = Firebase.firestore
+
+    val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    // Fetch suppliers when the component is first composed
+    LaunchedEffect(Unit) {
+        suppliersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val suppliersList = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
+                suppliers = suppliersList
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+    }
+
+    // Function to update the supplier article and close the dialog
+    fun updateSupplierArticle(supplier: SupplierTabelle) {
+        showDialog = false  // Close the dialog immediately
+        coroutineScope.launch {
+            try {
+                val batch = firestore.batch()
+                val lineData = hashMapOf<String, Any>(
+                    "nomArticleFinale" to (article.nomArticleFinale ?: ""),
+                    "diponibilityState" to (article.diponibilityState ?: ""),
+                )
+                val docId = "${article.idArticle}"
+                val docRef = supplierArticlesRef
+                    .document(supplier.idSupplierSu.toString())
+                    .collection("historiquesAchats")
+                    .document(docId)
+                batch.set(docRef, lineData)
+
+                batch.commit().await()
+                updateStatus = "Update successful for ${supplier.nomSupplierSu}"
+                selectedSupplier = supplier
+            } catch (e: Exception) {
+                updateStatus = "Error: ${e.message}"
+            }
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier.width(170.dp),
@@ -399,6 +452,24 @@ fun ArticleBoardCard(
                         }
                     }
                 }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(7.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+
+                IconButton(
+                    onClick = { showDialog = true },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "More Info"
+                    )
+                }
                 AutoResizedText(
                     text = capitalizeFirstLetter(article.nomArticleFinale),
                     modifier = Modifier
@@ -409,6 +480,7 @@ fun ArticleBoardCard(
                     textAlign = TextAlign.Center,
                     color = Color.Red
                 )
+                }
                 AutoResizedText(
                     text = capitalizeFirstLetter(article.nomCategorie),
                     modifier = Modifier
@@ -435,113 +507,6 @@ fun ArticleBoardCard(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-fun DisplayDetailleArticle(
-    article: BaseDonneStatTabel,
-    articlesDataBaseDonne: BaseDonne?,
-    editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    currentChangingField: String,
-    function: (String) -> Unit,
-    function1: (BaseDonne?) -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    val database = FirebaseDatabase.getInstance()
-    val suppliersRef = database.getReference("F_Suppliers")
-    var suppliers by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
-    var selectedSupplier by remember { mutableStateOf<SupplierTabelle?>(null) }
-    val firestore = Firebase.firestore
-
-    val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
-    var updateStatus by remember { mutableStateOf<String?>(null) }
-
-    val coroutineScope = rememberCoroutineScope()
-
-    // Fetch suppliers when the component is first composed
-    LaunchedEffect(Unit) {
-        suppliersRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val suppliersList = snapshot.children.mapNotNull { it.getValue(SupplierTabelle::class.java) }
-                suppliers = suppliersList
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error
-            }
-        })
-    }
-
-    // Function to update the supplier article and close the dialog
-    fun updateSupplierArticle(supplier: SupplierTabelle) {
-        showDialog = false  // Close the dialog immediately
-        coroutineScope.launch {
-            try {
-                val batch = firestore.batch()
-                val lineData = hashMapOf<String, Any>(
-                    "nomArticleFinale" to (article.nomArticleFinale ?: ""),
-                    // Add other relevant properties from BaseDonneStatTabel here
-                )
-                val docId = "${supplier.idSupplierSu}_${article.nomArticleFinale}"
-                val docRef = supplierArticlesRef
-                    .document(supplier.idSupplierSu.toString())
-                    .collection("historiquesAchats")
-                    .document(docId)
-                batch.set(docRef, lineData)
-
-                batch.commit().await()
-                updateStatus = "Update successful for ${supplier.nomSupplierSu}"
-                selectedSupplier = supplier
-            } catch (e: Exception) {
-                updateStatus = "Error: ${e.message}"
-            }
-        }
-    }
-
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .wrapContentSize()
-            .padding(4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            TopRowQuantitys(
-                article,
-                articlesDataBaseDonne= articlesDataBaseDonne,
-                viewModel = editeBaseDonneViewModel,
-                currentChangingField = currentChangingField,
-                function = function
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(7.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = capitalizeFirstLetter(article.nomArticleFinale),
-                    fontSize = 25.sp,
-                    textAlign = TextAlign.Center,
-                    color = Color.Red,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(
-                    onClick = { showDialog = true },
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "More Info"
-                    )
-                }
-            }
-        }
-    }
-
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -579,6 +544,66 @@ fun DisplayDetailleArticle(
         }
     }
 }
+
+@Composable
+fun DisplayDetailleArticle(
+    article: BaseDonneStatTabel,
+    articlesDataBaseDonne: BaseDonne?,
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    currentChangingField: String,
+    function: (String) -> Unit,
+    function1: (BaseDonne?) -> Unit,
+) {
+
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            TopRowQuantitys(
+                article,
+                articlesDataBaseDonne= articlesDataBaseDonne,
+                viewModel = editeBaseDonneViewModel,
+                currentChangingField = currentChangingField,
+                function = function
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DisplayColorsCards(article, Modifier.weight(0.38f))
+                DisplayArticleInformations(
+                    editeBaseDonneViewModel = editeBaseDonneViewModel,
+                    article = article,
+                    articlesDataBaseDonne= articlesDataBaseDonne,
+                    modifier = Modifier.weight(0.62f),
+                    function = function,
+                    currentChangingField = currentChangingField,
+                    function1 =function1,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = capitalizeFirstLetter(article.nomArticleFinale),
+                    fontSize = 25.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color.Red
+                )
+            }
+            }
+        }
+    }
+
 fun capitalizeFirstLetter(text: String): String {
     return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
