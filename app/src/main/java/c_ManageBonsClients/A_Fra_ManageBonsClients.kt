@@ -57,7 +57,6 @@ import kotlin.random.Random
 
 @Composable
 fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-                              boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var clientsData by remember { mutableStateOf<List<ClientsTabelle>>(emptyList()) }
@@ -135,7 +134,6 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
                 listState = listState,
                 paddingValues = PaddingValues(0.dp),
                 boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
-                boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
             )
         }
     }
@@ -172,7 +170,6 @@ fun DisplayManageBonsClients(
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     paddingValues: PaddingValues, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
