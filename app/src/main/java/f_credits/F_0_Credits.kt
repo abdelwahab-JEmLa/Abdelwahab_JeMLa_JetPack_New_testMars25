@@ -209,11 +209,13 @@ fun FragmentCredits(
             }
         )
     }
-}@Composable
+}
+@Composable
 fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     val backgroundColor = remember(supplier.couleurSu) {
         try {
             Color(android.graphics.Color.parseColor(supplier.couleurSu))
@@ -296,12 +298,16 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text("Ignore Products:")
+
                                     IconToggleButton(
                                         checked = supplier.ignoreItProdects,
                                         onCheckedChange = { isChecked ->
                                             viewModel.updateSupplierList(supplier.idSupplierSu, "ignoreItProdects")
+                                            coroutineScope.launch {
+                                                viewModel.updateSupplierArticlesWithNonDispo(supplier.idSupplierSu, if (isChecked) "Non Dispo" else "")
+                                            }
                                         }
-                                    ) {
+                                    ){
                                         Icon(
                                             imageVector = if (supplier.ignoreItProdects)
                                                 Icons.Filled.CheckBox
@@ -879,6 +885,28 @@ class CreditsViewModel : ViewModel() {
         viewModelScope.launch {
             val updatedStat = _supplierList.value.find { it.idSupplierSu == idSupplierSu }
             updatedStat?.let { updateSupplierFireBaseRef(it) }
+        }
+    }
+    suspend fun updateSupplierArticlesWithNonDispo(idSupplierSu: Long, newVal: String) {
+        val firestore = Firebase.firestore
+        val realtimeDB = FirebaseDatabase.getInstance()
+
+        // Get all documents from the 'historiquesAchats' subcollection
+        val querySnapshot = firestore.collection("F_SupplierArticlesFireS")
+            .document(idSupplierSu.toString())
+            .collection("historiquesAchats")
+            .get()
+            .await()
+
+        // Iterate through all documents and update their availability state in Realtime Database
+        for (document in querySnapshot.documents) {
+            val documentId = document.id
+            realtimeDB.reference
+                .child("e_DBJetPackExport")
+                .child(documentId)
+                .child("diponibilityState")
+                .setValue(newVal)
+                .await()
         }
     }
     fun updateSupplier(updatedSupplier: SupplierTabelle) {

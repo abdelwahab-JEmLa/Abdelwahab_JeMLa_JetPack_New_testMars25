@@ -209,7 +209,7 @@ fun MyApp(
             }
         },
         floatingActionButton = {
-            if (currentRoute != Screen.CreditsClients.route) {
+            if (currentRoute != Screen.CreditsClients.route && currentRoute != Screen.Credits.route) {
                 FloatingActionButton(
                     onClick = { isNavBarVisible = !isNavBarVisible }
                 ) {
