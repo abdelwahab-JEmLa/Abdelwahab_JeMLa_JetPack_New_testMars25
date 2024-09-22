@@ -575,7 +575,8 @@ fun NameColumn(
 
                                 Spacer(modifier = Modifier.width(8.dp))
                                 val standart =  "${if (!imageExist||article.idArticleBG>2000) article.nomArticleBG else ""} ${if (article.idArticleBG<2000) relatedArticle?.nomArab ?: "" else ""}"
-                                val itsvoiceFrancais= if (voiceFrancais) relatedArticle?.autreNomDarticle ?: "" else   standart
+                                val voiceFrancaisText= if (article.idArticleBG>2000) article.nomArticleBG else  relatedArticle?.autreNomDarticle ?: ""
+                                val itsvoiceFrancais= if (voiceFrancais) voiceFrancaisText else   standart
                                 // Text Card (70% width)
                                 Box(
                                     modifier = Modifier
