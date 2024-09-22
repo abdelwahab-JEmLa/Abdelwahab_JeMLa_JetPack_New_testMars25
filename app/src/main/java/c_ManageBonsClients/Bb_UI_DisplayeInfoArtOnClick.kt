@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -55,7 +56,7 @@ fun DisplayDetailleArticle(
     article: ArticlesAcheteModele,
     currentChangingField: String,
     onValueOutlineChange: (String) -> Unit,
-    focusRequester: FocusRequester,
+    focusRequester: FocusRequester, onFocuseChange: () -> Unit, lastFocusedColumn: String,
 ) {
 
     LaunchedEffect(Unit) {
@@ -75,7 +76,8 @@ fun DisplayDetailleArticle(
                 article = article,
                 currentChangingField = currentChangingField,
                 onValueChange = onValueOutlineChange,
-                focusRequester = focusRequester,
+                focusRequester = focusRequester, onFocuseChange = onFocuseChange,
+                lastFocusedColumn = lastFocusedColumn,
             )
 
         }
@@ -88,7 +90,7 @@ fun InformationsChanger(
     onValueChange: (String) -> Unit,
     currentChangingField: String,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester,
+    focusRequester: FocusRequester, onFocuseChange: () -> Unit, lastFocusedColumn: String,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         val cardHeight = remember(article) {
@@ -105,7 +107,8 @@ fun InformationsChanger(
             onCardFocused = {
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireBase")
             },
-            modifier = Modifier.height(cardHeight)
+            modifier = Modifier.height(cardHeight), onFocuseChange = onFocuseChange,
+            lastFocusedColumn = lastFocusedColumn
         )
         CombinedCard(
             article = article,
@@ -116,9 +119,13 @@ fun InformationsChanger(
                 updateChoisirePrixDepuitFireStoreOuBaseBM(article, "CardFireStor")
             },
             focusRequester = focusRequester,
-            modifier = Modifier.height(cardHeight)
+            modifier = Modifier.height(cardHeight), onFocuseChange = onFocuseChange,
+            lastFocusedColumn = lastFocusedColumn
         )
-        RowAutresInfo(article, onValueChange, currentChangingField)
+        RowAutresInfo(article, onValueChange,
+            currentChangingField,
+            onFocuseChange = onFocuseChange,
+            lastFocusedColumn = lastFocusedColumn)
     }
 }
 fun updateChoisirePrixDepuitFireStoreOuBaseBM(article: ArticlesAcheteModele, newType: String) {
@@ -134,7 +141,7 @@ fun CombinedCard(
     cardType: String,
     onCardFocused: () -> Unit,
     focusRequester: FocusRequester? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier, onFocuseChange: () -> Unit, lastFocusedColumn: String
 ) {
     val isFireStor = cardType == "CardFireStor"
     var isCardFocused by remember { mutableStateOf(false) }
@@ -240,11 +247,6 @@ fun CombinedCard(
                             OutlineTextEditeRegle(
                                 columnToChange = field.columnToChange,
                                 abbreviation = field.abbreviation,
-                                calculateOthersRelated = { columnChanged, newValue ->
-                                    onCardFocused()
-                                    onValueChange(columnChanged)
-                                    updateRelatedFields(article, columnChanged, newValue)
-                                },
                                 currentChangingField = currentChangingField,
                                 article = article,
                                 modifier = Modifier
@@ -266,9 +268,16 @@ fun CombinedCard(
                                             }
                                         }
                                     },
+                                calculateOthersRelated = { columnChanged, newValue ->
+                                    onCardFocused()
+                                    onValueChange(columnChanged)
+                                    updateRelatedFields(article, columnChanged, newValue)
+                                },
                                 focusRequester = if (field.useFocusRequester) focusRequester else null,
                                 textColor = textColor,
-                                isChosenCard = isChosenCard
+                                isChosenCard = isChosenCard,
+                                onFocuseChange   =onFocuseChange,
+                                lastFocusedColumn=    lastFocusedColumn
                             )
                         }
                     }
@@ -282,8 +291,11 @@ private fun RowAutresInfo(
     article: ArticlesAcheteModele,
     onValueChange: (String) -> Unit,
     currentChangingField: String,
-    modifier: Modifier = Modifier
-) {
+    modifier: Modifier = Modifier,
+    onFocuseChange: () -> Unit,
+    lastFocusedColumn: String,
+
+    ) {
     data class FieldInfo(
         val columnToChange: String,
         val abbreviation: String,
@@ -308,17 +320,19 @@ private fun RowAutresInfo(
                 OutlineTextEditeRegle(
                     columnToChange = field.columnToChange,
                     abbreviation = field.abbreviation,
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    modifier = Modifier
+                        .weight(field.weight)
+                        .height(67.dp),
                     calculateOthersRelated = { columnChanged, newValue ->
                         onValueChange(columnChanged)
                         if (field.updateRelated) {
                             updateRelatedFields(article, columnChanged, newValue)
                         }
                     },
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    modifier = Modifier
-                        .weight(field.weight)
-                        .height(67.dp)
+                    onFocuseChange   =onFocuseChange,
+                    lastFocusedColumn = lastFocusedColumn
                 )
             }
         }
@@ -326,17 +340,19 @@ private fun RowAutresInfo(
         OutlineTextEditeRegle(
             columnToChange = "nomArticleFinale",
             abbreviation = "",
-            calculateOthersRelated = { columnChanged, newValue ->
-                onValueChange(columnChanged)
-                updateNomArticleFinale(article, columnChanged, newValue)
-            },
             currentChangingField = currentChangingField,
             article = article,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(67.dp),
+            calculateOthersRelated = { columnChanged, newValue ->
+                onValueChange(columnChanged)
+                updateNomArticleFinale(article, columnChanged, newValue)
+            },
             colore = Color.Red,
             isText = true,
+            onFocuseChange   =onFocuseChange,
+            lastFocusedColumn = lastFocusedColumn
         )
     }
 }
@@ -489,8 +505,11 @@ fun OutlineTextEditeRegle(
     colore: Color? = null,
     isText: Boolean = false,
     textColor: Color = Color.Unspecified,
-    isChosenCard: Boolean = false
-) {
+    isChosenCard: Boolean = false,
+    onFocuseChange: () -> Unit,
+    lastFocusedColumn: String,
+
+    ) {
     val initialValue = article.getColumnValue(columnToChange)
     var textFieldValue by remember {
         mutableStateOf(
@@ -524,9 +543,9 @@ fun OutlineTextEditeRegle(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    var isFocused by remember { mutableStateOf(false) }
-    var wasEverFocused by remember { mutableStateOf(false) }
-    var lastFocusedColumn by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    // Keep track of the last focused column
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -572,12 +591,12 @@ fun OutlineTextEditeRegle(
                 .height(65.dp)
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .onFocusChanged { focusState ->
-                    if (focusState.isFocused && !isFocused) {
-                        isFocused = true
-                        if (!wasEverFocused || lastFocusedColumn != columnToChange) {
-                            wasEverFocused = true
-                            lastFocusedColumn = columnToChange
-                            keyboardController?.hide() // Explicitly hide the keyboard on first focus
+                    if (focusState.isFocused) {
+                        if (lastFocusedColumn != columnToChange) {
+                            // This is either the first focus or a focus on a different column
+
+                            onFocuseChange()
+                            keyboardController?.hide()
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastLaunchTime > 1000) {
                                 lastLaunchTime = currentTime
@@ -589,10 +608,9 @@ fun OutlineTextEditeRegle(
                                 speechRecognizerLauncher.launch(intent)
                             }
                         } else {
+                            // Subsequent focus on the same column
                             keyboardController?.show()
                         }
-                    } else if (!focusState.isFocused) {
-                        isFocused = false
                     }
                 },
             keyboardOptions = KeyboardOptions(

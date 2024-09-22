@@ -70,6 +70,7 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
 
     val clientsTableRef = Firebase.database.getReference("G_Clients")
     val articlesAcheteModeleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
+    var lastFocusedColumn by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         // Fetch ClientsTabelle data
@@ -129,11 +130,13 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
             DisplayManageBonsClients(
                 articles = articles.filter { selectedClientFilter == null || it.nomClient == selectedClientFilter },
                 selectedArticleId = selectedArticleId,
-                onArticleSelect = { selectedArticleId = it },
+                onArticleSelect = { selectedArticleId = it
+                    lastFocusedColumn=""
+                                  },
                 coroutineScope = coroutineScope,
                 listState = listState,
                 paddingValues = PaddingValues(0.dp),
-                boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
+                boardStatistiquesStatViewModel = boardStatistiquesStatViewModel, onFocuseChange = {lastFocusedColumn=""},lastFocusedColumn,
             )
         }
     }
@@ -170,6 +173,8 @@ fun DisplayManageBonsClients(
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     paddingValues: PaddingValues, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    onFocuseChange: () -> Unit,
+    lastFocusedColumn: String,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
@@ -239,6 +244,7 @@ fun DisplayManageBonsClients(
                                         currentChangingField = it
                                     },
                                     focusRequester = focusRequester,
+                                    onFocuseChange = onFocuseChange, lastFocusedColumn,
                                 )
                                 LaunchedEffect(selectedArticleId) {
                                     focusRequester.requestFocus()
