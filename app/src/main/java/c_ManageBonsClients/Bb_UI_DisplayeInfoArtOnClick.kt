@@ -1,5 +1,10 @@
 package c_ManageBonsClients
 
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -486,7 +491,6 @@ fun OutlineTextEditeRegle(
     textColor: Color = Color.Unspecified,
     isChosenCard: Boolean = false
 ) {
-
     val initialValue = article.getColumnValue(columnToChange)
     var textFieldValue by remember {
         mutableStateOf(
@@ -520,6 +524,21 @@ fun OutlineTextEditeRegle(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
+    var isFocused by remember { mutableStateOf(false) }
+    var wasEverFocused by remember { mutableStateOf(false) }
+    var lastFocusedColumn by remember { mutableStateOf("") }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            textFieldValue = spokenText
+            calculateOthersRelated(columnToChange, spokenText)
+        }
+    }
+
+    var lastLaunchTime by remember { mutableStateOf(0L) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -551,7 +570,31 @@ fun OutlineTextEditeRegle(
             modifier = modifier
                 .fillMaxWidth()
                 .height(65.dp)
-                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
+                .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused && !isFocused) {
+                        isFocused = true
+                        if (!wasEverFocused || lastFocusedColumn != columnToChange) {
+                            wasEverFocused = true
+                            lastFocusedColumn = columnToChange
+                            keyboardController?.hide() // Explicitly hide the keyboard on first focus
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastLaunchTime > 1000) {
+                                lastLaunchTime = currentTime
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                                }
+                                speechRecognizerLauncher.launch(intent)
+                            }
+                        } else {
+                            keyboardController?.show()
+                        }
+                    } else if (!focusState.isFocused) {
+                        isFocused = false
+                    }
+                },
             keyboardOptions = KeyboardOptions(
                 keyboardType = if (!isText) KeyboardType.Number else KeyboardType.Text,
                 imeAction = ImeAction.Done
@@ -574,7 +617,6 @@ fun AutoResizedTextBC(
     var resizedTextStyle by remember { mutableStateOf(style) }
     var readyToDraw by remember { mutableStateOf(false) }
 
-    val defaultFontSize = if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
     val minFontSize = 7.sp
 
     Box(
