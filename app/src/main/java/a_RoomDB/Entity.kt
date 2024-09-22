@@ -9,6 +9,7 @@ data class BaseDonne(
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
     var nomArab: String = "",
+    var autreNomDarticle: String? = null,
     var nmbrCat: Int = 0,
     var couleur1: String? = null,
     var couleur2: String? = null,

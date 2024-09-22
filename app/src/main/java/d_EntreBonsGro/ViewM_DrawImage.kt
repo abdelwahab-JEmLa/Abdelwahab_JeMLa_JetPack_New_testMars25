@@ -45,7 +45,9 @@ fun reconnaisanceVocaleLencer(
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
     context: Context,
     itsImageClick: Boolean,
-    founisseurIdNowIs: Long?
+    founisseurIdNowIs: Long?,
+    suggestionsListFromAutreNom: List<String>,
+    voiceFrancais: Boolean
 ): Pair<ManagedActivityResultLauncher<Intent, ActivityResult>, List<String>> {
     var filteredSuggestions by remember { mutableStateOf(initialFilteredSuggestions) }
     var showSuggestions by remember { mutableStateOf(false) }
@@ -68,7 +70,28 @@ fun reconnaisanceVocaleLencer(
             selectedArticle?.let {
                 updateQuantuPrixArticleDI(extractInputFromVoice, it, articlesRef, coroutineScope)
             }
-        } else if (input.contains("تغيير")) {
+
+        } else if (input.contains("change")) {
+            val selectedArticle =
+                if (itsImageClick) {
+                    articlesEntreBonsGrosTabele.firstOrNull { it.vidBG == vidDernierArticleouOnaEntreQuantity }
+                } else selectedArticleStart
+
+            // Extract the new Arabic name correctly
+            val parts = input.split("change")
+            val newFrName = if (parts.size > 1) parts[0].trim() else ""
+            if (newFrName.isNotEmpty()) {
+                coroutineScope.launch {
+                    selectedArticle?.let { article ->
+                        baseDonneRef.child(article.idArticleBG.toString()).child("autreNomDarticle")
+                            .setValue(newFrName)
+                        articleDao.updateArticleArabName(article.idArticleBG, newFrName)
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Veuillez fournir un nouveau nom avant 'change'", Toast.LENGTH_SHORT).show()
+            }
+        }else if (input.contains("تغيير")) {
             val selectedArticle =
                 if (itsImageClick) {
                     articlesEntreBonsGrosTabele.firstOrNull { it.vidBG == vidDernierArticleouOnaEntreQuantity }
@@ -91,7 +114,9 @@ fun reconnaisanceVocaleLencer(
             }
         } else {
             val cleanInput = input.replace(".", "").toLowerCase()
-            filteredSuggestions = suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
+            filteredSuggestions = if (voiceFrancais) suggestionsListFromAutreNom.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
+                         else
+            suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput) }
 
             val selectedArticle =
                 if (itsImageClick) {
@@ -113,9 +138,10 @@ fun reconnaisanceVocaleLencer(
                     )
                 }
                 filteredSuggestions.isEmpty() -> {
-                    val filteredSuggestions3Sentence = suggestionsList.filter {
-                        it.replace(".", "").toLowerCase().contains(cleanInput.take(3))
-                    }
+                    val filteredSuggestions3Sentence =  if (voiceFrancais) suggestionsListFromAutreNom.filter { it.replace(".", "").toLowerCase().contains(cleanInput.take(3)) }
+                    else
+                        suggestionsList.filter { it.replace(".", "").toLowerCase().contains(cleanInput.take(3)) }
+
                     showSuggestions = true
                     filteredSuggestions = filteredSuggestions3Sentence
                 }

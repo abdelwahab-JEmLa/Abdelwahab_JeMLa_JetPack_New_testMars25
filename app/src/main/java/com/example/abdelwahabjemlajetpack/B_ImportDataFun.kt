@@ -192,7 +192,7 @@ suspend fun transferFirebaseData() {
                 dateCreationCategorie = value["a29"] as? String ?: "",
                 prixDeVentTotaleChezClient = prixDeVentTotaleChezClient,
                 benificeTotaleEn2 = prixDeVentTotaleChezClient - monPrixVent,
-                monPrixAchatUniter =  monPrixVent / nmbrUnite ,
+                monPrixAchatUniter =  monPrixVent / nmbrUnite,
                 monPrixVentUniter = monPrixVent / 2,
                 benificeClient= benificeClient,
             )
@@ -286,7 +286,8 @@ suspend fun transferFirebaseDataArticlesAcheteModele(
                         typeEmballage = if (baseDonne.cartonState == "itsCarton"|| baseDonne.cartonState == "Carton") "Carton" else "Boit",
                         choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
                         monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
-                        monPrixVentFireStoreBM = monPrixVentFireStoreBM
+                        monPrixVentFireStoreBM = monPrixVentFireStoreBM ,
+
                     ).apply {
                         monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
 

@@ -255,7 +255,8 @@ suspend fun trensfertBonSuppAuDataBaseArticles(
 
                 val articleBaseDonne = articlesBaseDonne.find { it.idArticle.toLong() == article.idArticleBG }
                 val calculatedPriceVent = calculatedPrice + (articleBaseDonne?.monBenfice ?: 0.0)
-                val calculatedPriceVentUniter = calculatedPrice + ((articleBaseDonne?.monBenfice ?: 0.0)/(articleBaseDonne?.nmbrUnite ?: 1))
+                val calculatedPriceVentUniter = calculatedPrice + ((articleBaseDonne?.monBenfice
+                    ?: 0.0)/(articleBaseDonne?.nmbrUnite ?: 1))
 
                 refArticlesAcheteModele.orderByChild("idArticle").equalTo(article.idArticleBG.toDouble()).get().await().children.forEach { childSnapshot ->
                     childSnapshot.ref.child("prixAchat").setValue(calculatedPrice)

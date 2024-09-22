@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.VoiceChat
 import androidx.compose.material.icons.filled.VoiceOverOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -96,6 +97,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var articlesBaseDonne by remember { mutableStateOf<List<BaseDonne>>(emptyList()) }
     var suppliersList by remember { mutableStateOf<List<SupplierTabelle>>(emptyList()) }
     var suggestionsList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var suggestionsListFromAutreNom by remember { mutableStateOf<List<String>>(emptyList()) }
     var editionPassedMode by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showActionsDialog by remember { mutableStateOf(false) }
@@ -126,6 +128,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
     var showDivider by remember { mutableStateOf(true) }
     var showDialogeNbrIMGs by remember { mutableStateOf(false) }
     var heightOfImageAndRelatedDialogEditer by remember { mutableStateOf(false) }
+
+    var voiceFrancai by remember { mutableStateOf(false) }
 
     var modeVerificationAvantUpdateBD by remember { mutableStateOf(false) }
 
@@ -166,8 +170,14 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                 suggestionsList = newArticlesAcheteModele.map { articleAchete ->
                     val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
                     val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
-                    val nomArabe = baseDonneArticle?.nomArab ?: ""
-                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomArabe (${articleAchete.idArticle})"
+                    val nomVocale = baseDonneArticle?.nomArab ?: ""
+                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomVocale (${articleAchete.idArticle})"
+                }.distinct() + listOf("supp","محو" )
+                suggestionsListFromAutreNom = newArticlesAcheteModele.map { articleAchete ->
+                    val nomArticleSansSymbole = articleAchete.nomArticleFinale.toLowerCase().replace("®", "")
+                    val baseDonneArticle = articlesBaseDonne.find { it.idArticle.toLong() == articleAchete.idArticle }
+                    val nomVocale = baseDonneArticle?.autreNomDarticle ?: ""
+                    "$nomArticleSansSymbole -> ${articleAchete.prixAchat} $nomVocale (${articleAchete.idArticle})"
                 }.distinct() + listOf("supp","محو" )
             }
 
@@ -219,7 +229,11 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
         Triple(
             if (showDialogeNbrIMGs) Icons.Default.Close else Icons.Default.Image,
             if (showDialogeNbrIMGs) "Hide Image Dialog" else "Show Image Dialog"
-        ) { showDialogeNbrIMGs = !showDialogeNbrIMGs }
+        ) { showDialogeNbrIMGs = !showDialogeNbrIMGs }   ,
+        Triple(
+            if (voiceFrancai) Icons.Default.Close else Icons.Default.VoiceChat,
+            if (voiceFrancai) "Voice Input Fr" else "Voice Input Ar"
+        ) { voiceFrancai = !voiceFrancai }
     )
 
     Scaffold(
@@ -322,6 +336,8 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
                             supplierList = suppliersList,
                             modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD,
+                            voiceFrancai,
+                            suggestionsListFromAutreNom=suggestionsListFromAutreNom,
                         )
                     }
                     showSplitView -> {
@@ -344,7 +360,9 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                                 onDissmiss = { showDialogeNbrIMGs = false },
                                 heightOfImageAndRelatedDialogEditer = heightOfImageAndRelatedDialogEditer,
                                 supplierList = suppliersList,
-                                modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD
+                                modeVerificationAvantUpdateBD = modeVerificationAvantUpdateBD,
+                                voiceFrancais = voiceFrancai,
+                                suggestionsListFromAutreNom = suggestionsListFromAutreNom
                             )
                             AfficheEntreBonsGro(
                                 articlesEntreBonsGro = articlesEntreBonsGrosTabele,

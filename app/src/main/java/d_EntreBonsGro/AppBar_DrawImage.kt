@@ -63,7 +63,9 @@ fun DialogsController(
     suggestionsList: List<String>,
     onSectionCountChange: (Int) -> Unit,
     onImageCountChange: (Int) -> Unit,
-    onOutlineDialogClose: () -> Unit, supplierList: List<SupplierTabelle>
+    onOutlineDialogClose: () -> Unit,
+    supplierList: List<SupplierTabelle>,
+    suggestionsListFromAutreNom: List<String>, voiceFrancais: Boolean
 ) {
     if (showDiviseurDesSections) {
         TreeCountControl(
@@ -95,7 +97,8 @@ fun DialogsController(
             suggestionsList = suggestionsList,
             articlesRef = articlesRef,
             coroutineScope = coroutineScope,
-            onDismiss = onOutlineDialogClose
+            onDismiss = onOutlineDialogClose ,
+            suggestionsListFromAutreNom=suggestionsListFromAutreNom, voiceFrancais = voiceFrancais,
         )
     }
 }@Composable
@@ -246,7 +249,8 @@ fun OutlineDialog(
     suggestionsList: List<String>,
     articlesRef: DatabaseReference,
     coroutineScope: CoroutineScope,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    suggestionsListFromAutreNom: List<String>, voiceFrancais: Boolean
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -261,7 +265,10 @@ fun OutlineDialog(
                     suggestionsList = suggestionsList,
                     articlesRef = articlesRef,
                     coroutineScope = coroutineScope,
-                    selectedArticle = article.vidBG
+                    selectedArticle = article.vidBG,
+                    suggestionsListFromAutreNom=suggestionsListFromAutreNom,
+                    voiceFrancais=voiceFrancais,
+
                 )
             }
         },

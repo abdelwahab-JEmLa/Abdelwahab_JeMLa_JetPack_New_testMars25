@@ -87,6 +87,8 @@ fun DessinableImage(
     heightOfImageAndRelatedDialogEditer: Boolean,
     supplierList: List<SupplierTabelle>,
     modeVerificationAvantUpdateBD: Boolean,
+    voiceFrancais: Boolean,
+    suggestionsListFromAutreNom: List<String>,
 ) {
     val configuration = LocalConfiguration.current
     val isPortraitLandscap = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -130,7 +132,9 @@ fun DessinableImage(
         articlesArticlesAcheteModele,
         articlesBaseDonne,
         articlesEntreBonsGrosTabele.filter { it.supplierIdBG==founisseurIdNowIs },
-        context ,itsImageClick  ,founisseurIdNowIs
+        context ,itsImageClick  ,founisseurIdNowIs ,
+        suggestionsListFromAutreNom=suggestionsListFromAutreNom,
+        voiceFrancais=voiceFrancais
     )
     val speechRecognizerLauncher = reconnaisanceVocaleLencer.first
     filteredSuggestions = reconnaisanceVocaleLencer.second
@@ -180,7 +184,7 @@ fun DessinableImage(
                                 lastLaunchTime = currentTime
                                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (voiceFrancais) "fr-FR" else "ar-DZ")
                                     putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
                                 }
                                 speechRecognizerLauncher.launch(intent)
@@ -208,14 +212,15 @@ fun DessinableImage(
                                 lastLaunchTime = currentTime
                                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (voiceFrancais) "fr-FR" else "ar-DZ")
                                     putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
                                 }
                                 speechRecognizerLauncher.launch(intent)
                             }
                         }
                     },
-                    imageOffset = imageOffset ,
+                    imageOffset = imageOffset, voiceFrancais =voiceFrancais ,
+                    suggestionsListFromAutreNom=suggestionsListFromAutreNom,
                          )
 
                      }
@@ -254,7 +259,8 @@ fun DessinableImage(
             suggestionsList = suggestionsList,
             articlesRef = articlesRef,
             coroutineScope = coroutineScope,
-            onDismiss = { showOutlineDialog = false }
+            onDismiss = { showOutlineDialog = false },
+            suggestionsListFromAutreNom = suggestionsListFromAutreNom, voiceFrancais = voiceFrancais
         )
     }
     DialogsController(
@@ -280,8 +286,10 @@ fun DessinableImage(
         },
         onOutlineDialogClose = {
             showOutlineDialog = false
-        }, supplierList = supplierList
-    )
+        }, supplierList = supplierList  ,
+        suggestionsListFromAutreNom=suggestionsListFromAutreNom,  voiceFrancais = voiceFrancais,
+
+        )
 }
 
 @Composable
@@ -309,7 +317,7 @@ fun Displayer(
     rightColumnOffset: Float,
     onLeftColumnDrag: (Float) -> Unit,
     onRightColumnDrag: (Float) -> Unit,
-    imageOffset: Float
+    imageOffset: Float, voiceFrancais: Boolean, suggestionsListFromAutreNom: List<String>
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -355,7 +363,8 @@ fun Displayer(
                 heightOfImageAndRelated = heightOfImageAndRelated,
                 onArticleClick = onArticleClick,
                 articlesBaseDonne = articlesBaseDonne,
-                onDrag = onLeftColumnDrag
+                onDrag = onLeftColumnDrag,
+                voiceFrancais=voiceFrancais
             )
         }
 
@@ -487,7 +496,8 @@ fun NameColumn(
     heightOfImageAndRelated: Dp,
     onArticleClick: (EntreBonsGrosTabele) -> Unit,
     articlesBaseDonne: List<BaseDonne>,
-    onDrag: (Float) -> Unit
+    onDrag: (Float) -> Unit,
+    voiceFrancais: Boolean,
 ) {
     val columnWidth = 100.dp
 
@@ -564,7 +574,8 @@ fun NameColumn(
                                 }
 
                                 Spacer(modifier = Modifier.width(8.dp))
-
+                                val standart =  "${if (!imageExist||article.idArticleBG>2000) article.nomArticleBG else ""} ${if (article.idArticleBG<2000) relatedArticle?.nomArab ?: "" else ""}"
+                                val itsvoiceFrancais= if (voiceFrancais) relatedArticle?.autreNomDarticle ?: "" else   standart
                                 // Text Card (70% width)
                                 Box(
                                     modifier = Modifier
@@ -573,7 +584,7 @@ fun NameColumn(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     AutoResizedTextDI(
-                                        text = "${if (!imageExist||article.idArticleBG>2000) article.nomArticleBG else ""} ${if (article.idArticleBG<2000) relatedArticle?.nomArab ?: "" else ""}",
+                                        text = itsvoiceFrancais,
                                         color = textColor,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth()

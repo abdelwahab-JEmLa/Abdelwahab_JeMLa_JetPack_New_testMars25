@@ -196,7 +196,9 @@ fun OutlineInputDI(
     articlesRef: DatabaseReference,
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope,
-    selectedArticle: Long
+    selectedArticle: Long,
+    suggestionsListFromAutreNom: List<String>,
+    voiceFrancais: Boolean
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     var filteredSuggestions by remember { mutableStateOf(emptyList<String>()) }
@@ -213,7 +215,8 @@ fun OutlineInputDI(
                     currentInputText = newValue
                     if (newValue.length >= 3) {
                         val cleanInput = newValue.replace(".", "").lowercase(Locale.getDefault())
-                        filteredSuggestions = suggestionsList.asSequence().filter { suggestion ->
+                          val choiseSugetion=  if (voiceFrancais)    suggestionsList else suggestionsListFromAutreNom
+                        filteredSuggestions = choiseSugetion.asSequence().filter { suggestion ->
                             val cleanSuggestion =
                                 suggestion.replace(".", "").lowercase(Locale.ROOT)
                             if (isArabicDI(cleanInput)) {

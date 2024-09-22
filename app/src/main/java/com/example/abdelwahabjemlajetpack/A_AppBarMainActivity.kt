@@ -297,7 +297,7 @@ private fun WindosBakupToDao(
                             coroutineScope.launch {
                                 onStartImport()
                                 // Passer onProgressUpdate ici
-                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup1") { newProgress ->
+                                trensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup1") { newProgress ->
                                     onProgressUpdate(newProgress)
                                 }
                                 editeBaseDonneViewModel.initBaseDonneStatTabel()
@@ -316,7 +316,7 @@ private fun WindosBakupToDao(
                             coroutineScope.launch {
                                 onStartImport()
                                 // Passer onProgressUpdate ici
-                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup2") { newProgress ->
+                                trensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup2") { newProgress ->
                                     onProgressUpdate(newProgress)
                                 }
                                 editeBaseDonneViewModel.initBaseDonneStatTabel()
@@ -335,7 +335,7 @@ private fun WindosBakupToDao(
                             coroutineScope.launch {
                                 onStartImport()
                                 // Passer onProgressUpdate ici
-                                TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup3") { newProgress ->
+                                trensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(articleDao,refFireBase="BaseDonne_Bakup3") { newProgress ->
                                     onProgressUpdate(newProgress)
                                 }
                                 editeBaseDonneViewModel.initBaseDonneStatTabel()
@@ -353,7 +353,7 @@ private fun WindosBakupToDao(
     }
 
 }
-private fun TrensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(
+private fun trensfertDeBaseDonnePourBakuAuRefe_DBJetPackExport(
     articleDao: ArticleDao,
     refFireBase: String,
     onProgressUpdate: (Float) -> Unit
@@ -565,6 +565,18 @@ private fun NameListDialog(
                     },
                     tint2 = Color.Green
                 )
+                DialogButton(
+                    text = "exportAutreNameToFirebase",
+                    icon = Icons.Default.Upload,
+                    onClick = {
+                        coroutineScope.launch {
+                            exportAutreNameToFirebase(articleDao)
+                        }
+                        onDismiss()
+                    },
+                    tint2 = Color.Blue
+                )
+
             }
         },
         dismissButton = {
@@ -603,6 +615,16 @@ private suspend fun importArabNamesToarticleDao(articleDao: ArticleDao) {
                 articleDao.updateArticle(article)
             }
         }
+    }
+}
+
+private suspend fun exportAutreNameToFirebase(articleDao: ArticleDao) {
+    val articles = articleDao.getAllArticlesOrder()
+    val refFirebase = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
+
+    articles.forEach { article ->
+        val nomArticleSansSymbole = article.nomArticleFinale.toLowerCase().replace("®", "")
+        refFirebase.child(article.idArticle.toString()).child("autreNomDarticle").setValue(nomArticleSansSymbole)
     }
 }
 
