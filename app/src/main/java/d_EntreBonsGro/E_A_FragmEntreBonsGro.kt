@@ -45,10 +45,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -257,7 +257,7 @@ fun FragmentEntreBonsGro(articleDao: ArticleDao) {
                             )
                         }
                     },
-                    colors = TopAppBarDefaults.smallTopAppBarColors(
+                    colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color(android.graphics.Color.parseColor(
                             suppliersList.find { it.bonDuSupplierSu == founisseurNowIs?.toString() }?.couleurSu ?: "#FFFFFF"
                         )),
@@ -526,7 +526,6 @@ fun FloatingActionButtonsSection(
     }
 }
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 private fun OutlineQuichangeLeTotaleProvisoire(
     founisseurIdNowIs: Long?,
     articlesEntreBonsGrosTabele: List<EntreBonsGrosTabele>,
@@ -606,13 +605,14 @@ private fun OutlineQuichangeLeTotaleProvisoire(
                     (ancienTotaleDepuitFireStore.minus(totalSumNow)).toString()
                 )
             },
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.Red,
-                unfocusedBorderColor = Color.Gray
+                unfocusedBorderColor = Color.Gray,
+                focusedLabelColor = Color.Red,
+                unfocusedLabelColor = Color.Gray
             ),
             modifier = Modifier.weight(1f)
         )
-
         IconButton(
             onClick = {
                 val currentTime = System.currentTimeMillis()

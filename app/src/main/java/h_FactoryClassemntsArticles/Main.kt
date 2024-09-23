@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +42,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -60,9 +68,31 @@ fun MainFactoryClassementsArticles(
     onToggleNavBar: () -> Unit
 ) {
     val articles by viewModel.articlesList.collectAsState()
+    val categories by viewModel.categorieList.collectAsState()
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
-    var holdedIdCateForMove by remember { mutableStateOf(Double) }
+    var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
+
+    // State to track the current sticky header
+    var stickyHeaderHeight by remember { mutableStateOf(0f) }
+    var currentStickyHeader by remember { mutableStateOf<CategorieTabelee?>(null) }
+
+    val density = LocalDensity.current
+
+    // Custom nested scroll connection to update the sticky header
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                if (delta < 0) {
+                    stickyHeaderHeight = (stickyHeaderHeight + delta).coerceAtLeast(0f)
+                } else {
+                    stickyHeaderHeight = (stickyHeaderHeight + delta).coerceAtMost(with(density) { 56.dp.toPx() })
+                }
+                return Offset.Zero
+            }
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -76,25 +106,103 @@ fun MainFactoryClassementsArticles(
         },
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            items(articles) { article ->
-                ArticleItem(
-                    article = article,
-                    onDisponibilityChange = { newState ->
-                        viewModel.updateArticleDisponibility(article.idArticle, newState)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(nestedScrollConnection)
+            ) {
+                categories.forEach { category ->
+                    item(span = { GridItemSpan(3) }) {
+                        CategoryHeader(
+                            category = category,
+                            isSelected = holdedIdCateForMove == category.idCategorieCT,
+                            onCategoryClick = { clickedCategory ->
+                                if (holdedIdCateForMove == null) {
+                                    holdedIdCateForMove = clickedCategory.idCategorieCT
+                                } else if (holdedIdCateForMove != clickedCategory.idCategorieCT) {
+                                    viewModel.swapCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
+                                    holdedIdCateForMove = null
+                                } else {
+                                    holdedIdCateForMove = null
+                                }
+                            },
+                            onAppear = { currentStickyHeader = category }
+                        )
                     }
+
+                    val categoryArticles = articles.filter { it.idCategorie == category.idCategorieCT.toDouble() }
+                    items(categoryArticles) { article ->
+                        ArticleItem(
+                            article = article,
+                            onDisponibilityChange = { newState ->
+                                viewModel.updateArticleDisponibility(article.idArticle, newState)
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Sticky header
+            currentStickyHeader?.let { category ->
+                CategoryHeader(
+                    category = category,
+                    isSelected = holdedIdCateForMove == category.idCategorieCT,
+                    onCategoryClick = { clickedCategory ->
+                        if (holdedIdCateForMove == null) {
+                            holdedIdCateForMove = clickedCategory.idCategorieCT
+                        } else if (holdedIdCateForMove != clickedCategory.idCategorieCT) {
+                            viewModel.swapCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
+                            holdedIdCateForMove = null
+                        } else {
+                            holdedIdCateForMove = null
+                        }
+                    },
+                    modifier = Modifier.offset(y = with(density) { stickyHeaderHeight.toDp() })
                 )
             }
         }
     }
 }
 
+@Composable
+fun CategoryHeader(
+    category: CategorieTabelee,
+    isSelected: Boolean,
+    onCategoryClick: (CategorieTabelee) -> Unit,
+    modifier: Modifier = Modifier,
+    onAppear: (() -> Unit)? = null
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+            .clickable { onCategoryClick(category) }
+    ) {
+        Text(
+            text = category.nomCategorieCT,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .padding(16.dp)
+                .align(Alignment.CenterStart)
+        )
+    }
+
+    // Call onAppear when the composable is first laid out
+    onAppear?.let {
+        DisposableEffect(Unit) {
+            it()
+            onDispose { }
+        }
+    }
+}
 @Composable
 fun FloatingActionButtons(
     showFloatingButtons: Boolean,
@@ -251,7 +359,7 @@ class ClassementsArticlesViewModel : ViewModel() {
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
             _categorieList.value = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
-                .sortedBy { it.idClassementCategorie }
+                .sortedBy { it.idClassementCategorieCT }
         } catch (e: Exception) {
             Log.e("ClassementsArticlesVM", "Error loading data", e)
         }
@@ -263,17 +371,17 @@ class ClassementsArticlesViewModel : ViewModel() {
                 .groupBy { it.nomCategorie }
                 .map { (nomCategorie, articles) ->
                     CategorieTabelee(
-                        vid = articles.firstOrNull()?.idCategorie?.toLong() ?: 0,
-                        idClassementCategorie = articles.firstOrNull()?.idCategorie ?: 0.0,
-                        nomCategorie = nomCategorie
+                        idCategorieCT = articles.firstOrNull()?.idCategorie?.toLong() ?: 0,
+                        idClassementCategorieCT = articles.firstOrNull()?.idCategorie ?: 0.0,
+                        nomCategorieCT = nomCategorie
                     )
                 }
-                .sortedBy { it.idClassementCategorie }
+                .sortedBy { it.idClassementCategorieCT }
 
             _categorieList.value = categories
 
             categories.forEach { category ->
-                refCategorieTabelee.child(category.vid.toString()).setValue(category).await()
+                refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
             }
             Log.d("ClassementsArticlesVM", "CategorieTabelee updated successfully")
         } catch (e: Exception) {
@@ -281,6 +389,64 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
+    fun swapCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
+        viewModelScope.launch {
+            val updatedCategories = _categorieList.value.toMutableList()
+            val fromIndex = updatedCategories.indexOfFirst { it.idCategorieCT == fromCategoryId }
+            val toIndex = updatedCategories.indexOfFirst { it.idCategorieCT == toCategoryId }
+
+            if (fromIndex != -1 && toIndex != -1) {
+                val fromCategory = updatedCategories[fromIndex]
+                val toCategory = updatedCategories[toIndex]
+
+                // Swap idClassementCategorieCT values
+                val tempClassement = fromCategory.idClassementCategorieCT
+                updatedCategories[fromIndex] = fromCategory.copy(idClassementCategorieCT = toCategory.idClassementCategorieCT)
+                updatedCategories[toIndex] = toCategory.copy(idClassementCategorieCT = tempClassement)
+
+                // Sort the list by the new idClassementCategorieCT values
+                updatedCategories.sortBy { it.idClassementCategorieCT }
+
+                // Update the categories in Firebase and local state
+                updateCategoriesInFirebase(updatedCategories)
+                _categorieList.value = updatedCategories
+
+                // Update the articles to follow their categories
+                updateArticlesToFollowCategories(fromCategoryId, toCategoryId)
+            }
+        }
+    }
+
+    private suspend fun updateCategoriesInFirebase(categories: List<CategorieTabelee>) {
+        categories.forEach { category ->
+            try {
+                refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
+            } catch (e: Exception) {
+                Log.e("ClassementsArticlesVM", "Error updating category in Firebase", e)
+            }
+        }
+    }
+
+    private fun updateArticlesToFollowCategories(fromCategoryId: Long, toCategoryId: Long) {
+        val updatedArticles = _articlesList.value.map { article ->
+            when (article.idCategorie) {
+                fromCategoryId.toDouble() -> article.copy(idCategorie = toCategoryId.toDouble())
+                toCategoryId.toDouble() -> article.copy(idCategorie = fromCategoryId.toDouble())
+                else -> article
+            }
+        }
+
+        _articlesList.value = updatedArticles
+        viewModelScope.launch {
+            updatedArticles.forEach { article ->
+                try {
+                    refClassmentsArtData.child(article.idArticle.toString()).setValue(article).await()
+                } catch (e: Exception) {
+                    Log.e("ClassementsArticlesVM", "Error updating article in Firebase", e)
+                }
+            }
+        }
+    }
     fun toggleFilter() {
         _showOnlyWithFilter.value = !_showOnlyWithFilter.value
     }
@@ -311,7 +477,7 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 }
-data class ClassementsArticlesTabel(
+data class ClassementsArticlesTabel(  //
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
     val idCategorie: Double = 0.0,
@@ -323,9 +489,9 @@ data class ClassementsArticlesTabel(
     constructor() : this(0)
 }
 data class CategorieTabelee(
-    val vid: Long = 0,
-    val idClassementCategorie: Double = 0.0,
-    val nomCategorie: String = "",
+    val idCategorieCT: Long = 0,
+    val idClassementCategorieCT: Double = 0.0,
+    val nomCategorieCT: String = "",
 ) {
     constructor() : this(0)
 }

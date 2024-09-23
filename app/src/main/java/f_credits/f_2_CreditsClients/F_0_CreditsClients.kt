@@ -80,7 +80,8 @@ import kotlin.random.Random
 @Composable
 fun FragmentCreditsClients(
     viewModel: CreditsClientsViewModel = viewModel(),
-    onToggleNavBar: () -> Unit, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
+    onToggleNavBar: () -> Unit,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     val clients by viewModel.clientsList.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -91,7 +92,7 @@ fun FragmentCreditsClients(
         topBar = {
             TopAppBar(
                 title = { Text("CreditsClients", color = Color.White) },
-                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color.Red),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Red),
                 actions = {
                     IconButton(onClick = { showMenuDialog = true }) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)

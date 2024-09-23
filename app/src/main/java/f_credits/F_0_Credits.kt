@@ -115,7 +115,8 @@ fun FragmentCredits(
         topBar = {
             TopAppBar(
                 title = { Text("Credits", color = Color.White) },
-                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color.Red),
+
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Red),
                 actions = {
                     IconButton(onClick = { showMenuDialog = true }) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
