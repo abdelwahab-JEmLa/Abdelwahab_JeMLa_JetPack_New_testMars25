@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -147,13 +146,13 @@ fun ArticleItem(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(2.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.height(230.dp)
+                modifier = Modifier
             ) {
                 val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
                 LoadImageFromPath(
@@ -180,7 +179,7 @@ fun ArticleItem(
                             Icon(
                                 Icons.Default.TextDecrease,
                                 "Not Available For all",
-                                modifier = Modifier.size(64.dp),
+                                modifier = Modifier,
                                 tint = Color.White
                             )
                         }
@@ -195,7 +194,7 @@ fun ArticleItem(
                             Icon(
                                 Icons.Default.Person,
                                 "Not Available For New Clients",
-                                modifier = Modifier.size(64.dp),
+                                modifier = Modifier,
                                 tint = Color.White
                             )
                         }
@@ -206,15 +205,15 @@ fun ArticleItem(
                 text = article.nomArticleFinale,
                 style = MaterialTheme.typography.headlineSmall
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             Text(
-                text = "Catégorie: ${article.nomCategorie}",
-                style = MaterialTheme.typography.bodyMedium
+                text = article.nomCategorie,
+                style = MaterialTheme.typography.bodySmall
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             Text(
-                text = "Classement: ${article.classementCate}",
-                style = MaterialTheme.typography.bodyMedium
+                text = "${article.classementCate}",
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }

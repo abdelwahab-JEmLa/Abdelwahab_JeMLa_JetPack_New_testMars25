@@ -32,7 +32,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FabPosition
@@ -150,13 +150,13 @@ class MainActivity : ComponentActivity() {
 
 
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
-    object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
-    object EditBaseScreen : Screen("A_Edite_Base_Screen", Icons.Default.Edit, "Edit Base", Color(0xFF2196F3))
-    object ManageBonsClients : Screen("C_ManageBonsClients", Icons.Default.List, "Manage Bons", Color(0xFFFFC107))
-    object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
-    object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
-    object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
-    object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Star, "Classements", Color(0xFFFF5722))
+    data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
+    data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
+    data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.Default.List, "Manage Bons", Color(0xFFFFC107))
+    data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
+    data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
+    data   object EditBaseScreen : Screen("A_Edite_Base_Screen", Icons.Default.Edit, "Edit Base", Color(0xFF2196F3))
+    data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
 }
 
 
