@@ -1,5 +1,6 @@
 package h_FactoryClassemntsArticles
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -80,7 +81,7 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
                             if (holdedIdCateForMove == null) {
                                 holdedIdCateForMove = clickedCategory.idCategorieCT
                             } else if (holdedIdCateForMove != clickedCategory.idCategorieCT) {
-                                viewModel.swapCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
+                                viewModel.goUpAndshiftsAutersDownCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
                                 holdedIdCateForMove = null
                             } else {
                                 holdedIdCateForMove = null
@@ -219,6 +220,7 @@ class ClassementsArticlesViewModel : ViewModel() {
     init {
         viewModelScope.launch {
             initDataFromFirebase()
+            updateCategorieTabelee()
         }
     }
 
@@ -232,22 +234,49 @@ class ClassementsArticlesViewModel : ViewModel() {
             _categorieList.value = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
                 .sortedBy { it.idClassementCategorieCT }
         } catch (e: Exception) {
-            // Handle error
+            Log.e("ClassementsArticlesVM", "Error loading data", e)
         }
     }
 
-    fun swapCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
+    private suspend fun updateCategorieTabelee() {
+        try {
+            val categories = _articlesList.value
+                .groupBy { it.nomCategorie }
+                .map { (nomCategorie, articles) ->
+                    CategorieTabelee(
+                        idCategorieCT = articles.firstOrNull()?.idCategorie?.toLong() ?: 0,
+                        idClassementCategorieCT = articles.firstOrNull()?.idCategorie ?: 0.0,
+                        nomCategorieCT = nomCategorie
+                    )
+                }
+                .sortedBy { it.idClassementCategorieCT }
+
+            _categorieList.value = categories
+
+            categories.forEach { category ->
+                refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
+            }
+            Log.d("ClassementsArticlesVM", "CategorieTabelee updated successfully")
+        } catch (e: Exception) {
+            Log.e("ClassementsArticlesVM", "Error updating CategorieTabelee", e)
+        }
+    }
+
+    fun goUpAndshiftsAutersDownCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
         viewModelScope.launch {
             val updatedCategories = _categorieList.value.toMutableList()
             val fromIndex = updatedCategories.indexOfFirst { it.idCategorieCT == fromCategoryId }
             val toIndex = updatedCategories.indexOfFirst { it.idCategorieCT == toCategoryId }
 
             if (fromIndex != -1 && toIndex != -1) {
-                val tempClassement = updatedCategories[fromIndex].idClassementCategorieCT
-                updatedCategories[fromIndex] = updatedCategories[fromIndex].copy(idClassementCategorieCT = updatedCategories[toIndex].idClassementCategorieCT)
-                updatedCategories[toIndex] = updatedCategories[toIndex].copy(idClassementCategorieCT = tempClassement)
+                val movedCategory = updatedCategories.removeAt(fromIndex)
+                updatedCategories.add(toIndex, movedCategory)
 
-                updatedCategories.sortBy { it.idClassementCategorieCT }
+                // Update idClassementCategorieCT for all affected categories
+                updatedCategories.forEachIndexed { index, category ->
+                    category.idClassementCategorieCT = (index + 1).toDouble()
+                }
+
                 _categorieList.value = updatedCategories
 
                 updateCategoriesInFirebase(updatedCategories)
@@ -255,7 +284,6 @@ class ClassementsArticlesViewModel : ViewModel() {
             }
         }
     }
-
     private suspend fun updateCategoriesInFirebase(categories: List<CategorieTabelee>) {
         categories.forEach { category ->
             refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
@@ -305,6 +333,6 @@ data class ClassementsArticlesTabel(
 
 data class CategorieTabelee(
     val idCategorieCT: Long = 0,
-    val idClassementCategorieCT: Double = 0.0,
+    var idClassementCategorieCT: Double = 0.0,
     val nomCategorieCT: String = ""
 )
