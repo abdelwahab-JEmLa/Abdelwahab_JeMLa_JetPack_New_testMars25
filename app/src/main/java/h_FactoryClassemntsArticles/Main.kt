@@ -288,11 +288,7 @@ class ClassementsArticlesViewModel : ViewModel() {
     // New method to update Firebase categories
     private suspend fun updateFirebaseCategories(categories: List<CategorieTabelee>) {
         categories.forEach { category ->
-            try {
                 refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
-            } catch (e: Exception) {
-                Log.e("ClassementsArticlesVM", "Error updating category in Firebase", e)
-            }
         }
     }
 
@@ -320,10 +316,7 @@ class ClassementsArticlesViewModel : ViewModel() {
 
             // Update Firebase
             _articlesList.value.find { it.idArticle == idArticle }?.let { updatedArt ->
-                try {
-                    refClassmentsArtData.child(updatedArt.idArticle.toString()).setValue(updatedArt).await()
-                } catch (_: Exception) {
-                }
+                refClassmentsArtData.child(updatedArt.idArticle.toString()).setValue(updatedArt).await()
             }
         }
     }
