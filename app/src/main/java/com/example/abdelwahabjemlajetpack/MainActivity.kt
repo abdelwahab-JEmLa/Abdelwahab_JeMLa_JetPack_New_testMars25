@@ -1,6 +1,5 @@
 package com.example.abdelwahabjemlajetpack
 
-
 import ZA_Learn_WhelPiker.PickerExample
 import a_RoomDB.AppDatabase
 import android.Manifest
@@ -27,10 +26,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FabPosition
@@ -111,7 +113,7 @@ class MainActivity : ComponentActivity() {
                     viewModel,
                     database.articleDao(),
                     creditsViewModel,
-                    creditsClientsViewModel ,
+                    creditsClientsViewModel,
                     boardStatistiquesStatViewModel,
                     classementsArticlesViewModel
                 )
@@ -146,6 +148,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
+    object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
+    object EditBaseScreen : Screen("A_Edite_Base_Screen", Icons.Default.Edit, "Edit Base", Color(0xFF2196F3))
+    object ManageBonsClients : Screen("C_ManageBonsClients", Icons.Default.List, "Manage Bons", Color(0xFFFFC107))
+    object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
+    object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
+    object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
+    object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Star, "Classements", Color(0xFFFF5722))
+}
+
+
 @Composable
 fun MyApp(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -162,10 +176,9 @@ fun MyApp(
         Screen.ManageBonsClients,
         Screen.EntreBonsGro,
         Screen.Credits,
-        Screen.CreditsClients ,
-        Screen.FactoryClassemntsArticles ,
-
-        )
+        Screen.CreditsClients,
+        Screen.FactoryClassemntsArticles,
+    )
 
     var isNavBarVisible by remember { mutableStateOf(true) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -180,21 +193,8 @@ fun MyApp(
                             icon = {
                                 Icon(
                                     screen.icon,
-                                    contentDescription = null,
-                                    tint = if (currentRoute == screen.route)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            label = {
-                                Text(
-                                    screen.title,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (currentRoute == screen.route)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentDescription = screen.title,
+                                    tint = screen.color
                                 )
                             },
                             selected = currentRoute == screen.route,
@@ -205,11 +205,9 @@ fun MyApp(
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                selectedIconColor = screen.color,
+                                unselectedIconColor = screen.color.copy(alpha = 0.6f),
+                                indicatorColor = screen.color.copy(alpha = 0.1f)
                             )
                         )
                     }
@@ -244,8 +242,8 @@ fun MyApp(
                     MainScreen(
                         navController = navController,
                         editeBaseDonneViewModel = editeBaseDonneViewModel,
-                        articleDao = articleDao   ,
-                        boardStatistiquesStatViewModel,
+                        articleDao = articleDao,
+                        boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
                     )
                 }
                 composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, articleDao) }
@@ -254,13 +252,12 @@ fun MyApp(
                 ) }
                 composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(articleDao) }
                 composable("FragmentCredits") { FragmentCredits(creditsViewModel,
-                    onToggleNavBar = { isNavBarVisible = !isNavBarVisible }
-                ) }
+                    onToggleNavBar = { isNavBarVisible = !isNavBarVisible },) }
                 composable("FragmentCreditsClients") {
                     FragmentCreditsClients(
                         creditsClientsViewModel,
+                        boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
                         onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                        boardStatistiquesStatViewModel = boardStatistiquesStatViewModel
                     )
                 }
                 composable("Main_FactoryClassemntsArticles") {
@@ -271,23 +268,8 @@ fun MyApp(
                 }
                 composable("PickerExample") { PickerExample() }
             }
-
-
         }
     }
-}
-
-
-
-
-sealed class Screen(val route: String, val title: String, val icon: ImageVector) {  //TODO fait cree des couleurs aleatoire  a chaque element et enlve le text et fait que ca soit on double ma x element a chaque line =4
-    object MainScreen : Screen("main_screen", "Home", Icons.Filled.Home)
-    object EditBaseScreen : Screen("A_Edite_Base_Screen", "Edit Base", Icons.Filled.Edit)
-    object ManageBonsClients : Screen("C_ManageBonsClients", "Manage Bons", Icons.Filled.List)
-    object EntreBonsGro : Screen("FragmentEntreBonsGro", "Entre Bons", Icons.Filled.Add)
-    object Credits : Screen("FragmentCredits", "Credits", Icons.Filled.MonetizationOn)
-    object CreditsClients : Screen("FragmentCreditsClients", "Credits Clients", Icons.Filled.People)
-    object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", "Factory Classemnt sArticles", Icons.Filled.List)
 }
 @Composable
 fun MainScreen(
@@ -317,10 +299,7 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-
-               CardBoardStatistiques(boardStatistiquesStatViewModel)
-
+                CardBoardStatistiques(boardStatistiquesStatViewModel)
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
@@ -353,6 +332,7 @@ fun MainScreen(
         }
     }
 }
+
 @Composable
 fun MenuCard(title: String, route: String, navController: NavHostController, icon: ImageVector) {
     Card(
