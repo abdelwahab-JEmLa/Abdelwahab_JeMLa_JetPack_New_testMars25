@@ -1,5 +1,7 @@
 package com.example.abdelwahabjemlajetpack
 
+import ClassementsArticlesViewModel
+import Main_FactoryClassemntsArticles
 import ZA_Learn_WhelPiker.PickerExample
 import a_RoomDB.AppDatabase
 import android.Manifest
@@ -95,6 +97,7 @@ class MainActivity : ComponentActivity() {
     private val creditsViewModel: CreditsViewModel by viewModels()
     private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
+    private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     creditsViewModel,
                     creditsClientsViewModel ,
                     boardStatistiquesStatViewModel,
+                    classementsArticlesViewModel
                 )
             }
         }
@@ -148,6 +152,7 @@ fun MyApp(
     creditsViewModel: CreditsViewModel,
     creditsClientsViewModel: CreditsClientsViewModel,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    classementsArticlesViewModel: ClassementsArticlesViewModel,
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -156,8 +161,10 @@ fun MyApp(
         Screen.ManageBonsClients,
         Screen.EntreBonsGro,
         Screen.Credits,
-        Screen.CreditsClients
-    )
+        Screen.CreditsClients ,
+        Screen.FactoryClassemntsArticles ,
+
+        )
 
     var isNavBarVisible by remember { mutableStateOf(true) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -196,7 +203,7 @@ fun MyApp(
                                     launchSingleTop = true
                                 }
                             },
-                            colors = NavigationBarItemDefaults.colors(   //TODO fait cree des couleurs aleatoire
+                            colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
                                 indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -255,6 +262,12 @@ fun MyApp(
                         boardStatistiquesStatViewModel = boardStatistiquesStatViewModel
                     )
                 }
+                composable("Main_FactoryClassemntsArticles") {
+                    Main_FactoryClassemntsArticles(
+                        classementsArticlesViewModel,
+                        onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
+                    )
+                }
                 composable("PickerExample") { PickerExample() }
             }
 
@@ -264,13 +277,14 @@ fun MyApp(
 }
 
 
-sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
+sealed class Screen(val route: String, val title: String, val icon: ImageVector) {  //TODO fait cree des couleurs aleatoire  a chaque element et enlve le text et fait que ca soit on double ma x element a chaque line =4
     object MainScreen : Screen("main_screen", "Home", Icons.Filled.Home)
     object EditBaseScreen : Screen("A_Edite_Base_Screen", "Edit Base", Icons.Filled.Edit)
     object ManageBonsClients : Screen("C_ManageBonsClients", "Manage Bons", Icons.Filled.List)
     object EntreBonsGro : Screen("FragmentEntreBonsGro", "Entre Bons", Icons.Filled.Add)
     object Credits : Screen("FragmentCredits", "Credits", Icons.Filled.MonetizationOn)
     object CreditsClients : Screen("FragmentCreditsClients", "Credits Clients", Icons.Filled.People)
+    object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", "Factory Classemnt sArticles", Icons.Filled.List)
 }
 @Composable
 fun MainScreen(
@@ -324,6 +338,9 @@ fun MainScreen(
                     }
                     item {
                         MenuCard("CreditsClients", "FragmentCreditsClients", navController, Icons.Default.People)
+                    }
+                    item {
+                        MenuCard("FactoryClassemntsArticles", "Main_FactoryClassemntsArticles", navController, Icons.Default.List)
                     }
                     item {
                         MenuCard("Picker Example", "PickerExample", navController, Icons.Default.DateRange)
