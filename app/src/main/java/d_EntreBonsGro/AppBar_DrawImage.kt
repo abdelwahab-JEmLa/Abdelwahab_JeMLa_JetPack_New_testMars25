@@ -86,8 +86,6 @@ fun DialogsController(
         )
     }
 
-
-
     if (showOutlineDialog) {
         OutlineDialog(
             selectedArticle = selectedArticle,

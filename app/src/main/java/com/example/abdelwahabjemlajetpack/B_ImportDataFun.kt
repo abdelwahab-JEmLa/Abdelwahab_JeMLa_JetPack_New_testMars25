@@ -9,6 +9,7 @@ import c_ManageBonsClients.roundToOneDecimal
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseException
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
@@ -140,9 +141,7 @@ fun BaseDonne.toMap(): Map<String, Any?> {
     )
 }
 
-suspend fun transferFirebaseData() {
-    val refSource = Firebase.database.getReference("c_db_de_base_down_test")
-    val refDestination = Firebase.database.getReference("d_db_jetPack")
+suspend fun transferFirebaseData(refSource: DatabaseReference, refDestination: DatabaseReference) {
 
     try {
         // Clear existing data in the destination reference

@@ -80,10 +80,13 @@ fun TopAppBar(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Transfer Firebase Data") },
+                        text = { Text("Transfer Entre Firebase [c_db_de_base_down_test]>>[d_db_jetPack]") },
                         onClick = {
+                            val firebaseDatabase = Firebase.database
+                            val refSource = firebaseDatabase.getReference("c_db_de_base_down_test")
+                            val refDestination = firebaseDatabase.getReference("d_db_jetPack")
                             coroutineScope.launch {
-                                transferFirebaseData()
+                                transferFirebaseData(refSource,refDestination)
                             }
                             menuExpanded = false
                         }
