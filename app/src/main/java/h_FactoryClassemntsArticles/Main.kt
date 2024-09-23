@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -200,7 +201,6 @@ fun FloatingActionButtons(
         }
     }
 }
-
 class ClassementsArticlesViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance()
     private val refClassmentsArtData = database.getReference("BaseDonne_Bakup3")
@@ -279,30 +279,19 @@ class ClassementsArticlesViewModel : ViewModel() {
 
                 _categorieList.value = updatedCategories
 
-                updateCategoriesInFirebase(updatedCategories)
-                updateArticlesToFollowCategories(fromCategoryId, toCategoryId)
+                // Fix: Call updateFirebaseCategories
+                updateFirebaseCategories(updatedCategories)
             }
         }
     }
-    private suspend fun updateCategoriesInFirebase(categories: List<CategorieTabelee>) {
+
+    // New method to update Firebase categories
+    private suspend fun updateFirebaseCategories(categories: List<CategorieTabelee>) {
         categories.forEach { category ->
-            refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
-        }
-    }
-
-    private fun updateArticlesToFollowCategories(fromCategoryId: Long, toCategoryId: Long) {
-        val updatedArticles = _articlesList.value.map { article ->
-            when (article.idCategorie) {
-                fromCategoryId.toDouble() -> article.copy(idCategorie = toCategoryId.toDouble())
-                toCategoryId.toDouble() -> article.copy(idCategorie = fromCategoryId.toDouble())
-                else -> article
-            }
-        }
-
-        _articlesList.value = updatedArticles
-        viewModelScope.launch {
-            updatedArticles.forEach { article ->
-                refClassmentsArtData.child(article.idArticle.toString()).setValue(article).await()
+            try {
+                refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
+            } catch (e: Exception) {
+                Log.e("ClassementsArticlesVM", "Error updating category in Firebase", e)
             }
         }
     }
@@ -320,8 +309,27 @@ class ClassementsArticlesViewModel : ViewModel() {
             refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
         }
     }
-}
 
+    fun updateFireBase(idArticle: Long, update: (ClassementsArticlesTabel) -> ClassementsArticlesTabel) {
+        viewModelScope.launch {
+            _articlesList.update { articles ->
+                articles.map { article ->
+                    if (article.idArticle == idArticle) update(article) else article
+                }
+            }
+
+            // Update Firebase
+            _articlesList.value.find { it.idArticle == idArticle }?.let { updatedArt ->
+                try {
+                    refClassmentsArtData.child(updatedArt.idArticle.toString()).setValue(updatedArt).await()
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+
+}
 data class ClassementsArticlesTabel(
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
