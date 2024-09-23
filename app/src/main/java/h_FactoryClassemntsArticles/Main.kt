@@ -34,7 +34,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -49,6 +48,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onToggleNavBar: () -> Unit) {
@@ -58,6 +72,9 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
     var showFloatingButtons by remember { mutableStateOf(false) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
 
+    val gridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButtons(
@@ -65,12 +82,29 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
                 onToggleNavBar = onToggleNavBar,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
                 onToggleFilter = viewModel::toggleFilter,
-                showOnlyWithFilter = showOnlyWithFilter
+                showOnlyWithFilter = showOnlyWithFilter,
+                categories = categories,
+                onCategorySelected = { selectedCategory ->   //TODO fait affiche on bas du windos un button avec "Selectioné"
+                    // le button text devien "Collé" et ca active modee multiSelection =true  dons cette mode on peut selection plusieur categories
+                    // et le stoque don un mutableStat  on clicko cette foit a colle le prochen click sur une cate va
+                    //    goUpAndshiftsAutersDownCategoryPositions ca veut dire tout les stoque vont alle on up du clické puch autre down
+                    coroutineScope.launch {
+                        val index = categories.indexOfFirst { it.idCategorieCT == selectedCategory.idCategorieCT }
+                        if (index != -1) {
+                            // Calculate the actual position in the grid, accounting for articles
+                            val position = categories.take(index).sumOf { category ->
+                                1 + articles.count { it.idCategorie == category.idCategorieCT.toDouble() }
+                            }
+                            gridState.scrollToItem(position)
+                        }
+                    }
+                }
             )
         }
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
+            state = gridState,
             modifier = Modifier.padding(padding)
         ) {
             categories.forEach { category ->
@@ -173,20 +207,38 @@ fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (Strin
     }
 }
 
+
+
 @Composable
 fun FloatingActionButtons(
     showFloatingButtons: Boolean,
     onToggleNavBar: () -> Unit,
     onToggleFloatingButtons: () -> Unit,
     onToggleFilter: () -> Unit,
-    showOnlyWithFilter: Boolean
+    showOnlyWithFilter: Boolean,
+    categories: List<CategorieTabelee>,
+    onCategorySelected: (CategorieTabelee) -> Unit
 ) {
+    var showCategorySelection by remember { mutableStateOf(false) }
+
     Column {
         if (showFloatingButtons) {
-            FloatingActionButton(onClick = onToggleNavBar) {
+            FloatingActionButton(
+                onClick = { showCategorySelection = true },
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(Icons.Default.Category, "Select Category")
+            }
+            FloatingActionButton(
+                onClick = onToggleNavBar,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
                 Icon(Icons.Default.Home, "Toggle Navigation Bar")
             }
-            FloatingActionButton(onClick = onToggleFilter) {
+            FloatingActionButton(
+                onClick = onToggleFilter,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
                 Icon(
                     if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
                     "Toggle Filter"
@@ -198,6 +250,58 @@ fun FloatingActionButtons(
                 if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
             )
+        }
+    }
+
+    if (showCategorySelection) {
+        CategorySelectionWindow(
+            categories = categories,
+            onDismiss = { showCategorySelection = false },
+            onCategorySelected = { category ->
+                onCategorySelected(category)
+                showCategorySelection = false
+            }
+        )
+    }
+}
+
+@Composable
+fun CategorySelectionWindow(
+    categories: List<CategorieTabelee>,
+    onDismiss: () -> Unit,
+    onCategorySelected: (CategorieTabelee) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    "Select Category",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(categories) { category ->
+                        Button(
+                            onClick = { onCategorySelected(category) },
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                        ) {
+                            Text(category.nomCategorieCT, maxLines = 2)
+                        }
+                    }
+                }
+            }
         }
     }
 }
