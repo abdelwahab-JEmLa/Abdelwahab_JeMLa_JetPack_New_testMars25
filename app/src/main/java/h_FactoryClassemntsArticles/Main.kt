@@ -1,12 +1,9 @@
 package h_FactoryClassemntsArticles
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,7 +12,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -25,15 +21,12 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,7 +42,6 @@ import b_Edite_Base_Donne.LoadImageFromPath
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -57,18 +49,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun MainFactoryClassementsArticles(
-    viewModel: ClassementsArticlesViewModel,
-    onToggleNavBar: () -> Unit
-) {
+fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onToggleNavBar: () -> Unit) {
     val articles by viewModel.articlesList.collectAsState()
     val categories by viewModel.categorieList.collectAsState()
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
-
-    // State to track the fixed header
-    val fixedHeader = remember { mutableStateOf<CategorieTabelee?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -79,70 +65,37 @@ fun MainFactoryClassementsArticles(
                 onToggleFilter = viewModel::toggleFilter,
                 showOnlyWithFilter = showOnlyWithFilter
             )
-        },
-        floatingActionButtonPosition = FabPosition.End
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+        }
+    ) { padding ->
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.padding(padding)
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                categories.forEachIndexed { index, category ->
-                    item(span = { GridItemSpan(3) }) {
-                        CategoryHeader(
-                            category = category,
-                            isSelected = holdedIdCateForMove == category.idCategorieCT,
-                            onCategoryClick = { clickedCategory ->
-                                if (holdedIdCateForMove == null) {
-                                    holdedIdCateForMove = clickedCategory.idCategorieCT
-                                } else if (holdedIdCateForMove != clickedCategory.idCategorieCT) {
-                                    viewModel.swapCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
-                                    holdedIdCateForMove = null
-                                } else {
-                                    holdedIdCateForMove = null
-                                }
-                            },
-                            onAppear = {
-                                if (index == 0 && fixedHeader.value == null) {
-                                    fixedHeader.value = category
-                                }
+            categories.forEach { category ->
+                item(span = { GridItemSpan(3) }) {
+                    CategoryHeader(
+                        category = category,
+                        isSelected = holdedIdCateForMove == category.idCategorieCT,
+                        onCategoryClick = { clickedCategory ->
+                            if (holdedIdCateForMove == null) {
+                                holdedIdCateForMove = clickedCategory.idCategorieCT
+                            } else if (holdedIdCateForMove != clickedCategory.idCategorieCT) {
+                                viewModel.swapCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
+                                holdedIdCateForMove = null
+                            } else {
+                                holdedIdCateForMove = null
                             }
-                        )
-                    }
-
-                    val categoryArticles = articles.filter { it.idCategorie == category.idCategorieCT.toDouble() }
-                    items(categoryArticles) { article ->
-                        ArticleItem(
-                            article = article,
-                            onDisponibilityChange = { newState ->
-                                viewModel.updateArticleDisponibility(article.idArticle, newState)
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Fixed header
-            fixedHeader.value?.let { category ->
-                CategoryHeader(
-                    category = category,
-                    isSelected = holdedIdCateForMove == category.idCategorieCT,
-                    onCategoryClick = { clickedCategory ->
-                        if (holdedIdCateForMove == null) {
-                            holdedIdCateForMove = clickedCategory.idCategorieCT
-                        } else if (holdedIdCateForMove != clickedCategory.idCategorieCT) {
-                            viewModel.swapCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieCT)
-                            holdedIdCateForMove = null
-                        } else {
-                            holdedIdCateForMove = null
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    )
+                }
+                items(articles.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
+                    ArticleItem(
+                        article = article,
+                        onDisponibilityChange = { newState ->
+                            viewModel.updateArticleDisponibility(article.idArticle, newState)
+                        }
+                    )
+                }
             }
         }
     }
@@ -152,12 +105,10 @@ fun MainFactoryClassementsArticles(
 fun CategoryHeader(
     category: CategorieTabelee,
     isSelected: Boolean,
-    onCategoryClick: (CategorieTabelee) -> Unit,
-    modifier: Modifier = Modifier,
-    onAppear: (() -> Unit)? = null
+    onCategoryClick: (CategorieTabelee) -> Unit
 ) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
             .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
@@ -166,90 +117,30 @@ fun CategoryHeader(
         Text(
             text = category.nomCategorieCT,
             style = MaterialTheme.typography.titleMedium,
-            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.CenterStart)
+            modifier = Modifier.padding(16.dp)
         )
     }
-
-    // Call onAppear when the composable is first laid out
-    DisposableEffect(Unit) {
-        onAppear?.invoke()
-        onDispose { }
-    }
-}
-@Composable
-fun FloatingActionButtons(
-    showFloatingButtons: Boolean,
-    onToggleNavBar: () -> Unit,
-    onToggleFloatingButtons: () -> Unit,
-    onToggleFilter: () -> Unit,
-    showOnlyWithFilter: Boolean
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.End
-    ) {
-        if (showFloatingButtons) {
-            FloatingActionButton(
-                onClick = onToggleNavBar,
-                containerColor = MaterialTheme.colorScheme.secondary
-            ) {
-                Icon(Icons.Default.Home, "Toggle Navigation Bar")
-            }
-            FloatingActionButton(
-                onClick = onToggleFilter,
-                containerColor = MaterialTheme.colorScheme.tertiary
-            ) {
-                Icon(
-                    if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
-                    "Toggle Filter"
-                )
-            }
-        }
-        FloatingActionButton(
-            onClick = onToggleFloatingButtons,
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(
-                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
-            )
-        }
-    }
 }
 
 @Composable
-fun ArticleItem(
-    article: ClassementsArticlesTabel,
-    onDisponibilityChange: (String) -> Unit
-) {
+fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (String) -> Unit) {
     Card(
-        shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(2.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(4.dp)
+            .clickable {
+                val newState = when (article.diponibilityState) {
+                    "" -> "Non Dispo"
+                    "Non Dispo" -> "NonForNewsClients"
+                    else -> ""
+                }
+                onDisponibilityChange(newState)
+            }
     ) {
-        Column(modifier = Modifier) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-            ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Box(contentAlignment = Alignment.Center) {
                 val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                LoadImageFromPath(
-                    imagePath = imagePath,
-                    modifier = Modifier.clickable {
-                        val newDisponibilityState = when (article.diponibilityState) {
-                            "" -> "Non Dispo"
-                            "Non Dispo" -> "NonForNewsClients"
-                            "NonForNewsClients" -> ""
-                            else -> ""
-                        }
-                        onDisponibilityChange(newDisponibilityState)
-                    }
-                )
+                LoadImageFromPath(imagePath = imagePath)
 
                 when (article.diponibilityState) {
                     "Non Dispo" -> {
@@ -259,12 +150,7 @@ fun ArticleItem(
                                 .background(Color.Black.copy(alpha = 0.5f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Default.TextDecrease,
-                                "Not Available For all",
-                                modifier = Modifier,
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.TextDecrease, "Not Available For all", tint = Color.White)
                         }
                     }
                     "NonForNewsClients" -> {
@@ -274,56 +160,65 @@ fun ArticleItem(
                                 .background(Color.Gray.copy(alpha = 0.5f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Default.Person,
-                                "Not Available For New Clients",
-                                modifier = Modifier,
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.Person, "Not Available For New Clients", tint = Color.White)
                         }
                     }
                 }
             }
-            Text(
-                text = article.nomArticleFinale,
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = article.nomCategorie,
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = "${article.classementIdAuCate}",
-                style = MaterialTheme.typography.bodySmall
+            Text(text = article.nomArticleFinale, style = MaterialTheme.typography.bodyLarge)
+            Text(text = article.nomCategorie, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+fun FloatingActionButtons(
+    showFloatingButtons: Boolean,
+    onToggleNavBar: () -> Unit,
+    onToggleFloatingButtons: () -> Unit,
+    onToggleFilter: () -> Unit,
+    showOnlyWithFilter: Boolean
+) {
+    Column {
+        if (showFloatingButtons) {
+            FloatingActionButton(onClick = onToggleNavBar) {
+                Icon(Icons.Default.Home, "Toggle Navigation Bar")
+            }
+            FloatingActionButton(onClick = onToggleFilter) {
+                Icon(
+                    if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
+                    "Toggle Filter"
+                )
+            }
+        }
+        FloatingActionButton(onClick = onToggleFloatingButtons) {
+            Icon(
+                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
             )
         }
     }
 }
+
 class ClassementsArticlesViewModel : ViewModel() {
-    private val _articlesList = MutableStateFlow<List<ClassementsArticlesTabel>>(emptyList())
-    private val _categorieList = MutableStateFlow<List<CategorieTabelee>>(emptyList())
-    private val _showOnlyWithFilter = MutableStateFlow(false)
     private val database = FirebaseDatabase.getInstance()
     private val refClassmentsArtData = database.getReference("BaseDonne_Bakup3")
     private val refCategorieTabelee = database.getReference("H_CategorieTabele")
 
-    val articlesList: StateFlow<List<ClassementsArticlesTabel>> = combine(_articlesList, _showOnlyWithFilter) { articles, filterKey ->
-        if (filterKey) {
-            articles.filter { it.diponibilityState == "" }
-        } else {
-            articles
-        }
+    private val _articlesList = MutableStateFlow<List<ClassementsArticlesTabel>>(emptyList())
+    private val _categorieList = MutableStateFlow<List<CategorieTabelee>>(emptyList())
+    private val _showOnlyWithFilter = MutableStateFlow(false)
+
+    val articlesList = combine(_articlesList, _showOnlyWithFilter) { articles, filterKey ->
+        if (filterKey) articles.filter { it.diponibilityState == "" } else articles
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val categorieList: StateFlow<List<CategorieTabelee>> = _categorieList.asStateFlow()
-    val showOnlyWithFilter: StateFlow<Boolean> = _showOnlyWithFilter.asStateFlow()
+    val categorieList = _categorieList.asStateFlow()
+    val showOnlyWithFilter = _showOnlyWithFilter.asStateFlow()
 
     init {
         viewModelScope.launch {
             initDataFromFirebase()
-            updateCategorieTabelee()
         }
     }
 
@@ -337,31 +232,7 @@ class ClassementsArticlesViewModel : ViewModel() {
             _categorieList.value = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
                 .sortedBy { it.idClassementCategorieCT }
         } catch (e: Exception) {
-            Log.e("ClassementsArticlesVM", "Error loading data", e)
-        }
-    }
-
-    private suspend fun updateCategorieTabelee() {
-        try {
-            val categories = _articlesList.value
-                .groupBy { it.nomCategorie }
-                .map { (nomCategorie, articles) ->
-                    CategorieTabelee(
-                        idCategorieCT = articles.firstOrNull()?.idCategorie?.toLong() ?: 0,
-                        idClassementCategorieCT = articles.firstOrNull()?.idCategorie ?: 0.0,
-                        nomCategorieCT = nomCategorie
-                    )
-                }
-                .sortedBy { it.idClassementCategorieCT }
-
-            _categorieList.value = categories
-
-            categories.forEach { category ->
-                refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
-            }
-            Log.d("ClassementsArticlesVM", "CategorieTabelee updated successfully")
-        } catch (e: Exception) {
-            Log.e("ClassementsArticlesVM", "Error updating CategorieTabelee", e)
+            // Handle error
         }
     }
 
@@ -372,22 +243,14 @@ class ClassementsArticlesViewModel : ViewModel() {
             val toIndex = updatedCategories.indexOfFirst { it.idCategorieCT == toCategoryId }
 
             if (fromIndex != -1 && toIndex != -1) {
-                val fromCategory = updatedCategories[fromIndex]
-                val toCategory = updatedCategories[toIndex]
+                val tempClassement = updatedCategories[fromIndex].idClassementCategorieCT
+                updatedCategories[fromIndex] = updatedCategories[fromIndex].copy(idClassementCategorieCT = updatedCategories[toIndex].idClassementCategorieCT)
+                updatedCategories[toIndex] = updatedCategories[toIndex].copy(idClassementCategorieCT = tempClassement)
 
-                // Swap idClassementCategorieCT values
-                val tempClassement = fromCategory.idClassementCategorieCT
-                updatedCategories[fromIndex] = fromCategory.copy(idClassementCategorieCT = toCategory.idClassementCategorieCT)
-                updatedCategories[toIndex] = toCategory.copy(idClassementCategorieCT = tempClassement)
-
-                // Sort the list by the new idClassementCategorieCT values
                 updatedCategories.sortBy { it.idClassementCategorieCT }
-
-                // Update the categories in Firebase and local state
-                updateCategoriesInFirebase(updatedCategories)
                 _categorieList.value = updatedCategories
 
-                // Update the articles to follow their categories
+                updateCategoriesInFirebase(updatedCategories)
                 updateArticlesToFollowCategories(fromCategoryId, toCategoryId)
             }
         }
@@ -395,11 +258,7 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     private suspend fun updateCategoriesInFirebase(categories: List<CategorieTabelee>) {
         categories.forEach { category ->
-            try {
-                refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
-            } catch (e: Exception) {
-                Log.e("ClassementsArticlesVM", "Error updating category in Firebase", e)
-            }
+            refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
         }
     }
 
@@ -415,59 +274,37 @@ class ClassementsArticlesViewModel : ViewModel() {
         _articlesList.value = updatedArticles
         viewModelScope.launch {
             updatedArticles.forEach { article ->
-                try {
-                    refClassmentsArtData.child(article.idArticle.toString()).setValue(article).await()
-                } catch (e: Exception) {
-                    Log.e("ClassementsArticlesVM", "Error updating article in Firebase", e)
-                }
+                refClassmentsArtData.child(article.idArticle.toString()).setValue(article).await()
             }
         }
     }
+
     fun toggleFilter() {
         _showOnlyWithFilter.value = !_showOnlyWithFilter.value
     }
 
     fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
-        updateFirebase(articleId) { article ->
-            article.copy(diponibilityState = newDisponibilityState)
-        }
-    }
-
-    private fun updateFirebase(articleId: Long, update: (ClassementsArticlesTabel) -> ClassementsArticlesTabel) {
         viewModelScope.launch {
             val updatedArticles = _articlesList.value.map { article ->
-                if (article.idArticle == articleId) update(article) else article
+                if (article.idArticle == articleId) article.copy(diponibilityState = newDisponibilityState) else article
             }
-
             _articlesList.value = updatedArticles
-
-            val updatedArticle = updatedArticles.find { it.idArticle == articleId }
-            updatedArticle?.let {
-                try {
-                    refClassmentsArtData.child(articleId.toString()).setValue(it).await()
-                    Log.d("ClassementsArticlesVM", "Article updated successfully in Firebase")
-                } catch (e: Exception) {
-                    Log.e("ClassementsArticlesVM", "Error updating article in Firebase", e)
-                }
-            }
+            refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
         }
     }
 }
-data class ClassementsArticlesTabel(  //
+
+data class ClassementsArticlesTabel(
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
     val idCategorie: Double = 0.0,
     val nomCategorie: String = "",
     val classementIdAuCate: Double = 0.0,
-    val lastUpdateState: String = "",
-    val diponibilityState: String = "",
-) {
-    constructor() : this(0)
-}
+    val diponibilityState: String = ""
+)
+
 data class CategorieTabelee(
     val idCategorieCT: Long = 0,
     val idClassementCategorieCT: Double = 0.0,
-    val nomCategorieCT: String = "",
-) {
-    constructor() : this(0)
-}
+    val nomCategorieCT: String = ""
+)
