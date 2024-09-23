@@ -1,7 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
-import ClassementsArticlesViewModel
-import Main_FactoryClassemntsArticles
+
 import ZA_Learn_WhelPiker.PickerExample
 import a_RoomDB.AppDatabase
 import android.Manifest
@@ -78,6 +77,8 @@ import f_credits.f_2_CreditsClients.CreditsClientsViewModel
 import f_credits.f_2_CreditsClients.FragmentCreditsClients
 import g_BoardStatistiques.BoardStatistiquesStatViewModel
 import g_BoardStatistiques.CardBoardStatistiques
+import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
+import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
 import java.util.Locale
 
 class MyApplication : Application() {
@@ -263,7 +264,7 @@ fun MyApp(
                     )
                 }
                 composable("Main_FactoryClassemntsArticles") {
-                    Main_FactoryClassemntsArticles(
+                    MainFactoryClassementsArticles(
                         classementsArticlesViewModel,
                         onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                     )
@@ -275,6 +276,8 @@ fun MyApp(
         }
     }
 }
+
+
 
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {  //TODO fait cree des couleurs aleatoire  a chaque element et enlve le text et fait que ca soit on double ma x element a chaque line =4
