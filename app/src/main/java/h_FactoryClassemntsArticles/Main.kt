@@ -44,10 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import b_Edite_Base_Donne.LoadImageFromPath
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -65,6 +62,7 @@ fun MainFactoryClassementsArticles(
     val articles by viewModel.articlesList.collectAsState()
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
+    var holdedIdCateForMove by remember { mutableStateOf(Double) }
 
     Scaffold(
         floatingActionButton = {
@@ -78,6 +76,7 @@ fun MainFactoryClassementsArticles(
         },
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             modifier = Modifier
@@ -212,18 +211,19 @@ fun ArticleItem(
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
-                text = "${article.classementCate}",
+                text = "${article.classementIdAuCate}",
                 style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
-
 class ClassementsArticlesViewModel : ViewModel() {
     private val _articlesList = MutableStateFlow<List<ClassementsArticlesTabel>>(emptyList())
+    private val _categorieList = MutableStateFlow<List<CategorieTabelee>>(emptyList())
     private val _showOnlyWithFilter = MutableStateFlow(false)
     private val database = FirebaseDatabase.getInstance()
-    private val refClassmentsArtData = database.getReference("e_DBJetPackExport")
+    private val refClassmentsArtData = database.getReference("BaseDonne_Bakup3")
+    private val refCategorieTabelee = database.getReference("H_CategorieTabele")
 
     val articlesList: StateFlow<List<ClassementsArticlesTabel>> = combine(_articlesList, _showOnlyWithFilter) { articles, filterKey ->
         if (filterKey) {
@@ -233,22 +233,52 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val categorieList: StateFlow<List<CategorieTabelee>> = _categorieList.asStateFlow()
     val showOnlyWithFilter: StateFlow<Boolean> = _showOnlyWithFilter.asStateFlow()
 
     init {
-        initDataFromFirebase()
+        viewModelScope.launch {
+            initDataFromFirebase()
+            updateCategorieTabelee()
+        }
     }
 
-    private fun initDataFromFirebase() {
-        refClassmentsArtData.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                _articlesList.value = dataSnapshot.children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
-            }
+    private suspend fun initDataFromFirebase() {
+        try {
+            val articlesSnapshot = refClassmentsArtData.get().await()
+            _articlesList.value = articlesSnapshot.children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
+                .sortedWith(compareBy<ClassementsArticlesTabel> { it.idCategorie }.thenBy { it.classementIdAuCate })
 
-            override fun onCancelled(databaseError: DatabaseError) {
-                Log.e("ClassementsArticlesVM", "Error loading data", databaseError.toException())
+            val categoriesSnapshot = refCategorieTabelee.get().await()
+            _categorieList.value = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
+                .sortedBy { it.idClassementCategorie }
+        } catch (e: Exception) {
+            Log.e("ClassementsArticlesVM", "Error loading data", e)
+        }
+    }
+
+    private suspend fun updateCategorieTabelee() {
+        try {
+            val categories = _articlesList.value
+                .groupBy { it.nomCategorie }
+                .map { (nomCategorie, articles) ->
+                    CategorieTabelee(
+                        vid = articles.firstOrNull()?.idCategorie?.toLong() ?: 0,
+                        idClassementCategorie = articles.firstOrNull()?.idCategorie ?: 0.0,
+                        nomCategorie = nomCategorie
+                    )
+                }
+                .sortedBy { it.idClassementCategorie }
+
+            _categorieList.value = categories
+
+            categories.forEach { category ->
+                refCategorieTabelee.child(category.vid.toString()).setValue(category).await()
             }
-        })
+            Log.d("ClassementsArticlesVM", "CategorieTabelee updated successfully")
+        } catch (e: Exception) {
+            Log.e("ClassementsArticlesVM", "Error updating CategorieTabelee", e)
+        }
     }
 
     fun toggleFilter() {
@@ -281,15 +311,21 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 }
-
 data class ClassementsArticlesTabel(
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
-    val classementCate: Double = 0.0,
     val idCategorie: Double = 0.0,
     val nomCategorie: String = "",
+    val classementIdAuCate: Double = 0.0,
     val lastUpdateState: String = "",
     val diponibilityState: String = "",
+) {
+    constructor() : this(0)
+}
+data class CategorieTabelee(
+    val vid: Long = 0,
+    val idClassementCategorie: Double = 0.0,
+    val nomCategorie: String = "",
 ) {
     constructor() : this(0)
 }
