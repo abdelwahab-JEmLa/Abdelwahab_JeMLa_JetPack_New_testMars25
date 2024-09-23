@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -42,12 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -73,26 +67,8 @@ fun MainFactoryClassementsArticles(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
 
-    // State to track the current sticky header
-    var stickyHeaderHeight by remember { mutableStateOf(0f) }
-    var currentStickyHeader by remember { mutableStateOf<CategorieTabelee?>(null) }
-
-    val density = LocalDensity.current
-
-    // Custom nested scroll connection to update the sticky header
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val delta = available.y
-                if (delta < 0) {
-                    stickyHeaderHeight = (stickyHeaderHeight + delta).coerceAtLeast(0f)
-                } else {
-                    stickyHeaderHeight = (stickyHeaderHeight + delta).coerceAtMost(with(density) { 56.dp.toPx() })
-                }
-                return Offset.Zero
-            }
-        }
-    }
+    // State to track the fixed header
+    val fixedHeader = remember { mutableStateOf<CategorieTabelee?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -113,11 +89,9 @@ fun MainFactoryClassementsArticles(
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(nestedScrollConnection)
+                modifier = Modifier.fillMaxSize()
             ) {
-                categories.forEach { category ->
+                categories.forEachIndexed { index, category ->
                     item(span = { GridItemSpan(3) }) {
                         CategoryHeader(
                             category = category,
@@ -132,7 +106,11 @@ fun MainFactoryClassementsArticles(
                                     holdedIdCateForMove = null
                                 }
                             },
-                            onAppear = { currentStickyHeader = category }
+                            onAppear = {
+                                if (index == 0 && fixedHeader.value == null) {
+                                    fixedHeader.value = category
+                                }
+                            }
                         )
                     }
 
@@ -148,8 +126,8 @@ fun MainFactoryClassementsArticles(
                 }
             }
 
-            // Sticky header
-            currentStickyHeader?.let { category ->
+            // Fixed header
+            fixedHeader.value?.let { category ->
                 CategoryHeader(
                     category = category,
                     isSelected = holdedIdCateForMove == category.idCategorieCT,
@@ -163,7 +141,7 @@ fun MainFactoryClassementsArticles(
                             holdedIdCateForMove = null
                         }
                     },
-                    modifier = Modifier.offset(y = with(density) { stickyHeaderHeight.toDp() })
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -196,11 +174,9 @@ fun CategoryHeader(
     }
 
     // Call onAppear when the composable is first laid out
-    onAppear?.let {
-        DisposableEffect(Unit) {
-            it()
-            onDispose { }
-        }
+    DisposableEffect(Unit) {
+        onAppear?.invoke()
+        onDispose { }
     }
 }
 @Composable
