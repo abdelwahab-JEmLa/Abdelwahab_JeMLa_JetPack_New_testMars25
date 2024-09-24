@@ -16,10 +16,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -44,9 +42,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+
 @Composable
 fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onToggleNavBar: () -> Unit) {
     val articles by viewModel.articlesList.collectAsState()
@@ -60,38 +58,32 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
 
     Scaffold(
         floatingActionButton = {
-            Column {
-                FloatingActionButtons(
-                    showFloatingButtons = showFloatingButtons,
-                    onToggleNavBar = onToggleNavBar,
-                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                    onToggleFilter = viewModel::toggleFilter,
-                    showOnlyWithFilter = showOnlyWithFilter,
-                    categories = categories,
-                    viewModel = viewModel,
-                    onCategorySelected = { selectedCategory ->
-                        coroutineScope.launch {
-                            val index = categories.indexOfFirst { it.idCategorieCT == selectedCategory.idCategorieCT }
-                            if (index != -1) {
-                                val position = categories.take(index).sumOf { category ->
-                                    1 + articles.count { it.idCategorie == category.idCategorieCT.toDouble() }
-                                }
-                                gridState.scrollToItem(position)
+            FloatingActionButtons(
+                showFloatingButtons = showFloatingButtons,
+                onToggleNavBar = onToggleNavBar,
+                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                onToggleFilter = viewModel::toggleFilter,
+                showOnlyWithFilter = showOnlyWithFilter,
+                categories = categories,
+                viewModel = viewModel,
+                onCategorySelected = { selectedCategory ->
+                    coroutineScope.launch {
+                        val index = categories.indexOfFirst { it.idCategorieCT == selectedCategory.idCategorieCT }
+                        if (index != -1) {
+                            val position = categories.take(index).sumOf { category ->
+                                1 + articles.count { it.idCategorie == category.idCategorieCT.toDouble() }
                             }
+                            gridState.scrollToItem(position)
                         }
-                    },
-                )
-                FloatingActionButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.updateClassementIdAuTotale()
-                        }
-                    },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Update Classement")
+                    }
+                },
+                onUpdateClassement = {
+                    coroutineScope.launch {
+                        viewModel.updateClassementIdAuTotale()   //TODO ajoute une progress bare s affiche au nav bar suive
+
+                    }
                 }
-            }
+            )
         }
     ) { padding ->
         LazyVerticalGrid(
@@ -207,6 +199,8 @@ class ClassementsArticlesViewModel : ViewModel() {
     private val _categorieList = MutableStateFlow<List<CategorieTabelee>>(emptyList())
     private val _showOnlyWithFilter = MutableStateFlow(false)
 
+
+
     val articlesList = combine(_articlesList, _categorieList, _showOnlyWithFilter) { articles, categories, filterKey ->
         val sortedArticles = articles.sortedWith(
             compareBy<ClassementsArticlesTabel> { article ->
@@ -226,6 +220,42 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
+
+    fun updateClassementIdAuTotale() {
+        viewModelScope.launch {
+
+            val sortedArticles = articlesList.value
+            val updatedArticles = sortedArticles.mapIndexed { index, article ->
+                article.copy(classementCate = (index + 1).toDouble())
+            }
+            _articlesList.value = updatedArticles
+
+            // Update Firebase
+            updatedArticles.forEach { article ->
+                refClassmentsArtData.child(article.idArticle.toString())
+                    .child("classementCate")
+                    .setValue(article.classementCate)
+                    .await()
+            }
+
+            updatee_DBJetPackExportParBaseDonne_Bakup3()
+
+        }
+    }
+
+    private fun updatee_DBJetPackExportParBaseDonne_Bakup3() {
+        viewModelScope.launch {
+            val updatedArticles = articlesList.value
+            updatedArticles.forEach { article ->
+                database.getReference("e_DBJetPackExport")
+                    .child(article.idArticle.toString())
+                    .updateChildren(mapOf(
+                        "idCategorie" to article.idCategorie,
+                        "classementCate" to article.classementCate
+                    )).await()
+            }
+        }
+    }
     private suspend fun initDataFromFirebase() {
         try {
             val articlesSnapshot = refClassmentsArtData.get().await()
@@ -316,23 +346,8 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-    fun updateClassementIdAuTotale() {
-        viewModelScope.launch {
-            val sortedArticles = articlesList.value
-            val updatedArticles = sortedArticles.mapIndexed { index, article ->
-                article.copy(classementIdAuTotale = (index + 1).toDouble())
-            }
-            _articlesList.value = updatedArticles
 
-            // Update Firebase
-            updatedArticles.forEach { article ->
-                refClassmentsArtData.child(article.idArticle.toString())
-                    .child("classementIdAuTotale")
-                    .setValue(article.classementIdAuTotale)
-                    .await()
-            }
-        }
-    }
+
     fun moveCategory(categoryToMove: CategorieTabelee, targetCategory: CategorieTabelee) {
         viewModelScope.launch {
             val currentCategories = _categorieList.value.toMutableList()
@@ -372,20 +387,6 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-    fun updateFireBase(idArticle: Long, update: (ClassementsArticlesTabel) -> ClassementsArticlesTabel) {
-        viewModelScope.launch {
-            _articlesList.update { articles ->
-                articles.map { article ->
-                    if (article.idArticle == idArticle) update(article) else article
-                }
-            }
-
-            // Update Firebase
-            _articlesList.value.find { it.idArticle == idArticle }?.let { updatedArt ->
-                refClassmentsArtData.child(updatedArt.idArticle.toString()).setValue(updatedArt).await()
-            }
-        }
-    }
 
 
 }
@@ -395,7 +396,7 @@ data class ClassementsArticlesTabel(
     val idCategorie: Double = 0.0,
     val nomCategorie: String = "",
     val classementIdAuCate: Double = 0.0,
-    val classementIdAuTotale: Double = 0.0,
+    val classementCate: Double = 0.0,     // totale Classement
     val diponibilityState: String = ""
 )
 

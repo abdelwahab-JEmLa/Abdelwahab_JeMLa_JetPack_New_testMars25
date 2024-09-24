@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,8 +53,10 @@ fun FloatingActionButtons(
     showOnlyWithFilter: Boolean,
     categories: List<CategorieTabelee>,
     onCategorySelected: (CategorieTabelee) -> Unit,
-    viewModel: ClassementsArticlesViewModel
-) {
+    viewModel: ClassementsArticlesViewModel  ,
+    onUpdateClassement: () -> Unit,
+
+    ) {
     var showCategorySelection by remember { mutableStateOf(false) }
 
     Column {
@@ -77,6 +80,15 @@ fun FloatingActionButtons(
                 Icon(
                     if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
                     "Toggle Filter"
+                )
+            }
+            FloatingActionButton(
+                onClick = onUpdateClassement,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(
+                    if (showOnlyWithFilter) Icons.Default.Refresh else Icons.Default.Refresh,
+                    "Refresh"
                 )
             }
         }
