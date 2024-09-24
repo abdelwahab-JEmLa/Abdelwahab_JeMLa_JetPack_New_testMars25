@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TransferWithinAStation
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -200,17 +199,6 @@ fun DialogeDataBaseEditer(
                         showUpdateConfirmationDialog = true
                     },
                     tint2 = Color.Red
-                )
-                DialogButton(
-                    text = "Trensfert TO Classment Table",
-                    icon = Icons.Default.TransferWithinAStation,
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.transfeeDbjetpackexportauclassment()
-                        }
-                        onDismiss()
-                    },
-                    tint2 = Color.Blue
                 )
                 DialogButton(
                     text = "Delete All ",

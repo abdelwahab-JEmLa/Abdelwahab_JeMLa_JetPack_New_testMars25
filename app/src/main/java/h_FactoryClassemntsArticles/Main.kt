@@ -390,49 +390,6 @@ class ClassementsArticlesViewModel : ViewModel() {
             refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
         }
     }
-
-    suspend fun transfeeDbjetpackexportauclassment() {
-        val refSource = database.getReference("e_DBJetPackExport")
-        val refDestination = refClassmentsArtData
-        try {
-            refDestination.removeValue().await()
-
-            val dataSnapshot = refSource.get().await()
-            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
-
-            val totalItems = dataMap.size
-            var processedItems = 0
-
-            dataMap.forEach { (key, value) ->
-                // Verify if the article exists in refDestination
-                val articleExists = refDestination.child(key).get().await().exists()
-
-                if (!articleExists) {
-                    val article = ClassementsArticlesTabel(
-                        idArticle = (value["idArticle"] as? Long) ?: 0,
-                        nomArticleFinale = (value["nomArticleFinale"] as? String) ?: "",
-                        idCategorie = (value["idCategorie"] as? Double) ?: 0.0,
-                        nomCategorie = (value["nomCategorie"] as? String) ?: "",
-                        classementIdAuCate = (value["classementIdAuCate"] as? Double) ?: 0.0,
-                        classementCate = (value["classementCate"] as? Double) ?: 0.0,
-                        diponibilityState = (value["diponibilityState"] as? String) ?: ""
-                    )
-
-                    refDestination.child(article.idArticle.toString()).setValue(article).await()
-
-                    // Add the article to _articlesList.value if it does not exist
-                    if (!_articlesList.value.any { it.idArticle == article.idArticle }) {
-                        _articlesList.value += article
-                    }
-                }
-
-                processedItems++
-            }
-        } catch (e: Exception) {
-            // Handle exception
-        }
-    }
-
 }
 data class ClassementsArticlesTabel(
     val idArticle: Long = 0,
