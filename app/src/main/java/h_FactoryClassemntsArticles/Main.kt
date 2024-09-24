@@ -13,16 +13,11 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.FilterListOff
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -32,8 +27,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -48,28 +45,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
 
 @Composable
 fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onToggleNavBar: () -> Unit) {
     val articles by viewModel.articlesList.collectAsState()
     val categories by viewModel.categorieList.collectAsState()
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
-    var showFloatingButtons by remember { mutableStateOf(false) }
+    var showFloatingButtons by remember { mutableStateOf(true) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
 
     val gridState = rememberLazyGridState()
@@ -84,10 +66,8 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
                 onToggleFilter = viewModel::toggleFilter,
                 showOnlyWithFilter = showOnlyWithFilter,
                 categories = categories,
-                onCategorySelected = { selectedCategory ->   //TODO fait affiche on bas du windos un button avec "Selectioné"
-                    // le button text devien "Collé" et ca active modee multiSelection =true  dons cette mode on peut selection plusieur categories
-                    // et le stoque don un mutableStat  on clicko cette foit a colle le prochen click sur une cate va
-                    //    goUpAndshiftsAutersDownCategoryPositions ca veut dire tout les stoque vont alle on up du clické puch autre down
+                viewModel=viewModel,
+                onCategorySelected = { selectedCategory ->
                     coroutineScope.launch {
                         val index = categories.indexOfFirst { it.idCategorieCT == selectedCategory.idCategorieCT }
                         if (index != -1) {
@@ -98,7 +78,8 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
                             gridState.scrollToItem(position)
                         }
                     }
-                }
+                },
+
             )
         }
     ) { padding ->
@@ -207,104 +188,6 @@ fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (Strin
     }
 }
 
-
-
-@Composable
-fun FloatingActionButtons(
-    showFloatingButtons: Boolean,
-    onToggleNavBar: () -> Unit,
-    onToggleFloatingButtons: () -> Unit,
-    onToggleFilter: () -> Unit,
-    showOnlyWithFilter: Boolean,
-    categories: List<CategorieTabelee>,
-    onCategorySelected: (CategorieTabelee) -> Unit
-) {
-    var showCategorySelection by remember { mutableStateOf(false) }
-
-    Column {
-        if (showFloatingButtons) {
-            FloatingActionButton(
-                onClick = { showCategorySelection = true },
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.Default.Category, "Select Category")
-            }
-            FloatingActionButton(
-                onClick = onToggleNavBar,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.Default.Home, "Toggle Navigation Bar")
-            }
-            FloatingActionButton(
-                onClick = onToggleFilter,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
-                    "Toggle Filter"
-                )
-            }
-        }
-        FloatingActionButton(onClick = onToggleFloatingButtons) {
-            Icon(
-                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
-            )
-        }
-    }
-
-    if (showCategorySelection) {
-        CategorySelectionWindow(
-            categories = categories,
-            onDismiss = { showCategorySelection = false },
-            onCategorySelected = { category ->
-                onCategorySelected(category)
-                showCategorySelection = false
-            }
-        )
-    }
-}
-
-@Composable
-fun CategorySelectionWindow(
-    categories: List<CategorieTabelee>,
-    onDismiss: () -> Unit,
-    onCategorySelected: (CategorieTabelee) -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.8f),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    "Select Category",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    items(categories) { category ->
-                        Button(
-                            onClick = { onCategorySelected(category) },
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .fillMaxWidth()
-                        ) {
-                            Text(category.nomCategorieCT, maxLines = 2)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 class ClassementsArticlesViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance()
     private val refClassmentsArtData = database.getReference("BaseDonne_Bakup3")
@@ -395,7 +278,58 @@ class ClassementsArticlesViewModel : ViewModel() {
                 refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
         }
     }
+    fun reorderCategories(categoriesToMove: List<CategorieTabelee>) {
+        viewModelScope.launch {
+            val currentCategories = _categorieList.value.toMutableList()
+            val firstSelectedCategoryIndex = currentCategories.indexOfFirst { it.idCategorieCT == categoriesToMove.first().idCategorieCT }
 
+            if (firstSelectedCategoryIndex != -1) {
+                // Remove the categories to be moved
+                currentCategories.removeAll(categoriesToMove)
+                // Insert them at the new position
+                currentCategories.addAll(firstSelectedCategoryIndex, categoriesToMove)
+
+                // Update idClassementCategorieCT for all categories
+                currentCategories.forEachIndexed { index, category ->
+                    category.idClassementCategorieCT = (index + 1).toDouble()
+                }
+
+                // Update the state
+                _categorieList.value = currentCategories
+
+                // Update Firebase
+                updateFirebaseCategories(currentCategories)
+            }
+        }
+    }
+
+    // ... (existing updateFirebaseCategories method remains the same)
+
+    fun moveCategory(categoryToMove: CategorieTabelee, targetCategory: CategorieTabelee) {
+        viewModelScope.launch {
+            val currentCategories = _categorieList.value.toMutableList()
+            val categoryToMoveIndex = currentCategories.indexOfFirst { it.idCategorieCT == categoryToMove.idCategorieCT }
+            val targetCategoryIndex = currentCategories.indexOfFirst { it.idCategorieCT == targetCategory.idCategorieCT }
+
+            if (categoryToMoveIndex != -1 && targetCategoryIndex != -1) {
+                // Remove the category to be moved
+                val movedCategory = currentCategories.removeAt(categoryToMoveIndex)
+                // Insert it at the new position
+                currentCategories.add(targetCategoryIndex, movedCategory)
+
+                // Update idClassementCategorieCT for all categories
+                currentCategories.forEachIndexed { index, category ->
+                    category.idClassementCategorieCT = (index + 1).toDouble()
+                }
+
+                // Update the state
+                _categorieList.value = currentCategories
+
+                // Update Firebase
+                updateFirebaseCategories(currentCategories)
+            }
+        }
+    }
     fun toggleFilter() {
         _showOnlyWithFilter.value = !_showOnlyWithFilter.value
     }
