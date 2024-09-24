@@ -16,8 +16,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,7 +47,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
 @Composable
 fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onToggleNavBar: () -> Unit) {
     val articles by viewModel.articlesList.collectAsState()
@@ -59,28 +60,38 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButtons(
-                showFloatingButtons = showFloatingButtons,
-                onToggleNavBar = onToggleNavBar,
-                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleFilter = viewModel::toggleFilter,
-                showOnlyWithFilter = showOnlyWithFilter,
-                categories = categories,
-                viewModel=viewModel,
-                onCategorySelected = { selectedCategory ->
-                    coroutineScope.launch {
-                        val index = categories.indexOfFirst { it.idCategorieCT == selectedCategory.idCategorieCT }
-                        if (index != -1) {
-                            // Calculate the actual position in the grid, accounting for articles
-                            val position = categories.take(index).sumOf { category ->
-                                1 + articles.count { it.idCategorie == category.idCategorieCT.toDouble() }
+            Column {
+                FloatingActionButtons(
+                    showFloatingButtons = showFloatingButtons,
+                    onToggleNavBar = onToggleNavBar,
+                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                    onToggleFilter = viewModel::toggleFilter,
+                    showOnlyWithFilter = showOnlyWithFilter,
+                    categories = categories,
+                    viewModel = viewModel,
+                    onCategorySelected = { selectedCategory ->
+                        coroutineScope.launch {
+                            val index = categories.indexOfFirst { it.idCategorieCT == selectedCategory.idCategorieCT }
+                            if (index != -1) {
+                                val position = categories.take(index).sumOf { category ->
+                                    1 + articles.count { it.idCategorie == category.idCategorieCT.toDouble() }
+                                }
+                                gridState.scrollToItem(position)
                             }
-                            gridState.scrollToItem(position)
                         }
-                    }
-                },
-
-            )
+                    },
+                )
+                FloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.updateClassementIdAuTotale()
+                        }
+                    },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Update Classement")
+                }
+            }
         }
     ) { padding ->
         LazyVerticalGrid(
@@ -117,7 +128,6 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
         }
     }
 }
-
 @Composable
 fun CategoryHeader(
     category: CategorieTabelee,
@@ -197,8 +207,13 @@ class ClassementsArticlesViewModel : ViewModel() {
     private val _categorieList = MutableStateFlow<List<CategorieTabelee>>(emptyList())
     private val _showOnlyWithFilter = MutableStateFlow(false)
 
-    val articlesList = combine(_articlesList, _showOnlyWithFilter) { articles, filterKey ->
-        if (filterKey) articles.filter { it.diponibilityState == "" } else articles
+    val articlesList = combine(_articlesList, _categorieList, _showOnlyWithFilter) { articles, categories, filterKey ->
+        val sortedArticles = articles.sortedWith(
+            compareBy<ClassementsArticlesTabel> { article ->
+                categories.find { it.idCategorieCT == article.idCategorie.toLong() }?.idClassementCategorieCT ?: Double.MAX_VALUE
+            }.thenBy { it.classementIdAuCate }
+        )
+        if (filterKey) sortedArticles.filter { it.diponibilityState == "" } else sortedArticles
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val categorieList = _categorieList.asStateFlow()
@@ -215,7 +230,6 @@ class ClassementsArticlesViewModel : ViewModel() {
         try {
             val articlesSnapshot = refClassmentsArtData.get().await()
             _articlesList.value = articlesSnapshot.children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
-                .sortedWith(compareBy<ClassementsArticlesTabel> { it.idCategorie }.thenBy { it.classementIdAuCate })
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
             _categorieList.value = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
@@ -224,7 +238,6 @@ class ClassementsArticlesViewModel : ViewModel() {
             Log.e("ClassementsArticlesVM", "Error loading data", e)
         }
     }
-
     private suspend fun updateCategorieTabelee() {
         try {
             val categories = _articlesList.value
@@ -303,8 +316,23 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-    // ... (existing updateFirebaseCategories method remains the same)
+    fun updateClassementIdAuTotale() {
+        viewModelScope.launch {
+            val sortedArticles = articlesList.value
+            val updatedArticles = sortedArticles.mapIndexed { index, article ->
+                article.copy(classementIdAuTotale = (index + 1).toDouble())
+            }
+            _articlesList.value = updatedArticles
 
+            // Update Firebase
+            updatedArticles.forEach { article ->
+                refClassmentsArtData.child(article.idArticle.toString())
+                    .child("classementIdAuTotale")
+                    .setValue(article.classementIdAuTotale)
+                    .await()
+            }
+        }
+    }
     fun moveCategory(categoryToMove: CategorieTabelee, targetCategory: CategorieTabelee) {
         viewModelScope.launch {
             val currentCategories = _categorieList.value.toMutableList()
@@ -367,6 +395,7 @@ data class ClassementsArticlesTabel(
     val idCategorie: Double = 0.0,
     val nomCategorie: String = "",
     val classementIdAuCate: Double = 0.0,
+    val classementIdAuTotale: Double = 0.0,
     val diponibilityState: String = ""
 )
 
