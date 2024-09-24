@@ -222,6 +222,7 @@ class ClassementsArticlesViewModel : ViewModel() {
     }
 
     fun giveNumAuSubCategorieArticle() {
+
         viewModelScope.launch {
             val updatedArticles = _articlesList.value.toMutableList()
             val updatedCategory = _categorieList.value.toMutableList()
@@ -230,6 +231,7 @@ class ClassementsArticlesViewModel : ViewModel() {
 
             updatedCategory.forEach { cate ->
                 val categoryArticles = updatedArticles.filter { it.idCategorie.toLong() == cate.idCategorieCT }
+                    .sortedBy { it.classementCate } .sortedBy { it.classementIdAuCate }
 
                 var index = 1
 
