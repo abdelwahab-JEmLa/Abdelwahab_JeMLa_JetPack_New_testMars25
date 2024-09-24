@@ -397,7 +397,7 @@ data class ClassementsArticlesTabel(
     val idCategorie: Double = 0.0,
     val nomCategorie: String = "",
     val classementIdAuCate: Double = 0.0,
-    val classementCate: Double = 0.0,     // totale Classement
+    val classementCate: Double = 0.0,
     val diponibilityState: String = ""
 )
 
