@@ -77,11 +77,7 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
                         }
                     }
                 },
-                onUpdateClassement = {
-                    coroutineScope.launch {
-                        viewModel.updateClassementIdAuTotale()   //TODO ajoute une progress bare s affiche au nav bar suive
-                    }
-                }   ,
+
                 coroutineScope=coroutineScope  ,
 
             )
@@ -225,6 +221,8 @@ class ClassementsArticlesViewModel : ViewModel() {
 
         viewModelScope.launch {
             val updatedArticles = _articlesList.value.toMutableList()
+                .sortedBy { it.classementCate }
+                .sortedBy { it.classementIdAuCate }
             val updatedCategory = _categorieList.value.toMutableList()
 
             // Initialize the index
@@ -252,29 +250,10 @@ class ClassementsArticlesViewModel : ViewModel() {
             }
         }
     }
-    fun updateClassementIdAuTotale() {
-        viewModelScope.launch {
 
-            val sortedArticles = articlesList.value
-            val updatedArticles = sortedArticles.mapIndexed { index, article ->
-                article.copy(classementCate = (index + 1).toDouble())
-            }
-            _articlesList.value = updatedArticles
 
-            // Update Firebase
-            updatedArticles.forEach { article ->
-                refClassmentsArtData.child(article.idArticle.toString())
-                    .child("classementCate")
-                    .setValue(article.classementCate)
-                    .await()
-            }
 
-            updatee_DBJetPackExportParBaseDonne_Bakup3()
-
-        }
-    }
-
-    private fun updatee_DBJetPackExportParBaseDonne_Bakup3() {
+    fun updateChangeInClassmentToe_DBJetPackExport() {
         viewModelScope.launch {
             val updatedArticles = articlesList.value
             updatedArticles.forEach { article ->

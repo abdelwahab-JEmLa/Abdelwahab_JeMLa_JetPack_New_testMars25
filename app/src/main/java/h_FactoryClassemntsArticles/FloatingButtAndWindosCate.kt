@@ -65,7 +65,6 @@ fun FloatingActionButtons(
     categories: List<CategorieTabelee>,
     onCategorySelected: (CategorieTabelee) -> Unit,
     viewModel: ClassementsArticlesViewModel,
-    onUpdateClassement: () -> Unit,
     coroutineScope: CoroutineScope,
 
     ) {
@@ -95,15 +94,7 @@ fun FloatingActionButtons(
                     "Toggle Filter"
                 )
             }
-            FloatingActionButton(
-                onClick = onUpdateClassement,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    if (showOnlyWithFilter) Icons.Default.Refresh else Icons.Default.Refresh,
-                    "Refresh"
-                )
-            }
+
             FloatingActionButton(
                 onClick = { showDialogeDataBaseEditer = true },
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -225,7 +216,25 @@ fun DialogeDataBaseEditer(
                     },
                     tint2 = Color.Blue
                 )
+
+                HorizontalDivider(color = Color.Blue,thickness=5.dp, modifier = Modifier.padding(8.dp))
+
+                DialogButton(
+                    text = "updateChangeInClassmentToe_DBJetPackExport",
+                    icon = Icons.Default.Refresh,
+                    onClick = {
+                        coroutineScope.launch {
+
+                            viewModel.updateChangeInClassmentToe_DBJetPackExport()  //TODO ajoute une progress bare s affiche au nav bar suive
+
+                        }
+
+                    },
+                    tint2 = Color.Black
+                )
+
             }
+
         },
     )
 }

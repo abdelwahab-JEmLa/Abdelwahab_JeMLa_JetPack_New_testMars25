@@ -11,7 +11,7 @@ import androidx.room.Upsert
 
 @Dao
 interface ArticleDao {
-    @Query("SELECT * FROM articles ORDER BY idCategorie, classementCate")
+    @Query("SELECT * FROM articles ORDER BY  classementCate,idCategorie")
     suspend fun getAllArticlesOrder(): List<BaseDonne>
 
     @Query("SELECT * FROM articles ORDER BY dateCreationCategorie")
@@ -19,6 +19,7 @@ interface ArticleDao {
 
     @Query("UPDATE articles SET nomArab = :newArabName WHERE idArticle = :idArticle")
     suspend fun updateArticleArabName(idArticle: Long, newArabName: String)
+
     // Méthode pour insérer un article
     @Insert
     suspend fun insert(article: BaseDonne)

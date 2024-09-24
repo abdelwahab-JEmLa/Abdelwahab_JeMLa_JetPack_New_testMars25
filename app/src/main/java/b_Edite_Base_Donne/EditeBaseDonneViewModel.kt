@@ -81,7 +81,9 @@ class EditeBaseDonneViewModel(
             val filterApplied = _isFilterApplied.value
             _isFilterApplied.value = !filterApplied
             val articlesFromRoom = articleDao.getAllArticlesOrder()
-            val baseDonneStatTabelList = articlesFromRoom.map {
+            val articlesFromRoomSorted =articlesFromRoom .sortedBy { it.classementCate } .sortedBy { it.idCategorie }
+
+            val baseDonneStatTabelList = articlesFromRoomSorted.map {
                 BaseDonneStatTabel(
                     it.idArticle,
                     it.nomArticleFinale,
@@ -128,7 +130,7 @@ class EditeBaseDonneViewModel(
                     _originalBaseDonneStatTabel.addAll(baseDonneStatTabelList)
                     _baseDonneStatTabel.value = _originalBaseDonneStatTabel.filter { it.monPrixVent == 0.0 }
                 } else {
-                    _baseDonneStatTabel.value = _originalBaseDonneStatTabel
+                    _baseDonneStatTabel.value = _originalBaseDonneStatTabel  .sortedBy { it.classementCate } .sortedBy { it.idCategorie }
                 }
             }
         }
