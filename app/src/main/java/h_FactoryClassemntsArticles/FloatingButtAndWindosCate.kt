@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mode
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
@@ -30,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -200,8 +202,23 @@ fun DialogeDataBaseEditer(
                     },
                     tint2 = Color.Red
                 )
+
+                HorizontalDivider(color = Color.Red,thickness=5.dp, modifier = Modifier.padding(8.dp))
+
+                // DialogButton
                 DialogButton(
-                    text = "Delete All ",
+                    text = "giveNumAuSubCategorieArticle",
+                    icon = Icons.Default.Mode,
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.giveNumAuSubCategorieArticle()
+                        }
+                    },
+                    tint2 = Color.Red
+                )
+
+                DialogButton(
+                    text = "Delete Ref Classment ",
                     icon = Icons.Default.Delete,
                     onClick = {
                         showConfirmationDialog = true
