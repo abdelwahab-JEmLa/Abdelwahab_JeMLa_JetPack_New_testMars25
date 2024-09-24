@@ -254,6 +254,17 @@ private fun WindosDaoToBakup(
                         },
                         tint2 = Color.Red
                     )
+                    DialogButton(
+                        text = "Dao>H_ClassementsArticlesTabel",
+                        icon = Icons.Default.Expand,
+                        onClick = {
+                            coroutineScope.launch {
+                                exportToFireBase(articleDao,refFireBase="H_ClassementsArticlesTabel")
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Red
+                    )
 
 
 
@@ -640,7 +651,7 @@ private suspend fun exportNamesListToFirebase(articleDao: ArticleDao) {
 }
 
 @Composable
-private fun DialogButton(
+fun DialogButton(
     text: String,
     icon: ImageVector,
     onClick: () -> Unit,

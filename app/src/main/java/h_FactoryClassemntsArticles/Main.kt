@@ -80,9 +80,9 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
                 onUpdateClassement = {
                     coroutineScope.launch {
                         viewModel.updateClassementIdAuTotale()   //TODO ajoute une progress bare s affiche au nav bar suive
-
                     }
-                }
+                }   ,
+                coroutineScope=coroutineScope
             )
         }
     ) { padding ->
@@ -192,7 +192,7 @@ fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (Strin
 
 class ClassementsArticlesViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance()
-    private val refClassmentsArtData = database.getReference("BaseDonne_Bakup3")
+    private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")
     private val refCategorieTabelee = database.getReference("H_CategorieTabele")
 
     private val _articlesList = MutableStateFlow<List<ClassementsArticlesTabel>>(emptyList())
@@ -216,7 +216,7 @@ class ClassementsArticlesViewModel : ViewModel() {
     init {
         viewModelScope.launch {
             initDataFromFirebase()
-            updateCategorieTabelee()
+
         }
     }
 
@@ -268,7 +268,7 @@ class ClassementsArticlesViewModel : ViewModel() {
             Log.e("ClassementsArticlesVM", "Error loading data", e)
         }
     }
-    private suspend fun updateCategorieTabelee() {
+    suspend fun updateCategorieTabelee() {
         try {
             val categories = _articlesList.value
                 .groupBy { it.nomCategorie }
@@ -282,7 +282,7 @@ class ClassementsArticlesViewModel : ViewModel() {
                 .sortedBy { it.idClassementCategorieCT }
 
             _categorieList.value = categories
-
+            refCategorieTabelee.removeValue().await()
             categories.forEach { category ->
                 refCategorieTabelee.child(category.idCategorieCT.toString()).setValue(category).await()
             }
@@ -291,7 +291,11 @@ class ClassementsArticlesViewModel : ViewModel() {
             Log.e("ClassementsArticlesVM", "Error updating CategorieTabelee", e)
         }
     }
-
+    fun delete() {
+        viewModelScope.launch {
+            refClassmentsArtData.removeValue().await()
+        }
+    }
     fun goUpAndshiftsAutersDownCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
         viewModelScope.launch {
             val updatedCategories = _categorieList.value.toMutableList()
@@ -387,7 +391,47 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
+    suspend fun transfeeDbjetpackexportauclassment() {
+        val refSource = database.getReference("e_DBJetPackExport")
+        val refDestination = refClassmentsArtData
+        try {
+            refDestination.removeValue().await()
 
+            val dataSnapshot = refSource.get().await()
+            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+
+            val totalItems = dataMap.size
+            var processedItems = 0
+
+            dataMap.forEach { (key, value) ->
+                // Verify if the article exists in refDestination
+                val articleExists = refDestination.child(key).get().await().exists()
+
+                if (!articleExists) {
+                    val article = ClassementsArticlesTabel(
+                        idArticle = (value["idArticle"] as? Long) ?: 0,
+                        nomArticleFinale = (value["nomArticleFinale"] as? String) ?: "",
+                        idCategorie = (value["idCategorie"] as? Double) ?: 0.0,
+                        nomCategorie = (value["nomCategorie"] as? String) ?: "",
+                        classementIdAuCate = (value["classementIdAuCate"] as? Double) ?: 0.0,
+                        classementCate = (value["classementCate"] as? Double) ?: 0.0,
+                        diponibilityState = (value["diponibilityState"] as? String) ?: ""
+                    )
+
+                    refDestination.child(article.idArticle.toString()).setValue(article).await()
+
+                    // Add the article to _articlesList.value if it does not exist
+                    if (!_articlesList.value.any { it.idArticle == article.idArticle }) {
+                        _articlesList.value += article
+                    }
+                }
+
+                processedItems++
+            }
+        } catch (e: Exception) {
+            // Handle exception
+        }
+    }
 
 }
 data class ClassementsArticlesTabel(

@@ -14,13 +14,20 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TransferWithinAStation
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -43,6 +50,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.window.Dialog
+import com.example.abdelwahabjemlajetpack.DialogButton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun FloatingActionButtons(
@@ -53,11 +63,13 @@ fun FloatingActionButtons(
     showOnlyWithFilter: Boolean,
     categories: List<CategorieTabelee>,
     onCategorySelected: (CategorieTabelee) -> Unit,
-    viewModel: ClassementsArticlesViewModel  ,
+    viewModel: ClassementsArticlesViewModel,
     onUpdateClassement: () -> Unit,
+    coroutineScope: CoroutineScope,
 
     ) {
     var showCategorySelection by remember { mutableStateOf(false) }
+    var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
 
     Column {
         if (showFloatingButtons) {
@@ -91,6 +103,16 @@ fun FloatingActionButtons(
                     "Refresh"
                 )
             }
+            FloatingActionButton(
+                onClick = { showDialogeDataBaseEditer = true },
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(
+                    if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia,
+                    "Dialoge"
+                )
+            }
+
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
@@ -111,8 +133,129 @@ fun FloatingActionButtons(
             }
         )
     }
+    if (showDialogeDataBaseEditer) {
+        DialogeDataBaseEditer(
+            viewModel = viewModel,
+            onDismiss = { showDialogeDataBaseEditer = false },
+            coroutineScope=coroutineScope
+
+        )
+    }
+
 }
 
+@Composable
+fun DialogeDataBaseEditer(
+    onDismiss: () -> Unit,
+    viewModel: ClassementsArticlesViewModel,
+    coroutineScope: CoroutineScope,
+) {
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var showUpdateConfirmationDialog by remember { mutableStateOf(false) }
+
+    if (showConfirmationDialog) {
+        ConfirmationDialog(
+            onDismiss = { showConfirmationDialog = false },
+            onConfirm = {
+                coroutineScope.launch {
+                    viewModel.delete()
+                }
+                showConfirmationDialog = false
+                onDismiss()
+            }
+        )
+    }
+
+    if (showUpdateConfirmationDialog) {
+        ConfirmationDialog(
+            onDismiss = { showUpdateConfirmationDialog = false },
+            onConfirm = {
+                coroutineScope.launch {
+                    viewModel.updateCategorieTabelee()
+                }
+                showUpdateConfirmationDialog = false
+                onDismiss()
+            }
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text(
+                text = "Firebase Data",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                DialogButton(
+                    text = "updateCategorieTabelee",
+                    icon = Icons.Default.Upload,
+                    onClick = {
+                        showUpdateConfirmationDialog = true
+                    },
+                    tint2 = Color.Red
+                )
+                DialogButton(
+                    text = "Trensfert TO Classment Table",
+                    icon = Icons.Default.TransferWithinAStation,
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.transfeeDbjetpackexportauclassment()
+                        }
+                        onDismiss()
+                    },
+                    tint2 = Color.Blue
+                )
+                DialogButton(
+                    text = "Delete All ",
+                    icon = Icons.Default.Delete,
+                    onClick = {
+                        showConfirmationDialog = true
+                    },
+                    tint2 = Color.Blue
+                )
+            }
+        },
+    )
+}
+
+@Composable
+fun ConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text(text = "Confirm Action")
+        },
+        text = {
+            Text(text = "Are you sure you want to proceed?")
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = { onDismiss() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
 
 @Composable
 fun CategoryItem(
