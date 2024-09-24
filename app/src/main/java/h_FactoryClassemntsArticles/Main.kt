@@ -223,40 +223,22 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     fun giveNumAuSubCategorieArticle() {
         viewModelScope.launch {
-
-            // Create a mutable copy of the articles list to update
             val updatedArticles = _articlesList.value.toMutableList()
+            val updatedCategory = _categorieList.value.toMutableList()
 
-            // Function to update the classementIdAuCate for a given category and its subcategories
-            fun updateClassementIdAuCate(categoryId: Long, increment: Int, visitedCategories: MutableSet<Long> = mutableSetOf()) {
-                // Check if the category has already been visited to prevent infinite recursion
-                if (visitedCategories.contains(categoryId)) {
-                    return
-                }
-                visitedCategories.add(categoryId)
+            // Initialize the index
 
-                // Find all articles that belong to the given category
-                val categoryArticles = updatedArticles.filter { it.idCategorie.toLong() == categoryId }
+            updatedCategory.forEach { cate ->
+                val categoryArticles = updatedArticles.filter { it.idCategorie.toLong() == cate.idCategorieCT }
 
-                // Update the classementIdAuCate for each article in the category
+                var index = 1
+
                 categoryArticles.forEach { article ->
-                    val currentClassementIdAuCate = article.classementIdAuCate
-                    article.classementIdAuCate = currentClassementIdAuCate + increment
+                    val indexToDouble = (index).toDouble()
+                    article.classementIdAuCate = indexToDouble
+                    article.classementCate = indexToDouble
+                    index++
                 }
-
-                // Find all subcategories of the given category
-                val subCategories = _categorieList.value.filter { it.idClassementCategorieCT.toLong() == categoryId }
-
-                // Recursively update the classementIdAuCate for each subcategory
-                subCategories.forEach { subCategory ->
-                    updateClassementIdAuCate(subCategory.idCategorieCT, increment, visitedCategories)
-                }
-            }
-
-            // Start the update process from the root categories
-            val rootCategories = _categorieList.value.filter { it.idClassementCategorieCT.toLong() == 0L }
-            rootCategories.forEach { rootCategory ->
-                updateClassementIdAuCate(rootCategory.idCategorieCT, 1)
             }
 
             // Update the articles list with the updated data
@@ -267,7 +249,8 @@ class ClassementsArticlesViewModel : ViewModel() {
                 refClassmentsArtData.child(article.idArticle.toString()).setValue(article)
             }
         }
-    }    fun updateClassementIdAuTotale() {
+    }
+    fun updateClassementIdAuTotale() {
         viewModelScope.launch {
 
             val sortedArticles = articlesList.value
@@ -296,8 +279,9 @@ class ClassementsArticlesViewModel : ViewModel() {
                 database.getReference("e_DBJetPackExport")
                     .child(article.idArticle.toString())
                     .updateChildren(mapOf(
-                        "idCategorie" to article.idCategorie,
-                        "classementCate" to article.classementIdAuCate
+                        "idCategorie" to article.classementIdAuCate,
+                        "classementCate" to article.classementIdAuCate ,
+                        "diponibilityState" to article.diponibilityState
                     )).await()
             }
         }
@@ -443,7 +427,7 @@ data class ClassementsArticlesTabel(
     val idCategorie: Double = 0.0,
     val nomCategorie: String = "",
     var classementIdAuCate: Double = 0.0,
-    val classementCate: Double = 0.0,
+    var classementCate: Double = 0.0,
     val diponibilityState: String = ""
 )
 
