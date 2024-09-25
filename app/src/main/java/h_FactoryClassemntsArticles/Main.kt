@@ -4,23 +4,14 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.TextDecrease
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,17 +22,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.example.abdelwahabjemlajetpack.R
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,7 +34,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.io.File
 
 @Composable
 fun MainFactoryClassementsArticles(
@@ -58,8 +41,9 @@ fun MainFactoryClassementsArticles(
     onToggleNavBar: () -> Unit,
     onUpdateStart: () -> Unit,
     onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit ,
-) {   val articles by viewModel.articlesList.collectAsState()
+    onUpdateComplete: () -> Unit,
+) {
+    val articles by viewModel.articlesList.collectAsState()
     val categories by viewModel.categorieList.collectAsState()
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
@@ -81,7 +65,8 @@ fun MainFactoryClassementsArticles(
                 viewModel = viewModel,
                 onCategorySelected = { selectedCategory ->
                     coroutineScope.launch {
-                        val index = categories.indexOfFirst { it.idCategorieInCategoriesTabele == selectedCategory.idCategorieInCategoriesTabele }
+                        val index =
+                            categories.indexOfFirst { it.idCategorieInCategoriesTabele == selectedCategory.idCategorieInCategoriesTabele }
                         if (index != -1) {
                             val position = categories.take(index).sumOf { category ->
                                 1 + articles.count { it.idCategorie == category.idCategorieInCategoriesTabele.toDouble() }
@@ -90,12 +75,12 @@ fun MainFactoryClassementsArticles(
                         }
                     }
                 },
-                coroutineScope=coroutineScope  ,
-                onUpdateStart=onUpdateStart,
-            onUpdateProgress=onUpdateProgress,
-            onUpdateComplete=onUpdateComplete,
+                coroutineScope = coroutineScope,
+                onUpdateStart = onUpdateStart,
+                onUpdateProgress = onUpdateProgress,
+                onUpdateComplete = onUpdateComplete,
 
-            )
+                )
         }
     ) { padding ->
         LazyVerticalGrid(
@@ -112,7 +97,10 @@ fun MainFactoryClassementsArticles(
                             if (holdedIdCateForMove == null) {
                                 holdedIdCateForMove = clickedCategory.idCategorieInCategoriesTabele
                             } else if (holdedIdCateForMove != clickedCategory.idCategorieInCategoriesTabele) {
-                                viewModel.goUpAndshiftsAutersDownCategoryPositions(holdedIdCateForMove!!, clickedCategory.idCategorieInCategoriesTabele)
+                                viewModel.goUpAndshiftsAutersDownCategoryPositions(
+                                    holdedIdCateForMove!!,
+                                    clickedCategory.idCategorieInCategoriesTabele
+                                )
                                 holdedIdCateForMove = null
                             } else {
                                 holdedIdCateForMove = null
@@ -155,7 +143,6 @@ fun CategoryHeader(
 }
 
 
-
 class ClassementsArticlesViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance()
     private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")
@@ -165,7 +152,11 @@ class ClassementsArticlesViewModel : ViewModel() {
     private val _categorieList = MutableStateFlow<List<CategoriesTabelle>>(emptyList())
     private val _showOnlyWithFilter = MutableStateFlow(false)
 
-    val articlesList = combine(_articlesList, _categorieList, _showOnlyWithFilter) { articles, categories, filterKey ->
+    val articlesList = combine(
+        _articlesList,
+        _categorieList,
+        _showOnlyWithFilter
+    ) { articles, categories, filterKey ->
         val sortedArticles = articles.sortedWith(
             compareBy<ClassementsArticlesTabel> { article ->
                 categories.find { it.idCategorieInCategoriesTabele == article.idCategorie.toLong() }?.idClassementCategorieInCategoriesTabele
@@ -195,8 +186,12 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     private suspend fun initDataFromFirebase() {
         try {
-            _articlesList.value = refClassmentsArtData.get().await().children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
-            _categorieList.value = refCategorieTabelee.get().await().children.mapNotNull { it.getValue(CategoriesTabelle::class.java) }
+            _articlesList.value = refClassmentsArtData.get().await().children.mapNotNull {
+                it.getValue(ClassementsArticlesTabel::class.java)
+            }
+            _categorieList.value = refCategorieTabelee.get().await().children.mapNotNull {
+                it.getValue(CategoriesTabelle::class.java)
+            }
                 .sortedBy { it.idClassementCategorieInCategoriesTabele }
         } catch (e: Exception) {
             Log.e("ClassementsArticlesVM", "Error loading data", e)
@@ -223,7 +218,8 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     fun goUpAndshiftsAutersDownCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
         viewModelScope.launch {
-            val updatedCategories = reorderCategories(_categorieList.value, fromCategoryId, toCategoryId)
+            val updatedCategories =
+                reorderCategories(_categorieList.value, fromCategoryId, toCategoryId)
             _categorieList.value = updatedCategories
             updateFirebaseCategories(updatedCategories)
         }
@@ -231,7 +227,8 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     fun reorderCategories(categoriesToMove: List<CategoriesTabelle>) {
         viewModelScope.launch {
-            val updatedCategories = reorderMultipleCategories(_categorieList.value, categoriesToMove)
+            val updatedCategories =
+                reorderMultipleCategories(_categorieList.value, categoriesToMove)
             _categorieList.value = updatedCategories
             updateFirebaseCategories(updatedCategories)
         }
@@ -239,7 +236,8 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     fun moveCategory(categoryToMove: CategoriesTabelle, targetCategory: CategoriesTabelle) {
         viewModelScope.launch {
-            val updatedCategories = moveSingleCategory(_categorieList.value, categoryToMove, targetCategory)
+            val updatedCategories =
+                moveSingleCategory(_categorieList.value, categoryToMove, targetCategory)
             _categorieList.value = updatedCategories
             updateFirebaseCategories(updatedCategories)
         }
@@ -251,17 +249,29 @@ class ClassementsArticlesViewModel : ViewModel() {
 
     fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
         viewModelScope.launch {
-            val updatedArticles = updateArticleDisponibilityState(_articlesList.value, articleId, newDisponibilityState)
+            val updatedArticles = updateArticleDisponibilityState(
+                _articlesList.value,
+                articleId,
+                newDisponibilityState
+            )
             _articlesList.value = updatedArticles
-            refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
+            refClassmentsArtData.child(articleId.toString()).child("diponibilityState")
+                .setValue(newDisponibilityState).await()
         }
     }
 
     // Helper functions
-    private fun updateArticlesRanking(articles: List<ClassementsArticlesTabel>, categories: List<CategoriesTabelle>): List<ClassementsArticlesTabel> {
+    private fun updateArticlesRanking(
+        articles: List<ClassementsArticlesTabel>,
+        categories: List<CategoriesTabelle>
+    ): List<ClassementsArticlesTabel> {
         return articles.groupBy { it.idCategorie.toLong() }
             .flatMap { (_, categoryArticles) ->
-                categoryArticles.sortedWith(compareBy({ it.classementCate }, { it.classementArticleAuCategorieCT }))
+                categoryArticles.sortedWith(
+                    compareBy(
+                        { it.classementCate },
+                        { it.classementArticleAuCategorieCT })
+                )
                     .mapIndexed { index, article ->
                         article.copy(
                             classementArticleAuCategorieCT = (index + 1).toDouble(),
@@ -286,14 +296,17 @@ class ClassementsArticlesViewModel : ViewModel() {
         var processedItems = 0
 
         articles.forEach { article ->
-            val category = categories.find { it.idCategorieInCategoriesTabele == article.idCategorie.toLong() }
+            val category =
+                categories.find { it.idCategorieInCategoriesTabele == article.idCategorie.toLong() }
             database.getReference("e_DBJetPackExport")
                 .child(article.idArticle.toString())
-                .updateChildren(mapOf(
-                    "idCategorie" to (category?.idClassementCategorieInCategoriesTabele ?: 0.0),
-                    "classementCate" to article.classementArticleAuCategorieCT,
-                    "diponibilityState" to article.diponibilityState
-                )).await()
+                .updateChildren(
+                    mapOf(
+                        "idCategorie" to (category?.idClassementCategorieInCategoriesTabele ?: 0.0),
+                        "classementCate" to article.classementArticleAuCategorieCT,
+                        "diponibilityState" to article.diponibilityState
+                    )
+                ).await()
 
             processedItems++
             onProgress(processedItems.toFloat() / totalItems)
@@ -304,28 +317,43 @@ class ClassementsArticlesViewModel : ViewModel() {
         val maxExistingId = articles.maxOfOrNull { it.idCategorie } ?: 0.0
 
         val defaultCategories = listOf(
-            CategoriesTabelle(idCategorieInCategoriesTabele =  (maxExistingId + 1).toLong(), idClassementCategorieInCategoriesTabele = maxExistingId + 1, nomCategorieInCategoriesTabele = "Consmitiques"),
-            CategoriesTabelle(idCategorieInCategoriesTabele = (maxExistingId +2).toLong(), idClassementCategorieInCategoriesTabele = maxExistingId + 2, nomCategorieInCategoriesTabele = "Confiseries"),
-            CategoriesTabelle(idCategorieInCategoriesTabele = (maxExistingId + 3).toLong(), idClassementCategorieInCategoriesTabele = maxExistingId + 3, nomCategorieInCategoriesTabele = "TeBnages")
+            CategoriesTabelle(
+                idCategorieInCategoriesTabele = (maxExistingId + 1).toLong(),
+                idClassementCategorieInCategoriesTabele = maxExistingId + 1,
+                nomCategorieInCategoriesTabele = "Consmitiques"
+            ),
+            CategoriesTabelle(
+                idCategorieInCategoriesTabele = (maxExistingId + 2).toLong(),
+                idClassementCategorieInCategoriesTabele = maxExistingId + 2,
+                nomCategorieInCategoriesTabele = "Confiseries"
+            ),
+            CategoriesTabelle(
+                idCategorieInCategoriesTabele = (maxExistingId + 3).toLong(),
+                idClassementCategorieInCategoriesTabele = maxExistingId + 3,
+                nomCategorieInCategoriesTabele = "TeBnages"
+            )
         )
 
 
         val articleCategories = articles.groupBy { it.nomCategorie }
             .map { (nomCategorie, categoryArticles) ->
                 CategoriesTabelle(
-                    idCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie?.toLong() ?: 0,
-                    idClassementCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie ?: 0.0,
+                    idCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie?.toLong()
+                        ?: 0,
+                    idClassementCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie
+                        ?: 0.0,
                     nomCategorieInCategoriesTabele = nomCategorie
                 )
             }
 
-        return (defaultCategories+articleCategories).sortedBy { it.idClassementCategorieInCategoriesTabele }
+        return (defaultCategories + articleCategories).sortedBy { it.idClassementCategorieInCategoriesTabele }
     }
 
     private suspend fun updateFirebaseCategories(categories: List<CategoriesTabelle>) {
         refCategorieTabelee.removeValue().await()
         categories.forEach { category ->
-            refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString()).setValue(category).await()
+            refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString())
+                .setValue(category).await()
         }
     }
 
@@ -337,10 +365,16 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-    private fun reorderCategories(categories: List<CategoriesTabelle>, fromCategoryId: Long, toCategoryId: Long): List<CategoriesTabelle> {
+    private fun reorderCategories(
+        categories: List<CategoriesTabelle>,
+        fromCategoryId: Long,
+        toCategoryId: Long
+    ): List<CategoriesTabelle> {
         val mutableCategories = categories.toMutableList()
-        val fromIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == fromCategoryId }
-        val toIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == toCategoryId }
+        val fromIndex =
+            mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == fromCategoryId }
+        val toIndex =
+            mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == toCategoryId }
 
         if (fromIndex != -1 && toIndex != -1) {
             val movedCategory = mutableCategories.removeAt(fromIndex)
@@ -352,9 +386,13 @@ class ClassementsArticlesViewModel : ViewModel() {
         return categories
     }
 
-    private fun reorderMultipleCategories(currentCategories: List<CategoriesTabelle>, categoriesToMove: List<CategoriesTabelle>): List<CategoriesTabelle> {
+    private fun reorderMultipleCategories(
+        currentCategories: List<CategoriesTabelle>,
+        categoriesToMove: List<CategoriesTabelle>
+    ): List<CategoriesTabelle> {
         val mutableCategories = currentCategories.toMutableList()
-        val firstSelectedCategoryIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == categoriesToMove.first().idCategorieInCategoriesTabele }
+        val firstSelectedCategoryIndex =
+            mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == categoriesToMove.first().idCategorieInCategoriesTabele }
 
         if (firstSelectedCategoryIndex != -1) {
             mutableCategories.removeAll(categoriesToMove)
@@ -366,10 +404,16 @@ class ClassementsArticlesViewModel : ViewModel() {
         return currentCategories
     }
 
-    private fun moveSingleCategory(currentCategories: List<CategoriesTabelle>, categoryToMove: CategoriesTabelle, targetCategory: CategoriesTabelle): List<CategoriesTabelle> {
+    private fun moveSingleCategory(
+        currentCategories: List<CategoriesTabelle>,
+        categoryToMove: CategoriesTabelle,
+        targetCategory: CategoriesTabelle
+    ): List<CategoriesTabelle> {
         val mutableCategories = currentCategories.toMutableList()
-        val categoryToMoveIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == categoryToMove.idCategorieInCategoriesTabele }
-        val targetCategoryIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == targetCategory.idCategorieInCategoriesTabele }
+        val categoryToMoveIndex =
+            mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == categoryToMove.idCategorieInCategoriesTabele }
+        val targetCategoryIndex =
+            mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == targetCategory.idCategorieInCategoriesTabele }
 
         if (categoryToMoveIndex != -1 && targetCategoryIndex != -1) {
             val movedCategory = mutableCategories.removeAt(categoryToMoveIndex)
@@ -381,12 +425,17 @@ class ClassementsArticlesViewModel : ViewModel() {
         return currentCategories
     }
 
-    private fun updateArticleDisponibilityState(articles: List<ClassementsArticlesTabel>, articleId: Long, newDisponibilityState: String): List<ClassementsArticlesTabel> {
+    private fun updateArticleDisponibilityState(
+        articles: List<ClassementsArticlesTabel>,
+        articleId: Long,
+        newDisponibilityState: String
+    ): List<ClassementsArticlesTabel> {
         return articles.map { article ->
             if (article.idArticle == articleId) article.copy(diponibilityState = newDisponibilityState) else article
         }
     }
 }
+
 data class ClassementsArticlesTabel(
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
@@ -394,7 +443,7 @@ data class ClassementsArticlesTabel(
     var classementInCategoriesCT: Double = 0.0,
     val nomCategorie: String = "",
     var classementArticleAuCategorieCT: Double = 0.0,
-    var itsNewArticleInCateWithID: Boolean=false,
+    var itsNewArticleInCateWithID: Boolean = false,
     var classementCate: Double = 0.0,
     val diponibilityState: String = ""
 )
@@ -402,5 +451,5 @@ data class ClassementsArticlesTabel(
 data class CategoriesTabelle(
     val idCategorieInCategoriesTabele: Long = 0,
     var idClassementCategorieInCategoriesTabele: Double = 0.0,
-    val nomCategorieInCategoriesTabele: String = "" ,
-    )
+    val nomCategorieInCategoriesTabele: String = "",
+)
