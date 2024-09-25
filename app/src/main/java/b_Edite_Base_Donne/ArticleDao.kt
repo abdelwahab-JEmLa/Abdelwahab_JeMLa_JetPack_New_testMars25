@@ -11,7 +11,7 @@ import androidx.room.Upsert
 
 @Dao
 interface ArticleDao {
-    @Query("SELECT * FROM articles ORDER BY  classementCate,idCategorie")
+    @Query("SELECT * FROM articles ORDER BY idCategorie, classementCate")
     suspend fun getAllArticlesOrder(): List<BaseDonne>
 
     @Query("SELECT * FROM articles ORDER BY dateCreationCategorie")
