@@ -129,67 +129,6 @@ fun MainFactoryClassementsArticles(
     }
 }
 
-@Composable
-fun FloatingActionButtons(
-    showFloatingButtons: Boolean,
-    onToggleNavBar: () -> Unit,
-    onToggleFloatingButtons: () -> Unit,
-    onToggleFilter: () -> Unit,
-    showOnlyWithFilter: Boolean,
-    categories: List<CategoriesTabelle>,
-    onCategorySelected: (CategoriesTabelle) -> Unit,
-    viewModel: ClassementsArticlesViewModel,
-    coroutineScope: CoroutineScope,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateComplete: () -> Unit,
-    onChangeGridColumns: (Int) -> Unit
-) {
-    var showCategorySelection by remember { mutableStateOf(false) }
-    var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
-
-    Column {
-        if (showFloatingButtons) {
-            FloatingActionButtonGroup(
-                onCategorySelectionClick = { showCategorySelection = true },
-                onToggleNavBar = onToggleNavBar,
-                onToggleFilter = onToggleFilter,
-                showOnlyWithFilter = showOnlyWithFilter,
-                onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
-                showDialogeDataBaseEditer = showDialogeDataBaseEditer,
-                onChangeGridColumns = onChangeGridColumns
-            )
-        }
-        FloatingActionButton(onClick = onToggleFloatingButtons) {
-            Icon(
-                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                null
-            )
-        }
-    }
-
-    if (showCategorySelection) {
-        CategorySelectionWindow(
-            categories = categories,
-            viewModel = viewModel,
-            onDismiss = { showCategorySelection = false },
-            onCategorySelected = { category ->
-                onCategorySelected(category)
-                showCategorySelection = false
-            }
-        )
-    }
-    if (showDialogeDataBaseEditer) {
-        DialogeDataBaseEditer(
-            viewModel = viewModel,
-            onDismiss = { showDialogeDataBaseEditer = false },
-            coroutineScope = coroutineScope,
-            onUpdateStart = onUpdateStart,
-            onUpdateProgress = onUpdateProgress,
-            onUpdateComplete = onUpdateComplete,
-        )
-    }
-}
 
 @Composable
 fun FloatingActionButtonGroup(

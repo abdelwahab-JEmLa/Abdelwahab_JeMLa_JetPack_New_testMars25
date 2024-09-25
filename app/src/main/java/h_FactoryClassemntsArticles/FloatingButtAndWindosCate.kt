@@ -1,15 +1,12 @@
 package h_FactoryClassemntsArticles
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,16 +14,17 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Mode
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,81 +39,73 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.abdelwahabjemlajetpack.DialogButton
-import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.File
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (String) -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clickable { onDisponibilityChange(getNextDisponibilityState(article.diponibilityState)) },
-                contentAlignment = Alignment.Center
-            ) {
-                val imagePath =
-                    "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                val imageExist =
-                    listOf("jpg", "webp").firstOrNull { File("$imagePath.$it").exists() }
-                GlideImage(
-                    model = imageExist?.let { "$imagePath.$it" } ?: R.drawable.blanc,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    it.diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .override(1000)
-                        .thumbnail(0.25f)
-                        .fitCenter()
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                }
-                DisponibilityOverlay(article.diponibilityState)
-            }
-            Text(text = article.nomArticleFinale, style = MaterialTheme.typography.bodyLarge)
-            Text(text = article.nomCategorie, style = MaterialTheme.typography.bodyMedium)
+fun FloatingActionButtons(
+    showFloatingButtons: Boolean,
+    onToggleNavBar: () -> Unit,
+    onToggleFloatingButtons: () -> Unit,
+    onToggleFilter: () -> Unit,
+    showOnlyWithFilter: Boolean,
+    categories: List<CategoriesTabelle>,
+    onCategorySelected: (CategoriesTabelle) -> Unit,
+    viewModel: ClassementsArticlesViewModel,
+    coroutineScope: CoroutineScope,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateStart: () -> Unit,
+    onUpdateComplete: () -> Unit,
+    onChangeGridColumns: (Int) -> Unit
+) {
+    var showCategorySelection by remember { mutableStateOf(false) }
+    var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
+
+    Column {
+        if (showFloatingButtons) {
+            FloatingActionButtonGroup(
+                onCategorySelectionClick = { showCategorySelection = true },
+                onToggleNavBar = onToggleNavBar,
+                onToggleFilter = onToggleFilter,
+                showOnlyWithFilter = showOnlyWithFilter,
+                onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
+                showDialogeDataBaseEditer = showDialogeDataBaseEditer,
+                onChangeGridColumns = onChangeGridColumns
+            )
+        }
+        FloatingActionButton(onClick = onToggleFloatingButtons) {
+            Icon(
+                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                null
+            )
         }
     }
-}
 
-@Composable
-fun DisponibilityOverlay(state: String) {
-    when (state) {
-        "Non Dispo" -> OverlayContent(color = Color.Black, icon = Icons.Default.TextDecrease)
-        "NonForNewsClients" -> OverlayContent(color = Color.Gray, icon = Icons.Default.Person)
+    if (showCategorySelection) {
+        CategorySelectionWindow(
+            categories = categories,
+            viewModel = viewModel,
+            onDismiss = { showCategorySelection = false },
+            onCategorySelected = { category ->
+                onCategorySelected(category)
+                showCategorySelection = false
+            }
+        )
     }
-}
-fun getNextDisponibilityState(currentState: String): String = when (currentState) {
-    "" -> "Non Dispo"
-    "Non Dispo" -> "NonForNewsClients"
-    else -> ""
-}
-@Composable
-fun OverlayContent(color: Color, icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, null, tint = Color.White)
+    if (showDialogeDataBaseEditer) {
+        DialogeDataBaseEditer(
+            viewModel = viewModel,
+            onDismiss = { showDialogeDataBaseEditer = false },
+            coroutineScope = coroutineScope,
+            onUpdateStart = onUpdateStart,
+            onUpdateProgress = onUpdateProgress,
+            onUpdateComplete = onUpdateComplete,
+        )
     }
 }
 
@@ -358,32 +348,5 @@ fun CategoryItem(
     }
 }
 
-@Composable
-fun AutoResizedText(
-    text: String,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.onSurface,
-    maxLines: Int = Int.MAX_VALUE
-) {
-    val initialFontSize = MaterialTheme.typography.bodyMedium.fontSize
-    var fontSize by remember { mutableStateOf(initialFontSize) }
-    var readyToDraw by remember { mutableStateOf(false) }
-
-    Text(
-        text = text,
-        color = color,
-        fontSize = fontSize,
-        maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier.drawWithContent { if (readyToDraw) drawContent() },
-        onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowHeight) {
-                fontSize *= 0.9f
-            } else {
-                readyToDraw = true
-            }
-        }
-    )
-}
 
 
