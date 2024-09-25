@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -38,6 +39,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -184,32 +186,47 @@ fun MyApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // New state for progress bar
+    var showProgressBar by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0f) }
+
     Scaffold(
         bottomBar = {
             if (isNavBarVisible) {
-                NavigationBar {
-                    items.forEach { screen ->
-                        NavigationBarItem(
-                            icon = {
-                                Icon(
-                                    screen.icon,
-                                    contentDescription = screen.title,
-                                    tint = screen.color
-                                )
-                            },
-                            selected = currentRoute == screen.route,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
-                                }
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = screen.color,
-                                unselectedIconColor = screen.color.copy(alpha = 0.6f),
-                                indicatorColor = screen.color.copy(alpha = 0.1f)
-                            )
+                Column {
+                    // Add LinearProgressIndicator here
+                    if (showProgressBar) {
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp),
                         )
+                    }
+                    NavigationBar {
+                        items.forEach { screen ->
+                            NavigationBarItem(
+                                icon = {
+                                    Icon(
+                                        screen.icon,
+                                        contentDescription = screen.title,
+                                        tint = screen.color
+                                    )
+                                },
+                                selected = currentRoute == screen.route,
+                                onClick = {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = screen.color,
+                                    unselectedIconColor = screen.color.copy(alpha = 0.6f),
+                                    indicatorColor = screen.color.copy(alpha = 0.1f)
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -264,6 +281,12 @@ fun MyApp(
                     MainFactoryClassementsArticles(
                         classementsArticlesViewModel,
                         onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
+                        onUpdateStart = { showProgressBar = true },
+                        onUpdateProgress = { progress = it },
+                        onUpdateComplete = {
+                            showProgressBar = false
+                            progress = 0f
+                        }
                     )
                 }
                 composable("PickerExample") { PickerExample() }

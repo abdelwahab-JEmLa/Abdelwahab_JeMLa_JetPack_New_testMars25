@@ -72,7 +72,7 @@ suspend fun importFromFirebase(
     try {
         val dataSnapshot = Firebase.database.getReference(refFireBase).get().await()
         val articlesFromFirebase = parseDataSnapshot(dataSnapshot)
-        val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne> { it.idCategorie }.thenBy { it.classementCate })
+        val sortedArticles = articlesFromFirebase.sortedWith(compareBy<BaseDonne>{ it.classementCate }.thenBy  { it.idCategorie })
 
         articleDao.deleteAll()
         articleDao.insertAll(sortedArticles)

@@ -62,10 +62,13 @@ fun FloatingActionButtons(
     onToggleFloatingButtons: () -> Unit,
     onToggleFilter: () -> Unit,
     showOnlyWithFilter: Boolean,
-    categories: List<CategorieTabelee>,
-    onCategorySelected: (CategorieTabelee) -> Unit,
+    categories: List<CategoriesTabelle>,
+    onCategorySelected: (CategoriesTabelle) -> Unit,
     viewModel: ClassementsArticlesViewModel,
     coroutineScope: CoroutineScope,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateStart: () -> Unit,
+    onUpdateComplete: () -> Unit,
 
     ) {
     var showCategorySelection by remember { mutableStateOf(false) }
@@ -129,7 +132,10 @@ fun FloatingActionButtons(
         DialogeDataBaseEditer(
             viewModel = viewModel,
             onDismiss = { showDialogeDataBaseEditer = false },
-            coroutineScope=coroutineScope
+            coroutineScope=coroutineScope  ,
+            onUpdateStart=onUpdateStart,
+            onUpdateProgress=onUpdateProgress,
+            onUpdateComplete=onUpdateComplete,
 
         )
     }
@@ -141,6 +147,9 @@ fun DialogeDataBaseEditer(
     onDismiss: () -> Unit,
     viewModel: ClassementsArticlesViewModel,
     coroutineScope: CoroutineScope,
+    onUpdateStart: () -> Unit,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateComplete: () -> Unit ,
 ) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showUpdateConfirmationDialog by remember { mutableStateOf(false) }
@@ -224,15 +233,19 @@ fun DialogeDataBaseEditer(
                     icon = Icons.Default.Refresh,
                     onClick = {
                         coroutineScope.launch {
-
-                            viewModel.updateChangeInClassmentToe_DBJetPackExport()  //TODO ajoute une progress bare s affiche au nav bar suive
-
+                            onUpdateStart()
+                            onDismiss()
+                            try {
+                                viewModel.updateChangeInClassmentToe_DBJetPackExport { progress ->
+                                    onUpdateProgress(progress)
+                                }
+                            } finally {
+                                onUpdateComplete()
+                            }
                         }
-
                     },
                     tint2 = Color.Black
                 )
-
             }
 
         },
@@ -273,7 +286,7 @@ fun ConfirmationDialog(
 
 @Composable
 fun CategoryItem(
-    category: CategorieTabelee,
+    category: CategoriesTabelle,
     isSelected: Boolean,
     isMoving: Boolean,
     onClick: () -> Unit
@@ -297,7 +310,7 @@ fun CategoryItem(
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            AutoResizedTextFC(category.nomCategorieCT, maxLines = 2)
+            AutoResizedTextFC(category.nomCategorieInCategoriesTabele, maxLines = 2)
         }
     }
 }
@@ -349,15 +362,15 @@ fun AutoResizedTextFC(
 
 @Composable
 fun CategorySelectionWindow(
-    categories: List<CategorieTabelee>,
+    categories: List<CategoriesTabelle>,
     onDismiss: () -> Unit,
-    viewModel: ClassementsArticlesViewModel  ,
-    onCategorySelected: (CategorieTabelee) -> Unit,
+    viewModel: ClassementsArticlesViewModel,
+    onCategorySelected: (CategoriesTabelle) -> Unit,
 
     ) {
     var multiSelectionMode by remember { mutableStateOf(false) }
-    var selectedCategories by remember { mutableStateOf<List<CategorieTabelee>>(emptyList()) }
-    var movingCategory by remember { mutableStateOf<CategorieTabelee?>(null) }
+    var selectedCategories by remember { mutableStateOf<List<CategoriesTabelle>>(emptyList()) }
+    var movingCategory by remember { mutableStateOf<CategoriesTabelle?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
