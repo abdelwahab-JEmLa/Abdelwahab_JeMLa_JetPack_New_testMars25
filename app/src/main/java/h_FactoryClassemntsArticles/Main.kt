@@ -231,7 +231,6 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-
     private suspend fun initDataFromFirebase() {
         try {
             _articlesList.value = refClassmentsArtData.get().await().children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
