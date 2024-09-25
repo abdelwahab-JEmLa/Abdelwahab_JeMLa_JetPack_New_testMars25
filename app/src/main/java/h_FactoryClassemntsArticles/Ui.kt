@@ -89,8 +89,7 @@ fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (Strin
                 }
                 DisponibilityOverlay(article.diponibilityState)
             }
-            Text(text = article.nomArticleFinale, style = MaterialTheme.typography.bodyLarge)
-            Text(text = article.nomCategorie, style = MaterialTheme.typography.bodyMedium)
+            AutoResizedTextClas(text = article.nomArticleFinale,)
         }
     }
 }
@@ -119,7 +118,7 @@ fun OverlayContent(color: Color, icon: ImageVector) {
     }
 }
 @Composable
-fun AutoResizedText(
+fun AutoResizedTextClas(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.onSurface,

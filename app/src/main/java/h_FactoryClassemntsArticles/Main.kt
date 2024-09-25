@@ -1,7 +1,6 @@
 package h_FactoryClassemntsArticles
 
 import android.util.Log
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -11,8 +10,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.GridView
@@ -33,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -87,7 +83,7 @@ fun MainFactoryClassementsArticles(
                 onUpdateStart = onUpdateStart,
                 onUpdateProgress = onUpdateProgress,
                 onUpdateComplete = onUpdateComplete,
-                onChangeGridColumns = { gridColumns = it }
+                onChangeGridColumns = { gridColumns = it }  //TODO fait que la taille ext ce diminu aussi
             )
         }
     ) { padding ->
@@ -171,7 +167,7 @@ fun FloatingActionButtonGroup(
         )
     }
     FloatingActionButton(
-        onClick = { onChangeGridColumns(if (Random.nextBoolean()) 3 else 4) },
+        onClick = { onChangeGridColumns(if (Random.nextBoolean()) 3 else 4 ) },   //TODO ajoute else 5 et 2
         modifier = Modifier.padding(bottom = 16.dp)
     ) {
         Icon(Icons.Default.GridView, null)
