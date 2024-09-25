@@ -217,40 +217,35 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-    fun giveNumAuSubCategorieArticle() {
 
+
+    suspend fun giveNumAuSubCategorieArticle() {
         viewModelScope.launch {
-            val updatedArticles = _articlesList.value.toMutableList()
-                .sortedBy { it.classementCate }
-                .sortedBy { it.classementIdAuCate }
-            val updatedCategory = _categorieList.value.toMutableList()
+            val updatedArticles = _articlesList.value
+                .sortedWith(compareBy({ it.classementCate }, { it.classementIdAuCate }))
+                .toMutableList()
 
-            // Initialize the index
+            _categorieList.value.forEach { category ->
+                val categoryArticles = updatedArticles
+                    .filter { it.idCategorie.toLong() == category.idCategorieCT }
+                    .sortedWith(compareBy({ it.classementCate }, { it.classementIdAuCate }))
 
-            updatedCategory.forEach { cate ->
-                val categoryArticles = updatedArticles.filter { it.idCategorie.toLong() == cate.idCategorieCT }
-                    .sortedBy { it.classementCate } .sortedBy { it.classementIdAuCate }
-
-                var index = 1
-
-                categoryArticles.forEach { article ->
-                    val indexToDouble = (index).toDouble()
-                    article.classementIdAuCate = indexToDouble
-                    article.classementCate = indexToDouble
-                    index++
+                categoryArticles.forEachIndexed { index, article ->
+                    val newRank = (index + 1).toDouble()
+                    article.classementIdAuCate = newRank
+                    article.classementCate = newRank
                 }
             }
 
-            // Update the articles list with the updated data
             _articlesList.value = updatedArticles
 
-            // Persist the changes back to Firebase
-            updatedArticles.forEach { article ->
-                refClassmentsArtData.child(article.idArticle.toString()).setValue(article)
+            viewModelScope.launch {
+                updatedArticles.forEach { article ->
+                    refClassmentsArtData.child(article.idArticle.toString()).setValue(article)
+                }
             }
         }
     }
-
 
 
     fun updateChangeInClassmentToe_DBJetPackExport() {
