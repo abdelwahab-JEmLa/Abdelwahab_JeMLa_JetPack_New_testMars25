@@ -1,20 +1,26 @@
 package h_FactoryClassemntsArticles
 
 import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FilterListOff
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PermMedia
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +41,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlin.random.Random
 
 @Composable
 fun MainFactoryClassementsArticles(
@@ -48,7 +56,7 @@ fun MainFactoryClassementsArticles(
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
-    var clickOnImageEntreModeNew by remember { mutableStateOf(true) }
+    var gridColumns by remember { mutableStateOf(3) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
@@ -79,17 +87,17 @@ fun MainFactoryClassementsArticles(
                 onUpdateStart = onUpdateStart,
                 onUpdateProgress = onUpdateProgress,
                 onUpdateComplete = onUpdateComplete,
-
-                )
+                onChangeGridColumns = { gridColumns = it }
+            )
         }
     ) { padding ->
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(gridColumns),
             state = gridState,
             modifier = Modifier.padding(padding)
         ) {
             categories.forEach { category ->
-                item(span = { GridItemSpan(3) }) {
+                item(span = { GridItemSpan(gridColumns) }) {
                     CategoryHeader(
                         category = category,
                         isSelected = holdedIdCateForMove == category.idCategorieInCategoriesTabele,
@@ -122,23 +130,112 @@ fun MainFactoryClassementsArticles(
 }
 
 @Composable
-fun CategoryHeader(
-    category: CategoriesTabelle,
-    isSelected: Boolean,
-    onCategoryClick: (CategoriesTabelle) -> Unit
+fun FloatingActionButtons(
+    showFloatingButtons: Boolean,
+    onToggleNavBar: () -> Unit,
+    onToggleFloatingButtons: () -> Unit,
+    onToggleFilter: () -> Unit,
+    showOnlyWithFilter: Boolean,
+    categories: List<CategoriesTabelle>,
+    onCategorySelected: (CategoriesTabelle) -> Unit,
+    viewModel: ClassementsArticlesViewModel,
+    coroutineScope: CoroutineScope,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateStart: () -> Unit,
+    onUpdateComplete: () -> Unit,
+    onChangeGridColumns: (Int) -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
-            .clickable { onCategoryClick(category) }
-    ) {
-        Text(
-            text = category.nomCategorieInCategoriesTabele,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(16.dp)
+    var showCategorySelection by remember { mutableStateOf(false) }
+    var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
+
+    Column {
+        if (showFloatingButtons) {
+            FloatingActionButtonGroup(
+                onCategorySelectionClick = { showCategorySelection = true },
+                onToggleNavBar = onToggleNavBar,
+                onToggleFilter = onToggleFilter,
+                showOnlyWithFilter = showOnlyWithFilter,
+                onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
+                showDialogeDataBaseEditer = showDialogeDataBaseEditer,
+                onChangeGridColumns = onChangeGridColumns
+            )
+        }
+        FloatingActionButton(onClick = onToggleFloatingButtons) {
+            Icon(
+                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                null
+            )
+        }
+    }
+
+    if (showCategorySelection) {
+        CategorySelectionWindow(
+            categories = categories,
+            viewModel = viewModel,
+            onDismiss = { showCategorySelection = false },
+            onCategorySelected = { category ->
+                onCategorySelected(category)
+                showCategorySelection = false
+            }
         )
+    }
+    if (showDialogeDataBaseEditer) {
+        DialogeDataBaseEditer(
+            viewModel = viewModel,
+            onDismiss = { showDialogeDataBaseEditer = false },
+            coroutineScope = coroutineScope,
+            onUpdateStart = onUpdateStart,
+            onUpdateProgress = onUpdateProgress,
+            onUpdateComplete = onUpdateComplete,
+        )
+    }
+}
+
+@Composable
+fun FloatingActionButtonGroup(
+    onCategorySelectionClick: () -> Unit,
+    onToggleNavBar: () -> Unit,
+    onToggleFilter: () -> Unit,
+    showOnlyWithFilter: Boolean,
+    onDialogDataBaseEditerClick: () -> Unit,
+    showDialogeDataBaseEditer: Boolean,
+    onChangeGridColumns: (Int) -> Unit
+) {
+    FloatingActionButton(
+        onClick = onCategorySelectionClick,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Icon(Icons.Default.Category, null)
+    }
+    FloatingActionButton(
+        onClick = onToggleNavBar,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Icon(Icons.Default.Home, null)
+    }
+    FloatingActionButton(
+        onClick = onToggleFilter,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Icon(
+            if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
+            null
+        )
+    }
+    FloatingActionButton(
+        onClick = onDialogDataBaseEditerClick,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Icon(
+            if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia,
+            null
+        )
+    }
+    FloatingActionButton(
+        onClick = { onChangeGridColumns(if (Random.nextBoolean()) 3 else 4) },
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Icon(Icons.Default.GridView, null)
     }
 }
 

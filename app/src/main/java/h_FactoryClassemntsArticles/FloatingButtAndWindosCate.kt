@@ -16,16 +16,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.FilterListOff
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mode
-import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TextDecrease
@@ -35,7 +27,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -128,87 +119,6 @@ fun OverlayContent(color: Color, icon: ImageVector) {
     }
 }
 
-@Composable
-fun FloatingActionButtons(
-    showFloatingButtons: Boolean,
-    onToggleNavBar: () -> Unit,
-    onToggleFloatingButtons: () -> Unit,
-    onToggleFilter: () -> Unit,
-    showOnlyWithFilter: Boolean,
-    categories: List<CategoriesTabelle>,
-    onCategorySelected: (CategoriesTabelle) -> Unit,
-    viewModel: ClassementsArticlesViewModel,
-    coroutineScope: CoroutineScope,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateComplete: () -> Unit,
-) {
-    var showCategorySelection by remember { mutableStateOf(false) }
-    var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
-
-    Column {
-        if (showFloatingButtons) {
-            FloatingActionButton(
-                onClick = { showCategorySelection = true },
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.Default.Category, null)
-            }
-            FloatingActionButton(
-                onClick = onToggleNavBar,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.Default.Home, null)
-            }
-            FloatingActionButton(
-                onClick = onToggleFilter,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
-                    null
-                )
-            }
-            FloatingActionButton(
-                onClick = { showDialogeDataBaseEditer = true },
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia,
-                    null
-                )
-            }
-        }
-        FloatingActionButton(onClick = onToggleFloatingButtons) {
-            Icon(
-                if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                null
-            )
-        }
-    }
-
-    if (showCategorySelection) {
-        CategorySelectionWindow(
-            categories = categories,
-            viewModel = viewModel,
-            onDismiss = { showCategorySelection = false },
-            onCategorySelected = { category ->
-                onCategorySelected(category)
-                showCategorySelection = false
-            }
-        )
-    }
-    if (showDialogeDataBaseEditer) {
-        DialogeDataBaseEditer(
-            viewModel = viewModel,
-            onDismiss = { showDialogeDataBaseEditer = false },
-            coroutineScope = coroutineScope,
-            onUpdateStart = onUpdateStart,
-            onUpdateProgress = onUpdateProgress,
-            onUpdateComplete = onUpdateComplete,
-        )
-    }
-}
 
 @Composable
 fun DialogeDataBaseEditer(
