@@ -117,6 +117,7 @@ fun MainFactoryClassementsArticles(viewModel: ClassementsArticlesViewModel, onTo
         }
     }
 }
+
 @Composable
 fun CategoryHeader(
     category: CategorieTabelee,
@@ -217,9 +218,7 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-
-
-    suspend fun giveNumAuSubCategorieArticle() {
+     fun giveNumAuSubCategorieArticle() {
         viewModelScope.launch {
             val updatedArticles = _articlesList.value
                 .sortedWith(compareBy({ it.classementCate }, { it.classementIdAuCate }))
@@ -247,7 +246,6 @@ class ClassementsArticlesViewModel : ViewModel() {
         }
     }
 
-
     fun updateChangeInClassmentToe_DBJetPackExport() {
         viewModelScope.launch {
             val updatedArticles = articlesList.value
@@ -274,6 +272,7 @@ class ClassementsArticlesViewModel : ViewModel() {
             Log.e("ClassementsArticlesVM", "Error loading data", e)
         }
     }
+
     suspend fun updateCategorieTabelee() {
         try {
             val categories = _articlesList.value
