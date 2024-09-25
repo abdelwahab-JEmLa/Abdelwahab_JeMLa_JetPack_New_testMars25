@@ -57,6 +57,7 @@ fun MainFactoryClassementsArticles(
     val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
+    var clickOnImageEntreModeNew by remember { mutableStateOf(true) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
@@ -215,6 +216,7 @@ class ClassementsArticlesViewModel : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val categorieList = _categorieList.asStateFlow()
+
     val showOnlyWithFilter = _showOnlyWithFilter.asStateFlow()
 
     init {
@@ -316,7 +318,7 @@ class ClassementsArticlesViewModel : ViewModel() {
     }
 
 
-    suspend fun updateChangeInClassmentToe_DBJetPackExport(onProgress: (Float) -> Unit) {
+    suspend fun updateChangeInClassmentToeDBJetPackExport(onProgress: (Float) -> Unit) {
         val articles = articlesList.value
         val categories = categorieList.value
 
@@ -341,7 +343,16 @@ class ClassementsArticlesViewModel : ViewModel() {
 
 
     private fun createCategoriesFromArticles(articles: List<ClassementsArticlesTabel>): List<CategoriesTabelle> {
-        return articles.groupBy { it.nomCategorie }
+        val maxExistingId = articles.maxOfOrNull { it.idCategorie } ?: 0.0
+
+        val defaultCategories = listOf(
+            CategoriesTabelle(idCategorieInCategoriesTabele =  (maxExistingId + 1).toLong(), idClassementCategorieInCategoriesTabele = maxExistingId + 1, nomCategorieInCategoriesTabele = "Consmitiques"),
+            CategoriesTabelle(idCategorieInCategoriesTabele = (maxExistingId +2).toLong(), idClassementCategorieInCategoriesTabele = maxExistingId + 2, nomCategorieInCategoriesTabele = "Confiseries"),
+            CategoriesTabelle(idCategorieInCategoriesTabele = (maxExistingId + 3).toLong(), idClassementCategorieInCategoriesTabele = maxExistingId + 3, nomCategorieInCategoriesTabele = "TeBnages")
+        )
+
+
+        val articleCategories = articles.groupBy { it.nomCategorie }
             .map { (nomCategorie, categoryArticles) ->
                 CategoriesTabelle(
                     idCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie?.toLong() ?: 0,
@@ -349,7 +360,8 @@ class ClassementsArticlesViewModel : ViewModel() {
                     nomCategorieInCategoriesTabele = nomCategorie
                 )
             }
-            .sortedBy { it.idClassementCategorieInCategoriesTabele }
+
+        return (defaultCategories+articleCategories).sortedBy { it.idClassementCategorieInCategoriesTabele }
     }
 
     private suspend fun updateFirebaseCategories(categories: List<CategoriesTabelle>) {
@@ -424,6 +436,7 @@ data class ClassementsArticlesTabel(
     var classementInCategoriesCT: Double = 0.0,
     val nomCategorie: String = "",
     var classementArticleAuCategorieCT: Double = 0.0,
+    var itsNewArticleInCateWithID: Boolean=false,
     var classementCate: Double = 0.0,
     val diponibilityState: String = ""
 )
@@ -431,5 +444,5 @@ data class ClassementsArticlesTabel(
 data class CategoriesTabelle(
     val idCategorieInCategoriesTabele: Long = 0,
     var idClassementCategorieInCategoriesTabele: Double = 0.0,
-    val nomCategorieInCategoriesTabele: String = ""
-)
+    val nomCategorieInCategoriesTabele: String = "" ,
+    )

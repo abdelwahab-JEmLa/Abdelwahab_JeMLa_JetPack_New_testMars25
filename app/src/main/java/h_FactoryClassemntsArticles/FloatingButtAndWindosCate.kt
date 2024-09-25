@@ -107,7 +107,6 @@ fun FloatingActionButtons(
                     "Dialoge"
                 )
             }
-
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
@@ -154,6 +153,77 @@ fun DialogeDataBaseEditer(
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showUpdateConfirmationDialog by remember { mutableStateOf(false) }
 
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text(
+                text = "Firebase Data",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                DialogButton(
+                    text = "updateCategorieTabelee",
+                    icon = Icons.Default.Upload,
+                    onClick = {
+                        showUpdateConfirmationDialog = true
+                    },
+                    tint2 = Color.Red
+                )
+
+
+                // DialogButton
+                DialogButton(
+                    text = "giveNumAuSubCategorieArticle",
+                    icon = Icons.Default.Mode,
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.giveNumAuSubCategorieArticle()
+                        }
+                    },
+                    tint2 = Color.Red
+                )
+                HorizontalDivider(color = Color.Red,thickness=5.dp, modifier = Modifier.padding(8.dp))
+
+                DialogButton(
+                    text = "Delete Ref Classment ",
+                    icon = Icons.Default.Delete,
+                    onClick = {
+                        showConfirmationDialog = true
+                    },
+                    tint2 = Color.Blue
+                )
+
+                HorizontalDivider(color = Color.Blue,thickness=5.dp, modifier = Modifier.padding(8.dp))
+
+                DialogButton(
+                    text = "updateChangeInClassmentToeDBJetPackExport",
+                    icon = Icons.Default.Refresh,
+                    onClick = {
+                        coroutineScope.launch {
+                            onUpdateStart()
+                            onDismiss()
+                            try {
+                                viewModel.updateChangeInClassmentToeDBJetPackExport { progress ->
+                                    onUpdateProgress(progress)
+                                }
+                            } finally {
+                                onUpdateComplete()
+                            }
+                        }
+                    },
+                    tint2 = Color.Black
+                )
+            }
+
+        },
+    )
     if (showConfirmationDialog) {
         ConfirmationDialog(
             onDismiss = { showConfirmationDialog = false },
@@ -180,76 +250,6 @@ fun DialogeDataBaseEditer(
         )
     }
 
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = {
-            Text(
-                text = "Firebase Data",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-        },
-        confirmButton = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                DialogButton(
-                    text = "updateCategorieTabelee",
-                    icon = Icons.Default.Upload,
-                    onClick = {
-                        showUpdateConfirmationDialog = true
-                    },
-                    tint2 = Color.Red
-                )
-
-                HorizontalDivider(color = Color.Red,thickness=5.dp, modifier = Modifier.padding(8.dp))
-
-                // DialogButton
-                DialogButton(
-                    text = "giveNumAuSubCategorieArticle",
-                    icon = Icons.Default.Mode,
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.giveNumAuSubCategorieArticle()
-                        }
-                    },
-                    tint2 = Color.Red
-                )
-
-                DialogButton(
-                    text = "Delete Ref Classment ",
-                    icon = Icons.Default.Delete,
-                    onClick = {
-                        showConfirmationDialog = true
-                    },
-                    tint2 = Color.Blue
-                )
-
-                HorizontalDivider(color = Color.Blue,thickness=5.dp, modifier = Modifier.padding(8.dp))
-
-                DialogButton(
-                    text = "updateChangeInClassmentToe_DBJetPackExport",
-                    icon = Icons.Default.Refresh,
-                    onClick = {
-                        coroutineScope.launch {
-                            onUpdateStart()
-                            onDismiss()
-                            try {
-                                viewModel.updateChangeInClassmentToe_DBJetPackExport { progress ->
-                                    onUpdateProgress(progress)
-                                }
-                            } finally {
-                                onUpdateComplete()
-                            }
-                        }
-                    },
-                    tint2 = Color.Black
-                )
-            }
-
-        },
-    )
 }
 
 @Composable
