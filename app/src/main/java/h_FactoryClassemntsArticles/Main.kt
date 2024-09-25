@@ -5,10 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -35,7 +37,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import b_Edite_Base_Donne.LoadImageFromPath
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.example.abdelwahabjemlajetpack.R
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,6 +50,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.io.File
 
 @Composable
 fun MainFactoryClassementsArticles(
@@ -147,54 +154,7 @@ fun CategoryHeader(
     }
 }
 
-@Composable
-fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (String) -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-            .clickable {
-                val newState = when (article.diponibilityState) {
-                    "" -> "Non Dispo"
-                    "Non Dispo" -> "NonForNewsClients"
-                    else -> ""
-                }
-                onDisponibilityChange(newState)
-            }
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
-                LoadImageFromPath(imagePath = imagePath)
 
-                when (article.diponibilityState) {
-                    "Non Dispo" -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.5f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.TextDecrease, "Not Available For all", tint = Color.White)
-                        }
-                    }
-                    "NonForNewsClients" -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Gray.copy(alpha = 0.5f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Person, "Not Available For New Clients", tint = Color.White)
-                        }
-                    }
-                }
-            }
-            Text(text = article.nomArticleFinale, style = MaterialTheme.typography.bodyLarge)
-            Text(text = article.nomCategorie, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
 
 class ClassementsArticlesViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance()
@@ -339,8 +299,6 @@ class ClassementsArticlesViewModel : ViewModel() {
             onProgress(processedItems.toFloat() / totalItems)
         }
     }
-
-
 
     private fun createCategoriesFromArticles(articles: List<ClassementsArticlesTabel>): List<CategoriesTabelle> {
         val maxExistingId = articles.maxOfOrNull { it.idCategorie } ?: 0.0

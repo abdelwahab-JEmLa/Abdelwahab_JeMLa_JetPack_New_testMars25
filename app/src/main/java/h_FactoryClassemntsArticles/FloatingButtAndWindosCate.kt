@@ -1,12 +1,15 @@
 package h_FactoryClassemntsArticles
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -23,7 +26,9 @@ import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mode
 import androidx.compose.material.icons.filled.PermMedia
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,15 +50,83 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.window.Dialog
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.abdelwahabjemlajetpack.DialogButton
+import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.io.File
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun ArticleItem(article: ClassementsArticlesTabel, onDisponibilityChange: (String) -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clickable { onDisponibilityChange(getNextDisponibilityState(article.diponibilityState)) },
+                contentAlignment = Alignment.Center
+            ) {
+                val imagePath =
+                    "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+                val imageExist =
+                    listOf("jpg", "webp").firstOrNull { File("$imagePath.$it").exists() }
+                GlideImage(
+                    model = imageExist?.let { "$imagePath.$it" } ?: R.drawable.blanc,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    it.diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .override(1000)
+                        .thumbnail(0.25f)
+                        .fitCenter()
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                }
+                DisponibilityOverlay(article.diponibilityState)
+            }
+            Text(text = article.nomArticleFinale, style = MaterialTheme.typography.bodyLarge)
+            Text(text = article.nomCategorie, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+fun DisponibilityOverlay(state: String) {
+    when (state) {
+        "Non Dispo" -> OverlayContent(color = Color.Black, icon = Icons.Default.TextDecrease)
+        "NonForNewsClients" -> OverlayContent(color = Color.Gray, icon = Icons.Default.Person)
+    }
+}
+fun getNextDisponibilityState(currentState: String): String = when (currentState) {
+    "" -> "Non Dispo"
+    "Non Dispo" -> "NonForNewsClients"
+    else -> ""
+}
+@Composable
+fun OverlayContent(color: Color, icon: ImageVector) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, null, tint = Color.White)
+    }
+}
 
 @Composable
 fun FloatingActionButtons(
@@ -69,8 +142,7 @@ fun FloatingActionButtons(
     onUpdateProgress: (Float) -> Unit,
     onUpdateStart: () -> Unit,
     onUpdateComplete: () -> Unit,
-
-    ) {
+) {
     var showCategorySelection by remember { mutableStateOf(false) }
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
 
@@ -80,13 +152,13 @@ fun FloatingActionButtons(
                 onClick = { showCategorySelection = true },
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
-                Icon(Icons.Default.Category, "Select Category")
+                Icon(Icons.Default.Category, null)
             }
             FloatingActionButton(
                 onClick = onToggleNavBar,
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
-                Icon(Icons.Default.Home, "Toggle Navigation Bar")
+                Icon(Icons.Default.Home, null)
             }
             FloatingActionButton(
                 onClick = onToggleFilter,
@@ -94,24 +166,23 @@ fun FloatingActionButtons(
             ) {
                 Icon(
                     if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
-                    "Toggle Filter"
+                    null
                 )
             }
-
             FloatingActionButton(
                 onClick = { showDialogeDataBaseEditer = true },
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Icon(
                     if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia,
-                    "Dialoge"
+                    null
                 )
             }
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
                 if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                if (showFloatingButtons) "Hide Buttons" else "Show Buttons"
+                null
             )
         }
     }
@@ -131,14 +202,12 @@ fun FloatingActionButtons(
         DialogeDataBaseEditer(
             viewModel = viewModel,
             onDismiss = { showDialogeDataBaseEditer = false },
-            coroutineScope=coroutineScope  ,
-            onUpdateStart=onUpdateStart,
-            onUpdateProgress=onUpdateProgress,
-            onUpdateComplete=onUpdateComplete,
-
+            coroutineScope = coroutineScope,
+            onUpdateStart = onUpdateStart,
+            onUpdateProgress = onUpdateProgress,
+            onUpdateComplete = onUpdateComplete,
         )
     }
-
 }
 
 @Composable
@@ -148,17 +217,16 @@ fun DialogeDataBaseEditer(
     coroutineScope: CoroutineScope,
     onUpdateStart: () -> Unit,
     onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit ,
+    onUpdateComplete: () -> Unit,
 ) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showUpdateConfirmationDialog by remember { mutableStateOf(false) }
 
-
     AlertDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Firebase Data",
+                "Firebase Data",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -169,105 +237,78 @@ fun DialogeDataBaseEditer(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 DialogButton(
-                    text = "updateCategorieTabelee",
-                    icon = Icons.Default.Upload,
-                    onClick = {
-                        showUpdateConfirmationDialog = true
-                    },
-                    tint2 = Color.Red
+                    "updateCategorieTabelee",
+                    Icons.Default.Upload,
+                    { showUpdateConfirmationDialog = true },
+                    Color.Red
                 )
-
-
-                // DialogButton
                 DialogButton(
-                    text = "giveNumAuSubCategorieArticle",
-                    icon = Icons.Default.Mode,
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.giveNumAuSubCategorieArticle()
+                    "giveNumAuSubCategorieArticle",
+                    Icons.Default.Mode,
+                    { coroutineScope.launch { viewModel.giveNumAuSubCategorieArticle() } },
+                    Color.Red
+                )
+                HorizontalDivider(
+                    color = Color.Red,
+                    thickness = 5.dp,
+                    modifier = Modifier.padding(8.dp)
+                )
+                DialogButton(
+                    "Delete Ref Classment",
+                    Icons.Default.Delete,
+                    { showConfirmationDialog = true },
+                    Color.Blue
+                )
+                HorizontalDivider(
+                    color = Color.Blue,
+                    thickness = 5.dp,
+                    modifier = Modifier.padding(8.dp)
+                )
+                DialogButton("updateChangeInClassmentToeDBJetPackExport", Icons.Default.Refresh, {
+                    coroutineScope.launch {
+                        onUpdateStart()
+                        onDismiss()
+                        try {
+                            viewModel.updateChangeInClassmentToeDBJetPackExport(onUpdateProgress)
+                        } finally {
+                            onUpdateComplete()
                         }
-                    },
-                    tint2 = Color.Red
-                )
-                HorizontalDivider(color = Color.Red,thickness=5.dp, modifier = Modifier.padding(8.dp))
-
-                DialogButton(
-                    text = "Delete Ref Classment ",
-                    icon = Icons.Default.Delete,
-                    onClick = {
-                        showConfirmationDialog = true
-                    },
-                    tint2 = Color.Blue
-                )
-
-                HorizontalDivider(color = Color.Blue,thickness=5.dp, modifier = Modifier.padding(8.dp))
-
-                DialogButton(
-                    text = "updateChangeInClassmentToeDBJetPackExport",
-                    icon = Icons.Default.Refresh,
-                    onClick = {
-                        coroutineScope.launch {
-                            onUpdateStart()
-                            onDismiss()
-                            try {
-                                viewModel.updateChangeInClassmentToeDBJetPackExport { progress ->
-                                    onUpdateProgress(progress)
-                                }
-                            } finally {
-                                onUpdateComplete()
-                            }
-                        }
-                    },
-                    tint2 = Color.Black
-                )
+                    }
+                }, Color.Black)
             }
-
         },
     )
     if (showConfirmationDialog) {
         ConfirmationDialog(
             onDismiss = { showConfirmationDialog = false },
             onConfirm = {
-                coroutineScope.launch {
-                    viewModel.delete()
-                }
+                coroutineScope.launch { viewModel.delete() }
                 showConfirmationDialog = false
                 onDismiss()
             }
         )
     }
-
     if (showUpdateConfirmationDialog) {
         ConfirmationDialog(
             onDismiss = { showUpdateConfirmationDialog = false },
             onConfirm = {
-                coroutineScope.launch {
-                    viewModel.updateCategorieTabelee()
-                }
+                coroutineScope.launch { viewModel.updateCategorieTabelee() }
                 showUpdateConfirmationDialog = false
                 onDismiss()
             }
         )
     }
-
 }
 
 @Composable
-fun ConfirmationDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
+fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = {
-            Text(text = "Confirm Action")
-        },
-        text = {
-            Text(text = "Are you sure you want to proceed?")
-        },
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Action") },
+        text = { Text("Are you sure you want to proceed?") },
         confirmButton = {
             Button(
-                onClick = { onConfirm() },
+                onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
                 Text("Confirm")
@@ -275,13 +316,105 @@ fun ConfirmationDialog(
         },
         dismissButton = {
             Button(
-                onClick = { onDismiss() },
+                onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
             ) {
                 Text("Cancel")
             }
         }
     )
+}
+
+@Composable
+fun CategorySelectionWindow(
+    categories: List<CategoriesTabelle>,
+    onDismiss: () -> Unit,
+    viewModel: ClassementsArticlesViewModel,
+    onCategorySelected: (CategoriesTabelle) -> Unit,
+) {
+    var multiSelectionMode by remember { mutableStateOf(false) }
+    var selectedCategories by remember { mutableStateOf<List<CategoriesTabelle>>(emptyList()) }
+    var movingCategory by remember { mutableStateOf<CategoriesTabelle?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "Select Category",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    contentPadding = PaddingValues(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(categories) { category ->
+                        CategoryItem(
+                            category = category,
+                            isSelected = category in selectedCategories,
+                            isMoving = category == movingCategory,
+                            onClick = {
+                                when {
+                                    multiSelectionMode -> selectedCategories =
+                                        selectedCategories.toMutableList().apply {
+                                            if (contains(category)) remove(category) else add(
+                                                category
+                                            )
+                                        }
+
+                                    movingCategory != null -> {
+                                        viewModel.moveCategory(movingCategory!!, category)
+                                        movingCategory = null
+                                    }
+
+                                    else -> {
+                                        onCategorySelected(category)
+                                        onDismiss()
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(onClick = {
+                        multiSelectionMode = !multiSelectionMode
+                        if (!multiSelectionMode) selectedCategories = emptyList()
+                        movingCategory = null
+                    }) {
+                        Text(if (multiSelectionMode) "Cancel" else "Select Multiple")
+                    }
+                    if (multiSelectionMode) {
+                        Button(
+                            onClick = {
+                                viewModel.reorderCategories(selectedCategories)
+                                multiSelectionMode = false
+                                selectedCategories = emptyList()
+                            },
+                            enabled = selectedCategories.isNotEmpty()
+                        ) {
+                            Text("Reorder")
+                        }
+                    } else if (movingCategory != null) {
+                        Button(onClick = { movingCategory = null }) {
+                            Text("Cancel Move")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -310,150 +443,37 @@ fun CategoryItem(
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            AutoResizedTextFC(category.nomCategorieInCategoriesTabele, maxLines = 2)
+            AutoResizedText(category.nomCategorieInCategoriesTabele, maxLines = 2)
         }
     }
 }
+
 @Composable
-fun AutoResizedTextFC(
+fun AutoResizedText(
     text: String,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
-    color: Color = style.color,
-    textAlign: TextAlign = TextAlign.Center,
-    bodyLarge: Boolean = false,
+    color: Color = MaterialTheme.colorScheme.onSurface,
     maxLines: Int = Int.MAX_VALUE
 ) {
-    var resizedTextStyle by remember { mutableStateOf(style) }
-    var shouldDraw by remember { mutableStateOf(false) }
+    val initialFontSize = MaterialTheme.typography.bodyMedium.fontSize
+    var fontSize by remember { mutableStateOf(initialFontSize) }
+    var readyToDraw by remember { mutableStateOf(false) }
 
-    val defaultFontSize =
-        if (bodyLarge) MaterialTheme.typography.bodyLarge.fontSize else MaterialTheme.typography.bodyMedium.fontSize
-
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = color,
-            modifier = Modifier.drawWithContent {
-                if (shouldDraw) drawContent()
-            },
-            softWrap = true,
-            style = resizedTextStyle,
-            textAlign = textAlign,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
-            onTextLayout = { result ->
-                if (result.didOverflowWidth) {
-                    if (style.fontSize.isUnspecified) {
-                        resizedTextStyle = resizedTextStyle.copy(fontSize = defaultFontSize)
-                    }
-                    resizedTextStyle =
-                        resizedTextStyle.copy(fontSize = resizedTextStyle.fontSize * 0.95)
-                } else {
-                    shouldDraw = true
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun CategorySelectionWindow(
-    categories: List<CategoriesTabelle>,
-    onDismiss: () -> Unit,
-    viewModel: ClassementsArticlesViewModel,
-    onCategorySelected: (CategoriesTabelle) -> Unit,
-
-    ) {
-    var multiSelectionMode by remember { mutableStateOf(false) }
-    var selectedCategories by remember { mutableStateOf<List<CategoriesTabelle>>(emptyList()) }
-    var movingCategory by remember { mutableStateOf<CategoriesTabelle?>(null) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.8f),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    "Select Category",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(categories) { category ->
-                        CategoryItem(
-                            category = category,
-                            isSelected = category in selectedCategories,
-                            isMoving = category == movingCategory,
-                            onClick = {
-                                if (multiSelectionMode) {
-                                    selectedCategories = if (category in selectedCategories) {
-                                        selectedCategories - category
-                                    } else {
-                                        selectedCategories + category
-                                    }
-                                } else if (movingCategory != null) {
-                                    viewModel.moveCategory(movingCategory!!, category)
-                                    movingCategory = null
-                                } else {
-                                    onCategorySelected(category)
-                                    onDismiss()
-                                }
-                            }
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(
-                        onClick = {
-                            multiSelectionMode = !multiSelectionMode
-                            if (!multiSelectionMode) {
-                                selectedCategories = emptyList()
-                            }
-                            movingCategory = null
-                        }
-                    ) {
-                        Text(if (multiSelectionMode) "Cancel" else "Select Multiple")
-                    }
-                    if (multiSelectionMode) {
-                        Button(
-                            onClick = {
-                                viewModel.reorderCategories(selectedCategories)
-                                multiSelectionMode = false
-                                selectedCategories = emptyList()
-                            },
-                            enabled = selectedCategories.isNotEmpty()
-                        ) {
-                            Text("Reorder")
-                        }
-                    } else if (movingCategory != null) {
-                        Button(
-                            onClick = {
-                                movingCategory = null
-                            }
-                        ) {
-                            Text("Cancel Move")
-                        }
-                    }
-                }
+    Text(
+        text = text,
+        color = color,
+        fontSize = fontSize,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier.drawWithContent { if (readyToDraw) drawContent() },
+        onTextLayout = { textLayoutResult ->
+            if (textLayoutResult.didOverflowHeight) {
+                fontSize *= 0.9f
+            } else {
+                readyToDraw = true
             }
         }
-    }
+    )
 }
+
+
