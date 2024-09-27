@@ -1,4 +1,4 @@
-package f_credits.f_2_CreditsClients
+package g_BoardStatistiques.f_2_CreditsClients
 
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement

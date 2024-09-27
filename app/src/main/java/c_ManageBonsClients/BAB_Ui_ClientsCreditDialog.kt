@@ -48,7 +48,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
-import f_credits.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
+import g_BoardStatistiques.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
 import g_BoardStatistiques.BoardStatistiquesStatViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
