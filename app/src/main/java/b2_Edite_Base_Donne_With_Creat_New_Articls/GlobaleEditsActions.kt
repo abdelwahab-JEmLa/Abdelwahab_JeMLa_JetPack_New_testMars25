@@ -209,7 +209,6 @@ fun DialogeDataBaseEditer(
         ConfirmationDialog(
             onDismiss = { showConfirmationDialog = false },
             onConfirm = {
-                coroutineScope.launch { viewModel.delete() }
                 showConfirmationDialog = false
                 onDismiss()
             }

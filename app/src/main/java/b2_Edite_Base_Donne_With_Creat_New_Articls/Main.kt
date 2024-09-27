@@ -175,7 +175,7 @@ class ClassementsArticlesRepository(private val database: FirebaseDatabase) {
             it.getValue(CategoriesTabelle::class.java)
         }.sortedBy { it.idClassementCategorieInCategoriesTabele }
 
-    suspend fun updateArticles(articles: List<ClassementsArticlesTabel>) {
+     fun updateArticles(articles: List<ClassementsArticlesTabel>) {
         articles.forEach { article ->
             refClassmentsArtData.child(article.idArticle.toString()).setValue(article)
         }
@@ -188,11 +188,11 @@ class ClassementsArticlesRepository(private val database: FirebaseDatabase) {
         }
     }
 
-    suspend fun updateArticleDisponibility(articleId: Long, newState: String) {
+     fun updateArticleDisponibility(articleId: Long, newState: String) {
         refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newState)
     }
 
-    suspend fun updateDBJetPackExport(article: ClassementsArticlesTabel, category: CategoriesTabelle?) {
+     fun updateDBJetPackExport(article: ClassementsArticlesTabel, category: CategoriesTabelle?) {
         database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
             .updateChildren(
                 mapOf(
