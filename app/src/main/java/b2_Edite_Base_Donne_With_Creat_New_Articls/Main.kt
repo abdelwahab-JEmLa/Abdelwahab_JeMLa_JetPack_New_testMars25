@@ -40,6 +40,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
+    var filterNonDispo by remember { mutableStateOf(false) }
 
     Scaffold(
         floatingActionButton = {
@@ -47,7 +48,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 showFloatingButtons = showFloatingButtons,
                 onToggleNavBar = onToggleNavBar,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleFilter = viewModel::toggleFilter,
+                onToggleFilter = {
+                    viewModel.toggleFilter()
+                    filterNonDispo = !filterNonDispo
+                },
                 showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
@@ -67,9 +71,11 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 item(span = { GridItemSpan(gridColumns) }) {
                     CategoryHeaderECB(category = category)
                 }
-                items(uiState.articlesBaseDonneECB.filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }) { article ->
+                items(uiState.articlesBaseDonneECB.filter {
+                    it.nomCategorie == category.nomCategorieInCategoriesTabele &&
+                            (!filterNonDispo || it.diponibilityState != "")
+                }) { article ->
                     ArticleItemECB(article = article)
-
                 }
             }
         }

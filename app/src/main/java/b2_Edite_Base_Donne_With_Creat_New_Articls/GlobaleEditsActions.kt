@@ -77,7 +77,7 @@ fun FloatingActionButtonGroup(
     showDialogeDataBaseEditer: Boolean,
     onChangeGridColumns: (Int) -> Unit
 ) {
-    FloatingActionButton(
+    FloatingActionButton(       //TODO utilise loop pour diminue la taille du code
         onClick = onCategorySelectionClick,
         modifier = Modifier.padding(bottom = 16.dp)
     ) {
