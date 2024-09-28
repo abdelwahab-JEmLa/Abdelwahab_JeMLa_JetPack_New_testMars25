@@ -36,7 +36,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     onUpdateComplete: () -> Unit,
 ) {
     val uiState by viewModel.uiStateHeaderViewsModel.collectAsState()
-    var showFloatingButtons by remember { mutableStateOf(true) }
+    var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
 
     val gridState = rememberLazyGridState()

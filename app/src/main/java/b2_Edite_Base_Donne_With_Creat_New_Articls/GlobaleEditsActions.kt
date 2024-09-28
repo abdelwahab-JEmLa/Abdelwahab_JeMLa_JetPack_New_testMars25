@@ -87,7 +87,7 @@ fun FloatingActionButtonGroup(
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 4
-    var showContentDescription by remember { mutableStateOf(false) }
+    var showContentDescription by remember { mutableStateOf(true) }
 
     val buttons = listOf(
         Triple(Icons.Default.Category, "Category", onCategorySelectionClick),
