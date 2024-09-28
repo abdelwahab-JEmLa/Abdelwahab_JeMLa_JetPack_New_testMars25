@@ -1,12 +1,10 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
@@ -14,12 +12,10 @@ import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PermMedia
-import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,12 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.abdelwahabjemlajetpack.DialogButton
 import kotlinx.coroutines.CoroutineScope
 import kotlin.random.Random
 
@@ -71,18 +64,6 @@ fun FloatingActionButtons(
                 null
             )
         }
-    }
-
-
-    if (showDialogeDataBaseEditer) {
-        DialogeDataBaseEditer(
-            viewModel = viewModel,
-            onDismiss = { showDialogeDataBaseEditer = false },
-            coroutineScope = coroutineScope,
-            onUpdateStart = onUpdateStart,
-            onUpdateProgress = onUpdateProgress,
-            onUpdateComplete = onUpdateComplete,
-        )
     }
 }
 
@@ -134,63 +115,6 @@ fun FloatingActionButtonGroup(
     }
 }
 
-@Composable
-fun DialogeDataBaseEditer(
-    onDismiss: () -> Unit,
-    viewModel: HeadOfViewModels,
-    coroutineScope: CoroutineScope,
-    onUpdateStart: () -> Unit,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit,
-) {
-    var showConfirmationDialog by remember { mutableStateOf(false) }
-    var showUpdateConfirmationDialog by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Firebase Data",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-        },
-        confirmButton = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                DialogButton(
-                    "updateCategorieTabelee",
-                    Icons.Default.Upload,
-                    { showUpdateConfirmationDialog = true },
-                    Color.Red
-                )
-                HorizontalDivider(
-                    color = Color.Red,
-                    thickness = 5.dp,
-                    modifier = Modifier.padding(8.dp)
-                )
-                DialogButton(
-                    "Delete Ref Classment",
-                    Icons.Default.Delete,
-                    { showConfirmationDialog = true },
-                    Color.Blue
-                )
-            }
-        },
-    )
-    if (showConfirmationDialog) {
-        ConfirmationDialog(
-            onDismiss = { showConfirmationDialog = false },
-            onConfirm = {
-                showConfirmationDialog = false
-                onDismiss()
-            }
-        )
-    }
-
-}
 
 @Composable
 fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
