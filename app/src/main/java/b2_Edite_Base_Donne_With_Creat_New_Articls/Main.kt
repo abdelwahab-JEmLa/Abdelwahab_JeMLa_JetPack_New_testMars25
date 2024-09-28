@@ -1,5 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,27 +33,31 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+
+import androidx.lifecycle.viewModelScope
+import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 @Composable
-fun MainFragmentEditeDataBaseWithCreatNewAticles(
-    viewModel: ClassementsArticlesViewModel,
+fun MainFragmentEditDatabaseWithCreateNewArticles(
+    viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
     onUpdateStart: () -> Unit,
     onUpdateProgress: (Float) -> Unit,
     onUpdateComplete: () -> Unit,
 ) {
-    val articles by viewModel.articlesList.collectAsState()
-    val categories by viewModel.categorieList.collectAsState()
-    val showOnlyWithFilter by viewModel.showOnlyWithFilter.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
     var gridColumns by remember { mutableStateOf(3) }
@@ -67,7 +72,7 @@ fun MainFragmentEditeDataBaseWithCreatNewAticles(
                 onToggleNavBar = onToggleNavBar,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
                 onToggleFilter = viewModel::toggleFilter,
-                showOnlyWithFilter = showOnlyWithFilter,
+                showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
                 onUpdateStart = onUpdateStart,
@@ -82,14 +87,14 @@ fun MainFragmentEditeDataBaseWithCreatNewAticles(
             state = gridState,
             modifier = Modifier.padding(padding)
         ) {
-            categories.forEach { category ->
+            uiState.categories.forEach { category ->
                 item(span = { GridItemSpan(gridColumns) }) {
                     CategoryHeader(
                         category = category,
-                        isSelected = holdedIdCateForMove == category.idCategorieInCategoriesTabele,
+                        isSelected = holdedIdCateForMove == category.idCategorieCT,
                     )
                 }
-                items(articles.filter { it.idCategorie == category.idCategorieInCategoriesTabele.toDouble() }) { article ->
+                items(uiState.articles.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
                     ArticleItem(
                         article = article,
                     )
@@ -99,11 +104,9 @@ fun MainFragmentEditeDataBaseWithCreatNewAticles(
     }
 }
 
-
-
 @Composable
 fun CategoryHeader(
-    category: CategoriesTabelle,
+    category: CategorieTabelee,
     isSelected: Boolean,
 ) {
     Box(
@@ -113,16 +116,17 @@ fun CategoryHeader(
             .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
     ) {
         Text(
-            text = category.nomCategorieInCategoriesTabele,
+            text = category.nomCategorieCT,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(16.dp)
         )
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun ArticleItem(article: ClassementsArticlesTabel) {
+fun ArticleItem(
+    article: ClassementsArticlesTabel,
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -132,19 +136,18 @@ fun ArticleItem(article: ClassementsArticlesTabel) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f) ,
+                    .aspectRatio(1f),
                 contentAlignment = Alignment.Center
             ) {
+
                 ImageDisplayerWithGlide(article)
 
                 DisponibilityOverlay(article.diponibilityState)
             }
-            AutoResizedTextClas(text = article.nomArticleFinale,)
+            AutoResizedTextClas(text = article.nomArticleFinale)
         }
     }
 }
-
-
 
 @Composable
 fun OverlayContent(color: Color, icon: ImageVector) {
@@ -158,226 +161,71 @@ fun OverlayContent(color: Color, icon: ImageVector) {
     }
 }
 
+class HeadOfViewModels(
+    private val repositoryCreatAndEditeInBaseDonne: CreatAndEditeInBaseDonneRepository
+) : ViewModel() {
+    val uiState = repositoryCreatAndEditeInBaseDonne.uiState
 
+    fun toggleFilter() = repositoryCreatAndEditeInBaseDonne.toggleFilter()
 
-// Repository
-class ClassementsArticlesRepository(private val database: FirebaseDatabase) {
-    private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")
-    private val refCategorieTabelee = database.getReference("H_CategorieTabele")
-
-    suspend fun getArticles(): List<ClassementsArticlesTabel> =
-        refClassmentsArtData.get().await().children.mapNotNull {
-            it.getValue(ClassementsArticlesTabel::class.java)
-        }
-
-    suspend fun getCategories(): List<CategoriesTabelle> =
-        refCategorieTabelee.get().await().children.mapNotNull {
-            it.getValue(CategoriesTabelle::class.java)
-        }.sortedBy { it.idClassementCategorieInCategoriesTabele }
-
-     fun updateArticles(articles: List<ClassementsArticlesTabel>) {
-        articles.forEach { article ->
-            refClassmentsArtData.child(article.idArticle.toString()).setValue(article)
-        }
+    fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
+        viewModelScope.launch { repositoryCreatAndEditeInBaseDonne.updateArticleDisponibility(articleId, newDisponibilityState) }
     }
 
-    suspend fun updateCategories(categories: List<CategoriesTabelle>) {
-        refCategorieTabelee.removeValue().await()
-        categories.forEach { category ->
-            refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString()).setValue(category)
-        }
-    }
-
-     fun updateArticleDisponibility(articleId: Long, newState: String) {
-        refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newState)
-    }
-
-     fun updateDBJetPackExport(article: ClassementsArticlesTabel, category: CategoriesTabelle?) {
-        database.getReference("e_DBJetPackExport").child(article.idArticle.toString())
-            .updateChildren(
-                mapOf(
-                    "idCategorie" to (category?.idClassementCategorieInCategoriesTabele ?: 0.0),
-                    "classementCate" to article.classementArticleAuCategorieCT,
-                    "diponibilityState" to article.diponibilityState
-                )
-            )
-    }
 }
 
-// ViewModel
-class ClassementsArticlesViewModel(private val repository: ClassementsArticlesRepository) : ViewModel() {
-    private val _articlesList = MutableStateFlow<List<ClassementsArticlesTabel>>(emptyList())
-    private val _categorieList = MutableStateFlow<List<CategoriesTabelle>>(emptyList())
-    private val _showOnlyWithFilter = MutableStateFlow(false)
+class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
+    private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")
+    private val refCategorieTabelee = database.getReference("H_CategorieTabele")
+    private val refDBJetPackExport = database.getReference("e_DBJetPackExport")
 
-    val articlesList = combine(_articlesList, _categorieList, _showOnlyWithFilter) { articles, categories, filterKey ->
-        val sortedArticles = articles.sortedWith(
-            compareBy<ClassementsArticlesTabel> { article ->
-                categories.find { it.idCategorieInCategoriesTabele == article.idCategorie.toLong() }?.idClassementCategorieInCategoriesTabele
-                    ?: Double.MAX_VALUE
-            }.thenBy { it.classementArticleAuCategorieCT }
-        )
-        if (filterKey) sortedArticles.filter { it.diponibilityState == "" } else sortedArticles
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
-    val categorieList = _categorieList.asStateFlow()
-    val showOnlyWithFilter = _showOnlyWithFilter.asStateFlow()
+    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnModel())
+    val uiState = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            _articlesList.value = repository.getArticles()
-            _categorieList.value = repository.getCategories()
+        viewModelScope.launch {     //TODO fix Unresolved reference. None of the following candidates is applicable because of receiver type mismatch:
+            //public val ViewModel.viewModelScope: CoroutineScope defined in androidx.lifecycle
+            initDataFromFirebase()
         }
     }
 
-    fun giveNumAuSubCategorieArticle() {
-        viewModelScope.launch {
-            val updatedArticles = updateArticlesRanking(_articlesList.value, _categorieList.value)
-            _articlesList.value = updatedArticles
-            repository.updateArticles(updatedArticles)
-        }
-    }
+    private suspend fun initDataFromFirebase() {
+        try {
+            val articlesSnapshot = refClassmentsArtData.get().await()
+            val articles = articlesSnapshot.children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
 
-    fun updateCategorieTabelee() {
-        viewModelScope.launch {
-            val categories = createCategoriesFromArticles(_articlesList.value)
-            _categorieList.value = categories
-            repository.updateCategories(categories)
-            updateArticlesWithNewCategoryIds(_articlesList.value)
-        }
-    }
+            val categoriesSnapshot = refCategorieTabelee.get().await()
+            val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
+                .sortedBy { it.idClassementCategorieCT }
 
-    fun reorderCategories(categoriesToMove: List<CategoriesTabelle>) {
-        viewModelScope.launch {
-            val updatedCategories = reorderMultipleCategories(_categorieList.value, categoriesToMove)
-            _categorieList.value = updatedCategories
-            repository.updateCategories(updatedCategories)
+            _uiState.update { currentState ->
+                currentState.copy(
+                    articles = articles,
+                    categories = categories
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("ClassementsArticlesRepo", "Error loading data", e)
         }
     }
 
     fun toggleFilter() {
-        _showOnlyWithFilter.value = !_showOnlyWithFilter.value
-    }
-
-    fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
-        viewModelScope.launch {
-            val updatedArticles = updateArticleDisponibilityState(_articlesList.value, articleId, newDisponibilityState)
-            _articlesList.value = updatedArticles
-            repository.updateArticleDisponibility(articleId, newDisponibilityState)
+        _uiState.update { currentState ->
+            currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
         }
     }
 
-    suspend fun updateChangeInClassmentToeDBJetPackExport(onProgress: (Float) -> Unit) {
-        val articles = articlesList.value
-        val categories = categorieList.value
-        val totalItems = articles.size
-
-        articles.forEachIndexed { index, article ->
-            val category = categories.find { it.idCategorieInCategoriesTabele == article.idCategorie.toLong() }
-            repository.updateDBJetPackExport(article, category)
-            onProgress((index + 1).toFloat() / totalItems)
-        }
-    }
-
-    // Helper functions
-    private fun updateArticlesRanking(
-        articles: List<ClassementsArticlesTabel>,
-        categories: List<CategoriesTabelle>
-    ): List<ClassementsArticlesTabel> {
-        return articles.groupBy { it.idCategorie.toLong() }
-            .flatMap { (_, categoryArticles) ->
-                categoryArticles.sortedWith(
-                    compareBy(
-                        { it.classementCate },
-                        { it.classementArticleAuCategorieCT }
-                    )
-                )
-                    .mapIndexed { index, article ->
-                        article.copy(
-                            classementArticleAuCategorieCT = (index + 1).toDouble(),
-                            classementCate = (index + 1).toDouble()
-                        )
-                    }
+    suspend fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
+        _uiState.update { currentState ->
+            val updatedArticles = currentState.articles.map { article ->
+                if (article.idArticle == articleId) article.copy(diponibilityState = newDisponibilityState) else article
             }
-    }
-
-    private fun createCategoriesFromArticles(articles: List<ClassementsArticlesTabel>): List<CategoriesTabelle> {
-        val maxExistingId = articles.maxOfOrNull { it.idCategorie } ?: 0.0
-
-        val defaultCategories = listOf(
-            CategoriesTabelle(
-                idCategorieInCategoriesTabele = (maxExistingId + 1).toLong(),
-                idClassementCategorieInCategoriesTabele = maxExistingId + 1,
-                nomCategorieInCategoriesTabele = "Consmitiques"
-            ),
-            CategoriesTabelle(
-                idCategorieInCategoriesTabele = (maxExistingId + 2).toLong(),
-                idClassementCategorieInCategoriesTabele = maxExistingId + 2,
-                nomCategorieInCategoriesTabele = "Confiseries"
-            ),
-            CategoriesTabelle(
-                idCategorieInCategoriesTabele = (maxExistingId + 3).toLong(),
-                idClassementCategorieInCategoriesTabele = maxExistingId + 3,
-                nomCategorieInCategoriesTabele = "TeBnages"
-            )
-        )
-
-        val articleCategories = articles.groupBy { it.nomCategorie }
-            .map { (nomCategorie, categoryArticles) ->
-                CategoriesTabelle(
-                    idCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie?.toLong() ?: 0,
-                    idClassementCategorieInCategoriesTabele = categoryArticles.firstOrNull()?.idCategorie ?: 0.0,
-                    nomCategorieInCategoriesTabele = nomCategorie
-                )
-            }
-
-        return (defaultCategories + articleCategories).sortedBy { it.idClassementCategorieInCategoriesTabele }
-    }
-
-    private suspend fun updateArticlesWithNewCategoryIds(articles: List<ClassementsArticlesTabel>) {
-        val updatedArticles = articles.map { article ->
-            article.copy(
-                classementInCategoriesCT = article.idCategorie,
-                classementArticleAuCategorieCT = article.classementCate
-            )
+            currentState.copy(articles = updatedArticles)
         }
-        _articlesList.value = updatedArticles
-        repository.updateArticles(updatedArticles)
+        refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
     }
 
-    private fun reorderMultipleCategories(
-        currentCategories: List<CategoriesTabelle>,
-        categoriesToMove: List<CategoriesTabelle>
-    ): List<CategoriesTabelle> {
-        val mutableCategories = currentCategories.toMutableList()
-        val firstSelectedCategoryIndex = mutableCategories.indexOfFirst {
-            it.idCategorieInCategoriesTabele == categoriesToMove.first().idCategorieInCategoriesTabele
-        }
-
-        if (firstSelectedCategoryIndex != -1) {
-            mutableCategories.removeAll(categoriesToMove)
-            mutableCategories.addAll(firstSelectedCategoryIndex, categoriesToMove)
-            return mutableCategories.mapIndexed { index, category ->
-                category.copy(idClassementCategorieInCategoriesTabele = (index + 1).toDouble())
-            }
-        }
-        return currentCategories
-    }
-
-    private fun updateArticleDisponibilityState(
-        articles: List<ClassementsArticlesTabel>,
-        articleId: Long,
-        newDisponibilityState: String
-    ): List<ClassementsArticlesTabel> {
-        return articles.map { article ->
-            if (article.idArticle == articleId)
-                article.copy(diponibilityState = newDisponibilityState)
-            else
-                article
-        }
-    }
 }
-
 
 
 data class ClassementsArticlesTabel(
@@ -392,8 +240,13 @@ data class ClassementsArticlesTabel(
     val diponibilityState: String = ""
 )
 
-data class CategoriesTabelle(
-    val idCategorieInCategoriesTabele: Long = 0,
-    var idClassementCategorieInCategoriesTabele: Double = 0.0,
-    val nomCategorieInCategoriesTabele: String = "",
+data class CategorieTabelee(
+    val idCategorieCT: Long = 0,
+    var idClassementCategorieCT: Double = 0.0,
+    val nomCategorieCT: String = "",
+)
+data class CreatAndEditeInBaseDonnModel(
+    val articles: List<ClassementsArticlesTabel> = emptyList(),
+    val categories: List<CategorieTabelee> = emptyList(),
+    val showOnlyWithFilter: Boolean = false
 )
