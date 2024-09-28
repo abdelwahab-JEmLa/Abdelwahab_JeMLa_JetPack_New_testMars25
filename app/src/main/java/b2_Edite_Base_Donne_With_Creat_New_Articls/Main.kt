@@ -20,7 +20,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
-import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -70,6 +69,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 }
                 items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
                     ArticleItemECB(article = article)
+
                 }
             }
         }
@@ -96,7 +96,11 @@ class HeadOfViewModels(
             _uiStateHeaderViewsModel.update { it.copy(isLoading = true) }
 
             val articlesClassementSnapshot = refDBJetPackExport.get().await()
-            val articles = articlesClassementSnapshot.children.mapNotNull { it.getValue(BaseDonneECBTabelle::class.java) }
+            val articles = articlesClassementSnapshot.children.mapNotNull { snapshot ->
+                snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
+                    updateIdArticle(snapshot.value as? Map<String, Any?> ?: emptyMap())
+                }
+            }
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
             val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
@@ -125,8 +129,14 @@ class HeadOfViewModels(
         _uiStateHeaderViewsModel.update { newState }
     }
 
-
     fun refreshData() {
+        viewModelScope.launch {
+            initDataFromFirebase()
+        }
+    }
+
+    // Fonction pour lancer initDataFromFirebase depuis la vue
+    fun loadDataFromFirebase() {
         viewModelScope.launch {
             initDataFromFirebase()
         }
@@ -157,7 +167,7 @@ class HeadOfViewModelFactory() : ViewModelProvider.Factory {
 }
 
 data class BaseDonneECBTabelle(
-    @SerializedName("idArticle") val idArticleECB: Int = 0,
+    var idArticleECB: Int = 0,
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
     var nomArab: String = "",
@@ -196,6 +206,10 @@ data class BaseDonneECBTabelle(
     var monBeneficeUniter: Double = 0.0
 ) {
     constructor() : this(0)
+
+    fun updateIdArticle(value: Map<String, Any?>) {
+        idArticleECB = (value["idArticle"] as? Long)?.toInt() ?: 0
+    }
 }
 
 data class CategoriesTabelleECB(
