@@ -2,9 +2,6 @@ package com.example.abdelwahabjemlajetpack
 
 import ZA_Learn_WhelPiker.PickerExample
 import a_RoomDB.AppDatabase
-import android.Manifest
-import android.app.Application
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -59,16 +56,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import b2_Edite_Base_Donne_With_Creat_New_Articls.CreatAndEditeInBaseDonneRepository
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.A_Edite_Base_Screen
@@ -76,8 +68,6 @@ import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
-import com.google.firebase.FirebaseApp
-import com.google.firebase.database.FirebaseDatabase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
@@ -89,25 +79,6 @@ import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
 import java.util.Locale
 
-class MyApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        FirebaseApp.initializeApp(this)
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
-    }
-}
-
-class MainAppViewModelFactory(
-    private val articleDao: ArticleDao,
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return EditeBaseDonneViewModel(articleDao) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
 
 class MainActivity : ComponentActivity() {
     private val permissionHandler by lazy {
@@ -188,12 +159,12 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             database = database,
                             viewModels = AppViewModels(
+                                headOfViewModels,
                                 editeBaseDonneViewModel,
                                 creditsViewModel,
                                 creditsClientsViewModel,
                                 boardStatistiquesStatViewModel,
-                                classementsArticlesViewModel,
-                                headOfViewModels
+                                classementsArticlesViewModel
                             ),
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                             onUpdateStart = { showProgressBar = true },
@@ -210,41 +181,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-class PermissionHandler(private val activity: ComponentActivity) {
-    private val PERMISSION_REQUEST_CODE = 101
-
-    fun checkAndRequestPermissions() {
-        if (!checkPermission()) {
-            requestPermission()
-        }
-    }
-
-    private fun checkPermission(): Boolean {
-        val result = ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
-        return result == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestPermission() {
-        ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-            PERMISSION_REQUEST_CODE
-        )
-    }
-
-    @Deprecated("This method has been deprecated. Use Activity Result API instead.")
-    fun handlePermissionResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        when (requestCode) {
-            PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted
-                } else {
-                    // Permission denied
-                }
-            }
-        }
-    }
-}
 @Composable
 fun ProgressIndicator(progress: Float) {
     LinearProgressIndicator(
@@ -320,15 +256,6 @@ fun AppNavHost(
         }
     }
 }
-class HeadOfViewModelFactory : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(CreatAndEditeInBaseDonneRepository(FirebaseDatabase.getInstance())) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
 
 object NavigationItems {
     fun getItems() = listOf(
@@ -344,12 +271,12 @@ object NavigationItems {
 }
 
 data class AppViewModels(
+    val headOfViewModels: HeadOfViewModels,
     val editeBaseDonneViewModel: EditeBaseDonneViewModel,
     val creditsViewModel: CreditsViewModel,
     val creditsClientsViewModel: CreditsClientsViewModel,
     val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-    val classementsArticlesViewModel: ClassementsArticlesViewModel,
-    val headOfViewModels: HeadOfViewModels
+    val classementsArticlesViewModel: ClassementsArticlesViewModel
 )
 
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
@@ -463,3 +390,5 @@ fun MenuCard(title: String, route: String, navController: NavHostController, ico
     }
 }
 }
+
+
