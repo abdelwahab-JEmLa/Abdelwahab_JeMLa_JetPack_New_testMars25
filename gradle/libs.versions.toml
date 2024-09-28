@@ -5,6 +5,7 @@ compose = "1.0.0-alpha.1"
 firebaseBom = "33.3.0"
 foundation = "1.7.2"
 gradleVersion = "8.6.1"
+gson = "2.8.9"
 kotlin = "1.9.24"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -46,6 +47,7 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose"
 compose = { module = "com.github.bumptech.glide:compose", version.ref = "compose" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 gradle-v800 = { module = "com.android.tools.build:gradle", version.ref = "gradleVersion" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

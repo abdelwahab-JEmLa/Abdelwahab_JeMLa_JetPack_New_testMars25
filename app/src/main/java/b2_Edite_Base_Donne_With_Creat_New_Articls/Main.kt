@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
+import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -236,7 +237,7 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
 
 
 data class BaseDonneECBTabelle(
-    val idArticleECB: Int = 0,
+    @SerializedName("idArticle") val idArticleECB: Int = 0,
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
     var nomArab: String = "",
@@ -275,7 +276,6 @@ data class BaseDonneECBTabelle(
     var monBeneficeUniter: Double = 0.0
 ) {
     constructor() : this(0)
-    //TODO utilise la serielialisation pour fait que idArticle     val idArticleECB: Int = 0,
 }
 
 data class CategoriesTabelleECB(
