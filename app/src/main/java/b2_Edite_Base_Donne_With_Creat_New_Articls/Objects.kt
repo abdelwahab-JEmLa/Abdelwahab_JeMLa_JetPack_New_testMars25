@@ -24,7 +24,7 @@ import java.io.File
 
 @Composable
 @OptIn(ExperimentalGlideComposeApi::class)
-fun ImageDisplayerWithGlide(article: ClassementsArticlesTabel) {
+fun ImageDisplayerWithGlideECB(article: ClassementsArticlesTabel) {
     val imagePath =
         "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
     val imageExist =
@@ -43,14 +43,14 @@ fun ImageDisplayerWithGlide(article: ClassementsArticlesTabel) {
 }
 
 @Composable
-fun DisponibilityOverlay(state: String) {
+fun DisponibilityOverlayECB(state: String) {
     when (state) {
-        "Non Dispo" -> OverlayContent(color = Color.Black, icon = Icons.Default.TextDecrease)
-        "NonForNewsClients" -> OverlayContent(color = Color.Gray, icon = Icons.Default.Person)
+        "Non Dispo" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
+        "NonForNewsClients" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
     }
 }
 @Composable
-fun AutoResizedTextClas(
+fun AutoResizedTextECB(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.onSurface,

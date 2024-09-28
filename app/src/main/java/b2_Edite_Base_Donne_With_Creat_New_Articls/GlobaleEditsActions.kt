@@ -115,7 +115,6 @@ fun FloatingActionButtonGroup(
     }
 }
 
-
 @Composable
 fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(

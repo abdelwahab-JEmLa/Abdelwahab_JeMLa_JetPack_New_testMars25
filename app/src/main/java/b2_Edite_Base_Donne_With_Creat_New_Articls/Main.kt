@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
+import h_FactoryClassemntsArticles.ClassementsArticlesTabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,8 +55,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
-    var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
-    var gridColumns by remember { mutableStateOf(3) }
+    var gridColumns by remember { mutableStateOf(1) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
@@ -84,13 +84,12 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         ) {
             uiState.categories.forEach { category ->
                 item(span = { GridItemSpan(gridColumns) }) {
-                    CategoryHeader(
+                    CategoryHeaderECB(
                         category = category,
-                        isSelected = holdedIdCateForMove == category.idCategorieCT,
                     )
                 }
                 items(uiState.articles.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
-                    ArticleItem(
+                    ArticleItemECB(
                         article = article,
                     )
                 }
@@ -100,15 +99,13 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 }
 
 @Composable
-fun CategoryHeader(
-    category: CategorieTabelee,
-    isSelected: Boolean,
+fun CategoryHeaderECB(
+    category: CategoriesTabelleECB,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
     ) {
         Text(
             text = category.nomCategorieCT,
@@ -119,7 +116,7 @@ fun CategoryHeader(
 }
 
 @Composable
-fun ArticleItem(
+fun ArticleItemECB(
     article: ClassementsArticlesTabel,
 ) {
     Card(
@@ -135,17 +132,17 @@ fun ArticleItem(
                 contentAlignment = Alignment.Center
             ) {
 
-                ImageDisplayerWithGlide(article)
+                ImageDisplayerWithGlideECB(article)
 
-                DisponibilityOverlay(article.diponibilityState)
+                DisponibilityOverlayECB(article.diponibilityState)
             }
-            AutoResizedTextClas(text = article.nomArticleFinale)
+            AutoResizedTextECB(text = article.nomArticleFinale)
         }
     }
 }
 
 @Composable
-fun OverlayContent(color: Color, icon: ImageVector) {
+fun OverlayContentECB(color: Color, icon: ImageVector) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -177,7 +174,7 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     private val refCategorieTabelee = database.getReference("H_CategorieTabele")
     private val refDBJetPackExport = database.getReference("e_DBJetPackExport")
 
-    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnModel())
+    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
 
 
@@ -192,7 +189,8 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     private suspend fun initDataFromFirebase() {
         try {
             val articlesSnapshot = refClassmentsArtData.get().await()
-            val articles = articlesSnapshot.children.mapNotNull { it.getValue(ClassementsArticlesTabel::class.java) }
+            val articles = articlesSnapshot.children.mapNotNull { it.getValue(
+                BaseDonneECBTabelle::class.java) }
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
             val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
@@ -230,26 +228,55 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     }
 }
 
-
-data class ClassementsArticlesTabel(
-    val idArticle: Long = 0,
-    val nomArticleFinale: String = "",
-    val idCategorie: Double = 0.0,
-    var classementInCategoriesCT: Double = 0.0,
-    val nomCategorie: String = "",
-    var classementArticleAuCategorieCT: Double = 0.0,
-    var itsNewArticleInCateWithID: Boolean = false,
+data class BaseDonneECBTabelle(
+    val idArticle: Int = 0,
+    var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
-    val diponibilityState: String = ""
-)
+    var nomArab: String = "",
+    var autreNomDarticle: String? = null,
+    var nmbrCat: Int = 0,
+    var couleur1: String? = null,
+    var couleur2: String? = null,
+    var couleur3: String? = null,
+    var couleur4: String? = null,
+    var nomCategorie2: String? = null,
+    var nmbrUnite: Int = 0,
+    var nmbrCaron: Int = 0,
+    var affichageUniteState: Boolean = false,
+    var commmentSeVent: String? = null,
+    var afficheBoitSiUniter: String? = null,
+    var monPrixAchat: Double = 0.0,
+    var clienPrixVentUnite: Double = 0.0,
+    var minQuan: Int = 0,
+    var monBenfice: Double = 0.0,
+    var monPrixVent: Double = 0.0,
+    var diponibilityState: String = "",
+    var neaon2: String = "",
+    var idCategorie: Double = 0.0,
+    var funChangeImagsDimention: Boolean = false,
+    var nomCategorie: String = "",
+    var neaon1: Double = 0.0,
+    var lastUpdateState: String = "",
+    var cartonState: String = "",
+    var dateCreationCategorie: String = "",
+    var prixDeVentTotaleChezClient: Double = 0.0,
+    var benficeTotaleEntreMoiEtClien: Double = 0.0,
+    var benificeTotaleEn2: Double = 0.0,
+    var monPrixAchatUniter: Double = 0.0,
+    var monPrixVentUniter: Double = 0.0,
+    var benificeClient: Double = 0.0,
+    var monBeneficeUniter: Double = 0.0
+) {
+    constructor() : this(0)
+}
 
-data class CategorieTabelee(
+data class CategoriesTabelleECB(
     val idCategorieCT: Long = 0,
     var idClassementCategorieCT: Double = 0.0,
     val nomCategorieCT: String = "",
 )
-data class CreatAndEditeInBaseDonnModel(
-    val articles: List<ClassementsArticlesTabel> = emptyList(),
-    val categories: List<CategorieTabelee> = emptyList(),
+data class CreatAndEditeInBaseDonnRepositeryModels(
+    val articles: List<BaseDonneECBTabelle> = emptyList(),
+    val categories: List<CategoriesTabelleECB> = emptyList(),
     val showOnlyWithFilter: Boolean = false
 )
