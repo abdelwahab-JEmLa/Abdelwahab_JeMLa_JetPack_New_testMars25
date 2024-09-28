@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
     viewModel: HeadOfViewModels,
@@ -36,7 +37,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 ) {
     val uiState by viewModel.uiStateHeaderViewsModel.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
-    var gridColumns by remember { mutableStateOf(1) }
+    var gridColumns by remember { mutableStateOf(2) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
@@ -73,7 +74,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 }
                 items(uiState.articlesBaseDonneECB.filter {
                     it.nomCategorie == category.nomCategorieInCategoriesTabele &&
-                            (!filterNonDispo || it.diponibilityState != "")
+                            (!filterNonDispo || it.diponibilityState == "")
                 }) { article ->
                     ArticleItemECB(article = article)
                 }
@@ -81,7 +82,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         }
     }
 }
-
 class HeadOfViewModels(
     private val modifierCreatAndEditeInBaseDonne: CreatAndEditeInBaseDonneModifier
 ) : ViewModel() {

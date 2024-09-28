@@ -1,10 +1,15 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
@@ -15,19 +20,22 @@ import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
-import kotlin.random.Random
 
 @Composable
 fun FloatingActionButtons(
@@ -61,7 +69,7 @@ fun FloatingActionButtons(
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
                 if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                null
+                contentDescription = "Toggle Floating Buttons"
             )
         }
     }
@@ -77,44 +85,60 @@ fun FloatingActionButtonGroup(
     showDialogeDataBaseEditer: Boolean,
     onChangeGridColumns: (Int) -> Unit
 ) {
-    FloatingActionButton(       //TODO utilise loop pour diminue la taille du code
-        onClick = onCategorySelectionClick,
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        Icon(Icons.Default.Category, null)
-    }
-    FloatingActionButton(
-        onClick = onToggleNavBar,
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        Icon(Icons.Default.Home, null)
-    }
-    FloatingActionButton(
-        onClick = onToggleFilter,
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        Icon(
-            if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
-            null
-        )
-    }
-    FloatingActionButton(
-        onClick = onDialogDataBaseEditerClick,
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        Icon(
-            if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia,
-            null
-        )
-    }
-    FloatingActionButton(
-        onClick = { onChangeGridColumns(if (Random.nextBoolean()) 3 else 4 ) },   //TODO ajoute else 5 et 2
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        Icon(Icons.Default.GridView, null)
+    var currentGridColumns by remember { mutableIntStateOf(2) }
+    val maxGridColumns = 4
+    var showContentDescription by remember { mutableStateOf(true) }
+
+    val buttons = listOf(
+        Triple(Icons.Default.Category, "Category", onCategorySelectionClick),
+        Triple(Icons.Default.Home, "Home", onToggleNavBar),
+        Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
+        Triple(if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia, "Database Editor", onDialogDataBaseEditerClick),
+        Triple(Icons.Default.GridView, "Change Grid")
+        {
+            currentGridColumns = (currentGridColumns % maxGridColumns) + 1
+            onChangeGridColumns(currentGridColumns)
+        },
+        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details,
+            "Toggle Description")
+                {
+                    showContentDescription = !showContentDescription
+                }
+    )
+
+    buttons.forEach { (icon, contentDescription, onClick: () -> Unit) ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            if (showContentDescription) {
+                Card(
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .heightIn(min = 30.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = contentDescription,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+            FloatingActionButton(    //TODO fait que les FloatingActionButton soit a gauche et le text a droit
+                onClick = onClick,
+                modifier = Modifier.size(56.dp)
+            ) {
+                Icon(icon, contentDescription = contentDescription)
+            }
+
+        }
     }
 }
-
 @Composable
 fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
@@ -139,6 +163,3 @@ fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
         }
     )
 }
-
-
-
