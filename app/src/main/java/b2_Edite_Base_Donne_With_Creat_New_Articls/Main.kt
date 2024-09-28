@@ -46,6 +46,59 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable
+fun MainFragmentEditDatabaseWithCreateNewArticles(
+    viewModel: HeadOfViewModels,
+    onToggleNavBar: () -> Unit,
+    onUpdateStart: () -> Unit,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateComplete: () -> Unit,
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var showFloatingButtons by remember { mutableStateOf(true) }
+    var gridColumns by remember { mutableStateOf(1) }
+
+    val gridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButtons(
+                showFloatingButtons = showFloatingButtons,
+                onToggleNavBar = onToggleNavBar,
+                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                onToggleFilter = viewModel::toggleFilter,
+                showOnlyWithFilter = uiState.showOnlyWithFilter,
+                viewModel = viewModel,
+                coroutineScope = coroutineScope,
+                onUpdateStart = onUpdateStart,
+                onUpdateProgress = onUpdateProgress,
+                onUpdateComplete = onUpdateComplete,
+                onChangeGridColumns = { gridColumns = it }
+            )
+        }
+    ) { padding ->
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(gridColumns),
+            state = gridState,
+            modifier = Modifier.padding(padding)
+        ) {
+            uiState.categoriesECB.forEach { category ->
+                item(span = { GridItemSpan(gridColumns) }) {
+                    CategoryHeaderECB(
+                        category = category,
+                    )
+                }
+                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
+                    ArticleItemECB(
+                        article = article,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun CategoryHeaderECB(
     category: CategoriesTabelleECB,
 ) {
@@ -97,58 +150,6 @@ fun OverlayContentECB(color: Color, icon: ImageVector) {
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, null, tint = Color.White)
-    }
-}
-@Composable
-fun MainFragmentEditDatabaseWithCreateNewArticles(
-    viewModel: HeadOfViewModels,
-    onToggleNavBar: () -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit,
-) {
-    val uiState by viewModel.uiState.collectAsState()
-    var showFloatingButtons by remember { mutableStateOf(true) }
-    var gridColumns by remember { mutableStateOf(1) }
-
-    val gridState = rememberLazyGridState()
-    val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButtons(
-                showFloatingButtons = showFloatingButtons,
-                onToggleNavBar = onToggleNavBar,
-                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleFilter = viewModel::toggleFilter,
-                showOnlyWithFilter = uiState.showOnlyWithFilter,
-                viewModel = viewModel,
-                coroutineScope = coroutineScope,
-                onUpdateStart = onUpdateStart,
-                onUpdateProgress = onUpdateProgress,
-                onUpdateComplete = onUpdateComplete,
-                onChangeGridColumns = { gridColumns = it }
-            )
-        }
-    ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(gridColumns),
-            state = gridState,
-            modifier = Modifier.padding(padding)
-        ) {
-            uiState.categoriesECB.forEach { category ->
-                item(span = { GridItemSpan(gridColumns) }) {
-                    CategoryHeaderECB(
-                        category = category,
-                    )
-                }
-                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
-                    ArticleItemECB(
-                        article = article,
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -234,7 +235,6 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
         coroutineScope.cancel()
     }
 }
-
 
 data class BaseDonneECBTabelle(
     @SerializedName("idArticle") val idArticleECB: Int = 0,
