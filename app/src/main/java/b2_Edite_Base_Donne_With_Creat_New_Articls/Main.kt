@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
-import h_FactoryClassemntsArticles.ClassementsArticlesTabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -82,13 +81,13 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             state = gridState,
             modifier = Modifier.padding(padding)
         ) {
-            uiState.categories.forEach { category ->
+            uiState.categoriesECB.forEach { category ->
                 item(span = { GridItemSpan(gridColumns) }) {
                     CategoryHeaderECB(
                         category = category,
                     )
                 }
-                items(uiState.articles.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
+                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
                     ArticleItemECB(
                         article = article,
                     )
@@ -117,7 +116,7 @@ fun CategoryHeaderECB(
 
 @Composable
 fun ArticleItemECB(
-    article: ClassementsArticlesTabel,
+    article: BaseDonneECBTabelle,
 ) {
     Card(
         modifier = Modifier
@@ -168,7 +167,11 @@ class HeadOfViewModels(
         repositoryCreatAndEditeInBaseDonne.onCleared()
     }
 }
-
+data class CreatAndEditeInBaseDonnRepositeryModels(
+    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
+    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val showOnlyWithFilter: Boolean = false
+)
 class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
     private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")
     private val refCategorieTabelee = database.getReference("H_CategorieTabele")
@@ -193,13 +196,13 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
                 BaseDonneECBTabelle::class.java) }
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
-            val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategorieTabelee::class.java) }
+            val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
                 .sortedBy { it.idClassementCategorieCT }
 
             _uiState.update { currentState ->
                 currentState.copy(
-                    articles = articles,
-                    categories = categories
+                    articlesBaseDonneECB = articles,
+                    categoriesECB = categories
                 )
             }
         } catch (e: Exception) {
@@ -215,10 +218,10 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
 
     suspend fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
         _uiState.update { currentState ->
-            val updatedArticles = currentState.articles.map { article ->
-                if (article.idArticle == articleId) article.copy(diponibilityState = newDisponibilityState) else article
+            val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
+                if (article.idArticle.toLong() == articleId) article.copy(diponibilityState = newDisponibilityState) else article
             }
-            currentState.copy(articles = updatedArticles)
+            currentState.copy(articlesBaseDonneECB = updatedArticles)
         }
         refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
     }
@@ -268,6 +271,7 @@ data class BaseDonneECBTabelle(
     var monBeneficeUniter: Double = 0.0
 ) {
     constructor() : this(0)
+    //TODO utilise la serielialisation car
 }
 
 data class CategoriesTabelleECB(
@@ -275,8 +279,4 @@ data class CategoriesTabelleECB(
     var idClassementCategorieCT: Double = 0.0,
     val nomCategorieCT: String = "",
 )
-data class CreatAndEditeInBaseDonnRepositeryModels(
-    val articles: List<BaseDonneECBTabelle> = emptyList(),
-    val categories: List<CategoriesTabelleECB> = emptyList(),
-    val showOnlyWithFilter: Boolean = false
-)
+
