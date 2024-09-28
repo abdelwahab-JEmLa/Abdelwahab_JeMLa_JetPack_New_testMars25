@@ -44,7 +44,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -111,7 +110,10 @@ class MainAppViewModelFactory(
 }
 
 class MainActivity : ComponentActivity() {
-    private val PERMISSION_REQUEST_CODE = 101
+    private val permissionHandler by lazy {
+        PermissionHandler(this)
+    }
+
     private val database by lazy { AppDatabase.getInstance(this) }
     private val editeBaseDonneViewModel: EditeBaseDonneViewModel by viewModels {
         MainAppViewModelFactory(database.articleDao())
@@ -121,40 +123,22 @@ class MainActivity : ComponentActivity() {
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
     private val headOfViewModels: HeadOfViewModels by viewModels {
-        object : ViewModelProvider.Factory {  //TODO extract
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
-                    @Suppress("UNCHECKED_CAST")
-                    return HeadOfViewModels(CreatAndEditeInBaseDonneRepository(FirebaseDatabase.getInstance())) as T
-                }
-                throw IllegalArgumentException("Unknown ViewModel class")
-            }
-        }
+        HeadOfViewModelFactory()
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!checkPermission()) {
-            requestPermission()
-        }
+        permissionHandler.checkAndRequestPermissions()
+
         setContent {
             AbdelwahabJeMLaJetPackTheme {
                 val navController = rememberNavController()
-                val items = listOf(    //TODO extract
-                    Screen.MainScreen,
-                    Screen.ManageBonsClients,
-                    Screen.EntreBonsGro,
-                    Screen.Credits,
-                    Screen.CreditsClients,
-                    Screen.FactoryClassemntsArticles,
-                    Screen.EditBaseScreen,
-                    Screen.EditDatabaseWithCreateNewArticles // Ajout de la nouvelle route
-                )
+                val items = NavigationItems.getItems()
 
                 var isNavBarVisible by remember { mutableStateOf(true) }
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                // New state for progress bar
                 var showProgressBar by remember { mutableStateOf(false) }
                 var progress by remember { mutableStateOf(0f) }
 
@@ -162,14 +146,8 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         if (isNavBarVisible) {
                             Column {
-                                // Add LinearProgressIndicator here
                                 if (showProgressBar) {
-                                    LinearProgressIndicator(         //TODO extract
-                                        progress = { progress },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(4.dp),
-                                    )
+                                    ProgressIndicator(progress)
                                 }
                                 NavigationBar {
                                     items.forEach { screen ->
@@ -177,22 +155,17 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     screen.icon,
-                                                    contentDescription = screen.title,
-                                                    tint = screen.color
+                                                    contentDescription = screen.title
                                                 )
                                             },
+                                            label = { Text(screen.title) },
                                             selected = currentRoute == screen.route,
                                             onClick = {
                                                 navController.navigate(screen.route) {
                                                     popUpTo(navController.graph.startDestinationId)
                                                     launchSingleTop = true
                                                 }
-                                            },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = screen.color,
-                                                unselectedIconColor = screen.color.copy(alpha = 0.6f),
-                                                indicatorColor = screen.color.copy(alpha = 0.1f)
-                                            )
+                                            }
                                         )
                                     }
                                 }
@@ -201,14 +174,7 @@ class MainActivity : ComponentActivity() {
                     },
                     floatingActionButton = {
                         if (currentRoute == Screen.MainScreen.route) {
-                            FloatingActionButton(
-                                onClick = { isNavBarVisible = !isNavBarVisible }
-                            ) {
-                                Icon(
-                                    if (isNavBarVisible) Icons.Filled.KeyboardArrowDown else Icons.Filled.Home,
-                                    contentDescription = "Toggle Navigation Bar"
-                                )
-                            }
+                            ToggleNavBarButton(isNavBarVisible) { isNavBarVisible = !isNavBarVisible }
                         }
                     },
                     floatingActionButtonPosition = FabPosition.End
@@ -218,81 +184,57 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-                        NavHost(   //TODO extract
+                        AppNavHost(
                             navController = navController,
-                            startDestination = "main_screen",
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            composable("main_screen") {
-                                MainScreen(
-                                    navController = navController,
-                                    editeBaseDonneViewModel = editeBaseDonneViewModel,
-                                    articleDao = database.articleDao(),
-                                    boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
-                                )
+                            database = database,
+                            viewModels = AppViewModels(
+                                editeBaseDonneViewModel,
+                                creditsViewModel,
+                                creditsClientsViewModel,
+                                boardStatistiquesStatViewModel,
+                                classementsArticlesViewModel,
+                                headOfViewModels
+                            ),
+                            onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
+                            onUpdateStart = { showProgressBar = true },
+                            onUpdateProgress = { progress = it },
+                            onUpdateComplete = {
+                                showProgressBar = false
+                                progress = 0f
                             }
-                            composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(editeBaseDonneViewModel, database.articleDao()) }
-                            composable("C_ManageBonsClients") { FragmentManageBonsClients(
-                                boardStatistiquesStatViewModel
-                            ) }
-                            composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(database.articleDao()) }
-                            composable("FragmentCredits") { FragmentCredits(creditsViewModel,
-                                onToggleNavBar = { isNavBarVisible = !isNavBarVisible },) }
-                            composable("FragmentCreditsClients") {
-                                FragmentCreditsClients(
-                                    creditsClientsViewModel,
-                                    boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
-                                    onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                                )
-                            }
-                            composable("Main_FactoryClassemntsArticles") {
-                                MainFactoryClassementsArticles(
-                                    classementsArticlesViewModel,
-                                    onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                                    onUpdateStart = { showProgressBar = true },
-                                    onUpdateProgress = { progress = it },
-                                    onUpdateComplete = {
-                                        showProgressBar = false
-                                        progress = 0f
-                                    }
-                                )
-                            }
-                            composable("PickerExample") { PickerExample() }
-                            composable("main_fragment_edit_database_with_create_new_articles") {
-                                MainFragmentEditDatabaseWithCreateNewArticles(
-                                    viewModel = headOfViewModels,  // Utilisation du ViewModel initialisé
-                                    onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                                    onUpdateStart = { showProgressBar = true },
-                                    onUpdateProgress = { progress = it },
-                                    onUpdateComplete = {
-                                        showProgressBar = false
-                                        progress = 0f
-                                    }
-                                )
-                            }
-                        }
+                        )
                     }
                 }
             }
         }
     }
-    private fun checkPermission(): Boolean {     //TODO extract
-        val result = ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_EXTERNAL_STORAGE)
+}
+
+class PermissionHandler(private val activity: ComponentActivity) {
+    private val PERMISSION_REQUEST_CODE = 101
+
+    fun checkAndRequestPermissions() {
+        if (!checkPermission()) {
+            requestPermission()
+        }
+    }
+
+    private fun checkPermission(): Boolean {
+        val result = ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
         return result == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestPermission() {        //TODO extract
+    private fun requestPermission() {
         ActivityCompat.requestPermissions(
-            this,
+            activity,
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
             PERMISSION_REQUEST_CODE
         )
     }
 
-    @Deprecated("This method has been deprecated ..")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)//TODO exctract
-        when (requestCode) {             //TODO extract
+    @Deprecated("This method has been deprecated. Use Activity Result API instead.")
+    fun handlePermissionResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
             PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // Permission granted
@@ -303,7 +245,112 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+@Composable
+fun ProgressIndicator(progress: Float) {
+    LinearProgressIndicator(
+        progress = { progress },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp),
+    )
+}
 
+@Composable
+fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
+    FloatingActionButton(onClick = onToggle) {
+        Icon(
+            if (isNavBarVisible) Icons.Filled.KeyboardArrowDown else Icons.Filled.Home,
+            contentDescription = "Toggle Navigation Bar"
+        )
+    }
+}
+
+@Composable
+fun AppNavHost(
+    navController: NavHostController,
+    database: AppDatabase,
+    viewModels: AppViewModels,
+    onToggleNavBar: () -> Unit,
+    onUpdateStart: () -> Unit,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateComplete: () -> Unit
+) {
+    NavHost(
+        navController = navController,
+        startDestination = "main_screen",
+        modifier = Modifier.fillMaxSize()
+    ) {
+        composable("main_screen") {
+            MainScreen(
+                navController = navController,
+                editeBaseDonneViewModel = viewModels.editeBaseDonneViewModel,
+                articleDao = database.articleDao(),
+                boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
+            )
+        }
+        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(viewModels.editeBaseDonneViewModel, database.articleDao()) }
+        composable("C_ManageBonsClients") { FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel) }
+        composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(database.articleDao()) }
+        composable("FragmentCredits") { FragmentCredits(viewModels.creditsViewModel, onToggleNavBar = onToggleNavBar) }
+        composable("FragmentCreditsClients") {
+            FragmentCreditsClients(
+                viewModels.creditsClientsViewModel,
+                boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
+                onToggleNavBar = onToggleNavBar,
+            )
+        }
+        composable("Main_FactoryClassemntsArticles") {
+            MainFactoryClassementsArticles(
+                viewModels.classementsArticlesViewModel,
+                onToggleNavBar = onToggleNavBar,
+                onUpdateStart = onUpdateStart,
+                onUpdateProgress = onUpdateProgress,
+                onUpdateComplete = onUpdateComplete
+            )
+        }
+        composable("PickerExample") { PickerExample() }
+        composable("main_fragment_edit_database_with_create_new_articles") {
+            MainFragmentEditDatabaseWithCreateNewArticles(
+                viewModel = viewModels.headOfViewModels,
+                onToggleNavBar = onToggleNavBar,
+                onUpdateStart = onUpdateStart,
+                onUpdateProgress = onUpdateProgress,
+                onUpdateComplete = onUpdateComplete
+            )
+        }
+    }
+}
+class HeadOfViewModelFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HeadOfViewModels(CreatAndEditeInBaseDonneRepository(FirebaseDatabase.getInstance())) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
+object NavigationItems {
+    fun getItems() = listOf(
+        Screen.MainScreen,
+        Screen.ManageBonsClients,
+        Screen.EntreBonsGro,
+        Screen.Credits,
+        Screen.CreditsClients,
+        Screen.FactoryClassemntsArticles,
+        Screen.EditBaseScreen,
+        Screen.EditDatabaseWithCreateNewArticles
+    )
+}
+
+data class AppViewModels(
+    val editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    val creditsViewModel: CreditsViewModel,
+    val creditsClientsViewModel: CreditsClientsViewModel,
+    val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    val classementsArticlesViewModel: ClassementsArticlesViewModel,
+    val headOfViewModels: HeadOfViewModels
+)
 
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
     data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
