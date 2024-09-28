@@ -67,7 +67,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 item(span = { GridItemSpan(gridColumns) }) {
                     CategoryHeaderECB(category = category)
                 }
-                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
+                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieInCategoriesTabele.toDouble() }) { article ->
                     ArticleItemECB(article = article)
 
                 }
@@ -104,7 +104,7 @@ class HeadOfViewModels(
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
             val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
-                .sortedBy { it.idClassementCategorieCT }
+                .sortedBy { it.idClassementCategorieInCategoriesTabele }
 
             _uiStateHeaderViewsModel.update { currentState ->
                 currentState.copy(
@@ -130,13 +130,6 @@ class HeadOfViewModels(
     }
 
     fun refreshData() {
-        viewModelScope.launch {
-            initDataFromFirebase()
-        }
-    }
-
-    // Fonction pour lancer initDataFromFirebase depuis la vue
-    fun loadDataFromFirebase() {
         viewModelScope.launch {
             initDataFromFirebase()
         }
@@ -213,7 +206,7 @@ data class BaseDonneECBTabelle(
 }
 
 data class CategoriesTabelleECB(
-    val idCategorieCT: Long = 0,
-    var idClassementCategorieCT: Double = 0.0,
-    val nomCategorieCT: String = "",
+    val idCategorieInCategoriesTabele: Long = 0,
+    var idClassementCategorieInCategoriesTabele: Double = 0.0,
+    val nomCategorieInCategoriesTabele: String = "",
 )

@@ -28,7 +28,7 @@ fun CategoryHeaderECB(
             .height(56.dp)
     ) {
         Text(
-            text = category.nomCategorieCT,
+            text = category.nomCategorieInCategoriesTabele,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(16.dp)
         )
