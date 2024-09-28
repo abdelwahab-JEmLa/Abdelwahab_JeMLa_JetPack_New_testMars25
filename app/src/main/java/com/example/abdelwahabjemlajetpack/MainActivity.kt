@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditRoad
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -140,12 +141,12 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val items = listOf(    //TODO extract
                     Screen.MainScreen,
-                    Screen.EditBaseScreen,
                     Screen.ManageBonsClients,
                     Screen.EntreBonsGro,
                     Screen.Credits,
                     Screen.CreditsClients,
                     Screen.FactoryClassemntsArticles,
+                    Screen.EditBaseScreen,
                     Screen.EditDatabaseWithCreateNewArticles // Ajout de la nouvelle route
                 )
 
@@ -311,8 +312,11 @@ sealed class Screen(val route: String, val icon: ImageVector, val title: String,
     data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
     data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
     data   object EditBaseScreen : Screen("A_Edite_Base_Screen", Icons.Default.Edit, "Edit Base", Color(0xFF2196F3))
+    data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.EditRoad, "Create New Articles", Color(
+        0xFFE30E0E
+    )
+    )
     data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
-    data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.Add, "Create New Articles", Color(0xFF795548))
 }
 
 @Composable
