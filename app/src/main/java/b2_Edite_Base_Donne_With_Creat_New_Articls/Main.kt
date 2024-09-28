@@ -45,59 +45,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun MainFragmentEditDatabaseWithCreateNewArticles(
-    viewModel: HeadOfViewModels,
-    onToggleNavBar: () -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit,
-) {
-    val uiState by viewModel.uiState.collectAsState()
-    var showFloatingButtons by remember { mutableStateOf(true) }
-    var gridColumns by remember { mutableStateOf(1) }
-
-    val gridState = rememberLazyGridState()
-    val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButtons(
-                showFloatingButtons = showFloatingButtons,
-                onToggleNavBar = onToggleNavBar,
-                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleFilter = viewModel::toggleFilter,
-                showOnlyWithFilter = uiState.showOnlyWithFilter,
-                viewModel = viewModel,
-                coroutineScope = coroutineScope,
-                onUpdateStart = onUpdateStart,
-                onUpdateProgress = onUpdateProgress,
-                onUpdateComplete = onUpdateComplete,
-                onChangeGridColumns = { gridColumns = it }
-            )
-        }
-    ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(gridColumns),
-            state = gridState,
-            modifier = Modifier.padding(padding)
-        ) {
-            uiState.categoriesECB.forEach { category ->
-                item(span = { GridItemSpan(gridColumns) }) {
-                    CategoryHeaderECB(
-                        category = category,
-                    )
-                }
-                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
-                    ArticleItemECB(
-                        article = article,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun CategoryHeaderECB(
     category: CategoriesTabelleECB,
 ) {
@@ -151,39 +98,69 @@ fun OverlayContentECB(color: Color, icon: ImageVector) {
         Icon(icon, null, tint = Color.White)
     }
 }
+@Composable
+fun MainFragmentEditDatabaseWithCreateNewArticles(
+    viewModel: HeadOfViewModels,
+    onToggleNavBar: () -> Unit,
+    onUpdateStart: () -> Unit,
+    onUpdateProgress: (Float) -> Unit,
+    onUpdateComplete: () -> Unit,
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var showFloatingButtons by remember { mutableStateOf(true) }
+    var gridColumns by remember { mutableStateOf(1) }
+
+    val gridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButtons(
+                showFloatingButtons = showFloatingButtons,
+                onToggleNavBar = onToggleNavBar,
+                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                onToggleFilter = viewModel::toggleFilter,
+                showOnlyWithFilter = uiState.showOnlyWithFilter,
+                viewModel = viewModel,
+                coroutineScope = coroutineScope,
+                onUpdateStart = onUpdateStart,
+                onUpdateProgress = onUpdateProgress,
+                onUpdateComplete = onUpdateComplete,
+                onChangeGridColumns = { gridColumns = it }
+            )
+        }
+    ) { padding ->
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(gridColumns),
+            state = gridState,
+            modifier = Modifier.padding(padding)
+        ) {
+            uiState.categoriesECB.forEach { category ->
+                item(span = { GridItemSpan(gridColumns) }) {
+                    CategoryHeaderECB(
+                        category = category,
+                    )
+                }
+                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
+                    ArticleItemECB(
+                        article = article,
+                    )
+                }
+            }
+        }
+    }
+}
 
 class HeadOfViewModels(
     private val repositoryCreatAndEditeInBaseDonne: CreatAndEditeInBaseDonneRepository
 ) : ViewModel() {
     val uiState = repositoryCreatAndEditeInBaseDonne.uiState
 
-    fun toggleFilter() = repositoryCreatAndEditeInBaseDonne.toggleFilter()
-
-    fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
-        viewModelScope.launch { repositoryCreatAndEditeInBaseDonne.updateArticleDisponibility(articleId, newDisponibilityState) }
-    }
-    override fun onCleared() {
-        super.onCleared()
-        repositoryCreatAndEditeInBaseDonne.onCleared()
-    }
-}
-data class CreatAndEditeInBaseDonnRepositeryModels(
-    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
-    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
-    val showOnlyWithFilter: Boolean = false
-)
-class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
-    private val refCategorieTabelee = database.getReference("H_CategorieTabele")
-    private val refDBJetPackExport = database.getReference("e_DBJetPackExport")
-
-    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
-    val uiState = _uiState.asStateFlow()
-
-
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
+    private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
 
     init {
-        coroutineScope.launch {
+        viewModelScope.launch {
             initDataFromFirebase()
         }
     }
@@ -191,23 +168,41 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     private suspend fun initDataFromFirebase() {
         try {
             val articlesClassementSnapshot = refDBJetPackExport.get().await()
-            val articles = articlesClassementSnapshot.children.mapNotNull { it.getValue(
-                BaseDonneECBTabelle::class.java) }
+            val articles = articlesClassementSnapshot.children.mapNotNull { it.getValue(BaseDonneECBTabelle::class.java) }
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
             val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
                 .sortedBy { it.idClassementCategorieCT }
 
-            _uiState.update { currentState ->
-                currentState.copy(
-                    articlesBaseDonneECB = articles,
-                    categoriesECB = categories
-                )
-            }
+            repositoryCreatAndEditeInBaseDonne.updateUiState(articles, categories)
         } catch (e: Exception) {
             Log.e("ClassementsArticlesRepo", "Error loading data", e)
         }
     }
+
+    fun toggleFilter() = repositoryCreatAndEditeInBaseDonne.toggleFilter()
+
+    fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
+        viewModelScope.launch { repositoryCreatAndEditeInBaseDonne.updateArticleDisponibility(articleId, newDisponibilityState) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        repositoryCreatAndEditeInBaseDonne.onCleared()
+    }
+}
+
+data class CreatAndEditeInBaseDonnRepositeryModels(
+    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
+    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val showOnlyWithFilter: Boolean = false
+)
+
+class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
+    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
+    val uiState = _uiState.asStateFlow()
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun toggleFilter() {
         _uiState.update { currentState ->
@@ -218,11 +213,20 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     suspend fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
         _uiState.update { currentState ->
             val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
-                if (article.idArticle.toLong() == articleId) article.copy(diponibilityState = newDisponibilityState) else article
+                if (article.idArticleECB.toLong() == articleId) article.copy(diponibilityState = newDisponibilityState) else article
             }
             currentState.copy(articlesBaseDonneECB = updatedArticles)
         }
-        refDBJetPackExport.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
+        database.getReference("e_DBJetPackExport").child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
+    }
+
+    fun updateUiState(articles: List<BaseDonneECBTabelle>, categories: List<CategoriesTabelleECB>) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                articlesBaseDonneECB = articles,
+                categoriesECB = categories
+            )
+        }
     }
 
     fun onCleared() {
@@ -230,8 +234,9 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     }
 }
 
+
 data class BaseDonneECBTabelle(
-    val idArticle: Int = 0,
+    val idArticleECB: Int = 0,
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
     var nomArab: String = "",
@@ -270,7 +275,7 @@ data class BaseDonneECBTabelle(
     var monBeneficeUniter: Double = 0.0
 ) {
     constructor() : this(0)
-    //TODO utilise la serielialisation car
+    //TODO utilise la serielialisation pour fait que idArticle     val idArticleECB: Int = 0,
 }
 
 data class CategoriesTabelleECB(
@@ -278,4 +283,6 @@ data class CategoriesTabelleECB(
     var idClassementCategorieCT: Double = 0.0,
     val nomCategorieCT: String = "",
 )
+
+
 

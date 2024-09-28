@@ -4,6 +4,12 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -15,11 +21,11 @@ import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
 
-class HeadOfViewModelFactory : ViewModelProvider.Factory {
+class HeadOfViewModelFactory(private val database: FirebaseDatabase) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(CreatAndEditeInBaseDonneRepository(FirebaseDatabase.getInstance())) as T
+            return HeadOfViewModels(CreatAndEditeInBaseDonneRepository(database)) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
@@ -43,6 +49,15 @@ class MainAppViewModelFactory(
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
+}
+@Composable
+fun ProgressIndicator(progress: Float) {
+    LinearProgressIndicator(
+        progress = { progress },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp),
+    )
 }
 
 class PermissionHandler(private val activity: ComponentActivity) {

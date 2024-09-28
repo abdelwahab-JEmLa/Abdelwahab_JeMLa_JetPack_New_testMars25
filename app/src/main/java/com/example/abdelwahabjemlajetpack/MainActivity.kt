@@ -14,12 +14,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
@@ -37,10 +37,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +62,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.A_Edite_Base_Screen
@@ -68,6 +70,7 @@ import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
+import com.google.firebase.database.FirebaseDatabase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
@@ -78,7 +81,6 @@ import g_BoardStatistiques.f_2_CreditsClients.FragmentCreditsClients
 import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
 import java.util.Locale
-
 
 class MainActivity : ComponentActivity() {
     private val permissionHandler by lazy {
@@ -94,7 +96,7 @@ class MainActivity : ComponentActivity() {
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
     private val headOfViewModels: HeadOfViewModels by viewModels {
-        HeadOfViewModelFactory()
+        HeadOfViewModelFactory(FirebaseDatabase.getInstance())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -120,26 +122,16 @@ class MainActivity : ComponentActivity() {
                                 if (showProgressBar) {
                                     ProgressIndicator(progress)
                                 }
-                                NavigationBar {
-                                    items.forEach { screen ->
-                                        NavigationBarItem(
-                                            icon = {
-                                                Icon(
-                                                    screen.icon,
-                                                    contentDescription = screen.title
-                                                )
-                                            },
-                                            label = { Text(screen.title) },
-                                            selected = currentRoute == screen.route,
-                                            onClick = {
-                                                navController.navigate(screen.route) {
-                                                    popUpTo(navController.graph.startDestinationId)
-                                                    launchSingleTop = true
-                                                }
-                                            }
-                                        )
+                                CustomNavigationBar(
+                                    items = items,
+                                    currentRoute = currentRoute,
+                                    onNavigate = { route ->
+                                        navController.navigate(route) {
+                                            popUpTo(navController.graph.startDestinationId)
+                                            launchSingleTop = true
+                                        }
                                     }
-                                }
+                                )
                             }
                         }
                     },
@@ -180,17 +172,32 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @Composable
-fun ProgressIndicator(progress: Float) {
-    LinearProgressIndicator(
-        progress = { progress },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(4.dp),
-    )
+fun CustomNavigationBar(
+    items: List<Screen>,
+    currentRoute: String?,
+    onNavigate: (String) -> Unit
+) {
+    NavigationBar {
+        items.forEach { screen ->
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        imageVector = screen.icon,
+                        contentDescription = screen.title,
+                        tint = screen.color
+                    )
+                },
+                selected = currentRoute == screen.route,
+                onClick = { onNavigate(screen.route) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = screen.color,
+                    unselectedIconColor = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+                )
+            )
+        }
+    }
 }
-
 @Composable
 fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
     FloatingActionButton(onClick = onToggle) {
@@ -282,7 +289,8 @@ data class AppViewModels(
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
     data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
     data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
-    data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.Default.List, "Manage Bons", Color(0xFFFFC107))
+    data  object ManageBonsClients : Screen("C_ManageBonsClients",
+        Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
     data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
     data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
     data   object EditBaseScreen : Screen("A_Edite_Base_Screen", Icons.Default.Edit, "Edit Base", Color(0xFF2196F3))
@@ -321,6 +329,7 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
                 CardBoardStatistiques(boardStatistiquesStatViewModel)
 
                 LazyVerticalGrid(

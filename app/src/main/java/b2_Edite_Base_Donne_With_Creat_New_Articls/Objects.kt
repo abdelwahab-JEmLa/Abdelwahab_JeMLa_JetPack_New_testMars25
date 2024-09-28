@@ -24,9 +24,9 @@ import java.io.File
 
 @Composable
 @OptIn(ExperimentalGlideComposeApi::class)
-fun ImageDisplayerWithGlideECB(article: ClassementsArticlesTabel) {
+fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle) {
     val imagePath =
-        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_1"
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_1"
     val imageExist =
         listOf("jpg", "webp").firstOrNull { File("$imagePath.$it").exists() }
     GlideImage(
