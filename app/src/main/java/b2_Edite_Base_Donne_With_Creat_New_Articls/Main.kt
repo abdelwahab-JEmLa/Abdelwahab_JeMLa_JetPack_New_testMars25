@@ -67,7 +67,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 item(span = { GridItemSpan(gridColumns) }) {
                     CategoryHeaderECB(category = category)
                 }
-                items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieInCategoriesTabele.toDouble() }) { article ->
+                items(uiState.articlesBaseDonneECB.filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }) { article ->
                     ArticleItemECB(article = article)
 
                 }
