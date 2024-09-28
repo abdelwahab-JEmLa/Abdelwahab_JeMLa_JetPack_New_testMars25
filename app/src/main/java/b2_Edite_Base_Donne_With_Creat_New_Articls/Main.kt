@@ -173,7 +173,6 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val showOnlyWithFilter: Boolean = false
 )
 class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
-    private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")
     private val refCategorieTabelee = database.getReference("H_CategorieTabele")
     private val refDBJetPackExport = database.getReference("e_DBJetPackExport")
 
@@ -191,8 +190,8 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
 
     private suspend fun initDataFromFirebase() {
         try {
-            val articlesSnapshot = refClassmentsArtData.get().await()
-            val articles = articlesSnapshot.children.mapNotNull { it.getValue(
+            val articlesClassementSnapshot = refDBJetPackExport.get().await()
+            val articles = articlesClassementSnapshot.children.mapNotNull { it.getValue(
                 BaseDonneECBTabelle::class.java) }
 
             val categoriesSnapshot = refCategorieTabelee.get().await()
@@ -223,7 +222,7 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
             }
             currentState.copy(articlesBaseDonneECB = updatedArticles)
         }
-        refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
+        refDBJetPackExport.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
     }
 
     fun onCleared() {
