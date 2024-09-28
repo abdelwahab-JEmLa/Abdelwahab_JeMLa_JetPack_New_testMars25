@@ -852,15 +852,4 @@ class EditeBaseDonneViewModel(
     }
 }
 
-class MainAppViewModelFactory(
-    private val articleDao: ArticleDao,
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return EditeBaseDonneViewModel(articleDao) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
 

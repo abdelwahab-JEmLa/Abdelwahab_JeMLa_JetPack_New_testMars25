@@ -13,9 +13,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Mode
 import androidx.compose.material.icons.filled.PermMedia
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -36,7 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.abdelwahabjemlajetpack.DialogButton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 @Composable
@@ -46,7 +43,7 @@ fun FloatingActionButtons(
     onToggleFloatingButtons: () -> Unit,
     onToggleFilter: () -> Unit,
     showOnlyWithFilter: Boolean,
-    viewModel: ClassementsArticlesViewModel,
+    viewModel: HeadOfViewModels,
     coroutineScope: CoroutineScope,
     onUpdateProgress: (Float) -> Unit,
     onUpdateStart: () -> Unit,
@@ -140,7 +137,7 @@ fun FloatingActionButtonGroup(
 @Composable
 fun DialogeDataBaseEditer(
     onDismiss: () -> Unit,
-    viewModel: ClassementsArticlesViewModel,
+    viewModel: HeadOfViewModels,
     coroutineScope: CoroutineScope,
     onUpdateStart: () -> Unit,
     onUpdateProgress: (Float) -> Unit,
@@ -169,12 +166,6 @@ fun DialogeDataBaseEditer(
                     { showUpdateConfirmationDialog = true },
                     Color.Red
                 )
-                DialogButton(
-                    "giveNumAuSubCategorieArticle",
-                    Icons.Default.Mode,
-                    { coroutineScope.launch { viewModel.giveNumAuSubCategorieArticle() } },
-                    Color.Red
-                )
                 HorizontalDivider(
                     color = Color.Red,
                     thickness = 5.dp,
@@ -186,22 +177,6 @@ fun DialogeDataBaseEditer(
                     { showConfirmationDialog = true },
                     Color.Blue
                 )
-                HorizontalDivider(
-                    color = Color.Blue,
-                    thickness = 5.dp,
-                    modifier = Modifier.padding(8.dp)
-                )
-                DialogButton("updateChangeInClassmentToeDBJetPackExport", Icons.Default.Refresh, {
-                    coroutineScope.launch {
-                        onUpdateStart()
-                        onDismiss()
-                        try {
-                            viewModel.updateChangeInClassmentToeDBJetPackExport(onUpdateProgress)
-                        } finally {
-                            onUpdateComplete()
-                        }
-                    }
-                }, Color.Black)
             }
         },
     )
@@ -214,16 +189,7 @@ fun DialogeDataBaseEditer(
             }
         )
     }
-    if (showUpdateConfirmationDialog) {
-        ConfirmationDialog(
-            onDismiss = { showUpdateConfirmationDialog = false },
-            onConfirm = {
-                coroutineScope.launch { viewModel.updateCategorieTabelee() }
-                showUpdateConfirmationDialog = false
-                onDismiss()
-            }
-        )
-    }
+
 }
 
 @Composable

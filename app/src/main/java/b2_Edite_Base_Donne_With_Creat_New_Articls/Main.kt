@@ -34,20 +34,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-
-import androidx.lifecycle.viewModelScope
-import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
@@ -171,7 +166,10 @@ class HeadOfViewModels(
     fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
         viewModelScope.launch { repositoryCreatAndEditeInBaseDonne.updateArticleDisponibility(articleId, newDisponibilityState) }
     }
-
+    override fun onCleared() {
+        super.onCleared()
+        repositoryCreatAndEditeInBaseDonne.onCleared()
+    }
 }
 
 class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
@@ -182,9 +180,11 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnModel())
     val uiState = _uiState.asStateFlow()
 
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     init {
-        viewModelScope.launch {     //TODO fix Unresolved reference. None of the following candidates is applicable because of receiver type mismatch:
-            //public val ViewModel.viewModelScope: CoroutineScope defined in androidx.lifecycle
+        coroutineScope.launch {
             initDataFromFirebase()
         }
     }
@@ -225,6 +225,9 @@ class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase)
         refClassmentsArtData.child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
     }
 
+    fun onCleared() {
+        coroutineScope.cancel()
+    }
 }
 
 
