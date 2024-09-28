@@ -14,22 +14,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import b2_Edite_Base_Donne_With_Creat_New_Articls.CreatAndEditeInBaseDonneRepository
-import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
 
-class HeadOfViewModelFactory(private val database: FirebaseDatabase) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(CreatAndEditeInBaseDonneRepository(database)) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
 
 class MyApplication : Application() {
     override fun onCreate() {
@@ -39,17 +28,7 @@ class MyApplication : Application() {
     }
 }
 
-class MainAppViewModelFactory(
-    private val articleDao: ArticleDao,
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return EditeBaseDonneViewModel(articleDao) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
+
 @Composable
 fun ProgressIndicator(progress: Float) {
     LinearProgressIndicator(
@@ -93,5 +72,16 @@ class PermissionHandler(private val activity: ComponentActivity) {
                 }
             }
         }
+    }
+}
+class MainAppViewModelFactory(
+    private val articleDao: ArticleDao,
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return EditeBaseDonneViewModel(articleDao) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

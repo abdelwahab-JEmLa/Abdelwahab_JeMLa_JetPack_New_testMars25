@@ -63,6 +63,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
+import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModelFactory
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.A_Edite_Base_Screen
@@ -70,7 +71,6 @@ import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
-import com.google.firebase.database.FirebaseDatabase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
     private val headOfViewModels: HeadOfViewModels by viewModels {
-        HeadOfViewModelFactory(FirebaseDatabase.getInstance())
+        HeadOfViewModelFactory()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

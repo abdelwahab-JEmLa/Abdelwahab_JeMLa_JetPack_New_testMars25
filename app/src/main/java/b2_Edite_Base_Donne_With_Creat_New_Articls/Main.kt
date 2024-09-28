@@ -1,24 +1,13 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,19 +15,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
 import com.google.gson.annotations.SerializedName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -53,7 +35,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     onUpdateProgress: (Float) -> Unit,
     onUpdateComplete: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiStateHeaderViewsModel.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(true) }
     var gridColumns by remember { mutableStateOf(1) }
 
@@ -84,82 +66,24 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         ) {
             uiState.categoriesECB.forEach { category ->
                 item(span = { GridItemSpan(gridColumns) }) {
-                    CategoryHeaderECB(
-                        category = category,
-                    )
+                    CategoryHeaderECB(category = category)
                 }
                 items(uiState.articlesBaseDonneECB.filter { it.idCategorie == category.idCategorieCT.toDouble() }) { article ->
-                    ArticleItemECB(
-                        article = article,
-                    )
+                    ArticleItemECB(article = article)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun CategoryHeaderECB(
-    category: CategoriesTabelleECB,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-    ) {
-        Text(
-            text = category.nomCategorieCT,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(16.dp)
-        )
-    }
-}
-
-@Composable
-fun ArticleItemECB(
-    article: BaseDonneECBTabelle,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-                contentAlignment = Alignment.Center
-            ) {
-
-                ImageDisplayerWithGlideECB(article)
-
-                DisponibilityOverlayECB(article.diponibilityState)
-            }
-            AutoResizedTextECB(text = article.nomArticleFinale)
-        }
-    }
-}
-
-@Composable
-fun OverlayContentECB(color: Color, icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, null, tint = Color.White)
     }
 }
 
 class HeadOfViewModels(
-    private val repositoryCreatAndEditeInBaseDonne: CreatAndEditeInBaseDonneRepository
+    private val modifierCreatAndEditeInBaseDonne: CreatAndEditeInBaseDonneModifier
 ) : ViewModel() {
-    val uiState = repositoryCreatAndEditeInBaseDonne.uiState
+    private val _uiStateHeaderViewsModel = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
+    val uiStateHeaderViewsModel = _uiStateHeaderViewsModel.asStateFlow()
 
-    private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
+    private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
 
     init {
         viewModelScope.launch {
@@ -169,6 +93,8 @@ class HeadOfViewModels(
 
     private suspend fun initDataFromFirebase() {
         try {
+            _uiStateHeaderViewsModel.update { it.copy(isLoading = true) }
+
             val articlesClassementSnapshot = refDBJetPackExport.get().await()
             val articles = articlesClassementSnapshot.children.mapNotNull { it.getValue(BaseDonneECBTabelle::class.java) }
 
@@ -176,63 +102,57 @@ class HeadOfViewModels(
             val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
                 .sortedBy { it.idClassementCategorieCT }
 
-            repositoryCreatAndEditeInBaseDonne.updateUiState(articles, categories)
+            _uiStateHeaderViewsModel.update { currentState ->
+                currentState.copy(
+                    articlesBaseDonneECB = articles,
+                    categoriesECB = categories,
+                    isLoading = false
+                )
+            }
         } catch (e: Exception) {
             Log.e("ClassementsArticlesRepo", "Error loading data", e)
+            _uiStateHeaderViewsModel.update { currentState ->
+                currentState.copy(
+                    isLoading = false,
+                    error = "Failed to load data: ${e.message}"
+                )
+            }
         }
     }
 
-    fun toggleFilter() = repositoryCreatAndEditeInBaseDonne.toggleFilter()
-
-    fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
-        viewModelScope.launch { repositoryCreatAndEditeInBaseDonne.updateArticleDisponibility(articleId, newDisponibilityState) }
+    fun toggleFilter() {
+        val newState = modifierCreatAndEditeInBaseDonne.toggleFilter(_uiStateHeaderViewsModel.value)
+        _uiStateHeaderViewsModel.update { newState }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        repositoryCreatAndEditeInBaseDonne.onCleared()
+
+    fun refreshData() {
+        viewModelScope.launch {
+            initDataFromFirebase()
+        }
     }
 }
 
 data class CreatAndEditeInBaseDonnRepositeryModels(
     val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
-    val showOnlyWithFilter: Boolean = false
+    val showOnlyWithFilter: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
 
-class CreatAndEditeInBaseDonneRepository(private val database: FirebaseDatabase) {
-    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
-    val uiState = _uiState.asStateFlow()
-
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    fun toggleFilter() {
-        _uiState.update { currentState ->
-            currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
-        }
+class CreatAndEditeInBaseDonneModifier() {
+    fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels): CreatAndEditeInBaseDonnRepositeryModels {
+        return currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
     }
-
-    suspend fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
-        _uiState.update { currentState ->
-            val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
-                if (article.idArticleECB.toLong() == articleId) article.copy(diponibilityState = newDisponibilityState) else article
-            }
-            currentState.copy(articlesBaseDonneECB = updatedArticles)
+}
+class HeadOfViewModelFactory() : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HeadOfViewModels(CreatAndEditeInBaseDonneModifier()) as T
         }
-        database.getReference("e_DBJetPackExport").child(articleId.toString()).child("diponibilityState").setValue(newDisponibilityState).await()
-    }
-
-    fun updateUiState(articles: List<BaseDonneECBTabelle>, categories: List<CategoriesTabelleECB>) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                articlesBaseDonneECB = articles,
-                categoriesECB = categories
-            )
-        }
-    }
-
-    fun onCleared() {
-        coroutineScope.cancel()
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
@@ -283,6 +203,3 @@ data class CategoriesTabelleECB(
     var idClassementCategorieCT: Double = 0.0,
     val nomCategorieCT: String = "",
 )
-
-
-
