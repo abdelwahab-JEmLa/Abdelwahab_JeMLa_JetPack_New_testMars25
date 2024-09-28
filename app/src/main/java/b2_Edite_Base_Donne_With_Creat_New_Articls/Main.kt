@@ -69,14 +69,18 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             modifier = Modifier.padding(padding)
         ) {
             uiState.categoriesECB.forEach { category ->
-                item(span = { GridItemSpan(gridColumns) }) {
-                    CategoryHeaderECB(category = category)
-                }
-                items(uiState.articlesBaseDonneECB.filter {
+                val articlesInCategory = uiState.articlesBaseDonneECB.filter {
                     it.nomCategorie == category.nomCategorieInCategoriesTabele &&
                             (!filterNonDispo || it.diponibilityState == "")
-                }) { article ->
-                    ArticleItemECB(article = article)
+                }
+
+                if (articlesInCategory.isNotEmpty()) {
+                    item(span = { GridItemSpan(gridColumns) }) {
+                        CategoryHeaderECB(category = category)
+                    }
+                    items(articlesInCategory) { article ->
+                        ArticleItemECB(article = article)
+                    }
                 }
             }
         }
