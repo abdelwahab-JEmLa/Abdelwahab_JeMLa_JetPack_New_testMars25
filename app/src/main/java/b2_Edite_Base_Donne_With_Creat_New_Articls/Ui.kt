@@ -60,7 +60,8 @@ enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
 fun ArticleDetailWindow(
     article: BaseDonneECBTabelle,
     onDismiss: () -> Unit,
-    viewModel: HeadOfViewModels
+    viewModel: HeadOfViewModels,
+    modifier: Modifier
 ) {
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
@@ -70,26 +71,24 @@ fun ArticleDetailWindow(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+            modifier = modifier
+                .fillMaxSize(),
             shape = MaterialTheme.shapes.large
         ) {
             Card(
-                modifier = Modifier
-                    .padding(4.dp)
+                modifier = modifier
                     .fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = modifier.fillMaxWidth()) {
                     DisplayColorsCards(article)
 
                     // TOP_ROW fields
-                    Row(modifier = Modifier.fillMaxWidth()) {
+                    Row(modifier = modifier.fillMaxWidth()) {
                         FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
                             DisplayField(
                                 column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                Modifier
+                                modifier
                                     .weight(1f)
                                     .height(67.dp)
                             ) { currentChangingField = column }
@@ -98,21 +97,21 @@ fun ArticleDetailWindow(
 
                     // Remaining FieldsDisplayer groups
                     FieldsDisplayer.values().drop(1).forEach { fieldsGroup ->
-                        Row(modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = modifier.fillMaxWidth()) {
                             fieldsGroup.fields.forEach { (column, abbr) ->
                                 when (fieldsGroup) {
                                     FieldsDisplayer.BenficesEntre -> {
                                         if (article.clienPrixVentUnite > 0) {
                                             BeneInfoBox(
                                                 "$abbr -> ${article.getColumnValue(column)}",
-                                                Modifier.weight(1f)
+                                                modifier.weight(1f)
                                             )
                                         }
                                     }
                                     else -> {
                                         DisplayField(
                                             column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                            Modifier
+                                            modifier
                                                 .weight(1f)
                                                 .height(67.dp)
                                         ) { currentChangingField = column }
@@ -131,20 +130,19 @@ fun ArticleDetailWindow(
                         fontSize = 25.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
+                        modifier = modifier
                             .fillMaxWidth()
-                            .padding(7.dp)
                     )
 
                     // Display in Outlines switch
                     Row(
-                        modifier = Modifier
+                        modifier = modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Display in Outlines")
-                        Spacer(Modifier.weight(1f))
+                        Spacer(modifier.weight(1f))
                         Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
                     }
                 }
@@ -171,7 +169,7 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifi
             if (couleur != null) {
                 Card(modifier = Modifier
                     .width(250.dp)
-                    .height(300.dp)
+                    .height(250.dp)
                     .padding(end = 8.dp)) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
