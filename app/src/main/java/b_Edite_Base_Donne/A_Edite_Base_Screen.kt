@@ -174,8 +174,8 @@ fun A_Edite_Base_Screen(
                 listState = listState,
                 currentChangingField = currentChangingField,
                 paddingValues = paddingValues,
-                function = { currentChangingField = it },
-                function1 = { articlesDataBaseDonne ->
+                onValueChanged = { currentChangingField = it },
+                onUniteToggleClick = { articlesDataBaseDonne ->
                     if (articlesDataBaseDonne != null) {
                         articleDataBaseDonne = articlesDataBaseDonne.copy(affichageUniteState = !articlesDataBaseDonne.affichageUniteState)
                         editeBaseDonneViewModel.updateDataBaseDonne(articleDataBaseDonne)
@@ -246,8 +246,8 @@ fun ArticlesScreenList(
     listState: LazyListState,
     currentChangingField: String,
     paddingValues: PaddingValues,
-    function: (String) -> Unit,
-    function1: (BaseDonne?) -> Unit,
+    onValueChanged: (String) -> Unit,
+    onUniteToggleClick: (BaseDonne?) -> Unit,
     onClickImageDimentionChangeur: (BaseDonne) -> Unit,
 ) {
 
@@ -264,8 +264,8 @@ fun ArticlesScreenList(
                         articlesDataBaseDonne = relatedBaseDonne,
                         editeBaseDonneViewModel = editeBaseDonneViewModel,
                         currentChangingField = currentChangingField,
-                        onValueChanged = function,
-                        onUniteToggleClick = function1,
+                        onValueChanged = onValueChanged,
+                        onUniteToggleClick = onUniteToggleClick,
                     )
                 }
                 Row(
@@ -584,7 +584,7 @@ fun DisplayDetailleArticle(
 ) {
     var displayeInOutlines by remember { mutableStateOf(false) }
 
-    Card(    //TODO combine tout les fields et columnToChange = don un seul et essye de modulise
+    Card(
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier
             .padding(4.dp)

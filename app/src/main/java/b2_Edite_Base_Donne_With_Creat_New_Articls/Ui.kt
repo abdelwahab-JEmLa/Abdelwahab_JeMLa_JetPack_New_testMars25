@@ -1,6 +1,5 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-import a_RoomDB.BaseDonne
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -14,9 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
@@ -26,6 +26,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -38,22 +39,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import b_Edite_Base_Donne.BaseDonneStatTabel
-import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.LoadImageFromPath
-import b_Edite_Base_Donne.OutlineTextEditeBaseDonne
 import b_Edite_Base_Donne.capitalizeFirstLetter
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.example.abdelwahabjemlajetpack.R
-import java.io.File
 
 @Composable
 fun CategoryHeaderECB(
@@ -93,8 +91,10 @@ fun CategoryHeaderECB(
 @Composable
 fun ArticleDetailDialog(
     article: BaseDonneECBTabelle,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    viewModel: HeadOfViewModels
 ) {
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -116,7 +116,10 @@ fun ArticleDetailDialog(
                         .fillMaxWidth()
                         .aspectRatio(1f)
                 ) {
-                    ImageDisplayerWithGlideECB(article)
+                    DisplayDetailleArticle(
+                        article=article,
+                        viewModel=viewModel,
+                        )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 AutoResizedTextECB(
@@ -134,17 +137,13 @@ fun ArticleDetailDialog(
         }
     }
 }
-
 @Composable
 fun DisplayDetailleArticle(
-    article: BaseDonneStatTabel,
-    articlesDataBaseDonne: BaseDonne?,
-    editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    currentChangingField: String,
-    onValueChanged: (String) -> Unit,
-    onUniteToggleClick: (BaseDonne?) -> Unit,
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
 ) {
     var displayeInOutlines by remember { mutableStateOf(false) }
+    var currentChangingField by remember { mutableStateOf("") }
 
     Card(
         shape = MaterialTheme.shapes.medium,
@@ -174,12 +173,14 @@ fun DisplayDetailleArticle(
                         abbreviation = abbreviation,
                         currentChangingField = currentChangingField,
                         article = article,
-                        viewModel = editeBaseDonneViewModel,
-                        onValueChanged = onValueChanged,
+                        viewModel = viewModel,
                         displayeInOutlines = displayeInOutlines,
                         modifier = Modifier
                             .weight(1f)
-                            .height(67.dp)
+                            .height(67.dp),
+                        onValueChanged = {
+                            currentChangingField=columnToChange
+                        }
                     )
                 }
             }
@@ -200,10 +201,12 @@ fun DisplayDetailleArticle(
                             abbreviation = abbreviation,
                             currentChangingField = currentChangingField,
                             article = article,
-                            viewModel = editeBaseDonneViewModel,
-                            onValueChanged = onValueChanged,
+                            viewModel = viewModel,
                             displayeInOutlines = displayeInOutlines,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            onValueChanged = {
+                                currentChangingField=columnToChange
+                            }
                         )
                     }
 
@@ -227,8 +230,8 @@ fun DisplayDetailleArticle(
                         }
                     }
 
-                    CalculationButtons(article, editeBaseDonneViewModel, onValueChanged)
-                    ArticleToggleButton(articlesDataBaseDonne, editeBaseDonneViewModel, onUniteToggleClick)
+                    CalculationButtons(article, viewModel)
+                    ArticleToggleButton(article, viewModel)
                 }
             }
 
@@ -264,14 +267,14 @@ fun DisplayField(
     columnToChange: String,
     abbreviation: String,
     currentChangingField: String,
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    onValueChanged: (String) -> Unit,
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
     displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier
-) {
+    modifier: Modifier = Modifier ,
+    onValueChanged: (String) -> Unit,
+    ) {
     if (displayeInOutlines) {
-        OutlineTextEditeBaseDonne(
+        OutlineTextECB(
             columnToChange = columnToChange,
             abbreviation = abbreviation,
             onValueChanged = onValueChanged,
@@ -281,27 +284,84 @@ fun DisplayField(
             modifier = modifier
         )
     } else {
+        val columnValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
         BeneInfoBox(
-            text = "$abbreviation: ${getArticleValue(article, columnToChange)}",
+            text = "$abbreviation: $columnValue",
             modifier = modifier
         )
     }
 }
 
+@Composable
+fun OutlineTextECB(
+    columnToChange: String,
+    abbreviation: String,
+    currentChangingField: String,
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier = Modifier,
+    onValueChanged: (String) -> Unit,
+) {
+    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
 
-// Update the getArticleValue function to include the new fields
-fun getArticleValue(article: BaseDonneStatTabel, columnName: String): String {
-    return when (columnName) {
-        "clienPrixVentUnite" -> article.clienPrixVentUnite.toString()
-        "nmbrCaron" -> article.nmbrCaron.toString()
-        "nmbrUnite" -> article.nmbrUnite.toString()
-        "monPrixAchatUniter" -> article.monPrixAchatUniter.toString()
-        "monPrixAchat" -> article.monPrixAchat.toString()
-        "monPrixVentUniter" -> article.monPrixVentUniter.toString()
-        "monPrixVent" -> article.monPrixVent.toString()
-        "benificeClient" -> article.benificeClient.toString()
-        // Add other fields as needed
-        else -> ""
+    // Déterminer la valeur du champ texte
+    val textValue = if (currentChangingField == columnToChange) {
+        textFieldValue
+    } else ""
+
+    // Déterminer la valeur de l'étiquette
+    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    val roundedValue = try {
+        val doubleValue = labelValue.toDouble()
+        if (doubleValue % 1 == 0.0) {
+            doubleValue.toInt().toString()
+        } else {
+            String.format("%.1f", doubleValue)
+        }
+    } catch (e: NumberFormatException) {
+        labelValue // Retourner la valeur initiale en cas d'exception
+    }
+
+    // Get the keyboard controller
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(horizontal = 3.dp)
+    ) {
+        OutlinedTextField(
+            value = textValue,
+            onValueChange = { newValue ->
+                textFieldValue = newValue.replace(',', '.')
+                viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
+                onValueChanged(columnToChange)
+            },
+            label = {
+                AutoResizedText(
+                    text = "$abbreviation$roundedValue",
+                    color = Color.Red,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            textStyle = TextStyle(
+                color = Color.Blue,
+                textAlign = TextAlign.Center,
+                fontSize = 14.sp
+            ),
+            modifier = modifier
+                .fillMaxWidth()
+                .height(65.dp),
+            visualTransformation = VisualTransformation.None, // Aucune transformation
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide()
+                }
+            )
+        )
     }
 }
 
@@ -322,9 +382,8 @@ fun BeneInfoBox(text: String, modifier: Modifier = Modifier) {
 }
 @Composable
 fun CalculationButtons(
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    onValueChanged: (String) -> Unit
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
 ) {
     Row(
         modifier = Modifier
@@ -335,16 +394,14 @@ fun CalculationButtons(
         CalculationButton(
             onClick = {
                 val newPrice = article.monPrixAchat / article.nmbrUnite
-                onValueChanged("monPrixAchat")
-                viewModel.updateCalculated(newPrice.toString(), "monPrixAchat", article)
+                viewModel.updateAndCalculateAuthersField(newPrice.toString(), "monPrixAchat", article)
             },
             text = "/"
         )
         CalculationButton(
             onClick = {
                 val newPrice2 = article.monPrixAchat * article.nmbrUnite
-                onValueChanged("monPrixAchat")
-                viewModel.updateCalculated(newPrice2.toString(), "monPrixAchat", article)
+                viewModel.updateAndCalculateAuthersField(newPrice2.toString(), "monPrixAchat", article)
             },
             text = "*"
         )
@@ -362,36 +419,33 @@ fun CalculationButton(onClick: () -> Unit, text: String) {
 
 @Composable
 fun ArticleToggleButton(
-    article: BaseDonne?,
-    viewModel: EditeBaseDonneViewModel,
-    onClickUniteToggleButton: (BaseDonne?) -> Unit,
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
 ) {
-    article?.let {
-        Button(
-            onClick = { onClickUniteToggleButton(article) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (article.affichageUniteState)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.error
-            ),
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = if (article.affichageUniteState)
-                    "Cacher les Unités"
-                else
-                    "Afficher les Unités"
-            )
-        }
+    Button(
+        onClick = { viewModel },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (article.affichageUniteState)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.error
+        ),
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = if (article.affichageUniteState)
+                "Cacher les Unités"
+            else
+                "Afficher les Unités"
+        )
     }
 }
 
 @Composable
 fun DisplayColorsCards(
-    article: BaseDonneStatTabel,
+    article: BaseDonneECBTabelle,
     modifier: Modifier = Modifier
 ) {
     val couleursList = listOf(
@@ -416,14 +470,14 @@ fun DisplayColorsCards(
 }
 
 @Composable
-fun ColorCard(article: BaseDonneStatTabel, index: Int, couleur: String) {
+fun ColorCard(article: BaseDonneECBTabelle, index: Int, couleur: String) {
     Card(
         modifier = Modifier
             .width(250.dp)
             .height(300.dp)
             .padding(end = 8.dp)
     ) {
-        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
+        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(8.dp)
@@ -441,45 +495,7 @@ fun ColorCard(article: BaseDonneStatTabel, index: Int, couleur: String) {
         }
     }
 }
-@OptIn(ExperimentalGlideComposeApi::class)
-@Composable
-fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
-    val defaultDrawable = R.drawable.blanc
-
-    val imageExist: String? = when {
-        File("$imagePath.jpg").exists() -> "$imagePath.jpg"
-        File("$imagePath.webp").exists() -> "$imagePath.webp"
-        else -> null
-    }
 
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .wrapContentSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        GlideImage(
-            model = imageExist ?: defaultDrawable,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .wrapContentSize(Alignment.Center),
-        ) {
-            it
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .override(1000) // Set a larger size
-                .thumbnail(0.25f) // Start with 25% quality
-                .fitCenter() // Ensure the image fits within the bounds
-                .transition(DrawableTransitionOptions.withCrossFade()) // Smooth transition as quality improves
-        }
-    }
-}
-
-// Helper function
-fun capitalizeFirstLetter(text: String): String {
-    return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-}
 
 

@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -66,4 +68,16 @@ fun AutoResizedTextECB(
             }
         }
     )
+  //  return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }//Ajoute cette
+
+}
+
+class HeadOfViewModelFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HeadOfViewModels(CreatAndEditeInBaseDonneModifier()) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

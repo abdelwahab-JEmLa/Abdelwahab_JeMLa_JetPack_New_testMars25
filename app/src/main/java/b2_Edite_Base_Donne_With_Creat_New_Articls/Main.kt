@@ -1,7 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +43,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     onUpdateProgress: (Float) -> Unit,
     onUpdateComplete: () -> Unit,
 ) {
-    val uiState by viewModel.uiStateHeaderViewsModel.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
     val gridState = rememberLazyGridState()
@@ -116,7 +114,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         dialogeDisplayeDetailleChanger?.let { article ->
             ArticleDetailDialog(
                 article = article,
-                onDismiss = { dialogeDisplayeDetailleChanger = null }
+                onDismiss = { dialogeDisplayeDetailleChanger = null },
+                viewModel=viewModel,
             )
         }
     }
@@ -153,11 +152,19 @@ fun ArticleItemECB(
 }
 
 
+data class CreatAndEditeInBaseDonnRepositeryModels(
+    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
+    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val showOnlyWithFilter: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
 class HeadOfViewModels(
-    private val modifierCreatAndEditeInBaseDonne: CreatAndEditeInBaseDonneModifier
+    private val modifier: CreatAndEditeInBaseDonneModifier
 ) : ViewModel() {
-    private val _uiStateHeaderViewsModel = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
-    val uiStateHeaderViewsModel = _uiStateHeaderViewsModel.asStateFlow()
+    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
+    val uiState = _uiState.asStateFlow()
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
@@ -170,69 +177,169 @@ class HeadOfViewModels(
 
     private suspend fun initDataFromFirebase() {
         try {
-            _uiStateHeaderViewsModel.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true) }
 
-            val articlesClassementSnapshot = refDBJetPackExport.get().await()
-            val articles = articlesClassementSnapshot.children.mapNotNull { snapshot ->
+            val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
                 snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
                     updateIdArticle(snapshot.value as? Map<String, Any?> ?: emptyMap())
                 }
             }
 
-            val categoriesSnapshot = refCategorieTabelee.get().await()
-            val categories = categoriesSnapshot.children.mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
+            val categories = refCategorieTabelee.get().await().children
+                .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
                 .sortedBy { it.idClassementCategorieInCategoriesTabele }
 
-            _uiStateHeaderViewsModel.update { currentState ->
-                currentState.copy(
-                    articlesBaseDonneECB = articles,
-                    categoriesECB = categories,
-                    isLoading = false
-                )
-            }
+            _uiState.update { it.copy(
+                articlesBaseDonneECB = articles,
+                categoriesECB = categories,
+                isLoading = false
+            ) }
         } catch (e: Exception) {
-            Log.e("ClassementsArticlesRepo", "Error loading data", e)
-            _uiStateHeaderViewsModel.update { currentState ->
-                currentState.copy(
-                    isLoading = false,
-                    error = "Failed to load data: ${e.message}"
-                )
+            _uiState.update { it.copy(
+                isLoading = false,
+                error = "Failed to load data: ${e.message}"
+            ) }
+        }
+    }
+
+    fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
+        val updatedArticle = modifier.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
+
+        // Update local state
+        _uiState.update { state ->
+            val updatedArticles = state.articlesBaseDonneECB.map {
+                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+            }
+            state.copy(articlesBaseDonneECB = updatedArticles)
+        }
+
+        // Perform Firebase update asynchronously
+        viewModelScope.launch {
+            try {
+                refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle).await()
+            } catch (e: Exception) {
+                // Handle error (e.g., update error state)
+                _uiState.update { it.copy(error = "Failed to update Firebase: ${e.message}") }
             }
         }
     }
 
     fun toggleFilter() {
-        val newState = modifierCreatAndEditeInBaseDonne.toggleFilter(_uiStateHeaderViewsModel.value)
-        _uiStateHeaderViewsModel.update { newState }
-    }
-
-    fun refreshData() {
-        viewModelScope.launch {
-            initDataFromFirebase()
-        }
+        _uiState.update { modifier.toggleFilter(it) }
     }
 }
 
-data class CreatAndEditeInBaseDonnRepositeryModels(
-    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
-    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
-    val showOnlyWithFilter: Boolean = false,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+class CreatAndEditeInBaseDonneModifier {
+    fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
+        currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
 
-class CreatAndEditeInBaseDonneModifier() {
-    fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels): CreatAndEditeInBaseDonnRepositeryModels {
-        return currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
-    }
-}
-class HeadOfViewModelFactory() : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(CreatAndEditeInBaseDonneModifier()) as T
+    fun updateAndCalculateAuthersField(
+        textFieldValue: String,
+        columnToChange: String,
+        article: BaseDonneECBTabelle
+    ): BaseDonneECBTabelle {
+        val newValue = textFieldValue.toDoubleOrNull() ?: return article
+        return article.copy().apply {
+            calculateWithoutCondition(columnToChange, textFieldValue, newValue)
+            calculateWithCondition(columnToChange, newValue)
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+
+    private fun BaseDonneECBTabelle.calculateWithoutCondition(
+        columnToChange: String,
+        textFieldValue: String,
+        newValue: Double
+    ) {
+        when (columnToChange) {
+            "nmbrUnite" -> nmbrUnite = newValue.toInt()
+            "clienPrixVentUnite" -> clienPrixVentUnite = newValue
+            else -> setField(columnToChange, textFieldValue)
+        }
+
+        prixDeVentTotaleChezClient = nmbrUnite * clienPrixVentUnite
+        benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
+        benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
+    }
+
+    private fun BaseDonneECBTabelle.calculateWithCondition(columnToChange: String, newValue: Double) {
+        when (columnToChange) {
+            "monPrixVent" -> updateMonPrixVent(newValue)
+            "monBenfice" -> updateMonBenfice(newValue)
+            "benificeClient" -> updateBenificeClient(newValue)
+            "monPrixAchat" -> updateMonPrixAchat(newValue)
+            "monPrixAchatUniter" -> updateMonPrixAchatUniter(newValue)
+            "monPrixVentUniter" -> updateMonPrixVentUniter(newValue)
+            "monBeneficeUniter" -> updateMonBeneficeUniter(newValue)
+        }
+    }
+
+    private fun BaseDonneECBTabelle.updateMonPrixVent(newValue: Double) {
+        monPrixVent = newValue
+        monBenfice = monPrixVent - monPrixAchat
+        monPrixVentUniter = monPrixVent / nmbrUnite
+        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+    }
+
+    private fun BaseDonneECBTabelle.updateMonBenfice(newValue: Double) {
+        monBenfice = newValue
+        monPrixVent = monBenfice + monPrixAchat
+        monPrixVentUniter = monPrixVent / nmbrUnite
+        monBeneficeUniter = monBenfice / nmbrUnite
+        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+    }
+
+    private fun BaseDonneECBTabelle.updateBenificeClient(newValue: Double) {
+        benificeClient = newValue
+        monPrixVent = prixDeVentTotaleChezClient - benificeClient
+        monBenfice = monPrixVent - monPrixAchat
+        monPrixVentUniter = monPrixVent / nmbrUnite
+        monBeneficeUniter = monBenfice / nmbrUnite
+    }
+
+    private fun BaseDonneECBTabelle.updateMonPrixAchat(newValue: Double) {
+        monPrixAchat = newValue
+        monPrixAchatUniter = monPrixAchat / nmbrUnite
+        monBenfice = monPrixVent - monPrixAchat
+        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+        benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
+        benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
+    }
+
+    private fun BaseDonneECBTabelle.updateMonPrixAchatUniter(newValue: Double) {
+        monPrixAchatUniter = newValue
+        monPrixAchat = monPrixAchatUniter * nmbrUnite
+        monBenfice = monPrixVent - monPrixAchat
+        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+        benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
+        benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
+    }
+
+    private fun BaseDonneECBTabelle.updateMonPrixVentUniter(newValue: Double) {
+        monPrixVentUniter = newValue
+        monPrixVent = monPrixVentUniter * nmbrUnite
+        monBenfice = monPrixVent - monPrixAchat
+        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+    }
+
+    private fun BaseDonneECBTabelle.updateMonBeneficeUniter(newValue: Double) {
+        monBeneficeUniter = newValue
+        monBenfice = monBeneficeUniter * nmbrUnite
+        monPrixVentUniter = monPrixAchatUniter + monBeneficeUniter
+        monPrixVent = monPrixVentUniter * nmbrUnite
+        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+    }
+
+    private fun BaseDonneECBTabelle.setField(fieldName: String, value: String) {
+        val field = this::class.java.getDeclaredField(fieldName)
+        field.isAccessible = true
+        when (field.type) {
+            Int::class.java -> field.setInt(this, value.toIntOrNull() ?: 0)
+            Double::class.java -> field.setDouble(this, value.toDoubleOrNull() ?: 0.0)
+            String::class.java -> field.set(this, value)
+            Boolean::class.java -> field.setBoolean(this, value.toBoolean())
+        }
     }
 }
 
@@ -275,10 +382,49 @@ data class BaseDonneECBTabelle(
     var benificeClient: Double = 0.0,
     var monBeneficeUniter: Double = 0.0
 ) {
-    constructor() : this(0)
-
     fun updateIdArticle(value: Map<String, Any?>) {
         idArticleECB = (value["idArticle"] as? Long)?.toInt() ?: 0
+    }
+
+    fun getColumnValue(columnName: String): Any? {
+        return when (columnName) {
+            "nomArticleFinale" -> nomArticleFinale
+            "classementCate" -> classementCate
+            "nomArab" -> nomArab
+            "nmbrCat" -> nmbrCat
+            "couleur1" -> couleur1
+            "couleur2" -> couleur2
+            "couleur3" -> couleur3
+            "couleur4" -> couleur4
+            "nomCategorie2" -> nomCategorie2
+            "nmbrUnite" -> nmbrUnite
+            "nmbrCaron" -> nmbrCaron
+            "affichageUniteState" -> affichageUniteState
+            "commmentSeVent" -> commmentSeVent
+            "afficheBoitSiUniter" -> afficheBoitSiUniter
+            "monPrixAchat" -> monPrixAchat
+            "clienPrixVentUnite" -> clienPrixVentUnite
+            "minQuan" -> minQuan
+            "monBenfice" -> monBenfice
+            "monPrixVent" -> monPrixVent
+            "diponibilityState" -> diponibilityState
+            "neaon2" -> neaon2
+            "idCategorie" -> idCategorie
+            "funChangeImagsDimention" -> funChangeImagsDimention
+            "nomCategorie" -> nomCategorie
+            "neaon1" -> neaon1
+            "lastUpdateState" -> lastUpdateState
+            "cartonState" -> cartonState
+            "dateCreationCategorie" -> dateCreationCategorie
+            "prixDeVentTotaleChezClient" -> prixDeVentTotaleChezClient
+            "benficeTotaleEntreMoiEtClien" -> benficeTotaleEntreMoiEtClien
+            "benificeTotaleEn2" -> benificeTotaleEn2
+            "monPrixAchatUniter" -> monPrixAchatUniter
+            "monPrixVentUniter" -> monPrixVentUniter
+            "benificeClient" -> benificeClient
+            "monBeneficeUniter" -> monBeneficeUniter
+            else -> null
+        }
     }
 }
 
