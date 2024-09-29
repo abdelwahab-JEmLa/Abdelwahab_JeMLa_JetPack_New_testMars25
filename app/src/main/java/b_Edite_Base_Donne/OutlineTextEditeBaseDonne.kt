@@ -36,7 +36,7 @@ fun OutlineTextEditeBaseDonne(
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
     modifier: Modifier = Modifier,
-    function: (String) -> Unit,
+    onValueChanged: (String) -> Unit,
 ) {
     var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
 
@@ -70,7 +70,7 @@ fun OutlineTextEditeBaseDonne(
             onValueChange = { newValue ->
                 textFieldValue = newValue.replace(',', '.')
                 viewModel.updateCalculated(textFieldValue, columnToChange, article)
-                function(columnToChange)
+                onValueChanged(columnToChange)
             },
             label = {
                 AutoResizedText(

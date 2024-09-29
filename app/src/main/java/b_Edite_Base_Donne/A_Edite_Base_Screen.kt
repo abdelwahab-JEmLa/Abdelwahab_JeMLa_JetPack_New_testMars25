@@ -86,7 +86,6 @@ import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
 @Composable
 fun A_Edite_Base_Screen(
     editeBaseDonneViewModel: EditeBaseDonneViewModel = viewModel(),
@@ -264,8 +263,8 @@ fun ArticlesScreenList(
                         articlesDataBaseDonne = relatedBaseDonne,
                         editeBaseDonneViewModel = editeBaseDonneViewModel,
                         currentChangingField = currentChangingField,
-                        function = function,
-                        function1 = function1,
+                        onValueChanged = function,
+                        onUniteToggleClick = function1,
                     )
                 }
                 Row(
@@ -571,300 +570,285 @@ fun ArticleBoardCard(
     }
 }
 
+
+
 @Composable
 fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
     articlesDataBaseDonne: BaseDonne?,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     currentChangingField: String,
-    function: (String) -> Unit,
-    function1: (BaseDonne?) -> Unit,
+    onValueChanged: (String) -> Unit,
+    onUniteToggleClick: (BaseDonne?) -> Unit,
 ) {
 
     Card(
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.medium,
         modifier = Modifier
-            .wrapContentSize()
-            .padding(4.dp),
+            .padding(4.dp)
+            .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             TopRowQuantitys(
-                article,
-                articlesDataBaseDonne= articlesDataBaseDonne,
+                article = article,
+                articlesDataBaseDonne = articlesDataBaseDonne,
                 viewModel = editeBaseDonneViewModel,
                 currentChangingField = currentChangingField,
-                function = function
+                onValueChanged = onValueChanged
             )
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
                 DisplayArticleInformations(
                     editeBaseDonneViewModel = editeBaseDonneViewModel,
                     article = article,
-                    articlesDataBaseDonne= articlesDataBaseDonne,
+                    articlesDataBaseDonne = articlesDataBaseDonne,
                     modifier = Modifier.weight(0.62f),
-                    function = function,
+                    onValueOutlineChanged = onValueChanged,
                     currentChangingField = currentChangingField,
-                    function1 =function1,
+                    onClickUniteToggleButton = onUniteToggleClick,
                 )
             }
-            Box(
+            Text(
+                text = capitalizeFirstLetter(article.nomArticleFinale),
+                fontSize = 25.sp,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(7.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = capitalizeFirstLetter(article.nomArticleFinale),
-                    fontSize = 25.sp,
-                    textAlign = TextAlign.Center,
-                    color = Color.Red
-                )
-            }
-            }
+                    .padding(7.dp)
+            )
         }
     }
-
-fun capitalizeFirstLetter(text: String): String {
-    return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 }
+
+
+
 
 @Composable
 fun TopRowQuantitys(
     article: BaseDonneStatTabel,
     articlesDataBaseDonne: BaseDonne?,
     viewModel: EditeBaseDonneViewModel,
-    modifier: Modifier = Modifier,
-    function: (String) -> Unit,
     currentChangingField: String,
-    ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        OutlineTextEditeBaseDonne(
-            columnToChange = "clienPrixVentUnite",
-            abbreviation = "c.pU",
-            function = function,
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = viewModel,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp)
+    onValueChanged: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier = modifier.fillMaxWidth()) {
+        val fields = listOf(
+            "clienPrixVentUnite" to "c.pU",
+            "nmbrCaron" to "n.c",
+            "nmbrUnite" to "n.u"
         )
-        OutlineTextEditeBaseDonne(
-            columnToChange = "nmbrCaron",
-            abbreviation = "n.c",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = viewModel,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp),
-            function = function
-        )
-        OutlineTextEditeBaseDonne(
-            columnToChange = "nmbrUnite",
-            abbreviation = "n.u",
-            function = function,
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = viewModel,
-            modifier = Modifier
-                .weight(1f)
-                .height(67.dp)
-        )
+        fields.forEach { (columnToChange, abbreviation) ->
+            OutlineTextEditeBaseDonne(
+                columnToChange = columnToChange,
+                abbreviation = abbreviation,
+                onValueChanged = onValueChanged,
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = viewModel,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(67.dp)
+            )
+        }
     }
 }
-// Composable Function to Display Article Information
+
 @Composable
 fun DisplayArticleInformations(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     article: BaseDonneStatTabel,
     articlesDataBaseDonne: BaseDonne?,
     modifier: Modifier = Modifier,
-    function: (String) -> Unit,
+    onValueOutlineChanged: (String) -> Unit,
     currentChangingField: String,
-    function1: (BaseDonne?) -> Unit,
+    onClickUniteToggleButton: (BaseDonne?) -> Unit,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
-        Row(
-            modifier = Modifier
-        ) {
-            if (article.nmbrUnite > 1) {
-                OutlineTextEditeBaseDonne(
-                    columnToChange = "monPrixAchatUniter",
-                    abbreviation = "U/",
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    viewModel = editeBaseDonneViewModel,
-                    function = function,
-                    modifier = Modifier
-                        .weight(0.40f)
-                        .height(63.dp)
-                )
-            }
+        // Price Information
+        ArticlePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged)
 
+        // Benefit Information
+        if (article.clienPrixVentUnite > 0) {
+            ArticleBenefitInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged)
+        }
+
+        // Sale Price Information
+        ArticleSalePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged)
+
+        // Calculation Buttons
+        CalculationButtons(article, editeBaseDonneViewModel, onValueOutlineChanged)
+
+        // Toggle Button
+        ArticleToggleButton(articlesDataBaseDonne, editeBaseDonneViewModel, onClickUniteToggleButton)
+    }
+}
+
+@Composable
+fun ArticlePriceInfo(
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel,
+    currentChangingField: String,
+    onValueChanged: (String) -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        if (article.nmbrUnite > 1) {
             OutlineTextEditeBaseDonne(
-                columnToChange = "monPrixAchat",
-                abbreviation = "m.pA>",
+                columnToChange = "monPrixAchatUniter",
+                abbreviation = "U/",
                 currentChangingField = currentChangingField,
                 article = article,
-                viewModel = editeBaseDonneViewModel,
-                function = function,
+                viewModel = viewModel,
+                onValueChanged = onValueChanged,
                 modifier = Modifier
-                    .weight(0.60f)
+                    .weight(0.40f)
                     .height(63.dp)
             )
         }
-
-        if (article.clienPrixVentUnite > 0) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp)
-                    .padding(top = 5.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 3.dp)
-                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                        .height(100.dp)
-                        .weight(1f)
-                ) {
-                    AutoResizedText(
-                        text = "b.E2 -> ${article.benificeTotaleEn2}",
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .align(Alignment.Center)
-                            .height(40.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(5.dp))
-                Box(
-                    modifier = Modifier
-                        .padding(top = 3.dp)
-                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
-                        .height(100.dp)
-                        .weight(1f)
-                ) {
-                    AutoResizedText(
-                        text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .align(Alignment.Center)
-                            .height(40.dp)
-                    )
-                }
-            }
-            OutlineTextEditeBaseDonne(
-                columnToChange = "benificeClient",
-                abbreviation = "b.c",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = editeBaseDonneViewModel,
-                function = function,
-                modifier = Modifier
-            )
-        }
-        Row(
+        OutlineTextEditeBaseDonne(
+            columnToChange = "monPrixAchat",
+            abbreviation = "m.pA>",
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel = viewModel,
+            onValueChanged = onValueChanged,
             modifier = Modifier
+                .weight(0.60f)
                 .height(63.dp)
-        ) {
-            if (article.nmbrUnite > 1) {
-                OutlineTextEditeBaseDonne(
-                    columnToChange = "monBeneficeUniter",
-                    abbreviation = "u/",
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    viewModel = editeBaseDonneViewModel,
-                    function = function,
-                    modifier = Modifier.weight(0.35f)
-                )
-            }
-            OutlineTextEditeBaseDonne(
-                columnToChange = "monBenfice",
-                abbreviation = "M.B",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = editeBaseDonneViewModel,
-                function = function,
-                modifier = Modifier.weight(0.65f)
-            )
-        }
-        Row(
-            modifier = Modifier
-                .height(63.dp)
-        ) {
-            if (article.nmbrUnite > 1) {
-                OutlineTextEditeBaseDonne(
-                    columnToChange = "monPrixVentUniter",
-                    abbreviation = "u/",
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    viewModel = editeBaseDonneViewModel,
-                    function = function,
-                    modifier = Modifier.weight(0.35f)
-                )
-            }
-
-            OutlineTextEditeBaseDonne(
-                columnToChange = "monPrixVent",
-                abbreviation = "M.P.V",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = editeBaseDonneViewModel,
-                function = function,
-                modifier = Modifier.weight(0.65f)
-            )
-        }
-
-        // Nouvelle ligne pour les boutons de calcul
-        Row(
-            modifier = Modifier
-                .height(60.dp)
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = {
-                    val newPrice = article.monPrixAchat / article.nmbrUnite
-                    function("monPrixAchat")
-                    editeBaseDonneViewModel.updateCalculated(newPrice.toString(), "monPrixAchat", article)
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("/")
-            }
-            Button(
-                onClick = {
-                    val newPrice2 = article.monPrixAchat * article.nmbrUnite
-                    function("monPrixAchat")
-                    editeBaseDonneViewModel.updateCalculated(newPrice2.toString(), "monPrixAchat", article)
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("*")
-            }
-        }
-
-
-        // Utilisation d'un état mutable pour que l'UI réagisse aux changements
-        ArticleToggleButton(
-            article = articlesDataBaseDonne,
-            viewModel = editeBaseDonneViewModel,
-            function1 = function1
         )
+    }
+}
+
+@Composable
+fun BenefitInfoBox(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.extraSmall)
+            .height(100.dp)
+    ) {
+        AutoResizedText(
+            text = text,
+            modifier = Modifier
+                .padding(4.dp)
+                .align(Alignment.Center)
+                .height(40.dp)
+        )
+    }
+}
+
+@Composable
+fun ArticleBenefitInfo(
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel,
+    currentChangingField: String,
+    onValueChanged: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(55.dp)
+            .padding(top = 5.dp)
+    ) {
+        BenefitInfoBox(
+            text = "b.E2 -> ${article.benificeTotaleEn2}",
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        BenefitInfoBox(
+            text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+            modifier = Modifier.weight(1f)
+        )
+    }
+    OutlineTextEditeBaseDonne(
+        columnToChange = "benificeClient",
+        abbreviation = "b.c",
+        currentChangingField = currentChangingField,
+        article = article,
+        viewModel = viewModel,
+        onValueChanged = onValueChanged,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+fun ArticleSalePriceInfo(
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel,
+    currentChangingField: String,
+    onValueChanged: (String) -> Unit
+) {
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .height(63.dp)) {
+        if (article.nmbrUnite > 1) {
+            OutlineTextEditeBaseDonne(
+                columnToChange = "monPrixVentUniter",
+                abbreviation = "u/",
+                currentChangingField = currentChangingField,
+                article = article,
+                viewModel = viewModel,
+                onValueChanged = onValueChanged,
+                modifier = Modifier.weight(0.35f)
+            )
+        }
+        OutlineTextEditeBaseDonne(
+            columnToChange = "monPrixVent",
+            abbreviation = "M.P.V",
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel = viewModel,
+            onValueChanged = onValueChanged,
+            modifier = Modifier.weight(0.65f)
+        )
+    }
+}
+
+@Composable
+fun CalculationButtons(
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel,
+    onValueChanged: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        CalculationButton(
+            onClick = {
+                val newPrice = article.monPrixAchat / article.nmbrUnite
+                onValueChanged("monPrixAchat")
+                viewModel.updateCalculated(newPrice.toString(), "monPrixAchat", article)
+            },
+            text = "/"
+        )
+        CalculationButton(
+            onClick = {
+                val newPrice2 = article.monPrixAchat * article.nmbrUnite
+                onValueChanged("monPrixAchat")
+                viewModel.updateCalculated(newPrice2.toString(), "monPrixAchat", article)
+            },
+            text = "*"
+        )
+    }
+}
+
+@Composable
+fun CalculationButton(onClick: () -> Unit, text: String) {
+    Button(
+        onClick = onClick,
+    ) {
+        Text(text)
     }
 }
 
@@ -872,31 +856,23 @@ fun DisplayArticleInformations(
 fun ArticleToggleButton(
     article: BaseDonne?,
     viewModel: EditeBaseDonneViewModel,
-    function1: (BaseDonne?) -> Unit,
+    onClickUniteToggleButton: (BaseDonne?) -> Unit,
 ) {
-        UniteToggleButton(
-            articleDataBaseDonneStat = article,
-            onClick = {function1(article) }
-        )
-}
-
-@Composable
-fun UniteToggleButton(
-    articleDataBaseDonneStat: BaseDonne?,
-    onClick: () -> Unit
-) {
-    if (articleDataBaseDonneStat != null) {
+    article?.let {
         Button(
-            onClick = onClick,
+            onClick = { onClickUniteToggleButton(article) },
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (articleDataBaseDonneStat.affichageUniteState) DarkGreen else Color.Red
+                containerColor = if (article.affichageUniteState)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.error
             ),
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxWidth()
         ) {
             Text(
-                text = if (articleDataBaseDonneStat.affichageUniteState)
+                text = if (article.affichageUniteState)
                     "Cacher les Unités"
                 else
                     "Afficher les Unités"
@@ -915,7 +891,7 @@ fun DisplayColorsCards(
         article.couleur2,
         article.couleur3,
         article.couleur4,
-    )
+    ).filterNot { it.isNullOrEmpty() }
 
     LazyRow(
         verticalAlignment = Alignment.CenterVertically,
@@ -924,35 +900,39 @@ fun DisplayColorsCards(
             .fillMaxWidth()
     ) {
         itemsIndexed(couleursList) { index, couleur ->
-            if (!couleur.isNullOrEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .width(250.dp)
-                        .height(300.dp)
-                        .padding(end = 8.dp)
-                ) {
-                    val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(8.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .height(250.dp)
-                                .fillMaxWidth()
-                        ) {
-                            LoadImageFromPath(imagePath = imagePath)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = couleur)
-                    }
-                }
+            if (couleur != null) {
+                ColorCard(article, index, couleur)
             }
         }
     }
 }
 
+@Composable
+fun ColorCard(article: BaseDonneStatTabel, index: Int, couleur: String) {
+    Card(
+        modifier = Modifier
+            .width(250.dp)
+            .height(300.dp)
+            .padding(end = 8.dp)
+    ) {
+        val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${index + 1}"
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .height(250.dp)
+                    .fillMaxWidth()
+            ) {
+                LoadImageFromPath(imagePath = imagePath)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = couleur)
+        }
+    }
+}
 //---------------------------------------------------------------
 
 
@@ -992,7 +972,10 @@ fun LoadImageFromPath(imagePath: String, modifier: Modifier = Modifier) {
     }
 }
 
-
+// Helper function
+fun capitalizeFirstLetter(text: String): String {
+    return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+}
 
 
 
