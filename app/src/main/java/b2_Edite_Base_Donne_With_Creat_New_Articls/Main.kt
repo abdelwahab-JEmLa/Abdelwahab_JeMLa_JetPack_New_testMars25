@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -61,8 +62,46 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
 
-    Scaffold(
-        floatingActionButton = {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize()
+        ) { padding ->
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(gridColumns),
+                state = gridState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                uiState.categoriesECB.forEach { category ->
+                    val articlesInCategory = uiState.articlesBaseDonneECB.filter {
+                        it.nomCategorie == category.nomCategorieInCategoriesTabele &&
+                                (!filterNonDispo || it.diponibilityState == "")
+                    }
+                    if (articlesInCategory.isNotEmpty()) {
+                        item(span = { GridItemSpan(gridColumns) }) {
+                            CategoryHeaderECB(category = category)
+                        }
+                        items(articlesInCategory) { article ->
+                            ArticleItemECB(
+                                article = article,
+                                onClickOnImg = { clickedArticle ->
+                                    dialogeDisplayeDetailleChanger = clickedArticle
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Floating Action Buttons
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .zIndex(1f)
+        ) {
             FloatingActionButtons(
                 showFloatingButtons = showFloatingButtons,
                 onToggleNavBar = onToggleNavBar,
@@ -80,33 +119,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 onChangeGridColumns = { gridColumns = it }
             )
         }
-    ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(gridColumns),
-            state = gridState,
-            modifier = Modifier.padding(padding)
-        ) {
-            uiState.categoriesECB.forEach { category ->
-                val articlesInCategory = uiState.articlesBaseDonneECB.filter {
-                    it.nomCategorie == category.nomCategorieInCategoriesTabele &&
-                            (!filterNonDispo || it.diponibilityState == "")
-                }
-                if (articlesInCategory.isNotEmpty()) {
-                    item(span = { GridItemSpan(gridColumns) }) {
-                        CategoryHeaderECB(category = category)
-                    }
-                    items(articlesInCategory) { article ->
-                        ArticleItemECB(
-                            article = article,
-                            onClickOnImg = { clickedArticle ->
-                                dialogeDisplayeDetailleChanger = clickedArticle
-                            }
-                        )
-                    }
-                }
-            }
-        }
 
+        // Dialog
         dialogeDisplayeDetailleChanger?.let { article ->
             ArticleDetailDialog(
                 article = article,
