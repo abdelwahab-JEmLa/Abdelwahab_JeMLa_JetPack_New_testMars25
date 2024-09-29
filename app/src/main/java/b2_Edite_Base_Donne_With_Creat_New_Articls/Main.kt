@@ -24,7 +24,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
@@ -163,7 +162,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
 )
 
 class HeadOfViewModels(
-    private val modifier: CreatAndEditeInBaseDonneModifier
+    private val creatAndEditeInBaseDonneRepositery: CreatAndEditeInBaseDonneRepositery
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
@@ -205,7 +204,7 @@ class HeadOfViewModels(
     }
 
     fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
-        val updatedArticle = modifier.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
+        val updatedArticle = creatAndEditeInBaseDonneRepositery.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
 
         // Update local state
         _uiState.update { state ->
@@ -227,11 +226,11 @@ class HeadOfViewModels(
     }
 
     fun toggleFilter() {
-        _uiState.update { modifier.toggleFilter(it) }
+        _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
 }
 
-class CreatAndEditeInBaseDonneModifier {
+class CreatAndEditeInBaseDonneRepositery {
     fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
         currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
 
