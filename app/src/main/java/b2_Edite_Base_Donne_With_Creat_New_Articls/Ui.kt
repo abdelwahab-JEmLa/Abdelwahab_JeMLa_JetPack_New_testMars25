@@ -51,6 +51,9 @@ fun ArticleDetailWindos(
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels
 ) {
+    var displayeInOutlines by remember { mutableStateOf(true) }
+    var currentChangingField by remember { mutableStateOf("") }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
@@ -58,8 +61,6 @@ fun ArticleDetailWindos(
                 .padding(16.dp),
             shape = MaterialTheme.shapes.large
         ) {
-            var displayeInOutlines by remember { mutableStateOf(false) }
-            var currentChangingField by remember { mutableStateOf("") }
 
             Card(
                 modifier = Modifier
