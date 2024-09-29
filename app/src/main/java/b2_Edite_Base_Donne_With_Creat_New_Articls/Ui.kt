@@ -107,7 +107,7 @@ fun ArticleDetailWindow(
                                         if (article.clienPrixVentUnite > 0) {
                                             InfoBoxWhithVoiceInpute(
                                                 "$abbr -> ${article.getColumnValue(column)}",
-                                                modifier.weight(1f).padding(top = 4.dp).height(67.dp)
+                                                modifier.weight(1f).padding(top = 6.dp).height(67.dp)
                                             )
                                         }
                                     }
@@ -131,12 +131,9 @@ fun ArticleDetailWindow(
                     AutoResizedTextECB(
                         text = article.nomArticleFinale.capitalize(Locale.current),
                         fontSize = 25.sp,
-                        textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = modifier
-                            .fillMaxWidth()
+                        modifier = modifier.fillMaxWidth()
                     )
-
                     // Display in Outlines switch
                     Row(
                         modifier = modifier
@@ -150,6 +147,41 @@ fun ArticleDetailWindow(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AutoResizedTextECB(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    maxLines: Int = Int.MAX_VALUE,
+    fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize
+) {
+    val initialFontSize = fontSize
+    var currentFontSize by remember { mutableStateOf(initialFontSize) }
+    var readyToDraw by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text.capitalize(Locale.current),
+            color = color,
+            fontSize = currentFontSize,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.drawWithContent { if (readyToDraw) drawContent() },
+            onTextLayout = { textLayoutResult ->
+                if (textLayoutResult.didOverflowHeight) {
+                    currentFontSize *= 0.9f
+                } else {
+                    readyToDraw = true
+                }
+            }
+        )
     }
 }
 
@@ -174,47 +206,15 @@ fun InfoBoxWhithVoiceInpute(
                 1.dp,
                 MaterialTheme.colorScheme.outline,
                 MaterialTheme.shapes.extraSmall
-            )
+            ),
+        contentAlignment = Alignment.Center
     ) {
         AutoResizedTextECB(
             text = "$abbreviation -> $roundedValue",
-            modifier = modifier.align(Alignment.Center),
             color = MaterialTheme.colorScheme.error
         )
     }
 }
-
-@Composable
-fun AutoResizedTextECB(
-    text: String,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.onSurface,
-    maxLines: Int = Int.MAX_VALUE,
-    fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize,
-    textAlign: TextAlign = TextAlign.Center
-) {
-    val initialFontSize = fontSize
-    var currentFontSize by remember { mutableStateOf(initialFontSize) }
-    var readyToDraw by remember { mutableStateOf(false) }
-
-    Text(
-        text = text.capitalize(Locale.current),
-        color = color,
-        fontSize = currentFontSize,
-        maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
-        textAlign = textAlign,
-        modifier = modifier.drawWithContent { if (readyToDraw) drawContent() },
-        onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowHeight) {
-                currentFontSize *= 0.9f
-            } else {
-                readyToDraw = true
-            }
-        }
-    )
-}
-
 @Composable
 fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifier) {
     val couleursList = listOf(
