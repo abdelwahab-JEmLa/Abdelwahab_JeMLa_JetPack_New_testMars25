@@ -103,15 +103,33 @@ fun ArticleDetailWindow(
                                 when (fieldsGroup) {
                                     FieldsDisplayer.BenficesEntre -> {
                                         if (article.clienPrixVentUnite > 0) {
+                                            val columnValue = article.getColumnValue(column)
+                                            val displayValue = when (columnValue) {
+                                                is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
+                                                is Int -> columnValue.toString()
+                                                else -> columnValue?.toString() ?: ""
+                                            }
                                             InfoBoxWhithVoiceInpute(
-                                                "$abbr -> ${article.getColumnValue(column)}",
-                                                modifier.weight(1f).padding(top = 6.dp).height(67.dp)
+                                                "$abbr -> $displayValue",
+                                                modifier
+                                                    .weight(1f)
+                                                    .padding(
+                                                        top = if (displayeInOutlines) 8.dp else 12.dp,
+                                                        start = 4.dp,
+                                                        end = 4.dp
+                                                    )
+                                                    .height(67.dp)
                                             )
                                         }
                                     }
                                     else -> {
                                         DisplayField(
-                                            column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                            column,
+                                            abbr,
+                                            currentChangingField,
+                                            article,
+                                            viewModel,
+                                            displayeInOutlines,
                                             modifier
                                                 .weight(1f)
                                                 .height(67.dp)
@@ -119,8 +137,7 @@ fun ArticleDetailWindow(
                                     }
                                 }
                             }
-                        }
-                    }
+                        }}
 
                     CalculationButtons(article, viewModel, modifier)
                     ArticleToggleButton(article, viewModel, modifier)
@@ -187,15 +204,8 @@ fun InfoBoxWhithVoiceInpute(
     text: String,
     modifier: Modifier = Modifier
 ) {
-    val parts = text.split("->")
-    val abbreviation = parts.getOrNull(0)?.trim() ?: ""
-    val value = parts.getOrNull(1)?.trim() ?: ""
 
-    val roundedValue = try {
-        value.toDouble().let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
-    } catch (e: NumberFormatException) {
-        value
-    }
+
 
     Box(
         modifier = modifier
@@ -207,7 +217,7 @@ fun InfoBoxWhithVoiceInpute(
         contentAlignment = Alignment.Center
     ) {
         AutoResizedTextECB(
-            text = "$abbreviation -> $roundedValue",
+            text = text,
             color = MaterialTheme.colorScheme.error
         )
     }

@@ -117,7 +117,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 article = article,
                 onDismiss = { dialogeDisplayeDetailleChanger = null },
                 viewModel=viewModel,
-                Modifier.padding(horizontal = 3.dp)
+                Modifier.padding(horizontal = 3.dp)      //TODO fait if
             )
         }
     }
