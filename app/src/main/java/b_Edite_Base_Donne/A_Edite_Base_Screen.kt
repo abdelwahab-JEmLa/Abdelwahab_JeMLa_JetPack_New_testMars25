@@ -593,30 +593,83 @@ fun DisplayDetailleArticle(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            TopRowQuantitys(
-                article = article,
-                articlesDataBaseDonne = articlesDataBaseDonne,
-                viewModel = editeBaseDonneViewModel,
-                currentChangingField = currentChangingField,
-                onValueChanged = onValueChanged,
-                displayeInOutlines = displayeInOutlines
+            val allFields = listOf(
+                "clienPrixVentUnite" to "c.pU",
+                "nmbrCaron" to "n.c",
+                "nmbrUnite" to "n.u",
+                "monPrixAchatUniter" to "U/",
+                "monPrixAchat" to "m.pA>",
+                "benificeClient" to "b.c",
+                "monPrixVentUniter" to "u/",
+                "monPrixVent" to "M.P.V"
             )
+
+            // Display top row fields
+            Row(modifier = Modifier.fillMaxWidth()) {
+                allFields.take(3).forEach { (columnToChange, abbreviation) ->
+                    DisplayField(
+                        columnToChange = columnToChange,
+                        abbreviation = abbreviation,
+                        currentChangingField = currentChangingField,
+                        article = article,
+                        viewModel = editeBaseDonneViewModel,
+                        onValueChanged = onValueChanged,
+                        displayeInOutlines = displayeInOutlines,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(67.dp)
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 DisplayColorsCards(article, Modifier.weight(0.38f))
-                DisplayArticleInformations(
-                    editeBaseDonneViewModel = editeBaseDonneViewModel,
-                    article = article,
-                    articlesDataBaseDonne = articlesDataBaseDonne,
-                    modifier = Modifier.weight(0.62f),
-                    onValueOutlineChanged = onValueChanged,
-                    currentChangingField = currentChangingField,
-                    onClickUniteToggleButton = onUniteToggleClick,
-                    displayeInOutlines = displayeInOutlines
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(0.62f)
+                ) {
+                    // Display remaining fields
+                    allFields.drop(3).forEach { (columnToChange, abbreviation) ->
+                        DisplayField(
+                            columnToChange = columnToChange,
+                            abbreviation = abbreviation,
+                            currentChangingField = currentChangingField,
+                            article = article,
+                            viewModel = editeBaseDonneViewModel,
+                            onValueChanged = onValueChanged,
+                            displayeInOutlines = displayeInOutlines,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    // Display additional information
+                    if (article.clienPrixVentUnite > 0) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp)
+                                .padding(top = 5.dp)
+                        ) {
+                            BeneInfoBox(
+                                text = "b.E2 -> ${article.benificeTotaleEn2}",
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            BeneInfoBox(
+                                text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    CalculationButtons(article, editeBaseDonneViewModel, onValueChanged)
+                    ArticleToggleButton(articlesDataBaseDonne, editeBaseDonneViewModel, onUniteToggleClick)
+                }
             }
+
             Text(
                 text = capitalizeFirstLetter(article.nomArticleFinale),
                 fontSize = 25.sp,
@@ -626,6 +679,7 @@ fun DisplayDetailleArticle(
                     .fillMaxWidth()
                     .padding(7.dp)
             )
+
             // Add a switch to toggle displayeInOutlines
             Row(
                 modifier = Modifier
@@ -643,111 +697,6 @@ fun DisplayDetailleArticle(
         }
     }
 }
-
-@Composable
-fun TopRowQuantitys(
-    article: BaseDonneStatTabel,
-    articlesDataBaseDonne: BaseDonne?,
-    viewModel: EditeBaseDonneViewModel,
-    currentChangingField: String,
-    onValueChanged: (String) -> Unit,
-    displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Row(modifier = modifier.fillMaxWidth()) {
-        val fields = listOf(
-            "clienPrixVentUnite" to "c.pU",
-            "nmbrCaron" to "n.c",
-            "nmbrUnite" to "n.u"
-        )
-        fields.forEach { (columnToChange, abbreviation) ->
-            if (displayeInOutlines) {
-                OutlineTextEditeBaseDonne(
-                    columnToChange = columnToChange,
-                    abbreviation = abbreviation,
-                    onValueChanged = onValueChanged,
-                    currentChangingField = currentChangingField,
-                    article = article,
-                    viewModel = viewModel,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(67.dp)
-                )
-            } else {
-                BeneInfoBox(
-                    text = "$abbreviation: ${getArticleValue(article, columnToChange)}",
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(67.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DisplayArticleInformations(
-    editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    article: BaseDonneStatTabel,
-    articlesDataBaseDonne: BaseDonne?,
-    modifier: Modifier = Modifier,
-    onValueOutlineChanged: (String) -> Unit,
-    currentChangingField: String,
-    onClickUniteToggleButton: (BaseDonne?) -> Unit,
-    displayeInOutlines: Boolean
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ) {
-        ArticlePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged, displayeInOutlines)
-        if (article.clienPrixVentUnite > 0) {
-            ArticleBenefitInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged, displayeInOutlines)
-        }
-        ArticleSalePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged, displayeInOutlines)
-        CalculationButtons(article, editeBaseDonneViewModel, onValueOutlineChanged)
-        ArticleToggleButton(articlesDataBaseDonne, editeBaseDonneViewModel, onClickUniteToggleButton)
-    }
-}
-
-@Composable
-fun ArticlePriceInfo(
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    currentChangingField: String,
-    onValueChanged: (String) -> Unit,
-    displayeInOutlines: Boolean
-) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        if (article.nmbrUnite > 1) {
-            DisplayField(
-                columnToChange = "monPrixAchatUniter",
-                abbreviation = "U/",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = viewModel,
-                onValueChanged = onValueChanged,
-                displayeInOutlines = displayeInOutlines,
-                modifier = Modifier
-                    .weight(0.40f)
-                    .height(63.dp)
-            )
-        }
-        DisplayField(
-            columnToChange = "monPrixAchat",
-            abbreviation = "m.pA>",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = viewModel,
-            onValueChanged = onValueChanged,
-            displayeInOutlines = displayeInOutlines,
-            modifier = Modifier
-                .weight(0.60f)
-                .height(63.dp)
-        )
-    }
-}
-
 @Composable
 fun DisplayField(
     columnToChange: String,
@@ -778,81 +727,7 @@ fun DisplayField(
 }
 
 
-@Composable
-fun ArticleBenefitInfo(
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    currentChangingField: String,
-    onValueChanged: (String) -> Unit,
-    displayeInOutlines: Boolean
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(55.dp)
-                .padding(top = 5.dp)
-        ) {
-            BeneInfoBox(
-                text = "b.E2 -> ${article.benificeTotaleEn2}",
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            BeneInfoBox(
-                text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                modifier = Modifier.weight(1f)
-            )
-        }
-        DisplayField(
-            columnToChange = "benificeClient",
-            abbreviation = "b.c",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = viewModel,
-            onValueChanged = onValueChanged,
-            displayeInOutlines = displayeInOutlines,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
 
-@Composable
-fun ArticleSalePriceInfo(
-    article: BaseDonneStatTabel,
-    viewModel: EditeBaseDonneViewModel,
-    currentChangingField: String,
-    onValueChanged: (String) -> Unit,
-    displayeInOutlines: Boolean
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(63.dp)
-    ) {
-        if (article.nmbrUnite > 1) {
-            DisplayField(
-                columnToChange = "monPrixVentUniter",
-                abbreviation = "u/",
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = viewModel,
-                onValueChanged = onValueChanged,
-                displayeInOutlines = displayeInOutlines,
-                modifier = Modifier.weight(0.35f)
-            )
-        }
-        DisplayField(
-            columnToChange = "monPrixVent",
-            abbreviation = "M.P.V",
-            currentChangingField = currentChangingField,
-            article = article,
-            viewModel = viewModel,
-            onValueChanged = onValueChanged,
-            displayeInOutlines = displayeInOutlines,
-            modifier = Modifier.weight(0.65f)
-        )
-    }
-}
 
 // Update the getArticleValue function to include the new fields
 fun getArticleValue(article: BaseDonneStatTabel, columnName: String): String {
