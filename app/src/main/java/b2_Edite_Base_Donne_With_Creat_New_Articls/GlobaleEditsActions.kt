@@ -129,7 +129,7 @@ fun FloatingActionButtonGroup(
                     }
                 }
             }
-            FloatingActionButton(    //TODO fait que les FloatingActionButton soit a gauche et le text a droit
+            FloatingActionButton(
                 onClick = onClick,
                 modifier = Modifier.size(56.dp)
             ) {

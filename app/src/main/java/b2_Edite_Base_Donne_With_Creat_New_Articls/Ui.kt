@@ -1,13 +1,14 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,34 +36,8 @@ fun CategoryHeaderECB(
     }
 }
 
-@Composable
-fun ArticleItemECB(
-    article: BaseDonneECBTabelle,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-                contentAlignment = Alignment.Center
-            ) {
 
-                ImageDisplayerWithGlideECB(article)
-
-                DisponibilityOverlayECB(article.diponibilityState)
-            }
-            AutoResizedTextECB(text = article.nomArticleFinale)
-        }
-    }
-}
-
-@Composable
-fun OverlayContentECB(color: Color, icon: ImageVector) {
+@Composable  fun OverlayContentECB(color: Color, icon: ImageVector) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -70,6 +45,12 @@ fun OverlayContentECB(color: Color, icon: ImageVector) {
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, null, tint = Color.White)
+    }
+}
+@Composable fun DisponibilityOverlayECB(state: String) {
+    when (state) {
+        "Non Dispo" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
+        "NonForNewsClients" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
     }
 }
 

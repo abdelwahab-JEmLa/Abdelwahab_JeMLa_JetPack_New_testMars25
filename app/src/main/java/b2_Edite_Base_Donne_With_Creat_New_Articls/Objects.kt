@@ -1,9 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,13 +39,7 @@ fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle) {
     }
 }
 
-@Composable
-fun DisponibilityOverlayECB(state: String) {
-    when (state) {
-        "Non Dispo" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
-        "NonForNewsClients" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
-    }
-}
+
 @Composable
 fun AutoResizedTextECB(
     text: String,
