@@ -112,7 +112,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 
         // Dialog
         dialogeDisplayeDetailleChanger?.let { article ->
-            ArticleDetailWindos(
+            ArticleDetailWindow(
                 article = article,
                 onDismiss = { dialogeDisplayeDetailleChanger = null },
                 viewModel=viewModel,

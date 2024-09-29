@@ -52,7 +52,7 @@ import b_Edite_Base_Donne.LoadImageFromPath
 import b_Edite_Base_Donne.capitalizeFirstLetter
 
 @Composable
-fun ArticleDetailWindos(
+fun ArticleDetailWindow(
     article: BaseDonneECBTabelle,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels
@@ -99,22 +99,44 @@ fun ArticleDetailWindos(
                             .padding(8.dp)
                     ) {
                         val allFields = listOf(
-                            "clienPrixVentUnite" to "c.pU",
-                            "nmbrCaron" to "n.c",
-                            "nmbrUnite" to "n.u",
-                            "monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>", "benificeClient" to "b.c",
-                            "monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"
+                            Triple("clienPrixVentUnite", "c.pU", false),
+                            Triple("nmbrCaron", "n.c", false),
+                            Triple("nmbrUnite", "n.u", false),
+                            Triple("monPrixAchatUniter", "U/", false),
+                            Triple("monPrixAchat", "m.pA>", false),
+                            Triple("benificeClient", "b.c", true),
+                            Triple("monPrixVentUniter", "u/", false),
+                            Triple("monPrixVent", "M.P.V", false)
                         )
 
-                        // Top row fields
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            allFields.take(3).forEach { (column, abbr) ->
-                                DisplayField(
-                                    column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                    Modifier
-                                        .weight(1f)
-                                        .height(67.dp)
-                                ) { currentChangingField = column }
+                        // Dynamic Row/Column generation
+                        allFields.forEach { (column, abbr, isAlone) ->
+                            if (isAlone) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    DisplayField(
+                                        column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(67.dp)
+                                    ) { currentChangingField = column }
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    DisplayField(
+                                        column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                        Modifier
+                                            .weight(1f)
+                                            .height(67.dp)
+                                    ) { currentChangingField = column }
+                                }
                             }
                         }
 
@@ -140,18 +162,6 @@ fun ArticleDetailWindos(
                                     .weight(0.6f)
                                     .fillMaxHeight()
                             ) {
-                                allFields.drop(3).forEach { (column, abbr) ->
-                                    DisplayField(
-                                        column,
-                                        abbr,
-                                        currentChangingField,
-                                        article,
-                                        viewModel,
-                                        displayeInOutlines,
-                                        Modifier.fillMaxWidth()
-                                    ) { currentChangingField = column }
-                                }
-
                                 if (article.clienPrixVentUnite > 0) {
                                     Row(
                                         modifier = Modifier
@@ -203,8 +213,6 @@ fun ArticleDetailWindos(
         }
     }
 }
-
-
 @Composable
 fun DisplayField(
     columnToChange: String,
