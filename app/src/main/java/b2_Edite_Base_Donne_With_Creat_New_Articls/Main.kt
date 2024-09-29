@@ -389,7 +389,7 @@ data class BaseDonneECBTabelle(
     }
 
     fun getColumnValue(columnName: String): Any? {
-        return when (columnName) {
+        val value = when (columnName) {
             "nomArticleFinale" -> nomArticleFinale
             "classementCate" -> classementCate
             "nomArab" -> nomArab
@@ -426,6 +426,11 @@ data class BaseDonneECBTabelle(
             "benificeClient" -> benificeClient
             "monBeneficeUniter" -> monBeneficeUniter
             else -> null
+        }
+
+        return when (value) {
+            is Double -> if (value % 1 == 0.0) value.toInt() else value
+            else -> value
         }
     }
 }

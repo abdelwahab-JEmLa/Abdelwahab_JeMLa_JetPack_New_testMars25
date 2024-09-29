@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
@@ -48,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.AutoResizedText
-import b_Edite_Base_Donne.BeneInfoBox
 import b_Edite_Base_Donne.LoadImageFromPath
 
 enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
@@ -158,8 +156,7 @@ fun AutoResizedTextECB(
     maxLines: Int = Int.MAX_VALUE,
     fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize
 ) {
-    val initialFontSize = fontSize
-    var currentFontSize by remember { mutableStateOf(initialFontSize) }
+    var currentFontSize by remember { mutableStateOf(fontSize) }
     var readyToDraw by remember { mutableStateOf(false) }
 
     Box(
