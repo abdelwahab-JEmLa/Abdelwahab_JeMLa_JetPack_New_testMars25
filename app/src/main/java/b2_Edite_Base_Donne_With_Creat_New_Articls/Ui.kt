@@ -1,3 +1,4 @@
+package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -5,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,10 +40,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import b2_Edite_Base_Donne_With_Creat_New_Articls.AutoResizedTextECB
-import b2_Edite_Base_Donne_With_Creat_New_Articls.BaseDonneECBTabelle
-import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b_Edite_Base_Donne.AutoResizedText
+import b_Edite_Base_Donne.BeneInfoBox
 import b_Edite_Base_Donne.LoadImageFromPath
 import b_Edite_Base_Donne.capitalizeFirstLetter
 
@@ -60,126 +58,101 @@ fun ArticleDetailWindos(
                 .padding(16.dp),
             shape = MaterialTheme.shapes.large
         ) {
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)) {
-                Box(modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .aspectRatio(1f)) {
-                    DisplayDetailleArticle(article, viewModel)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                AutoResizedTextECB(
-                    text = article.nomArticleFinale,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Close")
-                }
-            }
-        }
-    }
-}
+            var displayeInOutlines by remember { mutableStateOf(false) }
+            var currentChangingField by remember { mutableStateOf("") }
 
-@Composable
-fun DisplayDetailleArticle(
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels
-) {
-    var displayeInOutlines by remember { mutableStateOf(false) }
-    var currentChangingField by remember { mutableStateOf("") }
-
-    Card(
-        modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            val allFields = listOf(
-                "clienPrixVentUnite" to "c.pU",
-                "nmbrCaron" to "n.c",
-                "nmbrUnite" to "n.u",
-                "monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>", "benificeClient" to "b.c",
-                "monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"
-            )
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                allFields.take(3).forEach { (column, abbr) ->
-                    DisplayField(
-                        column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                        Modifier
-                            .weight(1f)
-                            .height(67.dp)
-                    ) { currentChangingField = column }
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Card(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                DisplayColorsCards(article, Modifier.weight(0.38f))
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(0.62f)
-                ) {
-                    allFields.drop(3).forEach { (column, abbr) ->
-                        DisplayField(
-                            column,
-                            abbr,
-                            currentChangingField,
-                            article,
-                            viewModel,
-                            displayeInOutlines,
-                            Modifier.fillMaxWidth()
-                        ) { currentChangingField = column }
-                    }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val allFields = listOf(
+                        "clienPrixVentUnite" to "c.pU",
+                        "nmbrCaron" to "n.c",
+                        "nmbrUnite" to "n.u",
+                        "monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>", "benificeClient" to "b.c",
+                        "monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"
+                    )
 
-                    if (article.clienPrixVentUnite > 0) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(55.dp)
-                                .padding(top = 5.dp)
-                        ) {
-                            BeneInfoBox("b.E2 -> ${article.benificeTotaleEn2}", Modifier.weight(1f))
-                            Spacer(modifier = Modifier.width(5.dp))
-                            BeneInfoBox(
-                                "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                                Modifier.weight(1f)
-                            )
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        allFields.take(3).forEach { (column, abbr) ->
+                            DisplayField(
+                                column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                Modifier
+                                    .weight(1f)
+                                    .height(67.dp)
+                            ) { currentChangingField = column }
                         }
                     }
 
-                    CalculationButtons(article, viewModel)
-                    ArticleToggleButton(article, viewModel)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        DisplayColorsCards(article, Modifier.weight(0.38f))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(0.62f)
+                        ) {
+                            allFields.drop(3).forEach { (column, abbr) ->
+                                DisplayField(
+                                    column,
+                                    abbr,
+                                    currentChangingField,
+                                    article,
+                                    viewModel,
+                                    displayeInOutlines,
+                                    Modifier.fillMaxWidth()
+                                ) { currentChangingField = column }
+                            }
+
+                            if (article.clienPrixVentUnite > 0) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(55.dp)
+                                        .padding(top = 5.dp)
+                                ) {
+                                    BeneInfoBox("b.E2 -> ${article.benificeTotaleEn2}", Modifier.weight(1f))
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    BeneInfoBox(
+                                        "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                                        Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
+                            CalculationButtons(article, viewModel)
+                            ArticleToggleButton(article, viewModel)
+                        }
+                    }
+
+                    Text(
+                        text = capitalizeFirstLetter(article.nomArticleFinale), fontSize = 25.sp,
+                        textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(7.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Display in Outlines")
+                        Spacer(Modifier.weight(1f))
+                        Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
+                    }
                 }
-            }
-
-            Text(
-                text = capitalizeFirstLetter(article.nomArticleFinale), fontSize = 25.sp,
-                textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(7.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Display in Outlines")
-                Spacer(Modifier.weight(1f))
-                Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
             }
         }
     }
 }
+
 
 @Composable
 fun DisplayField(
@@ -204,7 +177,7 @@ fun DisplayField(
         )
     } else {
         val columnValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
-        BeneInfoBox("$abbreviation: $columnValue", modifier)
+        InfoBoxWhithVoiceInpute("$abbreviation: $columnValue", modifier)
     }
 }
 
@@ -261,7 +234,7 @@ fun OutlineTextECB(
 }
 
 @Composable
-fun BeneInfoBox(
+fun InfoBoxWhithVoiceInpute(
     text: String,
     modifier: Modifier = Modifier
 ) {
