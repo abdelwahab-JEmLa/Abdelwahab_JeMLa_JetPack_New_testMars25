@@ -1,5 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,7 +47,13 @@ import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.BeneInfoBox
 import b_Edite_Base_Donne.LoadImageFromPath
-import b_Edite_Base_Donne.capitalizeFirstLetter
+
+enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
+    TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
+    PrixAchats(listOf("monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>")),
+    Benfices(listOf("benificeClient" to "b.c")),
+    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
+}
 
 @Composable
 fun ArticleDetailWindow(
@@ -72,25 +81,16 @@ fun ArticleDetailWindow(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    val allFields = listOf(
-                        "clienPrixVentUnite" to "c.pU",
-                        "nmbrCaron" to "n.c",
-                        "nmbrUnite" to "n.u",
-                        "monPrixAchatUniter" to "U/",
-                        "monPrixAchat" to "m.pA>",
-                        "benificeClient" to "b.c",
-                        "monPrixVentUniter" to "u/",
-                        "monPrixVent" to "M.P.V"
-                    )
-
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        allFields.take(3).forEach { (column, abbr) ->
-                            DisplayField(
-                                column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                Modifier
-                                    .weight(1f)
-                                    .height(67.dp)
-                            ) { currentChangingField = column }
+                    FieldsDisplayer.values().forEach { fieldsGroup ->
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            fieldsGroup.fields.forEach { (column, abbr) ->
+                                DisplayField(
+                                    column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                    Modifier
+                                        .weight(1f)
+                                        .height(67.dp)
+                                ) { currentChangingField = column }
+                            }
                         }
                     }
 
@@ -103,18 +103,6 @@ fun ArticleDetailWindow(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.weight(0.62f)
                         ) {
-                            allFields.drop(3).forEach { (column, abbr) ->
-                                DisplayField(
-                                    column,
-                                    abbr,
-                                    currentChangingField,
-                                    article,
-                                    viewModel,
-                                    displayeInOutlines,
-                                    Modifier.fillMaxWidth()
-                                ) { currentChangingField = column }
-                            }
-
                             if (article.clienPrixVentUnite > 0) {
                                 Row(
                                     modifier = Modifier
@@ -137,8 +125,10 @@ fun ArticleDetailWindow(
                     }
 
                     Text(
-                        text = capitalizeFirstLetter(article.nomArticleFinale), fontSize = 25.sp,
-                        textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error,
+                        text = article.nomArticleFinale.capitalize(Locale.current),
+                        fontSize = 25.sp,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(7.dp)
@@ -159,7 +149,6 @@ fun ArticleDetailWindow(
         }
     }
 }
-
 
 @Composable
 fun DisplayField(
