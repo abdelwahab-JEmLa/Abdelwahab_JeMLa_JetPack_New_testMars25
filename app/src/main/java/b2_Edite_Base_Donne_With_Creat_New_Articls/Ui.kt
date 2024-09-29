@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,14 +15,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -45,7 +40,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.BeneInfoBox
 import b_Edite_Base_Donne.LoadImageFromPath
@@ -57,162 +51,112 @@ fun ArticleDetailWindow(
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels
 ) {
-    var displayeInOutlines by remember { mutableStateOf(true) }
-    var currentChangingField by remember { mutableStateOf("") }
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+                .fillMaxSize(0.95f)
+                .padding(16.dp),
             shape = MaterialTheme.shapes.large
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Close button
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+            var displayeInOutlines by remember { mutableStateOf(false) }
+            var currentChangingField by remember { mutableStateOf("") }
+
+            Card(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val allFields = listOf(
+                        "clienPrixVentUnite" to "c.pU",
+                        "nmbrCaron" to "n.c",
+                        "nmbrUnite" to "n.u",
+                        "monPrixAchatUniter" to "U/",
+                        "monPrixAchat" to "m.pA>",
+                        "benificeClient" to "b.c",
+                        "monPrixVentUniter" to "u/",
+                        "monPrixVent" to "M.P.V"
+                    )
+
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        allFields.take(3).forEach { (column, abbr) ->
+                            DisplayField(
+                                column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                Modifier
+                                    .weight(1f)
+                                    .height(67.dp)
+                            ) { currentChangingField = column }
+                        }
                     }
-                }
 
-                // Main content
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(4.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val allFields = listOf(
-                            Triple("clienPrixVentUnite", "c.pU", false),
-                            Triple("nmbrCaron", "n.c", false),
-                            Triple("nmbrUnite", "n.u", false),
-                            Triple("monPrixAchatUniter", "U/", false),
-                            Triple("monPrixAchat", "m.pA>", false),
-                            Triple("benificeClient", "b.c", true),
-                            Triple("monPrixVentUniter", "u/", false),
-                            Triple("monPrixVent", "M.P.V", false)
-                        )
+                        DisplayColorsCards(article, Modifier.weight(0.38f))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(0.62f)
+                        ) {
+                            allFields.drop(3).forEach { (column, abbr) ->
+                                DisplayField(
+                                    column,
+                                    abbr,
+                                    currentChangingField,
+                                    article,
+                                    viewModel,
+                                    displayeInOutlines,
+                                    Modifier.fillMaxWidth()
+                                ) { currentChangingField = column }
+                            }
 
-                        // Dynamic Row/Column generation
-                        allFields.forEach { (column, abbr, isAlone) ->
-                            if (isAlone) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                ) {
-                                    DisplayField(
-                                        column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .height(67.dp)
-                                    ) { currentChangingField = column }
-                                }
-                            } else {
+                            if (article.clienPrixVentUnite > 0) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
+                                        .height(55.dp)
+                                        .padding(top = 5.dp)
                                 ) {
-                                    DisplayField(
-                                        column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                        Modifier
-                                            .weight(1f)
-                                            .height(67.dp)
-                                    ) { currentChangingField = column }
+                                    BeneInfoBox("b.E2 -> ${article.benificeTotaleEn2}", Modifier.weight(1f))
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    BeneInfoBox(
+                                        "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                                        Modifier.weight(1f)
+                                    )
                                 }
                             }
+
+                            CalculationButtons(article, viewModel)
+                            ArticleToggleButton(article, viewModel)
                         }
+                    }
 
-                        // Main content row
-                        Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            // Color cards
-                            DisplayColorsCards(
-                                article,
-                                Modifier
-                                    .weight(0.4f)
-                                    .fillMaxHeight()
-                            )
+                    Text(
+                        text = capitalizeFirstLetter(article.nomArticleFinale), fontSize = 25.sp,
+                        textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(7.dp)
+                    )
 
-                            // Other fields and buttons
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .weight(0.6f)
-                                    .fillMaxHeight()
-                            ) {
-                                if (article.clienPrixVentUnite > 0) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(55.dp)
-                                            .padding(top = 5.dp)
-                                    ) {
-                                        BeneInfoBox("b.E2 -> ${article.benificeTotaleEn2}", Modifier.weight(1f))
-                                        Spacer(modifier = Modifier.width(5.dp))
-                                        BeneInfoBox(
-                                            "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                                            Modifier.weight(1f)
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.weight(1f))
-
-                                CalculationButtons(article, viewModel)
-                                ArticleToggleButton(article, viewModel)
-                            }
-                        }
-
-                        // Article name
-                        Text(
-                            text = capitalizeFirstLetter(article.nomArticleFinale),
-                            fontSize = 25.sp,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                        )
-
-                        // Display mode switch
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Display in Outlines")
-                            Spacer(Modifier.weight(1f))
-                            Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
-                        }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Display in Outlines")
+                        Spacer(Modifier.weight(1f))
+                        Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
                     }
                 }
             }
         }
     }
 }
+
+
 @Composable
 fun DisplayField(
     columnToChange: String,
