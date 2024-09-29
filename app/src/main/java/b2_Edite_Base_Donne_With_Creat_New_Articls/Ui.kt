@@ -91,6 +91,7 @@ fun ArticleDetailWindow(
                                 modifier
                                     .weight(1f)
                                     .height(67.dp)
+                                    .padding(vertical = 2.dp)
                             ) { currentChangingField = column }
                         }
                     }
@@ -104,7 +105,7 @@ fun ArticleDetailWindow(
                                         if (article.clienPrixVentUnite > 0) {
                                             BeneInfoBox(
                                                 "$abbr -> ${article.getColumnValue(column)}",
-                                                modifier.weight(1f)
+                                                modifier.weight(1f) .padding(vertical = 2.dp)
                                             )
                                         }
                                     }
@@ -113,7 +114,7 @@ fun ArticleDetailWindow(
                                             column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
                                             modifier
                                                 .weight(1f)
-                                                .height(67.dp)
+                                                .height(67.dp) .padding(vertical = 2.dp)
                                         ) { currentChangingField = column }
                                     }
                                 }
@@ -121,8 +122,8 @@ fun ArticleDetailWindow(
                         }
                     }
 
-                    CalculationButtons(article, viewModel)
-                    ArticleToggleButton(article, viewModel)
+                    CalculationButtons(article, viewModel,modifier)
+                    ArticleToggleButton(article, viewModel,modifier)
 
                     // Article name
                     Text(
@@ -138,7 +139,7 @@ fun ArticleDetailWindow(
                     Row(
                         modifier = modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Display in Outlines")
@@ -162,18 +163,16 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifi
     LazyRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .padding(3.dp)
             .fillMaxWidth()
     ) {
         itemsIndexed(couleursList) { index, couleur ->
             if (couleur != null) {
                 Card(modifier = Modifier
-                    .width(250.dp)
-                    .height(250.dp)
-                    .padding(end = 8.dp)) {
+                    .height(200.dp)
+                   ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -282,7 +281,6 @@ fun InfoBoxWhithVoiceInpute(
                 MaterialTheme.colorScheme.outline,
                 MaterialTheme.shapes.extraSmall
             )
-            .padding(4.dp)
     ) {
         Text(text = text, modifier = Modifier.align(Alignment.Center), textAlign = TextAlign.Center)
     }
@@ -291,12 +289,13 @@ fun InfoBoxWhithVoiceInpute(
 @Composable
 fun CalculationButtons(
     article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels
+    viewModel: HeadOfViewModels,
+    modifier: Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            ,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Button(onClick = {
@@ -317,12 +316,15 @@ fun CalculationButtons(
 }
 
 @Composable
-fun ArticleToggleButton(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels) {
+fun ArticleToggleButton(
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier
+) {
     Button(
         onClick = { viewModel },
         colors = ButtonDefaults.buttonColors(containerColor = if (article.affichageUniteState) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error),
-        modifier = Modifier
-            .padding(top = 8.dp)
+        modifier = modifier
             .fillMaxWidth()
     ) {
         Text(text = if (article.affichageUniteState) "Cacher les Unités" else "Afficher les Unités")
