@@ -81,28 +81,27 @@ fun ArticleDetailWindow(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    FieldsDisplayer.values().forEach { fieldsGroup ->
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            fieldsGroup.fields.forEach { (column, abbr) ->
-                                DisplayField(
-                                    column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                    Modifier
-                                        .weight(1f)
-                                        .height(67.dp)
-                                ) { currentChangingField = column }
-                            }
+                    // TOP_ROW fields
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
+                            DisplayField(
+                                column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                Modifier
+                                    .weight(1f)
+                                    .height(67.dp)
+                            ) { currentChangingField = column }
                         }
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        DisplayColorsCards(article, Modifier.weight(0.38f))
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(0.62f)
-                        ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        // Left column with DisplayColorsCards
+                        Column(modifier = Modifier.weight(0.38f)) {
+                            DisplayColorsCards(article)
+                        }
+
+                        // Right column with remaining fields and buttons
+                        Column(modifier = Modifier.weight(0.62f)) {
+                            // Benefit information
                             if (article.clienPrixVentUnite > 0) {
                                 Row(
                                     modifier = Modifier
@@ -118,12 +117,26 @@ fun ArticleDetailWindow(
                                     )
                                 }
                             }
+                            // Remaining FieldsDisplayer groups
+                            FieldsDisplayer.values().drop(1).forEach { fieldsGroup ->
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    fieldsGroup.fields.forEach { (column, abbr) ->
+                                        DisplayField(
+                                            column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
+                                            Modifier
+                                                .weight(1f)
+                                                .height(67.dp)
+                                        ) { currentChangingField = column }
+                                    }
+                                }
+                            }
 
                             CalculationButtons(article, viewModel)
                             ArticleToggleButton(article, viewModel)
                         }
                     }
 
+                    // Article name
                     Text(
                         text = article.nomArticleFinale.capitalize(Locale.current),
                         fontSize = 25.sp,
@@ -134,6 +147,7 @@ fun ArticleDetailWindow(
                             .padding(7.dp)
                     )
 
+                    // Display in Outlines switch
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -150,6 +164,46 @@ fun ArticleDetailWindow(
     }
 }
 
+@Composable
+fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifier) {
+    val couleursList = listOf(
+        article.couleur1,
+        article.couleur2,
+        article.couleur3,
+        article.couleur4
+    ).filterNot { it.isNullOrEmpty() }
+    LazyRow(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .padding(3.dp)
+            .fillMaxWidth()
+    ) {
+        itemsIndexed(couleursList) { index, couleur ->
+            if (couleur != null) {
+                Card(modifier = Modifier
+                    .width(250.dp)
+                    .height(300.dp)
+                    .padding(end = 8.dp)) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .height(250.dp)
+                                .fillMaxWidth()
+                        ) {
+                            LoadImageFromPath(imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = couleur)
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 fun DisplayField(
     columnToChange: String,
@@ -288,43 +342,3 @@ fun ArticleToggleButton(article: BaseDonneECBTabelle, viewModel: HeadOfViewModel
     }
 }
 
-@Composable
-fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifier) {
-    val couleursList = listOf(
-        article.couleur1,
-        article.couleur2,
-        article.couleur3,
-        article.couleur4
-    ).filterNot { it.isNullOrEmpty() }
-    LazyRow(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .padding(3.dp)
-            .fillMaxWidth()
-    ) {
-        itemsIndexed(couleursList) { index, couleur ->
-            if (couleur != null) {
-                Card(modifier = Modifier
-                    .width(250.dp)
-                    .height(300.dp)
-                    .padding(end = 8.dp)) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(8.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .height(250.dp)
-                                .fillMaxWidth()
-                        ) {
-                            LoadImageFromPath(imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = couleur)
-                    }
-                }
-            }
-        }
-    }
-}
