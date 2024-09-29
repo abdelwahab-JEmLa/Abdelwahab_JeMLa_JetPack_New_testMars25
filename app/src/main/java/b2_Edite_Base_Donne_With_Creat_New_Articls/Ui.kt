@@ -72,13 +72,11 @@ fun ArticleDetailWindow(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            modifier = modifier
-                .fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             shape = MaterialTheme.shapes.large
         ) {
             Card(
-                modifier = modifier
-                    .fillMaxWidth(),
+                modifier = modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
@@ -88,8 +86,13 @@ fun ArticleDetailWindow(
                     Row(modifier = modifier.fillMaxWidth()) {
                         FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
                             DisplayField(
-                                column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
-                                modifier
+                                columnToChange = column,
+                                abbreviation = abbr,
+                                currentChangingField = currentChangingField,
+                                article = article,
+                                viewModel = viewModel,
+                                displayeInOutlines = displayeInOutlines,
+                                modifier = modifier
                                     .weight(1f)
                                     .height(67.dp)
                             ) { currentChangingField = column }
@@ -103,41 +106,34 @@ fun ArticleDetailWindow(
                                 when (fieldsGroup) {
                                     FieldsDisplayer.BenficesEntre -> {
                                         if (article.clienPrixVentUnite > 0) {
-                                            val columnValue = article.getColumnValue(column)
-                                            val displayValue = when (columnValue) {
-                                                is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
-                                                is Int -> columnValue.toString()
-                                                else -> columnValue?.toString() ?: ""
-                                            }
                                             InfoBoxWhithVoiceInpute(
-                                                "$abbr -> $displayValue",
-                                                modifier
+                                                columnToChange = column,
+                                                abbreviation = abbr,
+                                                article = article,
+                                                displayeInOutlines = displayeInOutlines,
+                                                modifier = modifier
                                                     .weight(1f)
-                                                    .padding(
-                                                        top = if (displayeInOutlines) 8.dp else 12.dp,
-                                                        start = 4.dp,
-                                                        end = 4.dp
-                                                    )
                                                     .height(67.dp)
                                             )
                                         }
                                     }
                                     else -> {
                                         DisplayField(
-                                            column,
-                                            abbr,
-                                            currentChangingField,
-                                            article,
-                                            viewModel,
-                                            displayeInOutlines,
-                                            modifier
+                                            columnToChange = column,
+                                            abbreviation = abbr,
+                                            currentChangingField = currentChangingField,
+                                            article = article,
+                                            viewModel = viewModel,
+                                            displayeInOutlines = displayeInOutlines,
+                                            modifier = modifier
                                                 .weight(1f)
                                                 .height(67.dp)
                                         ) { currentChangingField = column }
                                     }
                                 }
                             }
-                        }}
+                        }
+                    }
 
                     CalculationButtons(article, viewModel, modifier)
                     ArticleToggleButton(article, viewModel, modifier)
@@ -151,8 +147,7 @@ fun ArticleDetailWindow(
                     )
                     // Display in Outlines switch
                     Row(
-                        modifier = modifier
-                            .fillMaxWidth(),
+                        modifier = modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Display in Outlines")
@@ -162,6 +157,78 @@ fun ArticleDetailWindow(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun InfoBoxWhithVoiceInpute(
+    columnToChange: String,
+    abbreviation: String,
+    article: BaseDonneECBTabelle,
+    displayeInOutlines: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val columnValue = article.getColumnValue(columnToChange)
+    val displayValue = when (columnValue) {
+        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
+        is Int -> columnValue.toString()
+        else -> columnValue?.toString() ?: ""
+    }
+    Box(
+        modifier = modifier
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outline,
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(
+                top = if (displayeInOutlines) 8.dp else 12.dp,
+                start = 4.dp,
+                end = 4.dp
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        AutoResizedTextECB(
+            text = "$abbreviation -> $displayValue",
+            color = MaterialTheme.colorScheme.error
+        )
+    }
+}
+
+@Composable
+fun DisplayField(
+    columnToChange: String,
+    abbreviation: String,
+    currentChangingField: String,
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    displayeInOutlines: Boolean,
+    modifier: Modifier = Modifier,
+    onValueChanged: (String) -> Unit
+) {
+    if (displayeInOutlines) {
+        OutlineTextECB(
+            columnToChange,
+            abbreviation,
+            currentChangingField,
+            article,
+            viewModel,
+            modifier,
+            onValueChanged
+        )
+    } else {
+        InfoBoxWhithVoiceInpute(
+            columnToChange = columnToChange,
+            abbreviation = abbreviation,
+            article = article,
+            displayeInOutlines = displayeInOutlines,
+            modifier = modifier
+                .padding(
+                    top = if (displayeInOutlines) 8.dp else 12.dp,
+                    start = 4.dp,
+                    end = 4.dp
+                )
+        )
     }
 }
 
@@ -199,29 +266,7 @@ fun AutoResizedTextECB(
     }
 }
 
-@Composable
-fun InfoBoxWhithVoiceInpute(
-    text: String,
-    modifier: Modifier = Modifier
-) {
 
-
-
-    Box(
-        modifier = modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.extraSmall
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        AutoResizedTextECB(
-            text = text,
-            color = MaterialTheme.colorScheme.error
-        )
-    }
-}
 @Composable
 fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifier) {
     val couleursList = listOf(
@@ -260,33 +305,6 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifi
         }
     }
 }
-@Composable
-fun DisplayField(
-    columnToChange: String,
-    abbreviation: String,
-    currentChangingField: String,
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels,
-    displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier,
-    onValueChanged: (String) -> Unit
-) {
-    if (displayeInOutlines) {
-        OutlineTextECB(
-            columnToChange,
-            abbreviation,
-            currentChangingField,
-            article,
-            viewModel,
-            modifier,
-            onValueChanged
-        )
-    } else {
-        val columnValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
-        InfoBoxWhithVoiceInpute("$abbreviation: $columnValue", modifier)
-    }
-}
-
 
 
 @Composable
