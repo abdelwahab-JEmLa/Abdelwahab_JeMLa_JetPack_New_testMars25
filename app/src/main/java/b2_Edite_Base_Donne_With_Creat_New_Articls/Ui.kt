@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.AutoResizedText
 import b_Edite_Base_Donne.BeneInfoBox
 import b_Edite_Base_Donne.LoadImageFromPath
@@ -51,16 +52,19 @@ fun ArticleDetailWindow(
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    var displayeInOutlines by remember { mutableStateOf(true) }
+    var currentChangingField by remember { mutableStateOf("") }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxSize(0.95f)
-                .padding(16.dp),
+                .fillMaxSize()
+                .padding(8.dp),
             shape = MaterialTheme.shapes.large
         ) {
-            var displayeInOutlines by remember { mutableStateOf(false) }
-            var currentChangingField by remember { mutableStateOf("") }
-
             Card(
                 modifier = Modifier
                     .padding(4.dp)
