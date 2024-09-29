@@ -47,6 +47,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -581,6 +582,7 @@ fun DisplayDetailleArticle(
     onValueChanged: (String) -> Unit,
     onUniteToggleClick: (BaseDonne?) -> Unit,
 ) {
+    var displayeInOutlines by remember { mutableStateOf(false) }
 
     Card(
         shape = MaterialTheme.shapes.medium,
@@ -596,7 +598,8 @@ fun DisplayDetailleArticle(
                 articlesDataBaseDonne = articlesDataBaseDonne,
                 viewModel = editeBaseDonneViewModel,
                 currentChangingField = currentChangingField,
-                onValueChanged = onValueChanged
+                onValueChanged = onValueChanged,
+                displayeInOutlines = displayeInOutlines
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -611,6 +614,7 @@ fun DisplayDetailleArticle(
                     onValueOutlineChanged = onValueChanged,
                     currentChangingField = currentChangingField,
                     onClickUniteToggleButton = onUniteToggleClick,
+                    displayeInOutlines = displayeInOutlines
                 )
             }
             Text(
@@ -622,12 +626,23 @@ fun DisplayDetailleArticle(
                     .fillMaxWidth()
                     .padding(7.dp)
             )
+            // Add a switch to toggle displayeInOutlines
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Display in Outlines")
+                Spacer(Modifier.weight(1f))
+                Switch(
+                    checked = displayeInOutlines,
+                    onCheckedChange = { displayeInOutlines = it }
+                )
+            }
         }
     }
 }
-
-
-
 
 @Composable
 fun TopRowQuantitys(
@@ -636,6 +651,7 @@ fun TopRowQuantitys(
     viewModel: EditeBaseDonneViewModel,
     currentChangingField: String,
     onValueChanged: (String) -> Unit,
+    displayeInOutlines: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
@@ -645,17 +661,26 @@ fun TopRowQuantitys(
             "nmbrUnite" to "n.u"
         )
         fields.forEach { (columnToChange, abbreviation) ->
-            OutlineTextEditeBaseDonne(
-                columnToChange = columnToChange,
-                abbreviation = abbreviation,
-                onValueChanged = onValueChanged,
-                currentChangingField = currentChangingField,
-                article = article,
-                viewModel = viewModel,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(67.dp)
-            )
+            if (displayeInOutlines) {
+                OutlineTextEditeBaseDonne(
+                    columnToChange = columnToChange,
+                    abbreviation = abbreviation,
+                    onValueChanged = onValueChanged,
+                    currentChangingField = currentChangingField,
+                    article = article,
+                    viewModel = viewModel,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(67.dp)
+                )
+            } else {
+                BeneInfoBox(
+                    text = "$abbreviation: ${getArticleValue(article, columnToChange)}",
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(67.dp)
+                )
+            }
         }
     }
 }
@@ -669,26 +694,18 @@ fun DisplayArticleInformations(
     onValueOutlineChanged: (String) -> Unit,
     currentChangingField: String,
     onClickUniteToggleButton: (BaseDonne?) -> Unit,
+    displayeInOutlines: Boolean
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
-        // Price Information
-        ArticlePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged)
-
-        // Benefit Information
+        ArticlePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged, displayeInOutlines)
         if (article.clienPrixVentUnite > 0) {
-            ArticleBenefitInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged)
+            ArticleBenefitInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged, displayeInOutlines)
         }
-
-        // Sale Price Information
-        ArticleSalePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged)
-
-        // Calculation Buttons
+        ArticleSalePriceInfo(article, editeBaseDonneViewModel, currentChangingField, onValueOutlineChanged, displayeInOutlines)
         CalculationButtons(article, editeBaseDonneViewModel, onValueOutlineChanged)
-
-        // Toggle Button
         ArticleToggleButton(articlesDataBaseDonne, editeBaseDonneViewModel, onClickUniteToggleButton)
     }
 }
@@ -698,29 +715,32 @@ fun ArticlePriceInfo(
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
     currentChangingField: String,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
+    displayeInOutlines: Boolean
 ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         if (article.nmbrUnite > 1) {
-            OutlineTextEditeBaseDonne(
+            DisplayField(
                 columnToChange = "monPrixAchatUniter",
                 abbreviation = "U/",
                 currentChangingField = currentChangingField,
                 article = article,
                 viewModel = viewModel,
                 onValueChanged = onValueChanged,
+                displayeInOutlines = displayeInOutlines,
                 modifier = Modifier
                     .weight(0.40f)
                     .height(63.dp)
             )
         }
-        OutlineTextEditeBaseDonne(
+        DisplayField(
             columnToChange = "monPrixAchat",
             abbreviation = "m.pA>",
             currentChangingField = currentChangingField,
             article = article,
             viewModel = viewModel,
             onValueChanged = onValueChanged,
+            displayeInOutlines = displayeInOutlines,
             modifier = Modifier
                 .weight(0.60f)
                 .height(63.dp)
@@ -729,54 +749,71 @@ fun ArticlePriceInfo(
 }
 
 @Composable
-fun BenefitInfoBox(text: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .border(1.dp, MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.extraSmall)
-            .height(100.dp)
-    ) {
-        AutoResizedText(
-            text = text,
-            modifier = Modifier
-                .padding(4.dp)
-                .align(Alignment.Center)
-                .height(40.dp)
+fun DisplayField(
+    columnToChange: String,
+    abbreviation: String,
+    currentChangingField: String,
+    article: BaseDonneStatTabel,
+    viewModel: EditeBaseDonneViewModel,
+    onValueChanged: (String) -> Unit,
+    displayeInOutlines: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (displayeInOutlines) {
+        OutlineTextEditeBaseDonne(
+            columnToChange = columnToChange,
+            abbreviation = abbreviation,
+            onValueChanged = onValueChanged,
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel = viewModel,
+            modifier = modifier
+        )
+    } else {
+        BeneInfoBox(
+            text = "$abbreviation: ${getArticleValue(article, columnToChange)}",
+            modifier = modifier
         )
     }
 }
+
 
 @Composable
 fun ArticleBenefitInfo(
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
     currentChangingField: String,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
+    displayeInOutlines: Boolean
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(55.dp)
-            .padding(top = 5.dp)
-    ) {
-        BenefitInfoBox(
-            text = "b.E2 -> ${article.benificeTotaleEn2}",
-            modifier = Modifier.weight(1f)
-        )
-        Spacer(modifier = Modifier.width(5.dp))
-        BenefitInfoBox(
-            text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-            modifier = Modifier.weight(1f)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
+                .padding(top = 5.dp)
+        ) {
+            BeneInfoBox(
+                text = "b.E2 -> ${article.benificeTotaleEn2}",
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+            BeneInfoBox(
+                text = "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        DisplayField(
+            columnToChange = "benificeClient",
+            abbreviation = "b.c",
+            currentChangingField = currentChangingField,
+            article = article,
+            viewModel = viewModel,
+            onValueChanged = onValueChanged,
+            displayeInOutlines = displayeInOutlines,
+            modifier = Modifier.fillMaxWidth()
         )
     }
-    OutlineTextEditeBaseDonne(
-        columnToChange = "benificeClient",
-        abbreviation = "b.c",
-        currentChangingField = currentChangingField,
-        article = article,
-        viewModel = viewModel,
-        onValueChanged = onValueChanged,
-        modifier = Modifier.fillMaxWidth()
-    )
 }
 
 @Composable
@@ -784,34 +821,70 @@ fun ArticleSalePriceInfo(
     article: BaseDonneStatTabel,
     viewModel: EditeBaseDonneViewModel,
     currentChangingField: String,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
+    displayeInOutlines: Boolean
 ) {
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .height(63.dp)) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(63.dp)
+    ) {
         if (article.nmbrUnite > 1) {
-            OutlineTextEditeBaseDonne(
+            DisplayField(
                 columnToChange = "monPrixVentUniter",
                 abbreviation = "u/",
                 currentChangingField = currentChangingField,
                 article = article,
                 viewModel = viewModel,
                 onValueChanged = onValueChanged,
+                displayeInOutlines = displayeInOutlines,
                 modifier = Modifier.weight(0.35f)
             )
         }
-        OutlineTextEditeBaseDonne(
+        DisplayField(
             columnToChange = "monPrixVent",
             abbreviation = "M.P.V",
             currentChangingField = currentChangingField,
             article = article,
             viewModel = viewModel,
             onValueChanged = onValueChanged,
+            displayeInOutlines = displayeInOutlines,
             modifier = Modifier.weight(0.65f)
         )
     }
 }
 
+// Update the getArticleValue function to include the new fields
+fun getArticleValue(article: BaseDonneStatTabel, columnName: String): String {
+    return when (columnName) {
+        "clienPrixVentUnite" -> article.clienPrixVentUnite.toString()
+        "nmbrCaron" -> article.nmbrCaron.toString()
+        "nmbrUnite" -> article.nmbrUnite.toString()
+        "monPrixAchatUniter" -> article.monPrixAchatUniter.toString()
+        "monPrixAchat" -> article.monPrixAchat.toString()
+        "monPrixVentUniter" -> article.monPrixVentUniter.toString()
+        "monPrixVent" -> article.monPrixVent.toString()
+        "benificeClient" -> article.benificeClient.toString()
+        // Add other fields as needed
+        else -> ""
+    }
+}
+
+// Make sure to include this composable if it's not already defined
+@Composable
+fun BeneInfoBox(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.extraSmall)
+            .padding(4.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.align(Alignment.Center),
+            textAlign = TextAlign.Center
+        )
+    }
+}
 @Composable
 fun CalculationButtons(
     article: BaseDonneStatTabel,
