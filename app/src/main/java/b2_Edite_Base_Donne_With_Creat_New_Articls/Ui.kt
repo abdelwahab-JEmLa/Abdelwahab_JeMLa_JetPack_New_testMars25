@@ -51,6 +51,7 @@ import b_Edite_Base_Donne.LoadImageFromPath
 enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
     PrixAchats(listOf("monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>")),
+    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),
     Benfices(listOf("benificeClient" to "b.c")),
     MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
 }
@@ -81,6 +82,8 @@ fun ArticleDetailWindow(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    DisplayColorsCards(article)
+
                     // TOP_ROW fields
                     Row(modifier = Modifier.fillMaxWidth()) {
                         FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
@@ -93,34 +96,20 @@ fun ArticleDetailWindow(
                         }
                     }
 
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        // Left column with DisplayColorsCards
-                        Column(modifier = Modifier.weight(0.38f)) {
-                            DisplayColorsCards(article)
-                        }
-
-                        // Right column with remaining fields and buttons
-                        Column(modifier = Modifier.weight(0.62f)) {
-                            // Benefit information
-                            if (article.clienPrixVentUnite > 0) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(55.dp)
-                                        .padding(top = 5.dp)
-                                ) {
-                                    BeneInfoBox("b.E2 -> ${article.benificeTotaleEn2}", Modifier.weight(1f))
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    BeneInfoBox(
-                                        "b.EN -> ${article.benficeTotaleEntreMoiEtClien}",
-                                        Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                            // Remaining FieldsDisplayer groups
-                            FieldsDisplayer.values().drop(1).forEach { fieldsGroup ->
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    fieldsGroup.fields.forEach { (column, abbr) ->
+                    // Remaining FieldsDisplayer groups
+                    FieldsDisplayer.values().drop(1).forEach { fieldsGroup ->
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            fieldsGroup.fields.forEach { (column, abbr) ->
+                                when (fieldsGroup) {
+                                    FieldsDisplayer.BenficesEntre -> {
+                                        if (article.clienPrixVentUnite > 0) {
+                                            BeneInfoBox(
+                                                "$abbr -> ${article.getColumnValue(column)}",
+                                                Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                    else -> {
                                         DisplayField(
                                             column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
                                             Modifier
@@ -130,11 +119,11 @@ fun ArticleDetailWindow(
                                     }
                                 }
                             }
-
-                            CalculationButtons(article, viewModel)
-                            ArticleToggleButton(article, viewModel)
                         }
                     }
+
+                    CalculationButtons(article, viewModel)
+                    ArticleToggleButton(article, viewModel)
 
                     // Article name
                     Text(
