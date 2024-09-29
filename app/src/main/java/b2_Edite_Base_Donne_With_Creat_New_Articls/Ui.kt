@@ -26,6 +26,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +41,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.BaseDonneStatTabel
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import b_Edite_Base_Donne.LoadImageFromPath
@@ -86,6 +89,52 @@ fun CategoryHeaderECB(
         "NonForNewsClients" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
     }
 }
+
+@Composable
+fun ArticleDetailDialog(
+    article: BaseDonneECBTabelle,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize(0.95f)
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                ) {
+                    ImageDisplayerWithGlideECB(article)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                AutoResizedTextECB(
+                    text = article.nomArticleFinale,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Close")
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun DisplayDetailleArticle(
     article: BaseDonneStatTabel,
@@ -238,8 +287,6 @@ fun DisplayField(
         )
     }
 }
-
-
 
 
 // Update the getArticleValue function to include the new fields
