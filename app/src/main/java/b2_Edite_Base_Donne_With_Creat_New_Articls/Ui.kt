@@ -182,7 +182,7 @@ fun InfoBoxWhithVoiceInpute(
                 MaterialTheme.shapes.extraSmall
             )
             .padding(
-                top = if (displayeInOutlines) 8.dp else 12.dp,
+                top = if (displayeInOutlines) 10.dp else 15.dp,
                 start = 4.dp,
                 end = 4.dp
             ),
@@ -223,11 +223,6 @@ fun DisplayField(
             article = article,
             displayeInOutlines = displayeInOutlines,
             modifier = modifier
-                .padding(
-                    top = if (displayeInOutlines) 8.dp else 12.dp,
-                    start = 4.dp,
-                    end = 4.dp
-                )
         )
     }
 }
