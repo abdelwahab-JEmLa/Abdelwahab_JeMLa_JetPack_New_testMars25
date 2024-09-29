@@ -42,35 +42,7 @@ fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle) {
 }
 
 
-@Composable
-fun AutoResizedTextECB(
-    text: String,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.onSurface,
-    maxLines: Int = Int.MAX_VALUE
-) {
-    val initialFontSize = MaterialTheme.typography.bodyMedium.fontSize
-    var fontSize by remember { mutableStateOf(initialFontSize) }
-    var readyToDraw by remember { mutableStateOf(false) }
 
-    Text(
-        text = text,
-        color = color,
-        fontSize = fontSize,
-        maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier.drawWithContent { if (readyToDraw) drawContent() },
-        onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowHeight) {
-                fontSize *= 0.9f
-            } else {
-                readyToDraw = true
-            }
-        }
-    )
-  //  return text.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }//Ajoute cette
-
-}
 
 class HeadOfViewModelFactory : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

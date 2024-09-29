@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -40,6 +41,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -91,7 +94,6 @@ fun ArticleDetailWindow(
                                 modifier
                                     .weight(1f)
                                     .height(67.dp)
-                                    .padding(vertical = 2.dp)
                             ) { currentChangingField = column }
                         }
                     }
@@ -103,9 +105,9 @@ fun ArticleDetailWindow(
                                 when (fieldsGroup) {
                                     FieldsDisplayer.BenficesEntre -> {
                                         if (article.clienPrixVentUnite > 0) {
-                                            BeneInfoBox(
+                                            InfoBoxWhithVoiceInpute(
                                                 "$abbr -> ${article.getColumnValue(column)}",
-                                                modifier.weight(1f) .padding(vertical = 2.dp)
+                                                modifier.weight(1f).padding(top = 4.dp).height(67.dp)
                                             )
                                         }
                                     }
@@ -114,7 +116,7 @@ fun ArticleDetailWindow(
                                             column, abbr, currentChangingField, article, viewModel, displayeInOutlines,
                                             modifier
                                                 .weight(1f)
-                                                .height(67.dp) .padding(vertical = 2.dp)
+                                                .height(67.dp)
                                         ) { currentChangingField = column }
                                     }
                                 }
@@ -122,11 +124,11 @@ fun ArticleDetailWindow(
                         }
                     }
 
-                    CalculationButtons(article, viewModel,modifier)
-                    ArticleToggleButton(article, viewModel,modifier)
+                    CalculationButtons(article, viewModel, modifier)
+                    ArticleToggleButton(article, viewModel, modifier)
 
                     // Article name
-                    Text(
+                    AutoResizedTextECB(
                         text = article.nomArticleFinale.capitalize(Locale.current),
                         fontSize = 25.sp,
                         textAlign = TextAlign.Center,
@@ -138,8 +140,7 @@ fun ArticleDetailWindow(
                     // Display in Outlines switch
                     Row(
                         modifier = modifier
-                            .fillMaxWidth()
-                        ,
+                            .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Display in Outlines")
@@ -150,6 +151,68 @@ fun ArticleDetailWindow(
             }
         }
     }
+}
+
+@Composable
+fun InfoBoxWhithVoiceInpute(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val parts = text.split("->")
+    val abbreviation = parts.getOrNull(0)?.trim() ?: ""
+    val value = parts.getOrNull(1)?.trim() ?: ""
+
+    val roundedValue = try {
+        value.toDouble().let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
+    } catch (e: NumberFormatException) {
+        value
+    }
+
+    Box(
+        modifier = modifier
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outline,
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        AutoResizedTextECB(
+            text = "$abbreviation -> $roundedValue",
+            modifier = modifier.align(Alignment.Center),
+            color = MaterialTheme.colorScheme.error
+        )
+    }
+}
+
+@Composable
+fun AutoResizedTextECB(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    maxLines: Int = Int.MAX_VALUE,
+    fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize,
+    textAlign: TextAlign = TextAlign.Center
+) {
+    val initialFontSize = fontSize
+    var currentFontSize by remember { mutableStateOf(initialFontSize) }
+    var readyToDraw by remember { mutableStateOf(false) }
+
+    Text(
+        text = text.capitalize(Locale.current),
+        color = color,
+        fontSize = currentFontSize,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign,
+        modifier = modifier.drawWithContent { if (readyToDraw) drawContent() },
+        onTextLayout = { textLayoutResult ->
+            if (textLayoutResult.didOverflowHeight) {
+                currentFontSize *= 0.9f
+            } else {
+                readyToDraw = true
+            }
+        }
+    )
 }
 
 @Composable
@@ -183,7 +246,7 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifi
                             LoadImageFromPath(imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = couleur)
+                        AutoResizedTextECB(text = couleur)
                     }
                 }
             }
@@ -216,6 +279,8 @@ fun DisplayField(
         InfoBoxWhithVoiceInpute("$abbreviation: $columnValue", modifier)
     }
 }
+
+
 
 @Composable
 fun OutlineTextECB(
@@ -269,22 +334,6 @@ fun OutlineTextECB(
     )
 }
 
-@Composable
-fun InfoBoxWhithVoiceInpute(
-    text: String,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.extraSmall
-            )
-    ) {
-        Text(text = text, modifier = Modifier.align(Alignment.Center), textAlign = TextAlign.Center)
-    }
-}
 
 @Composable
 fun CalculationButtons(
