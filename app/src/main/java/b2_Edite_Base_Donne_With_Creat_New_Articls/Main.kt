@@ -114,7 +114,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         // Dialog
         dialogeDisplayeDetailleChanger?.let { article ->
             ArticleDetailWindow(
-                article = article,    //TODO pk ici ca ne change pas
+                article = article,
                 onDismiss = { dialogeDisplayeDetailleChanger = null },
                 viewModel=viewModel,
                 modifier =  Modifier.padding(horizontal = 3.dp)
