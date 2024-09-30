@@ -302,6 +302,7 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifi
 }
 
 
+
 @Composable
 fun OutlineTextECB(
     columnToChange: String,
@@ -312,9 +313,15 @@ fun OutlineTextECB(
     modifier: Modifier = Modifier,
     onValueChanged: (String) -> Unit
 ) {
-    var textFieldValue by remember { mutableStateOf(article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
+    // Observe the current edited article
+    val currentEditedArticle by viewModel.currentEditedArticle
+
+    // Use the current edited article if it matches the given article, otherwise use the original article
+    val displayedArticle = if (currentEditedArticle?.idArticleECB == article.idArticleECB) currentEditedArticle else article
+
+    var textFieldValue by remember { mutableStateOf(displayedArticle?.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    val labelValue = displayedArticle?.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
     val roundedValue = try {
         labelValue.toDouble()
             .let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
@@ -328,7 +335,7 @@ fun OutlineTextECB(
         value = textValue,
         onValueChange = { newValue ->
             textFieldValue = newValue.replace(',', '.')
-            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
+            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, displayedArticle ?: article)
             onValueChanged(columnToChange)
         },
         label = {
@@ -353,7 +360,6 @@ fun OutlineTextECB(
         )
     )
 }
-
 
 @Composable
 fun CalculationButtons(

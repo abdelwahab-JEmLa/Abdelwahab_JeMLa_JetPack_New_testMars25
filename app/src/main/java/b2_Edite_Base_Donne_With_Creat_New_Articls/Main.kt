@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -113,10 +114,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         // Dialog
         dialogeDisplayeDetailleChanger?.let { article ->
             ArticleDetailWindow(
-                article = article,
+                article = article,    //TODO pk ici ca ne change pas
                 onDismiss = { dialogeDisplayeDetailleChanger = null },
                 viewModel=viewModel,
-                Modifier.padding(horizontal = 3.dp)      //TODO fait if
+                modifier =  Modifier.padding(horizontal = 3.dp)
             )
         }
     }
@@ -167,6 +168,9 @@ class HeadOfViewModels(
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
 
+    private val _currentEditedArticle = mutableStateOf<BaseDonneECBTabelle?>(null)
+    val currentEditedArticle: State<BaseDonneECBTabelle?> = _currentEditedArticle
+
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
 
@@ -182,7 +186,7 @@ class HeadOfViewModels(
 
             val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
                 snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
-                    updateIdArticle(snapshot.value as? Map<String, Any?> ?: emptyMap())
+                    idArticleECB = snapshot.key?.toIntOrNull() ?: 0
                 }
             }
 
@@ -214,6 +218,9 @@ class HeadOfViewModels(
             state.copy(articlesBaseDonneECB = updatedArticles)
         }
 
+        // Update the current edited article
+        _currentEditedArticle.value = updatedArticle
+
         // Perform Firebase update asynchronously
         viewModelScope.launch {
             try {
@@ -228,8 +235,60 @@ class HeadOfViewModels(
     fun toggleFilter() {
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
-}
 
+    fun setCurrentEditedArticle(article: BaseDonneECBTabelle) {
+        _currentEditedArticle.value = article
+    }
+
+    // Additional functions can be added here as needed, for example:
+    fun addNewArticle(article: BaseDonneECBTabelle) {
+        viewModelScope.launch {
+            try {
+                val newRef = refDBJetPackExport.push()
+                val newId = newRef.key?.toIntOrNull() ?: return@launch
+                val newArticle = article.copy(idArticleECB = newId)
+                newRef.setValue(newArticle).await()
+
+                _uiState.update { state ->
+                    state.copy(articlesBaseDonneECB = state.articlesBaseDonneECB + newArticle)
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to add new article: ${e.message}") }
+            }
+        }
+    }
+
+    fun deleteArticle(article: BaseDonneECBTabelle) {
+        viewModelScope.launch {
+            try {
+                refDBJetPackExport.child(article.idArticleECB.toString()).removeValue().await()
+
+                _uiState.update { state ->
+                    state.copy(articlesBaseDonneECB = state.articlesBaseDonneECB.filter { it.idArticleECB != article.idArticleECB })
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to delete article: ${e.message}") }
+            }
+        }
+    }
+
+    fun updateCategory(category: CategoriesTabelleECB) {
+        viewModelScope.launch {
+            try {
+                refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString()).setValue(category).await()
+
+                _uiState.update { state ->
+                    val updatedCategories = state.categoriesECB.map {
+                        if (it.idCategorieInCategoriesTabele == category.idCategorieInCategoriesTabele) category else it
+                    }
+                    state.copy(categoriesECB = updatedCategories)
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to update category: ${e.message}") }
+            }
+        }
+    }
+}
 class CreatAndEditeInBaseDonneRepositery {
     fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
         currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
