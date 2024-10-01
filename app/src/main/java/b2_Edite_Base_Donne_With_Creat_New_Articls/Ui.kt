@@ -307,7 +307,7 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
     ) {
         itemsIndexed(couleursList) { index, couleur ->
             if (couleur != null) {
-                ColorCard(article, index, couleur)
+                ColorCard(article, index, couleur,viewModel)
             }
         }
 
@@ -322,7 +322,12 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-private fun ColorCard(article: BaseDonneECBTabelle, index: Int, couleur: String) {
+private fun ColorCard(
+    article: BaseDonneECBTabelle,
+    index: Int,
+    couleur: String,
+    viewModel: HeadOfViewModels
+) {
     Card(
         modifier = Modifier
             .height(200.dp)
@@ -338,10 +343,14 @@ private fun ColorCard(article: BaseDonneECBTabelle, index: Int, couleur: String)
                     .weight(1f)
                     .aspectRatio(1f)
             ) {
-                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
-                val imageExist = listOf("jpg", "webp")
-                    .firstOrNull { File("$imagePath.$it").exists() }
-                    ?.let { "$imagePath.$it" }
+                val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
+                val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
+
+                val imageExist = listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+                    listOf(baseImagePath, downloadsImagePath).firstOrNull { path ->
+                        File("$path.$extension").exists()
+                    }?.let { "$it.$extension" }
+                }
 
                 GlideImage(
                     model = imageExist ?: R.drawable.blanc,
@@ -383,8 +392,6 @@ private fun AddColorCard(onClick: () -> Unit) {
         }
     }
 }
-
-
 
 @Composable
 fun OutlineTextECB(

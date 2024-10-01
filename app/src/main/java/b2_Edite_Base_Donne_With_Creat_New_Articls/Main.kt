@@ -363,7 +363,7 @@ class HeadOfViewModels(
         }
     }
 
-    private fun getDownloadsDirectory(): File {
+    fun getDownloadsDirectory(): File {
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     }
 
