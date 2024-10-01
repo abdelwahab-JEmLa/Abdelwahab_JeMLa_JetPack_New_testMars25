@@ -87,7 +87,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
-                                }
+                                }  ,
+                                viewModel
                             )
                         }
                     }
@@ -135,7 +136,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 @Composable
 fun ArticleItemECB(
     article: BaseDonneECBTabelle,
-    onClickOnImg :(BaseDonneECBTabelle) ->Unit
+    onClickOnImg: (BaseDonneECBTabelle) -> Unit,
+    viewModel: HeadOfViewModels
 ) {
     Card(
         modifier = Modifier
@@ -151,7 +153,7 @@ fun ArticleItemECB(
                 contentAlignment = Alignment.Center
             ) {
                 //Affiche Image
-                ImageDisplayerWithGlideECB(article)
+                ImageDisplayerWithGlideECB(article,viewModel)
                 //Affiche diponibilityState
                 DisponibilityOverlayECB(article.diponibilityState)
             }

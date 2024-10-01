@@ -30,14 +30,19 @@ import java.io.File
 
 @Composable
 @OptIn(ExperimentalGlideComposeApi::class)
-fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle) {
-    val imagePath =
-        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_1"
-    val imageExist =
-        listOf("jpg", "webp").firstOrNull { File("$imagePath.$it").exists() }
+fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels) {
+    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_1"
+    val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_1"
+
+    val imageExist = listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+        listOf(baseImagePath, downloadsImagePath).firstOrNull { path ->
+            File("$path.$extension").exists()
+        }?.let { "$it.$extension" }
+    }
+
     GlideImage(
-        model = imageExist?.let { "$imagePath.$it" } ?: R.drawable.blanc,
-        contentDescription = null,
+        model = imageExist ?: R.drawable.blanc,
+        contentDescription = "Image for article ${article.idArticleECB}",
         modifier = Modifier.fillMaxSize(),
     ) {
         it.diskCacheStrategy(DiskCacheStrategy.ALL)
