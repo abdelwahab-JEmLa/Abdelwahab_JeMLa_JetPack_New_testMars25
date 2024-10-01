@@ -1,5 +1,8 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,11 +32,16 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
@@ -158,7 +166,9 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val error: String? = null
 )
 
+
 class HeadOfViewModels(
+    private val context: Context,
     private val creatAndEditeInBaseDonneRepositery: CreatAndEditeInBaseDonneRepositery
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
@@ -222,7 +232,6 @@ class HeadOfViewModels(
             try {
                 refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle).await()
             } catch (e: Exception) {
-                // Handle error (e.g., update error state)
                 _uiState.update { it.copy(error = "Failed to update Firebase: ${e.message}") }
             }
         }
@@ -231,6 +240,70 @@ class HeadOfViewModels(
     fun toggleFilter() {
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
+
+    private suspend fun getNextArticleId(): Int {
+        val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+            snapshot.key?.toIntOrNull()
+        }
+        return (articles.maxOrNull() ?: 0) + 1
+    }
+
+    private fun getDownloadsDirectory(): File {
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+    }
+
+    private suspend fun copyImageToDownloads(sourceUri: Uri, destinationFile: File) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    FileOutputStream(destinationFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            } catch (e: IOException) {
+                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
+            }
+        }
+    }
+    fun handleGallerySelection(uris: List<Uri>) {
+        viewModelScope.launch {
+            uris.forEach { uri ->
+                try {
+                    val newId = getNextArticleId()
+                    val newFileName = "$newId.jpg"
+                    val destinationFile = File(getDownloadsDirectory(), newFileName)
+
+                    copyImageToDownloads(uri, destinationFile)
+
+                    val newArticle = BaseDonneECBTabelle(
+                        idArticleECB = newId,
+                        nomArticleFinale = "New Article $newId",
+                        nomCategorie = "Uncategorized",
+                        diponibilityState = "",
+                    )
+
+                    addNewArticle(newArticle)
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(error = "Failed to process image: ${e.message}") }
+                }
+            }
+        }
+    }
+
+    private suspend fun addNewArticle(newArticle: BaseDonneECBTabelle) {
+        try {
+            refDBJetPackExport.child(newArticle.idArticleECB.toString()).setValue(newArticle).await()
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    articlesBaseDonneECB = currentState.articlesBaseDonneECB + newArticle
+                )
+            }
+        } catch (e: Exception) {
+            _uiState.update { it.copy(error = "Failed to add new article: ${e.message}") }
+        }
+    }
+
 }
 
 

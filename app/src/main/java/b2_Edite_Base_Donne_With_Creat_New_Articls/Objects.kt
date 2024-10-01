@@ -1,5 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -35,11 +36,14 @@ fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle) {
 
 
 
-class HeadOfViewModelFactory : ViewModelProvider.Factory {
+class HeadOfViewModelFactory(
+    private val context: Context,
+    private val creatAndEditeInBaseDonneRepositery: CreatAndEditeInBaseDonneRepositery
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(CreatAndEditeInBaseDonneRepositery()) as T
+            return HeadOfViewModels(context, creatAndEditeInBaseDonneRepositery) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

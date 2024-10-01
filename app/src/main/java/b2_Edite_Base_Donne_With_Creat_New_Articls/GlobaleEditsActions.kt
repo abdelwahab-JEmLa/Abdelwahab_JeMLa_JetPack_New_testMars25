@@ -1,5 +1,8 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
@@ -36,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun FloatingActionButtons(
@@ -63,7 +68,9 @@ fun FloatingActionButtons(
                 showOnlyWithFilter = showOnlyWithFilter,
                 onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
                 showDialogeDataBaseEditer = showDialogeDataBaseEditer,
-                onChangeGridColumns = onChangeGridColumns
+                onChangeGridColumns = onChangeGridColumns,
+                viewModel = viewModel,
+                coroutineScope = coroutineScope
             )
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
@@ -83,27 +90,37 @@ fun FloatingActionButtonGroup(
     showOnlyWithFilter: Boolean,
     onDialogDataBaseEditerClick: () -> Unit,
     showDialogeDataBaseEditer: Boolean,
-    onChangeGridColumns: (Int) -> Unit
+    onChangeGridColumns: (Int) -> Unit,
+    viewModel: HeadOfViewModels,
+    coroutineScope: CoroutineScope
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 4
-    var showContentDescription by remember { mutableStateOf(true) }
+    var showContentDescription by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        coroutineScope.launch {
+            viewModel.handleGallerySelection(uris)
+        }
+    }
 
     val buttons = listOf(
+        Triple(Icons.Default.Add, "Open Gallery and add article from it") {
+            galleryLauncher.launch("image/*")
+        },
         Triple(Icons.Default.Category, "Category", onCategorySelectionClick),
         Triple(Icons.Default.Home, "Home", onToggleNavBar),
         Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
         Triple(if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia, "Database Editor", onDialogDataBaseEditerClick),
-        Triple(Icons.Default.GridView, "Change Grid")
-        {
+        Triple(Icons.Default.GridView, "Change Grid") {
             currentGridColumns = (currentGridColumns % maxGridColumns) + 1
             onChangeGridColumns(currentGridColumns)
         },
-        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details,
-            "Toggle Description")
-                {
-                    showContentDescription = !showContentDescription
-                }
+        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
+            showContentDescription = !showContentDescription
+        }
     )
 
     buttons.forEach { (icon, contentDescription, onClick: () -> Unit) ->
@@ -135,10 +152,12 @@ fun FloatingActionButtonGroup(
             ) {
                 Icon(icon, contentDescription = contentDescription)
             }
-
         }
     }
 }
+
+
+
 @Composable
 fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
