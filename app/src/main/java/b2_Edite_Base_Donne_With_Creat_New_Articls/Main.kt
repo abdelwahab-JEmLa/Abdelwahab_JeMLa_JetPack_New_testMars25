@@ -235,59 +235,6 @@ class HeadOfViewModels(
     fun toggleFilter() {
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
-
-    fun setCurrentEditedArticle(article: BaseDonneECBTabelle) {
-        _currentEditedArticle.value = article
-    }
-
-    // Additional functions can be added here as needed, for example:
-    fun addNewArticle(article: BaseDonneECBTabelle) {
-        viewModelScope.launch {
-            try {
-                val newRef = refDBJetPackExport.push()
-                val newId = newRef.key?.toIntOrNull() ?: return@launch
-                val newArticle = article.copy(idArticleECB = newId)
-                newRef.setValue(newArticle).await()
-
-                _uiState.update { state ->
-                    state.copy(articlesBaseDonneECB = state.articlesBaseDonneECB + newArticle)
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Failed to add new article: ${e.message}") }
-            }
-        }
-    }
-
-    fun deleteArticle(article: BaseDonneECBTabelle) {
-        viewModelScope.launch {
-            try {
-                refDBJetPackExport.child(article.idArticleECB.toString()).removeValue().await()
-
-                _uiState.update { state ->
-                    state.copy(articlesBaseDonneECB = state.articlesBaseDonneECB.filter { it.idArticleECB != article.idArticleECB })
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Failed to delete article: ${e.message}") }
-            }
-        }
-    }
-
-    fun updateCategory(category: CategoriesTabelleECB) {
-        viewModelScope.launch {
-            try {
-                refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString()).setValue(category).await()
-
-                _uiState.update { state ->
-                    val updatedCategories = state.categoriesECB.map {
-                        if (it.idCategorieInCategoriesTabele == category.idCategorieInCategoriesTabele) category else it
-                    }
-                    state.copy(categoriesECB = updatedCategories)
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Failed to update category: ${e.message}") }
-            }
-        }
-    }
 }
 class CreatAndEditeInBaseDonneRepositery {
     fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
@@ -401,6 +348,7 @@ class CreatAndEditeInBaseDonneRepositery {
             Boolean::class.java -> field.setBoolean(this, value.toBoolean())
         }
     }
+
 }
 
 data class BaseDonneECBTabelle(
@@ -442,10 +390,6 @@ data class BaseDonneECBTabelle(
     var benificeClient: Double = 0.0,
     var monBeneficeUniter: Double = 0.0
 ) {
-    fun updateIdArticle(value: Map<String, Any?>) {
-        idArticleECB = (value["idArticle"] as? Long)?.toInt() ?: 0
-    }
-
     fun getColumnValue(columnName: String): Any? {
         val value = when (columnName) {
             "nomArticleFinale" -> nomArticleFinale
