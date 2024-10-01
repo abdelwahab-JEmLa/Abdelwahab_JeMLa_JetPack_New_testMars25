@@ -339,19 +339,6 @@ class HeadOfViewModels(
         return (articles.maxOrNull() ?: 0) + 1
     }
 
-    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
-        withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                    FileOutputStream(destinationFile).use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            } catch (e: IOException) {
-                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
-            }
-        }
-    }
 
     private suspend fun updateArticle(article: BaseDonneECBTabelle) {
         try {
@@ -455,6 +442,41 @@ class HeadOfViewModels(
                 if (file.exists()) {
                     file.delete()
                 }
+            }
+        }
+    }
+    // Add these functions to your HeadOfViewModels class
+    fun processNewImage(uri: Uri, article: BaseDonneECBTabelle, colorIndex: Int) {
+        viewModelScope.launch {
+            try {
+                val destinationFile = File(getDownloadsDirectory(), "${article.idArticleECB}_${colorIndex}.jpg")
+                copyImage(uri, destinationFile)
+
+                val updatedArticle = when (colorIndex) {
+                    1 -> article.copy(couleur1 = "Couleur_1")
+                    2 -> article.copy(couleur2 = "Couleur_2")
+                    3 -> article.copy(couleur3 = "Couleur_3")
+                    4 -> article.copy(couleur4 = "Couleur_4")
+                    else -> article
+                }
+
+                updateArticle(updatedArticle)
+            } catch (e: Exception) {
+                handleError("Failed to process new image", e)
+            }
+        }
+    }
+
+    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    FileOutputStream(destinationFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            } catch (e: IOException) {
+                throw Exception("Failed to copy image: ${e.message}")
             }
         }
     }

@@ -1,9 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
-import android.app.Activity
-import android.content.Intent
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -98,7 +95,7 @@ fun ArticleDetailWindow(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
-                    DisplayColorsCards(article,viewModel)
+                    DisplayColorsCards(article,viewModel, onDismiss= onDismiss)
 
                     // TOP_ROW fields
                     Row(modifier = modifier.fillMaxWidth()) {
@@ -289,7 +286,9 @@ fun CategoryHeaderECB(
 }
 
 @Composable
-fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier) {
+fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
+                       onDismiss: () -> Unit
+) {
     val couleursList = listOf(
         article.couleur1,
         article.couleur2,
@@ -314,7 +313,7 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
     ) {
         itemsIndexed(couleursList) { index, couleur ->
             if (couleur != null) {
-                ColorCard(article, index, couleur,viewModel)
+                ColorCard(article, index, couleur, viewModel, onDismiss)
             }
         }
 
@@ -333,9 +332,20 @@ private fun ColorCard(
     article: BaseDonneECBTabelle,
     index: Int,
     couleur: String,
-    viewModel: HeadOfViewModels
+    viewModel: HeadOfViewModels,
+    onDismiss: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            viewModel.tempImageUri?.let { uri ->
+                viewModel.processNewImage(uri, article, index + 1)
+            }
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -352,7 +362,6 @@ private fun ColorCard(
                     .weight(1f)
                     .aspectRatio(1f)
             ) {
-                val context = LocalContext.current
                 val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
                 val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
@@ -383,10 +392,8 @@ private fun ColorCard(
 
                 IconButton(
                     onClick = {
-                        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-                            putExtra(MediaStore.EXTRA_OUTPUT, viewModel.createTempImageUri(context))
-                        }
-                        (context as? Activity)?.startActivityForResult(intent, CAMERA_REQUEST_CODE)
+                        viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                        launcher.launch(viewModel.tempImageUri!!)
                     },
                     modifier = Modifier.align(Alignment.BottomEnd)
                 ) {
@@ -407,6 +414,7 @@ private fun ColorCard(
                 Button(onClick = {
                     showDeleteDialog = false
                     viewModel.deleteColor(article, index + 1)
+                    onDismiss()
                 }) {
                     Text("Confirm")
                 }
@@ -419,6 +427,7 @@ private fun ColorCard(
         )
     }
 }
+
 
 @Composable
 private fun AddColorCard(onClick: () -> Unit) {

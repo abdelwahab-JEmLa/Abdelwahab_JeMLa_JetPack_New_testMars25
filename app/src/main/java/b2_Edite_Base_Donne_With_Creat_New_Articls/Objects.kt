@@ -35,7 +35,7 @@ fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle, viewModel: HeadOfVi
     val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_1"
 
     val imageExist = listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-        listOf(baseImagePath, downloadsImagePath).firstOrNull { path ->
+        listOf(downloadsImagePath,baseImagePath ).firstOrNull { path ->
             File("$path.$extension").exists()
         }?.let { "$it.$extension" }
     }
