@@ -245,35 +245,89 @@ class HeadOfViewModels(
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
 
-    fun handleImageCapture(uri: Uri) {
+    fun handleImageCapture(uri: Uri, isParent: Boolean, colorChoice: String?) {
         viewModelScope.launch {
             try {
-                val newId = getNextArticleId()
-                val fileName = "${newId}_1.jpg"
-                val destinationFile = File(getDownloadsDirectory(), fileName)
-
-                copyImageToDownloads(uri, destinationFile)
-
-                val currentDateTime = LocalDateTime.now()
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                val formattedDateTime = currentDateTime.format(formatter)
-
-                val newArticle = BaseDonneECBTabelle(
-                    idArticleECB = newId,
-                    nomArticleFinale = "New Article $newId",
-                    nomCategorie = "New Articles",
-                    diponibilityState = "",
-                    dateCreationCategorie = formattedDateTime,
-                    couleur1 = "Couleur_1"
-                )
-
-                ensureNewArticlesCategoryExists()
-                addNewArticle(newArticle)
-
-                Log.d("HeadOfViewModels", "New article processed successfully: $newId")
+                if (isParent) {
+                    handleParentImageCapture(uri)
+                } else {
+                    handleColorImageCapture(uri, colorChoice)
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Failed to process image: ${e.message}") }
             }
+        }
+    }
+
+    private suspend fun handleParentImageCapture(uri: Uri) {
+        val newId = getNextArticleId()
+        val fileName = "${newId}_1.jpg"
+        val destinationFile = File(getDownloadsDirectory(), fileName)
+
+        copyImageToDownloads(uri, destinationFile)
+
+        val currentDateTime = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        val formattedDateTime = currentDateTime.format(formatter)
+
+        val newArticle = BaseDonneECBTabelle(
+            idArticleECB = newId,
+            nomArticleFinale = "New Article $newId",
+            nomCategorie = "New Articles",
+            diponibilityState = "",
+            dateCreationCategorie = formattedDateTime,
+            couleur1 = "Couleur_1"
+        )
+
+        ensureNewArticlesCategoryExists()
+        addNewArticle(newArticle)
+
+        Log.d("HeadOfViewModels", "New parent article processed successfully: $newId")
+    }
+
+
+    private suspend fun handleColorImageCapture(uri: Uri, colorChoice: String?) {
+        val lastParentArticle = getLastParentArticle()
+        if (lastParentArticle == null) {
+            _uiState.update { it.copy(error = "No parent article found to add color") }
+            return
+        }
+
+        val fileName = "${lastParentArticle.idArticleECB}_$colorChoice.jpg"
+        val destinationFile = File(getDownloadsDirectory(), fileName)
+
+        copyImageToDownloads(uri, destinationFile)
+
+        val updatedArticle = lastParentArticle.copy(
+            couleur2 = if (lastParentArticle.couleur2.isNullOrEmpty() && colorChoice == "Couleur_2") colorChoice else lastParentArticle.couleur2,
+            couleur3 = if (lastParentArticle.couleur3.isNullOrEmpty() && colorChoice == "Couleur_3") colorChoice else lastParentArticle.couleur3,
+            couleur4 = if (lastParentArticle.couleur4.isNullOrEmpty() && colorChoice == "Couleur_4") colorChoice else lastParentArticle.couleur4
+        )
+
+        updateArticle(updatedArticle)
+
+        Log.d("HeadOfViewModels", "Color added to article: ${lastParentArticle.idArticleECB}")
+    }
+
+    private suspend fun getLastParentArticle(): BaseDonneECBTabelle? {
+        return _uiState.value.articlesBaseDonneECB
+            .filter { it.couleur1 == "Couleur_1" }
+            .maxByOrNull { it.idArticleECB }
+    }
+
+    private suspend fun updateArticle(article: BaseDonneECBTabelle) {
+        try {
+            refDBJetPackExport.child(article.idArticleECB.toString()).setValue(article).await()
+
+            _uiState.update { currentState ->
+                val updatedArticles = currentState.articlesBaseDonneECB.map {
+                    if (it.idArticleECB == article.idArticleECB) article else it
+                }
+                currentState.copy(articlesBaseDonneECB = updatedArticles)
+            }
+            Log.d("HeadOfViewModels", "Article updated successfully: ${article.idArticleECB}")
+        } catch (e: Exception) {
+            handleError("Failed to update article", e)
         }
     }
 
@@ -356,14 +410,6 @@ class HeadOfViewModels(
     }
 }
 
-// Helper function to create a temporary URI for camera captures
-fun createTempImageUri(context: Context): Uri {
-    val tempFile = File.createTempFile("temp_image", ".jpg", context.cacheDir).apply {
-        createNewFile()
-        deleteOnExit()
-    }
-    return FileProvider.getUriForFile(context, "${context.packageName}.provider", tempFile)
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 class CreatAndEditeInBaseDonneRepositery {
