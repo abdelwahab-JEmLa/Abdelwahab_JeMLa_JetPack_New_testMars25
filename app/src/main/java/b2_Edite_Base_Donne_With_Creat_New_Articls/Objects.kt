@@ -18,6 +18,7 @@ import java.io.File
 fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle) {
     val imagePath =
         "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_1"
+    //TODO fait si image n exist pas  don imagePath de charcge dont le dossie downold
     val imageExist =
         listOf("jpg", "webp").firstOrNull { File("$imagePath.$it").exists() }
     GlideImage(

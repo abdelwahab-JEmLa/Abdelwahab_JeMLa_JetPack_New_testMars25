@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
@@ -82,6 +83,8 @@ fun FloatingActionButtons(
     }
 }
 
+
+
 @Composable
 fun FloatingActionButtonGroup(
     onCategorySelectionClick: () -> Unit,
@@ -97,23 +100,31 @@ fun FloatingActionButtonGroup(
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 4
     var showContentDescription by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris: List<Uri> ->
-        coroutineScope.launch {
-            viewModel.handleGallerySelection(uris)
+    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempImageUri?.let { uri ->
+                coroutineScope.launch {
+                    viewModel.handleImageCapture(uri)
+                }
+            }
         }
     }
 
     val buttons = listOf(
-        Triple(Icons.Default.Add, "Open Gallery and add article from it") {
-            galleryLauncher.launch("image/*")
+        Triple(Icons.Default.Add, "Add Article") {
+            tempImageUri = createTempImageUri(context)
+            cameraLauncher.launch(tempImageUri!!)
         },
-        Triple(Icons.Default.Category, "Category", onCategorySelectionClick),
+        Triple(Icons.Default.Category, "Category") { /* Implement category selection */ },
         Triple(Icons.Default.Home, "Home", onToggleNavBar),
         Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
-        Triple(if (showDialogeDataBaseEditer) Icons.Default.Close else Icons.Default.PermMedia, "Database Editor", onDialogDataBaseEditerClick),
+        Triple(Icons.Default.PermMedia, "Database Editor") { /* Implement database editor */ },
         Triple(Icons.Default.GridView, "Change Grid") {
             currentGridColumns = (currentGridColumns % maxGridColumns) + 1
             onChangeGridColumns(currentGridColumns)
@@ -155,7 +166,6 @@ fun FloatingActionButtonGroup(
         }
     }
 }
-
 
 
 @Composable

@@ -2,6 +2,7 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
@@ -116,7 +118,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 onUpdateStart = onUpdateStart,
                 onUpdateProgress = onUpdateProgress,
                 onUpdateComplete = onUpdateComplete,
-                onChangeGridColumns = { gridColumns = it }
+                onChangeGridColumns = { gridColumns = it } ,
             )
         }
 
@@ -243,6 +245,38 @@ class HeadOfViewModels(
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
 
+    fun handleImageCapture(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val newId = getNextArticleId()
+                val fileName = "${newId}_1.jpg"
+                val destinationFile = File(getDownloadsDirectory(), fileName)
+
+                copyImageToDownloads(uri, destinationFile)
+
+                val currentDateTime = LocalDateTime.now()
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                val formattedDateTime = currentDateTime.format(formatter)
+
+                val newArticle = BaseDonneECBTabelle(
+                    idArticleECB = newId,
+                    nomArticleFinale = "New Article $newId",
+                    nomCategorie = "New Articles",
+                    diponibilityState = "",
+                    dateCreationCategorie = formattedDateTime,
+                    couleur1 = "Couleur_1"
+                )
+
+                ensureNewArticlesCategoryExists()
+                addNewArticle(newArticle)
+
+                Log.d("HeadOfViewModels", "New article processed successfully: $newId")
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to process image: ${e.message}") }
+            }
+        }
+    }
+
     private suspend fun getNextArticleId(): Int {
         return try {
             val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
@@ -255,58 +289,20 @@ class HeadOfViewModels(
         }
     }
 
-    fun handleGallerySelection(uris: List<Uri>) {
-        viewModelScope.launch {
-            uris.forEach { uri ->
-                try {
-                    val newId = getNextArticleId()
-                    if (newId == -1) return@forEach // Skip this iteration if ID retrieval failed
-
-                    val fileName = "${newId}_1.jpg"
-                    copyImage(uri, fileName)
-
-                    val currentDateTime = LocalDateTime.now()
-                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    val formattedDateTime = currentDateTime.format(formatter)
-
-                    val newArticle = BaseDonneECBTabelle(
-                        idArticleECB = newId,
-                        nomArticleFinale = "New Article $newId",
-                        nomCategorie = "New Articles",
-                        diponibilityState = "",
-                        dateCreationCategorie = formattedDateTime,
-                    )
-
-                    ensureNewArticlesCategoryExists()
-                    addNewArticle(newArticle)
-
-                    Log.d("HeadOfViewModels", "New article processed successfully: $newId")
-                } catch (e: Exception) {
-                    handleError("Failed to process image", e)
-                }
-            }
-        }
+    private fun getDownloadsDirectory(): File {
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     }
 
-    private suspend fun copyImage(sourceUri: Uri, fileName: String) {
+    private suspend fun copyImageToDownloads(sourceUri: Uri, destinationFile: File) {
         withContext(Dispatchers.IO) {
             try {
-                val destinationFile = File(context.getExternalFilesDir(null), "IMGs/BaseDonne/$fileName")
-                destinationFile.parentFile?.mkdirs()
-
                 context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
                     FileOutputStream(destinationFile).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
                 }
-
-                if (destinationFile.exists() && destinationFile.length() > 0) {
-                    Log.d("HeadOfViewModels", "File copied successfully: ${destinationFile.absolutePath}")
-                } else {
-                    throw IOException("File copy failed or file is empty")
-                }
             } catch (e: IOException) {
-                throw Exception("Failed to copy image: ${e.message}")
+                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
             }
         }
     }
@@ -353,13 +349,23 @@ class HeadOfViewModels(
         }
     }
 
+
     private fun handleError(message: String, exception: Exception) {
         Log.e("HeadOfViewModels", message, exception)
         _uiState.update { it.copy(error = "$message: ${exception.message}") }
     }
 }
 
+// Helper function to create a temporary URI for camera captures
+fun createTempImageUri(context: Context): Uri {
+    val tempFile = File.createTempFile("temp_image", ".jpg", context.cacheDir).apply {
+        createNewFile()
+        deleteOnExit()
+    }
+    return FileProvider.getUriForFile(context, "${context.packageName}.provider", tempFile)
+}
 
+////////////////////////////////////////////////////////////////////////////////
 class CreatAndEditeInBaseDonneRepositery {
     fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
         currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
