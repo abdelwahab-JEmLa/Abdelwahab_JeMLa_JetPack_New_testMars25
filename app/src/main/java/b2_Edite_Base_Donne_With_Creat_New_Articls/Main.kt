@@ -78,10 +78,9 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                         it.nomCategorie == category.nomCategorieInCategoriesTabele &&
                                 (!filterNonDispo || it.diponibilityState == "")
                     }
-                    if (articlesInCategory.isNotEmpty()) {
+                    if (articlesInCategory.isNotEmpty() || category.nomCategorieInCategoriesTabele == "New Articles") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            CategoryHeaderECB(category = category,
-                                viewModel=viewModel)
+                            CategoryHeaderECB(category = category, viewModel = viewModel)
                         }
                         items(articlesInCategory) { article ->
                             ArticleItemECB(
@@ -126,8 +125,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             ArticleDetailWindow(
                 article = article,
                 onDismiss = { dialogeDisplayeDetailleChanger = null },
-                viewModel=viewModel,
-                modifier =  Modifier.padding(horizontal = 3.dp)
+                viewModel = viewModel,
+                modifier = Modifier.padding(horizontal = 3.dp)
             )
         }
     }
@@ -273,12 +272,20 @@ class HeadOfViewModels(
 
                 copyImage(uri, destinationFile)
 
+// Assuming viewModel is accessible here
+                val newClassementCate = (uiState.value.articlesBaseDonneECB
+                    .filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }
+                    .minOfOrNull { it.classementCate }
+                    ?.minus(1.0)
+                    ?: 0.0)
+
                 val newArticle = BaseDonneECBTabelle(
                     idArticleECB = newId,
                     nomArticleFinale = "New Article $newId",
                     nomCategorie = category.nomCategorieInCategoriesTabele,
                     diponibilityState = "",
-                    dateCreationCategorie = System.currentTimeMillis().toString()
+                    dateCreationCategorie = System.currentTimeMillis().toString(),
+                    classementCate = newClassementCate
                 )
                 ensureNewArticlesCategoryExists()
                 addNewArticle(newArticle)

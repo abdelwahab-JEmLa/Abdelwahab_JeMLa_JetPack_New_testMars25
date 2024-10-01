@@ -1,6 +1,5 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
@@ -93,10 +91,6 @@ fun FloatingActionButtonGroup(
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 4
     var showContentDescription by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-
-    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
-
 
     val buttons = listOf(
 
