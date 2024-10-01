@@ -243,36 +243,16 @@ class HeadOfViewModels(
     fun toggleFilter() {
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
-    private suspend fun getNextArticleId(): Int {
-        val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-            snapshot.key?.toIntOrNull()
-        }
-        return (articles.maxOrNull() ?: 0) + 1
-    }
 
 
-    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
-        withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                    FileOutputStream(destinationFile).use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            } catch (e: IOException) {
-                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
-            }
-        }
-    }
     fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB) {
         viewModelScope.launch {
             try {
                 val newId = getNextArticleId()
-                val destinationFile = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${newId}_1.jpg")
+                val destinationFile = File(getDownloadsDirectory(), "${newId}_1.jpg")
 
                 copyImage(uri, destinationFile)
 
-// Assuming viewModel is accessible here
                 val newClassementCate = (uiState.value.articlesBaseDonneECB
                     .filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }
                     .minOfOrNull { it.classementCate }
@@ -284,6 +264,7 @@ class HeadOfViewModels(
                     nomArticleFinale = "New Article $newId",
                     nomCategorie = category.nomCategorieInCategoriesTabele,
                     diponibilityState = "",
+                    couleur1 = "Couleur 1",
                     dateCreationCategorie = System.currentTimeMillis().toString(),
                     classementCate = newClassementCate
                 )
@@ -345,8 +326,26 @@ class HeadOfViewModels(
         val tempFile = File.createTempFile("temp_image", ".jpg", context.cacheDir)
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
     }
+    private suspend fun getNextArticleId(): Int {
+        val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+            snapshot.key?.toIntOrNull()
+        }
+        return (articles.maxOrNull() ?: 0) + 1
+    }
 
-
+    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    FileOutputStream(destinationFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            } catch (e: IOException) {
+                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
+            }
+        }
+    }
 
     private suspend fun updateArticle(article: BaseDonneECBTabelle) {
         try {
@@ -408,8 +407,6 @@ class HeadOfViewModels(
             }
         }
     }
-
-
 
     private fun handleError(message: String, exception: Exception) {
         Log.e("HeadOfViewModels", message, exception)
