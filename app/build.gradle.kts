@@ -50,6 +50,16 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    sourceSets {
+        getByName("main") {
+            res.srcDirs(
+                "src/main/res/layouts",
+                "src/main/res/layouts/main",
+                "src/main/res/xml",
+                "src/main/res"
+            )
+        }
+    }
 }
 
 dependencies {
