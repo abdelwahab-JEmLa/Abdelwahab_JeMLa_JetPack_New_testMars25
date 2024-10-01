@@ -122,8 +122,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     }
 }
 
-
-
 @Composable
 fun ArticleItemECB(
     article: BaseDonneECBTabelle,
@@ -151,7 +149,6 @@ fun ArticleItemECB(
         }
     }
 }
-
 
 data class CreatAndEditeInBaseDonnRepositeryModels(
     val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
