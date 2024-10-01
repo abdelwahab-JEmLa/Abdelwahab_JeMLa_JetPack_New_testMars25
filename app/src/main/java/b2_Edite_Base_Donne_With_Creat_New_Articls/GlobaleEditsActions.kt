@@ -124,13 +124,13 @@ fun FloatingActionButtonGroup(
         Triple(Icons.Default.Home, "Home", onToggleNavBar),
         Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
         Triple(Icons.Default.PermMedia, "Database Editor", onDialogDataBaseEditerClick),
-        Triple(Icons.Default.GridView, "Change Grid", {
+        Triple(Icons.Default.GridView, "Change Grid") {
             currentGridColumns = (currentGridColumns % maxGridColumns) + 1
             onChangeGridColumns(currentGridColumns)
-        }),
-        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description", {
+        },
+        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
             showContentDescription = !showContentDescription
-        })
+        }
     )
 
     Column(

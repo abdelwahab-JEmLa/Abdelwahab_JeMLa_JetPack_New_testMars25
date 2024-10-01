@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
@@ -309,7 +308,7 @@ class HeadOfViewModels(
         Log.d("HeadOfViewModels", "Color added to article: ${lastParentArticle.idArticleECB}")
     }
 
-    private suspend fun getLastParentArticle(): BaseDonneECBTabelle? {
+    private  fun getLastParentArticle(): BaseDonneECBTabelle? {
         return _uiState.value.articlesBaseDonneECB
             .filter { it.couleur1 == "Couleur_1" }
             .maxByOrNull { it.idArticleECB }
