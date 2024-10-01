@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
@@ -43,8 +44,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
@@ -81,7 +80,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                     }
                     if (articlesInCategory.isNotEmpty()) {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            CategoryHeaderECB(category = category)
+                            CategoryHeaderECB(category = category,
+                                viewModel=viewModel)
                         }
                         items(articlesInCategory) { article ->
                             ArticleItemECB(
@@ -184,6 +184,7 @@ class HeadOfViewModels(
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
+    var tempImageUri: Uri? = null
 
     init {
         viewModelScope.launch {
@@ -243,76 +244,102 @@ class HeadOfViewModels(
     fun toggleFilter() {
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
+    private suspend fun getNextArticleId(): Int {
+        val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+            snapshot.key?.toIntOrNull()
+        }
+        return (articles.maxOrNull() ?: 0) + 1
+    }
 
-    fun handleImageCapture(uri: Uri, isParent: Boolean, colorChoice: String?) {
+
+    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    FileOutputStream(destinationFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            } catch (e: IOException) {
+                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
+            }
+        }
+    }
+    fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB) {
         viewModelScope.launch {
             try {
-                if (isParent) {
-                    handleParentImageCapture(uri)
-                } else {
-                    handleColorImageCapture(uri, colorChoice)
-                }
+                val newId = getNextArticleId()
+                val destinationFile = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${newId}_1.jpg")
+
+                copyImage(uri, destinationFile)
+
+                val newArticle = BaseDonneECBTabelle(
+                    idArticleECB = newId,
+                    nomArticleFinale = "New Article $newId",
+                    nomCategorie = category.nomCategorieInCategoriesTabele,
+                    diponibilityState = "",
+                    dateCreationCategorie = System.currentTimeMillis().toString()
+                )
+                ensureNewArticlesCategoryExists()
+                addNewArticle(newArticle)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Failed to process image: ${e.message}") }
             }
         }
     }
 
-    private suspend fun handleParentImageCapture(uri: Uri) {
-        val newId = getNextArticleId()
-        val fileName = "${newId}_1.jpg"
-        val destinationFile = File(getDownloadsDirectory(), fileName)
 
-        copyImageToDownloads(uri, destinationFile)
+    private suspend fun addNewArticle(article: BaseDonneECBTabelle) {
+        try {
+            // Ajouter l'article à Firebase
+            refDBJetPackExport.child(article.idArticleECB.toString()).setValue(article).await()
 
-        val currentDateTime = LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-        val formattedDateTime = currentDateTime.format(formatter)
+            // Mettre à jour l'état local
+            _uiState.update { currentState ->
+                currentState.copy(
+                    articlesBaseDonneECB = currentState.articlesBaseDonneECB + article
+                )
+            }
 
-        val newArticle = BaseDonneECBTabelle(
-            idArticleECB = newId,
-            nomArticleFinale = "New Article $newId",
-            nomCategorie = "New Articles",
-            diponibilityState = "",
-            dateCreationCategorie = formattedDateTime,
-            couleur1 = "Couleur_1"
-        )
-
-        ensureNewArticlesCategoryExists()
-        addNewArticle(newArticle)
-
-        Log.d("HeadOfViewModels", "New parent article processed successfully: $newId")
-    }
-
-
-    private suspend fun handleColorImageCapture(uri: Uri, colorChoice: String?) {
-        val lastParentArticle = getLastParentArticle()
-        if (lastParentArticle == null) {
-            _uiState.update { it.copy(error = "No parent article found to add color") }
-            return
+            Log.d("HeadOfViewModels", "New article added successfully: ${article.idArticleECB}")
+        } catch (e: Exception) {
+            handleError("Failed to add new article", e)
         }
+    }
+    fun addColoreToArticle(uri: Uri, article: BaseDonneECBTabelle) {
+        viewModelScope.launch {
+            try {
+                val nextColorField = when {
+                    article.couleur2.isNullOrEmpty() -> "couleur2"
+                    article.couleur3.isNullOrEmpty() -> "couleur3"
+                    article.couleur4.isNullOrEmpty() -> "couleur4"
+                    else -> throw IllegalStateException("All color fields are filled")
+                }
 
-        val fileName = "${lastParentArticle.idArticleECB}_$colorChoice.jpg"
-        val destinationFile = File(getDownloadsDirectory(), fileName)
+                val fileName = "${article.idArticleECB}_${nextColorField.removePrefix("couleur")}.jpg"
+                val destinationFile = File(getDownloadsDirectory(), fileName)
 
-        copyImageToDownloads(uri, destinationFile)
+                copyImageToDownloads(uri, destinationFile)
 
-        val updatedArticle = lastParentArticle.copy(
-            couleur2 = if (lastParentArticle.couleur2.isNullOrEmpty() && colorChoice == "Couleur_2") colorChoice else lastParentArticle.couleur2,
-            couleur3 = if (lastParentArticle.couleur3.isNullOrEmpty() && colorChoice == "Couleur_3") colorChoice else lastParentArticle.couleur3,
-            couleur4 = if (lastParentArticle.couleur4.isNullOrEmpty() && colorChoice == "Couleur_4") colorChoice else lastParentArticle.couleur4
-        )
+                val updatedArticle = article.copy(
+                    couleur2 = if (nextColorField == "couleur2") "Couleur_2" else article.couleur2,
+                    couleur3 = if (nextColorField == "couleur3") "Couleur_3" else article.couleur3,
+                    couleur4 = if (nextColorField == "couleur4") "Couleur_4" else article.couleur4
+                )
 
-        updateArticle(updatedArticle)
-
-        Log.d("HeadOfViewModels", "Color added to article: ${lastParentArticle.idArticleECB}")
+                updateArticle(updatedArticle)
+            } catch (e: Exception) {
+                handleError("Failed to add color to article", e)
+            }
+        }
     }
 
-    private  fun getLastParentArticle(): BaseDonneECBTabelle? {
-        return _uiState.value.articlesBaseDonneECB
-            .filter { it.couleur1 == "Couleur_1" }
-            .maxByOrNull { it.idArticleECB }
+    fun createTempImageUri(context: Context): Uri {
+        val tempFile = File.createTempFile("temp_image", ".jpg", context.cacheDir)
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
     }
+
+
 
     private suspend fun updateArticle(article: BaseDonneECBTabelle) {
         try {
@@ -327,18 +354,6 @@ class HeadOfViewModels(
             Log.d("HeadOfViewModels", "Article updated successfully: ${article.idArticleECB}")
         } catch (e: Exception) {
             handleError("Failed to update article", e)
-        }
-    }
-
-    private suspend fun getNextArticleId(): Int {
-        return try {
-            val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-                snapshot.key?.toIntOrNull()
-            }
-            (articles.maxOrNull() ?: 0) + 1
-        } catch (e: Exception) {
-            handleError("Failed to get next article ID", e)
-            -1 // Return an invalid ID to indicate failure
         }
     }
 
@@ -387,20 +402,6 @@ class HeadOfViewModels(
         }
     }
 
-    private suspend fun addNewArticle(newArticle: BaseDonneECBTabelle) {
-        try {
-            refDBJetPackExport.child(newArticle.idArticleECB.toString()).setValue(newArticle).await()
-
-            _uiState.update { currentState ->
-                currentState.copy(
-                    articlesBaseDonneECB = currentState.articlesBaseDonneECB + newArticle
-                )
-            }
-            Log.d("HeadOfViewModels", "New article added successfully: ${newArticle.idArticleECB}")
-        } catch (e: Exception) {
-            handleError("Failed to add new article", e)
-        }
-    }
 
 
     private fun handleError(message: String, exception: Exception) {

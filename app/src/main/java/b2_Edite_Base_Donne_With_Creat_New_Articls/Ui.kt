@@ -1,24 +1,32 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -31,8 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.capitalize
@@ -40,14 +48,17 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.AutoResizedText
-import b_Edite_Base_Donne.LoadImageFromPath
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.example.abdelwahabjemlajetpack.R
+import java.io.File
 
 enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
@@ -80,7 +91,7 @@ fun ArticleDetailWindow(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
-                    DisplayColorsCards(article)
+                    DisplayColorsCards(article,viewModel)
 
                     // TOP_ROW fields
                     Row(modifier = modifier.fillMaxWidth()) {
@@ -194,7 +205,6 @@ fun InfoBoxWhithVoiceInpute(
         )
     }
 }
-
 @Composable
 fun DisplayField(
     columnToChange: String,
@@ -228,74 +238,147 @@ fun DisplayField(
 }
 
 @Composable
-fun AutoResizedTextECB(
-    text: String,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.onSurface,
-    maxLines: Int = Int.MAX_VALUE,
-    fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize
+fun CategoryHeaderECB(
+    category: CategoriesTabelleECB,
+    viewModel: HeadOfViewModels,
 ) {
-    var currentFontSize by remember { mutableStateOf(fontSize) }
-    var readyToDraw by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            viewModel.tempImageUri?.let { uri ->
+                viewModel.addNewParentArticle(uri, category)
+            }
+        }
+    }
 
     Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
     ) {
-        Text(
-            text = text.capitalize(Locale.current),
-            color = color,
-            fontSize = currentFontSize,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.drawWithContent { if (readyToDraw) drawContent() },
-            onTextLayout = { textLayoutResult ->
-                if (textLayoutResult.didOverflowHeight) {
-                    currentFontSize *= 0.9f
-                } else {
-                    readyToDraw = true
-                }
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = category.nomCategorieInCategoriesTabele,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(16.dp)
+            )
+            IconButton(
+                onClick = {
+                    viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                    viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+                },
+                modifier = Modifier.padding(end = 16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Article")
             }
-        )
+        }
     }
 }
 
-
 @Composable
-fun DisplayColorsCards(article: BaseDonneECBTabelle, modifier: Modifier = Modifier) {
+fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier) {
     val couleursList = listOf(
         article.couleur1,
         article.couleur2,
         article.couleur3,
         article.couleur4
     ).filterNot { it.isNullOrEmpty() }
+
+    val context = LocalContext.current
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            viewModel.tempImageUri?.let { uri ->
+                viewModel.addColoreToArticle(uri, article)
+            }
+        }
+    }
+
     LazyRow(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         itemsIndexed(couleursList) { index, couleur ->
             if (couleur != null) {
-                Card(modifier = Modifier
-                    .height(200.dp)
-                   ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .height(250.dp)
-                                .fillMaxWidth()
-                        ) {
-                            LoadImageFromPath(imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        AutoResizedTextECB(text = couleur)
-                    }
+                ColorCard(article, index, couleur)
+            }
+        }
+
+        item {
+            AddColorCard {
+                viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+private fun ColorCard(article: BaseDonneECBTabelle, index: Int, couleur: String) {
+    Card(
+        modifier = Modifier
+            .height(200.dp)
+            .padding(4.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .aspectRatio(1f)
+            ) {
+                val imagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
+                val imageExist = listOf("jpg", "webp")
+                    .firstOrNull { File("$imagePath.$it").exists() }
+                    ?.let { "$imagePath.$it" }
+
+                GlideImage(
+                    model = imageExist ?: R.drawable.blanc,
+                    contentDescription = "Color image for $couleur",
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    it.diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .override(1000)
+                        .thumbnail(0.25f)
+                        .fitCenter()
+                        .transition(DrawableTransitionOptions.withCrossFade())
                 }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            AutoResizedTextECB(text = couleur)
+        }
+    }
+}
+
+@Composable
+private fun AddColorCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .height(200.dp)
+            .aspectRatio(1f)
+            .padding(4.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            IconButton(onClick = onClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add new color",
+                    modifier = Modifier.size(48.dp)
+                )
             }
         }
     }
