@@ -1,6 +1,7 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -337,13 +339,24 @@ private fun ColorCard(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
             viewModel.tempImageUri?.let { uri ->
+                imageUri = uri
                 viewModel.processNewImage(uri, article, index + 1)
             }
+        }
+    }
+
+    LaunchedEffect(imageUri) {
+        if (imageUri != null) {
+            // Clear the temporary image and refresh the display
+            viewModel.clearTempImage(context)
+            imageUri = null
         }
     }
 
@@ -365,18 +378,21 @@ private fun ColorCard(
                 val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
                 val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
-                val imageExist = listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-                    listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
-                        File("$path.$extension").exists()
-                    }?.let { "$it.$extension" }
+                val imageExist = remember(imageUri) {
+                    listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+                        listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
+                            File("$path.$extension").exists()
+                        }?.let { "$it.$extension" }
+                    }
                 }
 
                 GlideImage(
-                    model = imageExist ?: R.drawable.blanc,
+                    model = imageUri ?: imageExist ?: R.drawable.blanc,
                     contentDescription = "Color image for $couleur",
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    it.diskCacheStrategy(DiskCacheStrategy.ALL)
+                    it.diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
                         .override(1000)
                         .thumbnail(0.25f)
                         .fitCenter()
@@ -462,15 +478,11 @@ fun OutlineTextECB(
     modifier: Modifier = Modifier,
     onValueChanged: (String) -> Unit
 ) {
-    // Observe the current edited article
-    val currentEditedArticle by viewModel.currentEditedArticle
 
-    // Use the current edited article if it matches the given article, otherwise use the original article
-    val displayedArticle = if (currentEditedArticle?.idArticleECB == article.idArticleECB) currentEditedArticle else article
-
-    var textFieldValue by remember { mutableStateOf(displayedArticle?.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
+    var textFieldValue by remember { mutableStateOf(
+        article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = displayedArticle?.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
     val roundedValue = try {
         labelValue.toDouble()
             .let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
@@ -484,7 +496,7 @@ fun OutlineTextECB(
         value = textValue,
         onValueChange = { newValue ->
             textFieldValue = newValue.replace(',', '.')
-            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, displayedArticle ?: article)
+            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
             onValueChanged(columnToChange)
         },
         label = {

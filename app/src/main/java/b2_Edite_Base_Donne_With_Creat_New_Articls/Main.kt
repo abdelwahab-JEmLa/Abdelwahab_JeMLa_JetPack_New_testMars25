@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +35,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -54,6 +54,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     onUpdateComplete: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentEditedArticle by viewModel.currentEditedArticle.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
     val gridState = rememberLazyGridState()
@@ -121,11 +122,19 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             )
         }
 
-        // Dialog
-        dialogeDisplayeDetailleChanger?.let { article ->
+        // Handle the current edited article
+
+        // Use the current edited article if it matches the given article, otherwise use the original article
+        val displayedArticle = currentEditedArticle?.takeIf { it.idArticleECB == dialogeDisplayeDetailleChanger?.idArticleECB }
+            ?: dialogeDisplayeDetailleChanger
+
+        displayedArticle?.let { article ->
             ArticleDetailWindow(
                 article = article,
-                onDismiss = { dialogeDisplayeDetailleChanger = null },
+                onDismiss = {
+                    dialogeDisplayeDetailleChanger = null
+                    viewModel.updateCurrentEditedArticle(null)
+                },
                 viewModel = viewModel,
                 modifier = Modifier.padding(horizontal = 3.dp)
             )
@@ -170,9 +179,6 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val error: String? = null
 )
 
-
-
-
 class HeadOfViewModels(
     private val context: Context,
     private val creatAndEditeInBaseDonneRepositery: CreatAndEditeInBaseDonneRepositery
@@ -180,14 +186,13 @@ class HeadOfViewModels(
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
 
-    private val _currentEditedArticle = mutableStateOf<BaseDonneECBTabelle?>(null)
-    val currentEditedArticle: State<BaseDonneECBTabelle?> = _currentEditedArticle
+    private val _currentEditedArticle = MutableStateFlow<BaseDonneECBTabelle?>(null)
+    val currentEditedArticle: StateFlow<BaseDonneECBTabelle?> = _currentEditedArticle.asStateFlow()
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
     var tempImageUri: Uri? = null
 
-     val CAMERA_REQUEST_CODE = 1001
 
     init {
         viewModelScope.launch {
@@ -219,6 +224,10 @@ class HeadOfViewModels(
         }
     }
 
+    fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
+        _currentEditedArticle.value = article
+    }
+
     fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
         val updatedArticle = creatAndEditeInBaseDonneRepositery.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
 
@@ -230,8 +239,7 @@ class HeadOfViewModels(
             state.copy(articlesBaseDonneECB = updatedArticles)
         }
 
-        // Update the current edited article
-        _currentEditedArticle.value = updatedArticle
+        updateCurrentEditedArticle(updatedArticle)
 
         // Perform Firebase update asynchronously
         viewModelScope.launch {
@@ -319,7 +327,7 @@ class HeadOfViewModels(
                     couleur4 = if (nextColorField == "couleur4") "Couleur_4" else article.couleur4
                 )
 
-                _currentEditedArticle.value = updatedArticle
+                updateCurrentEditedArticle(updatedArticle)
 
                 updateArticle(updatedArticle)
             } catch (e: Exception) {
@@ -332,6 +340,7 @@ class HeadOfViewModels(
         val tempFile = File.createTempFile("temp_image", ".jpg", context.cacheDir)
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
     }
+
     private suspend fun getNextArticleId(): Int {
         val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
             snapshot.key?.toIntOrNull()
@@ -403,7 +412,6 @@ class HeadOfViewModels(
         }
     }
 
-    // Add this function to your HeadOfViewModels class
     fun deleteColor(article: BaseDonneECBTabelle, colorIndex: Int) {
         viewModelScope.launch {
             when (colorIndex) {
@@ -459,6 +467,7 @@ class HeadOfViewModels(
                     4 -> article.copy(couleur4 = "Couleur_4")
                     else -> article
                 }
+                updateCurrentEditedArticle(updatedArticle)
 
                 updateArticle(updatedArticle)
             } catch (e: Exception) {
@@ -470,6 +479,9 @@ class HeadOfViewModels(
     private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
         withContext(Dispatchers.IO) {
             try {
+                if (destinationFile.exists()) {
+                    destinationFile.delete()
+                }
                 context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
                     FileOutputStream(destinationFile).use { outputStream ->
                         inputStream.copyTo(outputStream)
@@ -477,6 +489,33 @@ class HeadOfViewModels(
                 }
             } catch (e: IOException) {
                 throw Exception("Failed to copy image: ${e.message}")
+            }
+        }
+    }
+    fun clearTempImage(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Clear the tempImageUri
+                tempImageUri?.let { uri ->
+                    context.contentResolver.delete(uri, null, null)
+                    tempImageUri = null
+                }
+
+                // Clear the cache directory
+                context.cacheDir.listFiles()?.forEach { file ->
+                    if (file.name.startsWith("temp_image")) {
+                        file.delete()
+                    }
+                }
+
+                // Refresh the current edited article to trigger recomposition
+                _currentEditedArticle.value?.let { article ->
+                    _currentEditedArticle.value = article.copy()
+                }
+
+                Log.d("HeadOfViewModels", "Temporary image cleared successfully")
+            } catch (e: Exception) {
+                handleError("Failed to clear temporary image", e)
             }
         }
     }
