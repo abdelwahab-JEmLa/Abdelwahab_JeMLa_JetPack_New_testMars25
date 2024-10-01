@@ -187,6 +187,8 @@ class HeadOfViewModels(
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
     var tempImageUri: Uri? = null
 
+     val CAMERA_REQUEST_CODE = 1001
+
     init {
         viewModelScope.launch {
             initDataFromFirebase()
@@ -317,6 +319,8 @@ class HeadOfViewModels(
                     couleur4 = if (nextColorField == "couleur4") "Couleur_4" else article.couleur4
                 )
 
+                _currentEditedArticle.value = updatedArticle
+
                 updateArticle(updatedArticle)
             } catch (e: Exception) {
                 handleError("Failed to add color to article", e)
@@ -359,12 +363,14 @@ class HeadOfViewModels(
                 }
                 currentState.copy(articlesBaseDonneECB = updatedArticles)
             }
+
+            _currentEditedArticle.value = article
+
             Log.d("HeadOfViewModels", "Article updated successfully: ${article.idArticleECB}")
         } catch (e: Exception) {
             handleError("Failed to update article", e)
         }
     }
-
     fun getDownloadsDirectory(): File {
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     }
@@ -410,6 +416,48 @@ class HeadOfViewModels(
         }
     }
 
+    // Add this function to your HeadOfViewModels class
+    fun deleteColor(article: BaseDonneECBTabelle, colorIndex: Int) {
+        viewModelScope.launch {
+            when (colorIndex) {
+                1 -> deleteArticle(article)
+                2 -> updateArticle(article.copy(couleur2 = ""))
+                3 -> updateArticle(article.copy(couleur3 = ""))
+                4 -> updateArticle(article.copy(couleur4 = ""))
+            }
+            deleteColorImage(article.idArticleECB, colorIndex)
+        }
+    }
+
+    private suspend fun deleteArticle(article: BaseDonneECBTabelle) {
+        try {
+            refDBJetPackExport.child(article.idArticleECB.toString()).removeValue().await()
+            _uiState.update { currentState ->
+                currentState.copy(
+                    articlesBaseDonneECB = currentState.articlesBaseDonneECB.filter { it.idArticleECB != article.idArticleECB }
+                )
+            }
+            for (i in 1..4) {
+                deleteColorImage(article.idArticleECB, i)
+            }
+        } catch (e: Exception) {
+            handleError("Failed to delete article", e)
+        }
+    }
+
+    private fun deleteColorImage(articleId: Int, colorIndex: Int) {
+        val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
+        val downloadsImagePath = "${getDownloadsDirectory()}/${articleId}_${colorIndex}"
+
+        listOf("jpg", "webp").forEach { extension ->
+            listOf(baseImagePath, downloadsImagePath).forEach { path ->
+                val file = File("$path.$extension")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        }
+    }
     private fun handleError(message: String, exception: Exception) {
         Log.e("HeadOfViewModels", message, exception)
         _uiState.update { it.copy(error = "$message: ${exception.message}") }

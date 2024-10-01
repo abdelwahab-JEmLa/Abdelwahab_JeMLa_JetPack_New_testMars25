@@ -1,6 +1,9 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
+import android.app.Activity
+import android.content.Intent
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -21,6 +24,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -67,6 +73,7 @@ enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     Benfices(listOf("benificeClient" to "b.c")),
     MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
 }
+const val CAMERA_REQUEST_CODE = 1001
 
 @Composable
 fun ArticleDetailWindow(
@@ -328,6 +335,8 @@ private fun ColorCard(
     couleur: String,
     viewModel: HeadOfViewModels
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .height(200.dp)
@@ -343,11 +352,12 @@ private fun ColorCard(
                     .weight(1f)
                     .aspectRatio(1f)
             ) {
+                val context = LocalContext.current
                 val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
                 val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
                 val imageExist = listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-                    listOf(baseImagePath, downloadsImagePath).firstOrNull { path ->
+                    listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
                         File("$path.$extension").exists()
                     }?.let { "$it.$extension" }
                 }
@@ -363,10 +373,50 @@ private fun ColorCard(
                         .fitCenter()
                         .transition(DrawableTransitionOptions.withCrossFade())
                 }
+
+                IconButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete color")
+                }
+
+                IconButton(
+                    onClick = {
+                        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                            putExtra(MediaStore.EXTRA_OUTPUT, viewModel.createTempImageUri(context))
+                        }
+                        (context as? Activity)?.startActivityForResult(intent, CAMERA_REQUEST_CODE)
+                    },
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                ) {
+                    Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             AutoResizedTextECB(text = couleur)
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Confirm Deletion") },
+            text = { Text("Are you sure you want to delete this color?") },
+            confirmButton = {
+                Button(onClick = {
+                    showDeleteDialog = false
+                    viewModel.deleteColor(article, index + 1)
+                }) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
