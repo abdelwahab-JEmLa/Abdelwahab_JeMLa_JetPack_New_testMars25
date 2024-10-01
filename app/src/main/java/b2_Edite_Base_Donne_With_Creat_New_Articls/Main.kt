@@ -2,7 +2,7 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +42,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
@@ -167,6 +169,8 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
 )
 
 
+
+
 class HeadOfViewModels(
     private val context: Context,
     private val creatAndEditeInBaseDonneRepositery: CreatAndEditeInBaseDonneRepositery
@@ -206,10 +210,7 @@ class HeadOfViewModels(
                 isLoading = false
             ) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(
-                isLoading = false,
-                error = "Failed to load data: ${e.message}"
-            ) }
+            handleError("Failed to load data from Firebase", e)
         }
     }
 
@@ -231,8 +232,9 @@ class HeadOfViewModels(
         viewModelScope.launch {
             try {
                 refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle).await()
+                Log.d("HeadOfViewModels", "Article updated successfully in Firebase")
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Failed to update Firebase: ${e.message}") }
+                handleError("Failed to update article in Firebase", e)
             }
         }
     }
@@ -242,50 +244,96 @@ class HeadOfViewModels(
     }
 
     private suspend fun getNextArticleId(): Int {
-        val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-            snapshot.key?.toIntOrNull()
-        }
-        return (articles.maxOrNull() ?: 0) + 1
-    }
-
-    private fun getDownloadsDirectory(): File {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    }
-
-    private suspend fun copyImageToDownloads(sourceUri: Uri, destinationFile: File) {
-        withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                    FileOutputStream(destinationFile).use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            } catch (e: IOException) {
-                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
+        return try {
+            val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+                snapshot.key?.toIntOrNull()
             }
+            (articles.maxOrNull() ?: 0) + 1
+        } catch (e: Exception) {
+            handleError("Failed to get next article ID", e)
+            -1 // Return an invalid ID to indicate failure
         }
     }
+
     fun handleGallerySelection(uris: List<Uri>) {
         viewModelScope.launch {
             uris.forEach { uri ->
                 try {
                     val newId = getNextArticleId()
-                    val newFileName = "$newId.jpg"
-                    val destinationFile = File(getDownloadsDirectory(), newFileName)
+                    if (newId == -1) return@forEach // Skip this iteration if ID retrieval failed
 
-                    copyImageToDownloads(uri, destinationFile)
+                    val fileName = "${newId}_1.jpg"
+                    copyImage(uri, fileName)
+
+                    val currentDateTime = LocalDateTime.now()
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    val formattedDateTime = currentDateTime.format(formatter)
 
                     val newArticle = BaseDonneECBTabelle(
                         idArticleECB = newId,
                         nomArticleFinale = "New Article $newId",
-                        nomCategorie = "Uncategorized",
+                        nomCategorie = "New Articles",
                         diponibilityState = "",
+                        dateCreationCategorie = formattedDateTime,
                     )
 
+                    ensureNewArticlesCategoryExists()
                     addNewArticle(newArticle)
+
+                    Log.d("HeadOfViewModels", "New article processed successfully: $newId")
                 } catch (e: Exception) {
-                    _uiState.update { it.copy(error = "Failed to process image: ${e.message}") }
+                    handleError("Failed to process image", e)
                 }
+            }
+        }
+    }
+
+    private suspend fun copyImage(sourceUri: Uri, fileName: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val destinationFile = File(context.getExternalFilesDir(null), "IMGs/BaseDonne/$fileName")
+                destinationFile.parentFile?.mkdirs()
+
+                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    FileOutputStream(destinationFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+
+                if (destinationFile.exists() && destinationFile.length() > 0) {
+                    Log.d("HeadOfViewModels", "File copied successfully: ${destinationFile.absolutePath}")
+                } else {
+                    throw IOException("File copy failed or file is empty")
+                }
+            } catch (e: IOException) {
+                throw Exception("Failed to copy image: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun ensureNewArticlesCategoryExists() {
+        val newArticlesCategory = "New Articles"
+        val existingCategories = _uiState.value.categoriesECB
+
+        if (!existingCategories.any { it.nomCategorieInCategoriesTabele == newArticlesCategory }) {
+            val newCategory = CategoriesTabelleECB(
+                idClassementCategorieInCategoriesTabele = 0.5,
+                nomCategorieInCategoriesTabele = newArticlesCategory
+            )
+
+            try {
+                // Add to Firebase
+                refCategorieTabelee.push().setValue(newCategory).await()
+
+                // Update local state
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        categoriesECB = currentState.categoriesECB + newCategory
+                    )
+                }
+                Log.d("HeadOfViewModels", "'New Articles' category created successfully")
+            } catch (e: Exception) {
+                handleError("Failed to create 'New Articles' category", e)
             }
         }
     }
@@ -299,11 +347,16 @@ class HeadOfViewModels(
                     articlesBaseDonneECB = currentState.articlesBaseDonneECB + newArticle
                 )
             }
+            Log.d("HeadOfViewModels", "New article added successfully: ${newArticle.idArticleECB}")
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = "Failed to add new article: ${e.message}") }
+            handleError("Failed to add new article", e)
         }
     }
 
+    private fun handleError(message: String, exception: Exception) {
+        Log.e("HeadOfViewModels", message, exception)
+        _uiState.update { it.copy(error = "$message: ${exception.message}") }
+    }
 }
 
 
