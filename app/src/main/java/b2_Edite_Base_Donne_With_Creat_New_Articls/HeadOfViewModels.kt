@@ -38,11 +38,11 @@ class HeadOfViewModels(
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
     val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
-    val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
+    private val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
     var tempImageUri: Uri? = null
 
-    private val _uploadProgress = MutableStateFlow<Float>(0f)
+    private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress
 
     init {
@@ -77,7 +77,7 @@ class HeadOfViewModels(
 
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
-            val fileName = "${articleId}_$colorIndex.webp"
+            val fileName = "${articleId}_$colorIndex.jpg"
             val localFile = File(dossiesStandartImages, fileName)
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
 
@@ -373,7 +373,18 @@ class HeadOfViewModels(
 
     private fun deleteColorImage(articleId: Int, colorIndex: Int) {
         val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
+        val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
+        // Delete the image from Firebase Storage
+        val imageRef = storageImgsRef.child("${articleId}_${colorIndex}")
+        imageRef.delete().addOnSuccessListener {
+            // Image deleted successfully from Firebase Storage
+        }.addOnFailureListener { exception ->
+            // Handle any errors
+            Log.e("Firebase", "Error deleting image from Firebase Storage", exception)
+        }
+
+        // Delete local files
         listOf("jpg", "webp").forEach { extension ->
             listOf(baseImagePath).forEach { path ->
                 val file = File("$path.$extension")
