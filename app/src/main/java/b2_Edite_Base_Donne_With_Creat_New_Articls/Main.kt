@@ -161,9 +161,11 @@ fun ArticleItemECB(
                     .clickable { onClickOnImg(article) },
                 contentAlignment = Alignment.Center
             ) {
-                //Affiche Image
-                DisplayeImageGlide(article,viewModel)
-                //Affiche diponibilityState
+
+                DisplayeImageGlideECB(article,viewModel)          //TODO pk
+                //l image ne ce relode pas quand c change
+                //depuit                  viewModel.processNewImage(uri, article, index + 1)
+
                 DisponibilityOverlayECB(article.diponibilityState)
             }
             AutoResizedTextECB(text = article.nomArticleFinale)

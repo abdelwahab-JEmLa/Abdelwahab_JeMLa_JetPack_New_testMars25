@@ -376,7 +376,7 @@ private fun ColorCard(
                     .aspectRatio(1f)
             ) {
 
-                DisplayeImageGlide(article, viewModel, index, imageUri)
+                DisplayeImageGlideECB(article, viewModel, index, imageUri)
 
                 IconButton(
                     onClick = { showDeleteDialog = true },
@@ -425,7 +425,7 @@ private fun ColorCard(
 
 @Composable
 @OptIn(ExperimentalGlideComposeApi::class)
-fun DisplayeImageGlide(
+fun DisplayeImageGlideECB(
     article: BaseDonneECBTabelle,
     viewModel: HeadOfViewModels,
     index: Int =0,
