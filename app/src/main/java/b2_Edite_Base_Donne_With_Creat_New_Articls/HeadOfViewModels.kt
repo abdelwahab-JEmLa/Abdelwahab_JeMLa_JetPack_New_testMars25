@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -54,7 +53,7 @@ class HeadOfViewModels(
 
     private suspend fun initDataFromFirebase() {
         try {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true) }//TODO fait lence le suive de _uploadProgress
 
             val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
                 snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
@@ -76,11 +75,10 @@ class HeadOfViewModels(
         }
     }
 
-
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
             val fileName = "${articleId}_$colorIndex.webp"
-            val localFile = File(getDownloadsDirectory(), fileName)
+            val localFile = File(dossiesStandartImages, fileName)
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
 
             try {
@@ -89,6 +87,10 @@ class HeadOfViewModels(
                 // Convert image to WebP format
                 val webpImage = withContext(Dispatchers.IO) {
                     convertToWebP(localFile)
+                }
+
+                if (webpImage == null) {
+                    throw IllegalStateException("Failed to convert image to WebP")
                 }
 
                 // Upload the WebP image
@@ -104,7 +106,6 @@ class HeadOfViewModels(
 
                 completeProgress()
 
-
             } catch (e: Exception) {
                 handleError("Failed to upload image", e)
                 completeProgress() // Reset progress on error
@@ -112,19 +113,34 @@ class HeadOfViewModels(
         }
     }
 
-    private suspend fun convertToWebP(file: File): ByteArray {
+    private suspend fun convertToWebP(file: File): ByteArray? {
         return withContext(Dispatchers.IO) {
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-            val outputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.WEBP, 100, outputStream)
-            outputStream.toByteArray()
+            try {
+                if (!file.exists()) {
+                    Log.e(TAG, "File does not exist: ${file.absolutePath}")
+                    return@withContext null
+                }
+
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                if (bitmap == null) {
+                    Log.e(TAG, "Failed to decode bitmap from file: ${file.absolutePath}")
+                    return@withContext null
+                }
+
+                val outputStream = ByteArrayOutputStream()
+                val success = bitmap.compress(Bitmap.CompressFormat.WEBP, 100, outputStream)
+                if (!success) {
+                    Log.e(TAG, "Failed to compress bitmap to WebP")
+                    return@withContext null
+                }
+
+                outputStream.toByteArray()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error converting image to WebP", e)
+                null
+            }
         }
     }
-
-    fun getDownloadsDirectory(): File {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    }
-
     private fun handleError(message: String, exception: Exception) {
         Log.e(TAG, "$message: ${exception.message}")
         // You might want to update your UI or error state here
