@@ -30,9 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -91,6 +94,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                     dialogeDisplayeDetailleChanger = clickedArticle
                                 }  ,
                                 viewModel,
+                                reloadTrigger
                             )
                         }
                     }
@@ -123,7 +127,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             )
         }
 
-        // Handle the current edited article
 
         // Use the current edited article if it matches the given article, otherwise use the original article
         val displayedArticle = currentEditedArticle?.takeIf { it.idArticleECB == dialogeDisplayeDetailleChanger?.idArticleECB }
@@ -135,7 +138,23 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 onDismiss = {
                     dialogeDisplayeDetailleChanger = null
                     viewModel.updateCurrentEditedArticle(null)
-                    reloadTrigger += 1
+
+                    // Check if the article is new or if key changes occurred
+                    if (article.nomCategorie.contains("New", ignoreCase = true) ||
+                        article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB) {
+                        // Trigger image reload
+                        coroutineScope.launch {
+                            for (i in 1..4) {
+                                val fileName = "${article.idArticleECB}_$i.jpg"
+                                val sourceFile = File(viewModel.getDownloadsDirectory(), fileName)
+                                if (sourceFile.exists()) {
+                                    viewModel.setImagesInStorageFireBase(article.idArticleECB, i)
+                                }
+                            }
+                            // Increment reloadTrigger to force recomposition
+                            reloadTrigger += 1
+                        }
+                    }
                 },
                 viewModel = viewModel,
                 modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadTrigger += 1}, relodeTigger = reloadTrigger
@@ -148,7 +167,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 fun ArticleItemECB(
     article: BaseDonneECBTabelle,
     onClickOnImg: (BaseDonneECBTabelle) -> Unit,
-    viewModel: HeadOfViewModels
+    viewModel: HeadOfViewModels,
+    reloadTrigger: Int
 ) {
     Card(
         modifier = Modifier
@@ -164,10 +184,12 @@ fun ArticleItemECB(
                 contentAlignment = Alignment.Center
             ) {
 
-                DisplayeImageGlideECB(article,viewModel)          //TODO pk
-                //l image ne ce relode pas quand c change
-                //depuit                  viewModel.processNewImage(uri, article, index + 1)
-
+                DisplayeImageGlideECB(
+                    article = article,
+                    viewModel = viewModel,
+                    index = 0,
+                    reloadKey = reloadTrigger
+                )
                 DisponibilityOverlayECB(article.diponibilityState)
             }
             AutoResizedTextECB(text = article.nomArticleFinale)
@@ -193,8 +215,12 @@ class HeadOfViewModels(
     private val _currentEditedArticle = MutableStateFlow<BaseDonneECBTabelle?>(null)
     val currentEditedArticle: StateFlow<BaseDonneECBTabelle?> = _currentEditedArticle.asStateFlow()
 
+    private val _imageState = MutableStateFlow<Map<String, Uri>>(emptyMap())
+    val imageState: StateFlow<Map<String, Uri>> = _imageState.asStateFlow()
+
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
+    private val storage = Firebase.storage
     var tempImageUri: Uri? = null
 
 
@@ -521,6 +547,46 @@ class HeadOfViewModels(
             } catch (e: Exception) {
                 handleError("Failed to clear temporary image", e)
             }
+        }
+    }
+    fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
+        viewModelScope.launch {
+            try {
+                val fileName = "${articleId}_$colorIndex.jpg"
+                val localFile = File(getDownloadsDirectory(), fileName)
+                val storageRef = storage.reference.child("Images Articles Data Base/$fileName")
+
+                if (localFile.exists()) {
+                    val uploadTask = storageRef.putFile(localFile.toUri())
+                    uploadTask.addOnSuccessListener {
+                        // Get the download URL
+                        storageRef.downloadUrl.addOnSuccessListener { uri ->
+                            // Update the image state with the new URL
+                            updateImageState(articleId, colorIndex, uri)
+                            Log.d("HeadOfViewModels", "Image uploaded successfully: $fileName")
+                        }
+                    }.addOnFailureListener { exception ->
+                        handleError("Failed to upload image", exception)
+                    }
+                } else {
+                    // If the file doesn't exist locally, try to download it from Firebase Storage
+                    val localDestination = File(getDownloadsDirectory(), fileName)
+                    storageRef.getFile(localDestination).addOnSuccessListener {
+                        // File downloaded successfully, update the image state
+                        updateImageState(articleId, colorIndex, localDestination.toUri())
+                        Log.d("HeadOfViewModels", "Image downloaded successfully: $fileName")
+                    }.addOnFailureListener { exception ->
+                        handleError("Failed to download image", exception)
+                    }
+                }
+            } catch (e: Exception) {
+                handleError("Error in setImagesInStorageFireBase", e)
+            }
+        }
+    }
+    private fun updateImageState(articleId: Int, colorIndex: Int, uri: Uri) {
+        _imageState.update { currentState ->
+            currentState + ("${articleId}_$colorIndex" to uri)
         }
     }
     private fun handleError(message: String, exception: Exception) {
