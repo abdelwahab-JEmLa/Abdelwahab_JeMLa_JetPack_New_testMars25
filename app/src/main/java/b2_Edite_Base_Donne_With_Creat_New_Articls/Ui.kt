@@ -69,9 +69,9 @@ import java.io.File
 enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
     PrixAchats(listOf("monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>")),
-    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),
-    Benfices(listOf("benificeClient" to "b.c")),
-    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
+    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),     //TODO fait que si itsNewArticle ne pas l affiche
+    Benfices(listOf("benificeClient" to "b.c")),     //TODO fait que si itsNewArticle ne pas l affiche
+    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))      //TODO fait que si itsNewArticle ne pas l affiche
 }
 
 @Composable
@@ -83,6 +83,7 @@ fun ArticleDetailWindow(
 ) {
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
+    var itsNewArticle by remember { mutableStateOf(false) }     //   TODO fait que  si article.monPrixAchat ==0.0 de metre true
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -160,7 +161,7 @@ fun ArticleDetailWindow(
                     ArticleToggleButton(article, viewModel, modifier)
 
                     // Article name
-                    AutoResizedTextECB(
+                    AutoResizedTextECB(       //TODO fait que si itsNewArticle ne pas l affiche
                         text = article.nomArticleFinale.capitalize(Locale.current),
                         fontSize = 25.sp,
                         color = MaterialTheme.colorScheme.error,

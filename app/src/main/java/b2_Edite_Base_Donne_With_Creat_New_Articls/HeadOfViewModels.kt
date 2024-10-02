@@ -84,7 +84,7 @@ class HeadOfViewModels(
             val fileName = "${articleId}_$colorIndex.jpg"
             val localFile = File(dossiesStandartImages, fileName)
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
-
+            //TODO fait que les operations soit enregstre don une list a chaque foit termine il se coche check termine et aller au prochen pour le converti et update le stoage
             try {
                 startProgress()
 
@@ -105,7 +105,8 @@ class HeadOfViewModels(
                     updateProgress(progress.toFloat())
                 }.await()
 
-                val downloadUrl = storageRef.downloadUrl.await()
+                val downloadUrl = storageRef.downloadUrl.await() //TODO pk le sortie n ai pas on webp
+                //HeadOfViewModels         D  Image uploaded successfully: 1066_1.jpg, URL: https://firebasestorage.googleapis.com/v0/b/abdelwahab-jemla-com.appspot.com/o/Images%20Articles%20Data%20Base%2F1066_1.jpg?alt=media&token=611f4ed5-d094-496d-ba9e-23bdd42f7388
                 Log.d(TAG, "Image uploaded successfully: $fileName, URL: $downloadUrl")
 
                 completeProgress()
