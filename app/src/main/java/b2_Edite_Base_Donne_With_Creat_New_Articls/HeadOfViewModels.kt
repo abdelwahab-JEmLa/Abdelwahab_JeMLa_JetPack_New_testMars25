@@ -1,10 +1,8 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -108,7 +106,7 @@ class HeadOfViewModels(
             try {
                 val newId = getNextArticleId()
                 val fileName = "${newId}_1.jpg"
-                copyImage(context, uri, fileName)
+                copyImage(uri, fileName)
 
                 val newClassementCate = calculateNewClassementCate(category)
 
@@ -121,7 +119,7 @@ class HeadOfViewModels(
         }
     }
 
-    private suspend fun calculateNewClassementCate(category: CategoriesTabelleECB): Double {
+    private  fun calculateNewClassementCate(category: CategoriesTabelleECB): Double {
         return (uiState.value.articlesBaseDonneECB
             .filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }
             .minOfOrNull { it.classementCate }
@@ -162,7 +160,7 @@ class HeadOfViewModels(
             try {
                 val nextColorField = getNextAvailableColorField(article)
                 val fileName = "${article.idArticleECB}_${nextColorField.removePrefix("couleur")}.jpg"
-                copyImage(context, uri, fileName)
+                copyImage(uri, fileName)
 
                 val updatedArticle = updateArticleWithNewColor(article, nextColorField)
                 updateLocalAndRemoteArticle(updatedArticle)
@@ -205,26 +203,23 @@ class HeadOfViewModels(
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     }
 
-    suspend fun copyImage(context: Context, sourceUri: Uri, fileName: String) {
+    private suspend fun copyImage(sourceUri: Uri, fileName: String) {
         withContext(Dispatchers.IO) {
             try {
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                val destDir = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
+                if (!destDir.exists()) {
+                    destDir.mkdirs()
                 }
 
-                val resolver = context.contentResolver
-                val destinationUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                    ?: throw IOException("Failed to create new MediaStore record.")
+                val destFile = File(destDir, fileName)
 
-                resolver.openOutputStream(destinationUri)?.use { outputStream ->
-                    resolver.openInputStream(sourceUri)?.use { inputStream ->
-                        inputStream.copyTo(outputStream)
-                    } ?: throw IOException("Failed to open input stream for URI: $sourceUri")
-                } ?: throw IOException("Failed to open output stream for URI: $destinationUri")
+                context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: throw IOException("Failed to open input stream for URI: $sourceUri")
 
-                Log.d(TAG, "Image copied successfully to $destinationUri")
+                Log.d(TAG, "Image copied successfully to ${destFile.absolutePath}")
             } catch (e: IOException) {
                 Log.e(TAG, "Failed to copy image", e)
                 throw Exception("Failed to copy image: ${e.message}")
@@ -303,7 +298,7 @@ class HeadOfViewModels(
         viewModelScope.launch {
             try {
                 val fileName = "${article.idArticleECB}_${colorIndex}.jpg"
-                copyImage(context, uri, fileName)
+                copyImage(uri, fileName)
 
                 val updatedArticle = when (colorIndex) {
                     1 -> article.copy(couleur1 = "Couleur_1")
