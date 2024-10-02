@@ -3,7 +3,9 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -44,7 +46,9 @@ class HeadOfViewModels(
 
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress
-
+    // Constants
+    private  val MAX_WIDTH = 1024
+    private  val MAX_HEIGHT = 1024
     init {
         viewModelScope.launch {
             initDataFromFirebase()
@@ -121,19 +125,47 @@ class HeadOfViewModels(
                     return@withContext null
                 }
 
-                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                Log.d(TAG, "Starting image conversion for file: ${file.absolutePath}")
+
+                // Get image dimensions without loading the full bitmap
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                BitmapFactory.decodeFile(file.absolutePath, options)
+
+                // Calculate inSampleSize
+                options.inSampleSize = calculateInSampleSize(options, MAX_WIDTH, MAX_HEIGHT)
+                Log.d(TAG, "Calculated inSampleSize: ${options.inSampleSize}")
+
+                // Decode bitmap with inSampleSize set
+                options.inJustDecodeBounds = false
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
+
                 if (bitmap == null) {
                     Log.e(TAG, "Failed to decode bitmap from file: ${file.absolutePath}")
                     return@withContext null
                 }
 
+                Log.d(TAG, "Successfully decoded bitmap. Size: ${bitmap.width}x${bitmap.height}")
+
                 val outputStream = ByteArrayOutputStream()
-                val success = bitmap.compress(Bitmap.CompressFormat.WEBP, 100, outputStream)
-                if (!success) {
+
+                val compressionResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    // Use ImageDecoder for API 30+
+                    val imageDecoder = ImageDecoder.createSource(file)
+                    val decodedBitmap = ImageDecoder.decodeBitmap(imageDecoder)
+                    decodedBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 100, outputStream)
+                } else {
+                    // Fallback for older Android versions
+                    bitmap.compress(Bitmap.CompressFormat.WEBP, 100, outputStream)
+                }
+
+                if (!compressionResult) {
                     Log.e(TAG, "Failed to compress bitmap to WebP")
                     return@withContext null
                 }
 
+                Log.d(TAG, "Successfully converted image to WebP")
                 outputStream.toByteArray()
             } catch (e: Exception) {
                 Log.e(TAG, "Error converting image to WebP", e)
@@ -141,6 +173,23 @@ class HeadOfViewModels(
             }
         }
     }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val (height: Int, width: Int) = options.run { outHeight to outWidth }
+        var inSampleSize = 1
+
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+
+        return inSampleSize
+    }
+
     private fun handleError(message: String, exception: Exception) {
         Log.e(TAG, "$message: ${exception.message}")
         // You might want to update your UI or error state here
