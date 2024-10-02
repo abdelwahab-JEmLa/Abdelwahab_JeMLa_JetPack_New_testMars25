@@ -164,7 +164,7 @@ fun ArticleItemECB(
                 contentAlignment = Alignment.Center
             ) {
 
-                DisplayeImageGlideECB(
+                DisplayeImageECB(
                     article = article,
                     viewModel = viewModel,
                     index = 0,

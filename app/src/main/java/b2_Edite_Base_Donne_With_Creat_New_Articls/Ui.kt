@@ -392,7 +392,7 @@ private fun ColorCard(
                     .aspectRatio(1f)
             ) {
 
-                DisplayeImageGlideECB(article=article,
+                DisplayeImageECB(article=article,
                     viewModel=viewModel,
                     index=index,
                     reloadKey =relodeTigger
@@ -444,7 +444,7 @@ private fun ColorCard(
 }
 
 @Composable
-fun DisplayeImageGlideECB(
+fun DisplayeImageECB(
     article: BaseDonneECBTabelle,
     viewModel: HeadOfViewModels,
     index: Int = 0,
