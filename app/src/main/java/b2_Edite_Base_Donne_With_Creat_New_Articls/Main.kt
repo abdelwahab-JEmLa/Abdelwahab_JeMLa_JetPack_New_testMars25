@@ -162,7 +162,7 @@ fun ArticleItemECB(
                 contentAlignment = Alignment.Center
             ) {
                 //Affiche Image
-                ImageDisplayerWithGlideECB(article,viewModel)
+                DisplayeImageGlide(article,viewModel)
                 //Affiche diponibilityState
                 DisponibilityOverlayECB(article.diponibilityState)
             }

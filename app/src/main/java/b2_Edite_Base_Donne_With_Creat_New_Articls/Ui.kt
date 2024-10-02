@@ -72,7 +72,6 @@ enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     Benfices(listOf("benificeClient" to "b.c")),
     MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
 }
-const val CAMERA_REQUEST_CODE = 1001
 
 @Composable
 fun ArticleDetailWindow(
@@ -97,6 +96,7 @@ fun ArticleDetailWindow(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
+
                     DisplayColorsCards(article,viewModel, onDismiss= onDismiss)
 
                     // TOP_ROW fields
@@ -117,7 +117,7 @@ fun ArticleDetailWindow(
                     }
 
                     // Remaining FieldsDisplayer groups
-                    FieldsDisplayer.values().drop(1).forEach { fieldsGroup ->
+                    FieldsDisplayer.entries.drop(1).forEach { fieldsGroup ->
                         Row(modifier = modifier.fillMaxWidth()) {
                             fieldsGroup.fields.forEach { (column, abbr) ->
                                 when (fieldsGroup) {
@@ -375,29 +375,8 @@ private fun ColorCard(
                     .weight(1f)
                     .aspectRatio(1f)
             ) {
-                val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
-                val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
-                val imageExist = remember(imageUri) {
-                    listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-                        listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
-                            File("$path.$extension").exists()
-                        }?.let { "$it.$extension" }
-                    }
-                }
-
-                GlideImage(
-                    model = imageUri ?: imageExist ?: R.drawable.blanc,
-                    contentDescription = "Color image for $couleur",
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    it.diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
-                        .override(1000)
-                        .thumbnail(0.25f)
-                        .fitCenter()
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                }
+                DisplayeImageGlide(article, viewModel, index, imageUri)
 
                 IconButton(
                     onClick = { showDeleteDialog = true },
@@ -430,7 +409,7 @@ private fun ColorCard(
                 Button(onClick = {
                     showDeleteDialog = false
                     viewModel.deleteColor(article, index + 1)
-                    onDismiss()
+                   if (index==0) onDismiss()
                 }) {
                     Text("Confirm")
                 }
@@ -441,6 +420,41 @@ private fun ColorCard(
                 }
             }
         )
+    }
+}
+
+@Composable
+@OptIn(ExperimentalGlideComposeApi::class)
+fun DisplayeImageGlide(
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    index: Int =0,
+    imageUri: Uri? =null,
+) {
+    val baseImagePath =
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
+    val downloadsImagePath =
+        "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
+
+    val imageExist = remember(imageUri) {
+        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+            listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
+                File("$path.$extension").exists()
+            }?.let { "$it.$extension" }
+        }
+    }
+
+    GlideImage(
+        model = imageUri ?: imageExist ?: R.drawable.blanc,
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        it.diskCacheStrategy(DiskCacheStrategy.NONE)
+            .skipMemoryCache(true)
+            .override(1000)
+            .thumbnail(0.25f)
+            .fitCenter()
+            .transition(DrawableTransitionOptions.withCrossFade())
     }
 }
 

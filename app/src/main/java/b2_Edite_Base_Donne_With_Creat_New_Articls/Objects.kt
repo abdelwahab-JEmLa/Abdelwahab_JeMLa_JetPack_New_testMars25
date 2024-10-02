@@ -28,30 +28,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
-@Composable
-@OptIn(ExperimentalGlideComposeApi::class)
-fun ImageDisplayerWithGlideECB(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels) {
-    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_1"
-    val downloadsImagePath = "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_1"
 
-    val imageExist = listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-        listOf(downloadsImagePath,baseImagePath ).firstOrNull { path ->
-            File("$path.$extension").exists()
-        }?.let { "$it.$extension" }
-    }
-
-    GlideImage(
-        model = imageExist ?: R.drawable.blanc,
-        contentDescription = "Image for article ${article.idArticleECB}",
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        it.diskCacheStrategy(DiskCacheStrategy.ALL)
-            .override(1000)
-            .thumbnail(0.25f)
-            .fitCenter()
-            .transition(DrawableTransitionOptions.withCrossFade())
-    }
-}
 
 class HeadOfViewModelFactory(
     private val context: Context,
