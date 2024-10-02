@@ -60,6 +60,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
+    var reloadTrigger by remember { mutableStateOf(0) }  // Add this line
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
 
@@ -89,7 +90,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 onClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
                                 }  ,
-                                viewModel
+                                viewModel,
                             )
                         }
                     }
@@ -134,9 +135,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 onDismiss = {
                     dialogeDisplayeDetailleChanger = null
                     viewModel.updateCurrentEditedArticle(null)
+                    reloadTrigger += 1
                 },
                 viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp)
+                modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadTrigger += 1}, relodeTigger = reloadTrigger
             )
         }
     }

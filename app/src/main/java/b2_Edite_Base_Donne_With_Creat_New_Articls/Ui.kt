@@ -4,6 +4,7 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -58,10 +60,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import b_Edite_Base_Donne.AutoResizedText
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
@@ -78,7 +79,7 @@ fun ArticleDetailWindow(
     article: BaseDonneECBTabelle,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
-    modifier: Modifier
+    modifier: Modifier, onReloadTrigger: () -> Unit, relodeTigger: Int
 ) {
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
@@ -97,7 +98,10 @@ fun ArticleDetailWindow(
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
 
-                    DisplayColorsCards(article,viewModel, onDismiss= onDismiss)
+                    DisplayColorsCards(article,viewModel, onDismiss= onDismiss,
+                        onReloadTrigger = onReloadTrigger,
+                        relodeTigger = relodeTigger
+                    )
 
                     // TOP_ROW fields
                     Row(modifier = modifier.fillMaxWidth()) {
@@ -289,7 +293,9 @@ fun CategoryHeaderECB(
 
 @Composable
 fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
-                       onDismiss: () -> Unit
+                       onDismiss: () -> Unit,
+                       onReloadTrigger: () -> Unit,
+                       relodeTigger: Int
 ) {
     val couleursList = listOf(
         article.couleur1,
@@ -315,7 +321,14 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
     ) {
         itemsIndexed(couleursList) { index, couleur ->
             if (couleur != null) {
-                ColorCard(article, index, couleur, viewModel, onDismiss)
+                ColorCard(
+                    article,
+                    index,
+                    couleur,
+                    viewModel,
+                    onDismiss,
+                    onReloadTrigger,
+                    relodeTigger,)
             }
         }
 
@@ -334,12 +347,14 @@ private fun ColorCard(
     index: Int,
     couleur: String,
     viewModel: HeadOfViewModels,
-    onDismiss: () -> Unit
-) {
+    onDismiss: () -> Unit,
+    onReloadTrigger: () -> Unit,
+    relodeTigger: Int,
+
+    ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var reloadTrigger by remember { mutableStateOf(0) }  // Add this line
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -348,7 +363,7 @@ private fun ColorCard(
             viewModel.tempImageUri?.let { uri ->
                 imageUri = uri
                 viewModel.processNewImage(uri, article, index + 1)
-                reloadTrigger += 1  // Increment the trigger to force recomposition
+                onReloadTrigger()
             }
         }
     }
@@ -377,7 +392,7 @@ private fun ColorCard(
                     .aspectRatio(1f)
             ) {
 
-                DisplayeImageGlideECB(article, viewModel, index, imageUri,reloadKey =reloadTrigger)
+                DisplayeImageGlideECB(article, viewModel, index, imageUri,reloadKey =relodeTigger)
 
                 IconButton(
                     onClick = { showDeleteDialog = true },
@@ -424,21 +439,23 @@ private fun ColorCard(
     }
 }
 
+
+
 @Composable
-@OptIn(ExperimentalGlideComposeApi::class)
 fun DisplayeImageGlideECB(
     article: BaseDonneECBTabelle,
     viewModel: HeadOfViewModels,
     index: Int = 0,
     imageUri: Uri? = null,
-    reloadKey: Any = Unit  // Add this parameter
+    reloadKey: Any = Unit
 ) {
+    val context = LocalContext.current
     val baseImagePath =
         "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
     val downloadsImagePath =
         "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
-    val imageExist = remember(imageUri, reloadKey) {  // Add reloadKey here
+    val imageExist = remember(imageUri, reloadKey) {
         listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
             listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
                 File("$path.$extension").exists()
@@ -446,20 +463,23 @@ fun DisplayeImageGlideECB(
         }
     }
 
-    GlideImage(
-        model = imageUri ?: imageExist ?: R.drawable.blanc,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        it.diskCacheStrategy(DiskCacheStrategy.NONE)
-            .skipMemoryCache(true)
-            .override(1000)
-            .thumbnail(0.25f)
-            .fitCenter()
-            .transition(DrawableTransitionOptions.withCrossFade())
-    }
-}
+    val imageSource = imageUri ?: imageExist ?: R.drawable.blanc
 
+    val painter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(imageSource)
+            .size(Size(1000, 1000))
+            .crossfade(true)
+            .build()
+    )
+
+    Image(
+        painter = painter,
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Fit
+    )
+}
 @Composable
 private fun AddColorCard(onClick: () -> Unit) {
     Card(
