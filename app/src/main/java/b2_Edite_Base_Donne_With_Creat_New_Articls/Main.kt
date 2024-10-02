@@ -32,9 +32,6 @@ import java.io.File
 fun MainFragmentEditDatabaseWithCreateNewArticles(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentEditedArticle by viewModel.currentEditedArticle.collectAsState()
@@ -100,9 +97,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
-                onUpdateStart = onUpdateStart,
-                onUpdateProgress = onUpdateProgress,
-                onUpdateComplete = onUpdateComplete,
                 onChangeGridColumns = { gridColumns = it } ,
             )
         }
@@ -126,7 +120,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                         coroutineScope.launch {
                             for (i in 1..4) {
                                 val fileName = "${article.idArticleECB}_$i.jpg"
-                                val sourceFile = File(viewModel.getDownloadsDirectory(), fileName)
+                                val sourceFile = File(viewModel.dossiesStandartImages, fileName)
                                 if (sourceFile.exists()) {
                                     viewModel.setImagesInStorageFireBase(article.idArticleECB, i)
                                 }

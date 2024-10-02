@@ -43,9 +43,6 @@ fun FloatingActionButtons(
     showOnlyWithFilter: Boolean,
     viewModel: HeadOfViewModels,
     coroutineScope: CoroutineScope,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateComplete: () -> Unit,
     onChangeGridColumns: (Int) -> Unit
 ) {
     var showCategorySelection by remember { mutableStateOf(false) }

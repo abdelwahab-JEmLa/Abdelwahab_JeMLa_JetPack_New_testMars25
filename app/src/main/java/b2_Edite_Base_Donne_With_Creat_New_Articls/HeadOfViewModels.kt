@@ -1,12 +1,14 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 
@@ -35,8 +38,13 @@ class HeadOfViewModels(
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
-    private val storage = Firebase.storage
+    val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
+    val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
+
     var tempImageUri: Uri? = null
+
+    private val _uploadProgress = MutableStateFlow<Float>(0f)
+    val uploadProgress: StateFlow<Float> = _uploadProgress
 
     init {
         viewModelScope.launch {
@@ -66,6 +74,99 @@ class HeadOfViewModels(
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
         }
+    }
+
+
+    fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
+        viewModelScope.launch {
+            val fileName = "${articleId}_$colorIndex.webp"
+            val localFile = File(getDownloadsDirectory(), fileName)
+            val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
+
+            try {
+                startProgress()
+
+                // Convert image to WebP format
+                val webpImage = withContext(Dispatchers.IO) {
+                    convertToWebP(localFile)
+                }
+
+                // Upload the WebP image
+                val uploadTask = storageRef.putBytes(webpImage)
+
+                uploadTask.addOnProgressListener { taskSnapshot ->
+                    val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount)
+                    updateProgress(progress.toFloat())
+                }.await()
+
+                val downloadUrl = storageRef.downloadUrl.await()
+                Log.d(TAG, "Image uploaded successfully: $fileName, URL: $downloadUrl")
+
+                completeProgress()
+
+
+            } catch (e: Exception) {
+                handleError("Failed to upload image", e)
+                completeProgress() // Reset progress on error
+            }
+        }
+    }
+
+    private suspend fun convertToWebP(file: File): ByteArray {
+        return withContext(Dispatchers.IO) {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.WEBP, 100, outputStream)
+            outputStream.toByteArray()
+        }
+    }
+
+    fun getDownloadsDirectory(): File {
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+    }
+
+    private fun handleError(message: String, exception: Exception) {
+        Log.e(TAG, "$message: ${exception.message}")
+        // You might want to update your UI or error state here
+    }
+
+    companion object {
+        private const val TAG = "HeadOfViewModels"
+    }
+
+    private suspend fun copyImage(sourceUri: Uri, fileName: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                if (!dossiesStandartImages.exists()) {
+                    dossiesStandartImages.mkdirs()
+                }
+
+                val destFile = File(dossiesStandartImages, fileName)
+
+                context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: throw IOException("Failed to open input stream for URI: $sourceUri")
+
+                Log.d(TAG, "Image copied successfully to ${destFile.absolutePath}")
+            } catch (e: IOException) {
+                Log.e(TAG, "Failed to copy image", e)
+                throw Exception("Failed to copy image: ${e.message}")
+            }
+        }
+    }
+
+    fun startProgress() {
+        _uploadProgress.value = 0f
+    }
+
+    fun updateProgress(progress: Float) {
+        _uploadProgress.value = progress.coerceIn(0f, 100f)
+    }
+
+    fun completeProgress() {
+        _uploadProgress.value = 100f
     }
 
     fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
@@ -199,33 +300,7 @@ class HeadOfViewModels(
         return (articles.maxOrNull() ?: 0) + 1
     }
 
-    fun getDownloadsDirectory(): File {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    }
 
-    private suspend fun copyImage(sourceUri: Uri, fileName: String) {
-        withContext(Dispatchers.IO) {
-            try {
-                val destDir = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
-                if (!destDir.exists()) {
-                    destDir.mkdirs()
-                }
-
-                val destFile = File(destDir, fileName)
-
-                context.contentResolver.openInputStream(sourceUri)?.use { input ->
-                    destFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                } ?: throw IOException("Failed to open input stream for URI: $sourceUri")
-
-                Log.d(TAG, "Image copied successfully to ${destFile.absolutePath}")
-            } catch (e: IOException) {
-                Log.e(TAG, "Failed to copy image", e)
-                throw Exception("Failed to copy image: ${e.message}")
-            }
-        }
-    }
 
     private suspend fun ensureNewArticlesCategoryExists() {
         val newArticlesCategory = "New Articles"
@@ -282,10 +357,9 @@ class HeadOfViewModels(
 
     private fun deleteColorImage(articleId: Int, colorIndex: Int) {
         val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
-        val downloadsImagePath = "${getDownloadsDirectory()}/${articleId}_${colorIndex}"
 
         listOf("jpg", "webp").forEach { extension ->
-            listOf(baseImagePath, downloadsImagePath).forEach { path ->
+            listOf(baseImagePath).forEach { path ->
                 val file = File("$path.$extension")
                 if (file.exists()) {
                     file.delete()
@@ -338,32 +412,6 @@ class HeadOfViewModels(
             }
         }
     }
-
-    fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
-        viewModelScope.launch {
-            val fileName = "${articleId}_$colorIndex.jpg"
-            val localFile = File(getDownloadsDirectory(), fileName)
-            val storageRef = storage.reference.child("Images Articles Data Base/$fileName")
-
-            try {
-                val uploadTask = storageRef.putFile(localFile.toUri())
-                uploadTask.await()
-                val downloadUrl = storageRef.downloadUrl.await()
-                Log.d(TAG, "Image uploaded successfully: $fileName, URL: $downloadUrl")
-            } catch (e: Exception) {
-                handleError("Failed to upload image", e)
-            }
-        }
-    }
-
-    private fun handleError(message: String, exception: Exception) {
-        Log.e(TAG, message, exception)
-        _uiState.update { it.copy(error = "$message: ${exception.message}") }
-    }
-
-    companion object {
-        private const val TAG = "HeadOfViewModels"
-    }
 }
 
 data class CreatAndEditeInBaseDonnRepositeryModels(
@@ -373,3 +421,16 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val isLoading: Boolean = false,
     val error: String? = null
 )
+
+class HeadOfViewModelFactory(
+    private val context: Context,
+    private val repositeryCreatAndEditeDataBase: RepositeryCreatAndEditeDataBase
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HeadOfViewModels(context, repositeryCreatAndEditeDataBase) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}

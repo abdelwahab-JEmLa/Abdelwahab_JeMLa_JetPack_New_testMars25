@@ -34,18 +34,22 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,7 +99,7 @@ class MainActivity : ComponentActivity() {
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
     private val repositeryCreatAndEditeDataBase by lazy {
-        RepositeryCreatAndEditeDataBase() // Assurez-vous que cette classe existe et peut être instanciée ainsi
+        RepositeryCreatAndEditeDataBase()
     }
     private val headOfViewModels: HeadOfViewModels by viewModels {
         HeadOfViewModelFactory(
@@ -118,15 +122,17 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                var showProgressBar by remember { mutableStateOf(false) }
-                var progress by remember { mutableStateOf(0f) }
+                val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
 
                 Scaffold(
                     bottomBar = {
                         if (isNavBarVisible) {
                             Column {
-                                if (showProgressBar) {
-                                    ProgressIndicator(progress)
+                                if (uploadProgress > 0f && uploadProgress < 100f) {
+                                    LinearProgressIndicator(
+                                        progress = { uploadProgress / 100f },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
                                 }
                                 CustomNavigationBar(
                                     items = items,
@@ -164,13 +170,7 @@ class MainActivity : ComponentActivity() {
                                 boardStatistiquesStatViewModel,
                                 classementsArticlesViewModel
                             ),
-                            onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                            onUpdateStart = { showProgressBar = true },
-                            onUpdateProgress = { progress = it },
-                            onUpdateComplete = {
-                                showProgressBar = false
-                                progress = 0f
-                            }
+                            onToggleNavBar = { isNavBarVisible = !isNavBarVisible }
                         )
                     }
                 }
@@ -178,6 +178,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 @Composable
 fun CustomNavigationBar(
     items: List<Screen>,
@@ -204,15 +205,8 @@ fun CustomNavigationBar(
         }
     }
 }
-@Composable
-fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
-    FloatingActionButton(onClick = onToggle) {
-        Icon(
-            if (isNavBarVisible) Icons.Filled.KeyboardArrowDown else Icons.Filled.Home,
-            contentDescription = "Toggle Navigation Bar"
-        )
-    }
-}
+
+
 
 @Composable
 fun AppNavHost(
@@ -220,14 +214,15 @@ fun AppNavHost(
     database: AppDatabase,
     viewModels: AppViewModels,
     onToggleNavBar: () -> Unit,
-    onUpdateStart: () -> Unit,
-    onUpdateProgress: (Float) -> Unit,
-    onUpdateComplete: () -> Unit
+    modifier: Modifier = Modifier
 ) {
+    var localProgress by remember { mutableStateOf(0f) }
+    val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
+
     NavHost(
         navController = navController,
         startDestination = "main_screen",
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
         composable("main_screen") {
             MainScreen(
@@ -237,10 +232,18 @@ fun AppNavHost(
                 boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
             )
         }
-        composable("A_Edite_Base_Screen") { A_Edite_Base_Screen(viewModels.editeBaseDonneViewModel, database.articleDao()) }
-        composable("C_ManageBonsClients") { FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel) }
-        composable("FragmentEntreBonsGro") { FragmentEntreBonsGro(database.articleDao()) }
-        composable("FragmentCredits") { FragmentCredits(viewModels.creditsViewModel, onToggleNavBar = onToggleNavBar) }
+        composable("A_Edite_Base_Screen") {
+            A_Edite_Base_Screen(viewModels.editeBaseDonneViewModel, database.articleDao())
+        }
+        composable("C_ManageBonsClients") {
+            FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel)
+        }
+        composable("FragmentEntreBonsGro") {
+            FragmentEntreBonsGro(database.articleDao())
+        }
+        composable("FragmentCredits") {
+            FragmentCredits(viewModels.creditsViewModel, onToggleNavBar = onToggleNavBar)
+        }
         composable("FragmentCreditsClients") {
             FragmentCreditsClients(
                 viewModels.creditsClientsViewModel,
@@ -249,27 +252,55 @@ fun AppNavHost(
             )
         }
         composable("Main_FactoryClassemntsArticles") {
-            MainFactoryClassementsArticles(
-                viewModels.classementsArticlesViewModel,
-                onToggleNavBar = onToggleNavBar,
-                onUpdateStart = onUpdateStart,
-                onUpdateProgress = onUpdateProgress,
-                onUpdateComplete = onUpdateComplete
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                MainFactoryClassementsArticles(
+                    viewModels.classementsArticlesViewModel,
+                    onToggleNavBar = onToggleNavBar,
+                    onUpdateStart = {
+                        viewModels.headOfViewModels.startProgress()
+                        localProgress = 0f
+                    },
+                    onUpdateProgress = { progress ->
+                        localProgress = progress
+                        viewModels.headOfViewModels.updateProgress(progress)
+                    },
+                    onUpdateComplete = {
+                        viewModels.headOfViewModels.completeProgress()
+                        localProgress = 0f
+                    }
+                )
+            }
         }
-        composable("PickerExample") { PickerExample() }
+        composable("PickerExample") {
+            PickerExample()
+        }
         composable("main_fragment_edit_database_with_create_new_articles") {
-            MainFragmentEditDatabaseWithCreateNewArticles(
-                viewModel = viewModels.headOfViewModels,
-                onToggleNavBar = onToggleNavBar,
-                onUpdateStart = onUpdateStart,
-                onUpdateProgress = onUpdateProgress,
-                onUpdateComplete = onUpdateComplete
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                MainFragmentEditDatabaseWithCreateNewArticles(
+                    viewModel = viewModels.headOfViewModels,
+                    onToggleNavBar = onToggleNavBar
+                )
+                if (uploadProgress > 0f && uploadProgress < 100f) {
+                    CircularProgressIndicator(
+                        progress = { uploadProgress / 100f },
+                        modifier = Modifier.align(Alignment.Center),
+                        trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
+                    )
+                }
+            }
         }
     }
 }
 
+@Composable
+fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
+    FloatingActionButton(onClick = onToggle) {
+        Icon(
+            if (isNavBarVisible) Icons.Filled.KeyboardArrowDown else Icons.Filled.Home,
+            contentDescription = "Toggle Navigation Bar"
+        )
+    }
+}
 object NavigationItems {
     fun getItems() = listOf(
         Screen.MainScreen,

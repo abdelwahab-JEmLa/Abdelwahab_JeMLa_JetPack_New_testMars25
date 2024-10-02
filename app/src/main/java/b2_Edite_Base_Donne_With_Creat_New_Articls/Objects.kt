@@ -22,18 +22,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 
 
-class HeadOfViewModelFactory(
-    private val context: Context,
-    private val repositeryCreatAndEditeDataBase: RepositeryCreatAndEditeDataBase
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(context, repositeryCreatAndEditeDataBase) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
 @Composable
 fun AutoResizedTextECB(
     text: String,
