@@ -63,10 +63,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
-import b2_Edite_Base_Donne_With_Creat_New_Articls.CreatAndEditeInBaseDonneRepositery
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModelFactory
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
+import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryCreatAndEditeDataBase
 import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
@@ -96,13 +96,13 @@ class MainActivity : ComponentActivity() {
     private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
-    private val creatAndEditeInBaseDonneRepositery by lazy {
-        CreatAndEditeInBaseDonneRepositery() // Assurez-vous que cette classe existe et peut être instanciée ainsi
+    private val repositeryCreatAndEditeDataBase by lazy {
+        RepositeryCreatAndEditeDataBase() // Assurez-vous que cette classe existe et peut être instanciée ainsi
     }
     private val headOfViewModels: HeadOfViewModels by viewModels {
         HeadOfViewModelFactory(
             context = this@MainActivity,
-            creatAndEditeInBaseDonneRepositery = creatAndEditeInBaseDonneRepositery
+            repositeryCreatAndEditeDataBase = repositeryCreatAndEditeDataBase
         )
     }
 

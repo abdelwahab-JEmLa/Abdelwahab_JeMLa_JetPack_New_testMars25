@@ -2,7 +2,6 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import android.content.Context
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,23 +20,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.example.abdelwahabjemlajetpack.R
-import java.io.File
-
 
 
 class HeadOfViewModelFactory(
     private val context: Context,
-    private val creatAndEditeInBaseDonneRepositery: CreatAndEditeInBaseDonneRepositery
+    private val repositeryCreatAndEditeDataBase: RepositeryCreatAndEditeDataBase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(context, creatAndEditeInBaseDonneRepositery) as T
+            return HeadOfViewModels(context, repositeryCreatAndEditeDataBase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
