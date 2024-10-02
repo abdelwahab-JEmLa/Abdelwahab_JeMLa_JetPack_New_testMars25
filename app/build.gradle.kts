@@ -53,10 +53,10 @@ android {
     sourceSets {
         getByName("main") {
             res.srcDirs(
-                "src/main/res/layouts",
-                "src/main/res/layouts/main",
-                "src/main/res/xml",
-                "src/main/res"
+                "src/main/res",
+                "src/main/res-layouts",
+                "src/main/res-main",
+                "src/main/res-xml"
             )
         }
     }
