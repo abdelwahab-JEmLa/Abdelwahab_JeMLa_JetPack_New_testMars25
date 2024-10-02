@@ -39,7 +39,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +64,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
+import java.io.File
 
 enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
@@ -451,14 +451,24 @@ fun DisplayeImageGlideECB(
     reloadKey: Any = Unit
 ) {
     val context = LocalContext.current
-    val imageState by viewModel.imageState.collectAsState()
+    val baseImagePath =
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
+    val downloadsImagePath =
+        "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
-    val imageKey = "${article.idArticleECB}_${index + 1}"
-    val imageUri = imageState[imageKey]
+    val imageExist = remember( reloadKey) {
+        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+            listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
+                File("$path.$extension").exists()
+            }?.let { "$it.$extension" }
+        }
+    }
+
+    val imageSource = imageExist ?: R.drawable.blanc
 
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
-            .data(imageUri ?: R.drawable.blanc)
+            .data(imageSource)
             .size(Size(1000, 1000))
             .crossfade(true)
             .build()
@@ -470,13 +480,6 @@ fun DisplayeImageGlideECB(
         modifier = Modifier.fillMaxSize(),
         contentScale = ContentScale.Fit
     )
-
-    // Trigger image reload if not available
-    LaunchedEffect(article.idArticleECB, index, reloadKey) {
-        if (imageUri == null) {
-            viewModel.setImagesInStorageFireBase(article.idArticleECB, index + 1)
-        }
-    }
 }
 @Composable
 private fun AddColorCard(onClick: () -> Unit) {

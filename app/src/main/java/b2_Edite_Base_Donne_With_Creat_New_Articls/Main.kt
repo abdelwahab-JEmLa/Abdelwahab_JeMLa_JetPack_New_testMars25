@@ -215,14 +215,10 @@ class HeadOfViewModels(
     private val _currentEditedArticle = MutableStateFlow<BaseDonneECBTabelle?>(null)
     val currentEditedArticle: StateFlow<BaseDonneECBTabelle?> = _currentEditedArticle.asStateFlow()
 
-    private val _imageState = MutableStateFlow<Map<String, Uri>>(emptyMap())
-    val imageState: StateFlow<Map<String, Uri>> = _imageState.asStateFlow()
-
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
     private val storage = Firebase.storage
     var tempImageUri: Uri? = null
-
 
     init {
         viewModelScope.launch {
@@ -261,7 +257,10 @@ class HeadOfViewModels(
     fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
         val updatedArticle = creatAndEditeInBaseDonneRepositery.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
 
-        // Update local state
+        updateLocalAndRemoteArticle(updatedArticle)
+    }
+
+    private fun updateLocalAndRemoteArticle(updatedArticle: BaseDonneECBTabelle) {
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
                 if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
@@ -271,7 +270,6 @@ class HeadOfViewModels(
 
         updateCurrentEditedArticle(updatedArticle)
 
-        // Perform Firebase update asynchronously
         viewModelScope.launch {
             try {
                 refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle).await()
@@ -285,7 +283,6 @@ class HeadOfViewModels(
     fun toggleFilter() {
         _uiState.update { creatAndEditeInBaseDonneRepositery.toggleFilter(it) }
     }
-
 
     fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB) {
         viewModelScope.launch {
@@ -313,18 +310,15 @@ class HeadOfViewModels(
                 ensureNewArticlesCategoryExists()
                 addNewArticle(newArticle)
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Failed to process image: ${e.message}") }
+                handleError("Failed to process image", e)
             }
         }
     }
 
-
     private suspend fun addNewArticle(article: BaseDonneECBTabelle) {
         try {
-            // Ajouter l'article à Firebase
             refDBJetPackExport.child(article.idArticleECB.toString()).setValue(article).await()
 
-            // Mettre à jour l'état local
             _uiState.update { currentState ->
                 currentState.copy(
                     articlesBaseDonneECB = currentState.articlesBaseDonneECB + article
@@ -336,6 +330,7 @@ class HeadOfViewModels(
             handleError("Failed to add new article", e)
         }
     }
+
     fun addColoreToArticle(uri: Uri, article: BaseDonneECBTabelle) {
         viewModelScope.launch {
             try {
@@ -349,7 +344,7 @@ class HeadOfViewModels(
                 val fileName = "${article.idArticleECB}_${nextColorField.removePrefix("couleur")}.jpg"
                 val destinationFile = File(getDownloadsDirectory(), fileName)
 
-                copyImageToDownloads(uri, destinationFile)
+                copyImage(uri, destinationFile)
 
                 val updatedArticle = article.copy(
                     couleur2 = if (nextColorField == "couleur2") "Couleur_2" else article.couleur2,
@@ -357,9 +352,7 @@ class HeadOfViewModels(
                     couleur4 = if (nextColorField == "couleur4") "Couleur_4" else article.couleur4
                 )
 
-                updateCurrentEditedArticle(updatedArticle)
-
-                updateArticle(updatedArticle)
+                updateLocalAndRemoteArticle(updatedArticle)
             } catch (e: Exception) {
                 handleError("Failed to add color to article", e)
             }
@@ -378,39 +371,23 @@ class HeadOfViewModels(
         return (articles.maxOrNull() ?: 0) + 1
     }
 
-
-    private suspend fun updateArticle(article: BaseDonneECBTabelle) {
-        try {
-            refDBJetPackExport.child(article.idArticleECB.toString()).setValue(article).await()
-
-            _uiState.update { currentState ->
-                val updatedArticles = currentState.articlesBaseDonneECB.map {
-                    if (it.idArticleECB == article.idArticleECB) article else it
-                }
-                currentState.copy(articlesBaseDonneECB = updatedArticles)
-            }
-
-            _currentEditedArticle.value = article
-
-            Log.d("HeadOfViewModels", "Article updated successfully: ${article.idArticleECB}")
-        } catch (e: Exception) {
-            handleError("Failed to update article", e)
-        }
-    }
     fun getDownloadsDirectory(): File {
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     }
 
-    private suspend fun copyImageToDownloads(sourceUri: Uri, destinationFile: File) {
+    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
         withContext(Dispatchers.IO) {
             try {
+                if (destinationFile.exists()) {
+                    destinationFile.delete()
+                }
                 context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
                     FileOutputStream(destinationFile).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
                 }
             } catch (e: IOException) {
-                _uiState.update { it.copy(error = "Failed to copy image: ${e.message}") }
+                throw Exception("Failed to copy image: ${e.message}")
             }
         }
     }
@@ -426,10 +403,8 @@ class HeadOfViewModels(
             )
 
             try {
-                // Add to Firebase
                 refCategorieTabelee.push().setValue(newCategory).await()
 
-                // Update local state
                 _uiState.update { currentState ->
                     currentState.copy(
                         categoriesECB = currentState.categoriesECB + newCategory
@@ -446,9 +421,9 @@ class HeadOfViewModels(
         viewModelScope.launch {
             when (colorIndex) {
                 1 -> deleteArticle(article)
-                2 -> updateArticle(article.copy(couleur2 = ""))
-                3 -> updateArticle(article.copy(couleur3 = ""))
-                4 -> updateArticle(article.copy(couleur4 = ""))
+                2 -> updateLocalAndRemoteArticle(article.copy(couleur2 = ""))
+                3 -> updateLocalAndRemoteArticle(article.copy(couleur3 = ""))
+                4 -> updateLocalAndRemoteArticle(article.copy(couleur4 = ""))
             }
             deleteColorImage(article.idArticleECB, colorIndex)
         }
@@ -483,7 +458,7 @@ class HeadOfViewModels(
             }
         }
     }
-    // Add these functions to your HeadOfViewModels class
+
     fun processNewImage(uri: Uri, article: BaseDonneECBTabelle, colorIndex: Int) {
         viewModelScope.launch {
             try {
@@ -497,48 +472,27 @@ class HeadOfViewModels(
                     4 -> article.copy(couleur4 = "Couleur_4")
                     else -> article
                 }
-                updateCurrentEditedArticle(updatedArticle)
-
-                updateArticle(updatedArticle)
+                updateLocalAndRemoteArticle(updatedArticle)
             } catch (e: Exception) {
                 handleError("Failed to process new image", e)
             }
         }
     }
 
-    private suspend fun copyImage(sourceUri: Uri, destinationFile: File) {
-        withContext(Dispatchers.IO) {
-            try {
-                if (destinationFile.exists()) {
-                    destinationFile.delete()
-                }
-                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                    FileOutputStream(destinationFile).use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            } catch (e: IOException) {
-                throw Exception("Failed to copy image: ${e.message}")
-            }
-        }
-    }
     fun clearTempImage(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Clear the tempImageUri
                 tempImageUri?.let { uri ->
                     context.contentResolver.delete(uri, null, null)
                     tempImageUri = null
                 }
 
-                // Clear the cache directory
                 context.cacheDir.listFiles()?.forEach { file ->
                     if (file.name.startsWith("temp_image")) {
                         file.delete()
                     }
                 }
 
-                // Refresh the current edited article to trigger recomposition
                 _currentEditedArticle.value?.let { article ->
                     _currentEditedArticle.value = article.copy()
                 }
@@ -549,52 +503,29 @@ class HeadOfViewModels(
             }
         }
     }
+
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
-            try {
-                val fileName = "${articleId}_$colorIndex.jpg"
-                val localFile = File(getDownloadsDirectory(), fileName)
-                val storageRef = storage.reference.child("Images Articles Data Base/$fileName")
+            val fileName = "${articleId}_$colorIndex.jpg"
+            val localFile = File(getDownloadsDirectory(), fileName)
+            val storageRef = storage.reference.child("Images Articles Data Base/$fileName")
 
-                if (localFile.exists()) {
-                    val uploadTask = storageRef.putFile(localFile.toUri())
-                    uploadTask.addOnSuccessListener {
-                        // Get the download URL
-                        storageRef.downloadUrl.addOnSuccessListener { uri ->
-                            // Update the image state with the new URL
-                            updateImageState(articleId, colorIndex, uri)
-                            Log.d("HeadOfViewModels", "Image uploaded successfully: $fileName")
-                        }
-                    }.addOnFailureListener { exception ->
-                        handleError("Failed to upload image", exception)
-                    }
-                } else {
-                    // If the file doesn't exist locally, try to download it from Firebase Storage
-                    val localDestination = File(getDownloadsDirectory(), fileName)
-                    storageRef.getFile(localDestination).addOnSuccessListener {
-                        // File downloaded successfully, update the image state
-                        updateImageState(articleId, colorIndex, localDestination.toUri())
-                        Log.d("HeadOfViewModels", "Image downloaded successfully: $fileName")
-                    }.addOnFailureListener { exception ->
-                        handleError("Failed to download image", exception)
-                    }
-                }
+            try {
+                val uploadTask = storageRef.putFile(localFile.toUri())
+                uploadTask.await()
+                val downloadUrl = storageRef.downloadUrl.await()
+                Log.d("HeadOfViewModels", "Image uploaded successfully: $fileName, URL: $downloadUrl")
             } catch (e: Exception) {
-                handleError("Error in setImagesInStorageFireBase", e)
+                handleError("Failed to upload image", e)
             }
         }
     }
-    private fun updateImageState(articleId: Int, colorIndex: Int, uri: Uri) {
-        _imageState.update { currentState ->
-            currentState + ("${articleId}_$colorIndex" to uri)
-        }
-    }
+
     private fun handleError(message: String, exception: Exception) {
         Log.e("HeadOfViewModels", message, exception)
         _uiState.update { it.copy(error = "$message: ${exception.message}") }
     }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 class CreatAndEditeInBaseDonneRepositery {
