@@ -328,7 +328,6 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun ColorCard(
     article: BaseDonneECBTabelle,
@@ -340,6 +339,7 @@ private fun ColorCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var reloadTrigger by remember { mutableStateOf(0) }  // Add this line
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -348,6 +348,7 @@ private fun ColorCard(
             viewModel.tempImageUri?.let { uri ->
                 imageUri = uri
                 viewModel.processNewImage(uri, article, index + 1)
+                reloadTrigger += 1  // Increment the trigger to force recomposition
             }
         }
     }
@@ -376,7 +377,7 @@ private fun ColorCard(
                     .aspectRatio(1f)
             ) {
 
-                DisplayeImageGlideECB(article, viewModel, index, imageUri)
+                DisplayeImageGlideECB(article, viewModel, index, imageUri,reloadKey =reloadTrigger)
 
                 IconButton(
                     onClick = { showDeleteDialog = true },
@@ -428,15 +429,16 @@ private fun ColorCard(
 fun DisplayeImageGlideECB(
     article: BaseDonneECBTabelle,
     viewModel: HeadOfViewModels,
-    index: Int =0,
-    imageUri: Uri? =null,
+    index: Int = 0,
+    imageUri: Uri? = null,
+    reloadKey: Any = Unit  // Add this parameter
 ) {
     val baseImagePath =
         "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
     val downloadsImagePath =
         "${viewModel.getDownloadsDirectory()}/${article.idArticleECB}_${index + 1}"
 
-    val imageExist = remember(imageUri) {
+    val imageExist = remember(imageUri, reloadKey) {  // Add reloadKey here
         listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
             listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
                 File("$path.$extension").exists()
@@ -457,7 +459,6 @@ fun DisplayeImageGlideECB(
             .transition(DrawableTransitionOptions.withCrossFade())
     }
 }
-
 
 @Composable
 private fun AddColorCard(onClick: () -> Unit) {
