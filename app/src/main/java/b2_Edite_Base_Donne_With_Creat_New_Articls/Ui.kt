@@ -310,7 +310,7 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
     ) { success ->
         if (success) {
             viewModel.tempImageUri?.let { uri ->
-                viewModel.addColoreToArticle(uri, article)
+                viewModel.addColorToArticle(uri, article)
             }
         }
     }

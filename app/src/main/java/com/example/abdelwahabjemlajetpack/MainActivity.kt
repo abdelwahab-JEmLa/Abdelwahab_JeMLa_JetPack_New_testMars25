@@ -84,9 +84,7 @@ import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-    private val permissionHandler by lazy {
-        PermissionHandler(this)
-    }
+    private val permissionHandler by lazy { PermissionHandler(this) }
 
     private val database by lazy { AppDatabase.getInstance(this) }
     private val editeBaseDonneViewModel: EditeBaseDonneViewModel by viewModels {

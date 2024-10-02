@@ -4,13 +4,13 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -39,38 +39,33 @@ fun ProgressIndicator(progress: Float) {
     )
 }
 
-class PermissionHandler(private val activity: ComponentActivity) {
-    private val PERMISSION_REQUEST_CODE = 101
 
-    fun checkAndRequestPermissions() {
-        if (!checkPermission()) {
-            requestPermission()
+class PermissionHandler(private val activity: ComponentActivity) {
+    private val requestPermissionLauncher = activity.registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.all { it.value }) {
+            // All permissions granted
+        } else {
+            // Some permissions denied
         }
     }
 
-    private fun checkPermission(): Boolean {
-        val result = ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
-        return result == PackageManager.PERMISSION_GRANTED
-    }
+    fun checkAndRequestPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
 
-    private fun requestPermission() {
-        ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-            PERMISSION_REQUEST_CODE
-        )
-    }
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
-    @Deprecated("This method has been deprecated. Use Activity Result API instead.")
-    fun handlePermissionResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        when (requestCode) {
-            PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted
-                } else {
-                    // Permission denied
-                }
-            }
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
 }
