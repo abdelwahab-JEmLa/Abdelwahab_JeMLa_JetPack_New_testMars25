@@ -4,11 +4,7 @@ package i_SupplierArticlesRecivedManager
 import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,10 +34,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,24 +63,17 @@ import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
-enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
-    TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
-    PrixAchats(listOf("monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>")),
-    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),     //TODO fait que si itsNewArticle ne pas l affiche
-    Benfices(listOf("benificeClient" to "b.c")),     //TODO fait que si itsNewArticle ne pas l affiche
-    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))      //TODO fait que si itsNewArticle ne pas l affiche
-}
+
 
 @Composable
 fun ArticleDetailWindow(
-    article: BaseDonneECBTabelle,
+    article: TabelleSupplierArticlesRecived,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
     modifier: Modifier, onReloadTrigger: () -> Unit, relodeTigger: Int
 ) {
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
-    var itsNewArticle by remember { mutableStateOf(false) }     //   TODO fait que  si article.monPrixAchat ==0.0 de metre true
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -102,180 +89,41 @@ fun ArticleDetailWindow(
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
 
-                    DisplayColorsCards(article,viewModel, onDismiss= onDismiss,
+                    DisplayColorsCards(article,viewModel, onDismiss = onDismiss,
                         onReloadTrigger = onReloadTrigger,
                         relodeTigger = relodeTigger
                     )
 
-                    // TOP_ROW fields
-                    Row(modifier = modifier.fillMaxWidth()) {
-                        FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
-                            DisplayField(
-                                columnToChange = column,
-                                abbreviation = abbr,
-                                currentChangingField = currentChangingField,
-                                article = article,
-                                viewModel = viewModel,
-                                displayeInOutlines = displayeInOutlines,
-                                modifier = modifier
-                                    .weight(1f)
-                                    .height(67.dp)
-                            ) { currentChangingField = column }
-                        }
-                    }
-
-                    // Remaining FieldsDisplayer groups
-                    FieldsDisplayer.entries.drop(1).forEach { fieldsGroup ->
-                        Row(modifier = modifier.fillMaxWidth()) {
-                            fieldsGroup.fields.forEach { (column, abbr) ->
-                                when (fieldsGroup) {
-                                    FieldsDisplayer.BenficesEntre -> {
-                                        if (article.clienPrixVentUnite > 0) {
-                                            InfoBoxWhithVoiceInpute(
-                                                columnToChange = column,
-                                                abbreviation = abbr,
-                                                article = article,
-                                                displayeInOutlines = displayeInOutlines,
-                                                modifier = modifier
-                                                    .weight(1f)
-                                                    .height(67.dp)
-                                            )
-                                        }
-                                    }
-                                    else -> {
-                                        DisplayField(
-                                            columnToChange = column,
-                                            abbreviation = abbr,
-                                            currentChangingField = currentChangingField,
-                                            article = article,
-                                            viewModel = viewModel,
-                                            displayeInOutlines = displayeInOutlines,
-                                            modifier = modifier
-                                                .weight(1f)
-                                                .height(67.dp)
-                                        ) { currentChangingField = column }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    CalculationButtons(article, viewModel, modifier)
-                    ArticleToggleButton(article, viewModel, modifier)
-
                     // Article name
-                    AutoResizedTextECB(       //TODO fait que si itsNewArticle ne pas l affiche
-                        text = article.nomArticleFinale.capitalize(Locale.current),
+                    AutoResizedTextECB(
+                        text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
                         fontSize = 25.sp,
                         color = MaterialTheme.colorScheme.error,
                         modifier = modifier.fillMaxWidth()
                     )
-                    // Display in Outlines switch
-                    Row(
-                        modifier = modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Display in Outlines")
-                        Spacer(modifier.weight(1f))
-                        Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
-                    }
+
                 }
             }
         }
     }
 }
 
-@Composable
-fun InfoBoxWhithVoiceInpute(
-    columnToChange: String,
-    abbreviation: String,
-    article: BaseDonneECBTabelle,
-    displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val columnValue = article.getColumnValue(columnToChange)
-    val displayValue = when (columnValue) {
-        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
-        is Int -> columnValue.toString()
-        else -> columnValue?.toString() ?: ""
-    }
-    Box(
-        modifier = modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.extraSmall
-            )
-            .padding(
-                top = if (displayeInOutlines) 10.dp else 15.dp,
-                start = 4.dp,
-                end = 4.dp
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        AutoResizedTextECB(
-            text = "$abbreviation -> $displayValue",
-            color = MaterialTheme.colorScheme.error
-        )
-    }
-}
-@Composable
-fun DisplayField(
-    columnToChange: String,
-    abbreviation: String,
-    currentChangingField: String,
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels,
-    displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier,
-    onValueChanged: (String) -> Unit
-) {
-    if (displayeInOutlines) {
-        OutlineTextECB(
-            columnToChange,
-            abbreviation,
-            currentChangingField,
-            article,
-            viewModel,
-            modifier,
-            onValueChanged
-        )
-    } else {
-        InfoBoxWhithVoiceInpute(
-            columnToChange = columnToChange,
-            abbreviation = abbreviation,
-            article = article,
-            displayeInOutlines = displayeInOutlines,
-            modifier = modifier
-        )
-    }
-}
-
 
 
 @Composable
-fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
-                       onDismiss: () -> Unit,
-                       onReloadTrigger: () -> Unit,
-                       relodeTigger: Int
+fun DisplayColorsCards(
+    article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+    onReloadTrigger: () -> Unit,
+    relodeTigger: Int
 ) {
     val couleursList = listOf(
-        article.couleur1,
-        article.couleur2,
-        article.couleur3,
-        article.couleur4
-    ).filterNot { it.isNullOrEmpty() }
+        article.a_d_nomarticlefinale_c_1,
+        article.a_d_nomarticlefinale_c_2,
+        article.a_d_nomarticlefinale_c_3,
+        article.a_d_nomarticlefinale_c_4
+    ).filterNot { it.isEmpty() }
 
-    val context = LocalContext.current
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            viewModel.tempImageUri?.let { uri ->
-                viewModel.addColorToArticle(uri, article)
-            }
-        }
-    }
 
     LazyRow(
         verticalAlignment = Alignment.CenterVertically,
@@ -294,18 +142,12 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
             }
         }
 
-        item {
-            AddColorCard {
-                viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
-            }
-        }
     }
 }
 
 @Composable
 private fun ColorCard(
-    article: BaseDonneECBTabelle,
+    article: TabelleSupplierArticlesRecived,
     index: Int,
     couleur: String,
     viewModel: HeadOfViewModels,
@@ -316,27 +158,8 @@ private fun ColorCard(
     ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            viewModel.tempImageUri?.let { uri ->
-                imageUri = uri
-                viewModel.processNewImage(uri, article, index + 1)
-                onReloadTrigger()
-            }
-        }
-    }
 
-    LaunchedEffect(imageUri) {
-        if (imageUri != null) {
-            // Clear the temporary image and refresh the display
-            viewModel.clearTempImage(context)
-            imageUri = null
-        }
-    }
 
     Card(
         modifier = Modifier

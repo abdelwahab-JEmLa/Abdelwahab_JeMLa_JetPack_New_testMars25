@@ -10,21 +10,23 @@ data class TabelleSupplierArticlesRecived(
     val trouve_c: Boolean,
     val a_u_prix_1_q1_c: Double,
     var a_q_prixachat_c: Double,
-    val a_l_nmbunite_c: Int,
+    val a_l_nmbunite_c: Int = 0,
     val a_r_prixdevent_c: Double,
     val nomclient: String,
     val datedachate: String,
-    val a_d_nomarticlefinale_c_1: String,
-    val quantityachete_c_1: Int,
-    val a_d_nomarticlefinale_c_2: String,
-    val quantityachete_c_2: Int,
-    val a_d_nomarticlefinale_c_3: String,
-    val quantityachete_c_3: Int,
-    val a_d_nomarticlefinale_c_4: String,
-    val quantityachete_c_4: Int,
-    val totalquantity: Int,
-    val etatdecommendcolum: Int
-)
+    val a_d_nomarticlefinale_c_1: String = "",
+    val quantityachete_c_1: Int = 0,
+    val a_d_nomarticlefinale_c_2: String = "",
+    val quantityachete_c_2: Int = 0,
+    val a_d_nomarticlefinale_c_3: String = "",
+    val quantityachete_c_3: Int = 0,
+    val a_d_nomarticlefinale_c_4: String = "",
+    val quantityachete_c_4: Int = 0,
+    val totalquantity: Int = 0,
+    val etatdecommendcolum: Int ,
+    var disponibility :String? = null,
+
+    )
 
 data class TabelleSuppliersSA(
     var vidSupplierSA: Long = 0,

@@ -38,6 +38,9 @@ class HeadOfViewModels(
     private val _currentEditedArticle = MutableStateFlow<BaseDonneECBTabelle?>(null)
     val currentEditedArticle: StateFlow<BaseDonneECBTabelle?> = _currentEditedArticle.asStateFlow()
 
+    private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
+    val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
+
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
     private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("")

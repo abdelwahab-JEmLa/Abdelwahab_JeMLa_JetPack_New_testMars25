@@ -41,9 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import b2_Edite_Base_Donne_With_Creat_New_Articls.DisponibilityOverlayECB
-import kotlinx.coroutines.launch
-import java.io.File
 
 
 @Composable
@@ -52,7 +49,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     onToggleNavBar: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentEditedArticle by viewModel.currentEditedArticle.collectAsState()
+    val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -125,7 +122,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 
 
         // Use the current edited article if it matches the given article, otherwise use the original article
-        val displayedArticle = currentEditedArticle?.takeIf { it.idArticleECB == dialogeDisplayeDetailleChanger?.idArticleECB }
+        val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
             ?: dialogeDisplayeDetailleChanger
 
         displayedArticle?.let { article ->
@@ -134,24 +131,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 onDismiss = {
                     dialogeDisplayeDetailleChanger = null
                     viewModel.updateCurrentEditedArticle(null)
-
-                    // Check if the article is new or if key changes occurred
-                    if (article.nomCategorie.contains("New", ignoreCase = true) ||
-                        article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB) {
-                        // Trigger image reload
-                        coroutineScope.launch {
-                            for (i in 1..4) {
-                                val fileName = "${article.idArticleECB}_$i.jpg"
-                                val sourceFile = File(viewModel.dossiesStandartImages, fileName)
-                                if (sourceFile.exists()) {
-                                    viewModel.setImagesInStorageFireBase(article.idArticleECB, i)
-                                }
-                            }
-                            // Increment reloadTrigger to force recomposition
-                            reloadImageTrigger += 1
-                        }
-                    }
-                },
+                 },
                 viewModel = viewModel,
                 modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadImageTrigger += 1}, relodeTigger = reloadImageTrigger
             )
@@ -187,6 +167,7 @@ fun ArticleItem(
                     reloadKey = reloadTrigger
                 )
             }
+            article.disponibility?.let { DisponibilityOverlayECB(it) }
             AutoResizedTextECB(text = article.a_d_nomarticlefinale_c)
         }
     }
@@ -231,8 +212,8 @@ fun OverlayContentECB(color: Color, icon: ImageVector) {
 @Composable
 fun DisponibilityOverlayECB(state: String) {
     when (state) {
-        "Non Dispo" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
-        "NonForNewsClients" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
+        "Ask WHer" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
+        "TO Find" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
     }
 }
 
