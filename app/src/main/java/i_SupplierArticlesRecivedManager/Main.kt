@@ -1,21 +1,37 @@
 package i_SupplierArticlesRecivedManager
 
+
 import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.HeadOfViewModels
+import a_MainAppCompnents.TabelleSuppliersSA
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,10 +41,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import b2_Edite_Base_Donne_With_Creat_New_Articls.DisponibilityOverlayECB
 import kotlinx.coroutines.launch
 import java.io.File
+
 
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
@@ -37,14 +58,16 @@ fun Fragment_SupplierArticlesRecivedManager(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentEditedArticle by viewModel.currentEditedArticle.collectAsState()
+    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
+
+    var filterNonDispo by remember { mutableStateOf(false) }
+    var reloadImageTrigger by remember { mutableStateOf(0) }  // Add this line
+
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
-    var filterNonDispo by remember { mutableStateOf(false) }
-    var reloadTrigger by remember { mutableStateOf(0) }  // Add this line
-
-    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -57,14 +80,13 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                uiState.categoriesECB.forEach { category ->
-                    val articlesInCategory = uiState.articlesBaseDonneECB.filter {
-                        it.nomCategorie == category.nomCategorieInCategoriesTabele &&
-                                (!filterNonDispo || it.diponibilityState == "")
+                uiState.tabelleSuppliersSA.forEach { supplier ->
+                    val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
+                        it.idSupplierTSA.toLong() == supplier.vidSupplierSA
                     }
-                    if (articlesInCategory.isNotEmpty() || category.nomCategorieInCategoriesTabele == "New Articles") {
+                    if (articlesSupplier.isNotEmpty() || supplier.vidSupplierSA > 2) {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            CategoryHeaderECB(category = category, viewModel = viewModel)
+                            SupplierHeaderECB(supplier = supplier, viewModel = viewModel)
                         }
                         items(articlesInCategory) { article ->
                             ArticleItemECB(
@@ -73,7 +95,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                                     dialogeDisplayeDetailleChanger = clickedArticle
                                 }  ,
                                 viewModel,
-                                reloadTrigger
+                                reloadImageTrigger
                             )
                         }
                     }
@@ -128,12 +150,12 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 }
                             }
                             // Increment reloadTrigger to force recomposition
-                            reloadTrigger += 1
+                            reloadImageTrigger += 1
                         }
                     }
                 },
                 viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadTrigger += 1}, relodeTigger = reloadTrigger
+                modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadImageTrigger += 1}, relodeTigger = reloadImageTrigger
             )
         }
     }
@@ -172,3 +194,49 @@ fun ArticleItemECB(
         }
     }
 }
+
+@Composable
+fun SupplierHeaderECB(
+    supplier: TabelleSuppliersSA,
+    viewModel: HeadOfViewModels,
+) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = supplier.nomSupplierSA,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+@Composable
+fun OverlayContentECB(color: Color, icon: ImageVector) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, null, tint = Color.White)
+    }
+}
+
+@Composable
+fun DisponibilityOverlayECB(state: String) {
+    when (state) {
+        "Non Dispo" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
+        "NonForNewsClients" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
+    }
+}
+
+

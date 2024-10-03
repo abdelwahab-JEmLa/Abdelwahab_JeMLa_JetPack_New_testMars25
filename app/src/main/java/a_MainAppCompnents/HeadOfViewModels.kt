@@ -40,7 +40,8 @@ class HeadOfViewModels(
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
-    private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("finale")
+    private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("")
+    private val refTabelleSuppliersSA = FirebaseDatabase.getInstance().getReference("")
 
     val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
@@ -75,10 +76,14 @@ class HeadOfViewModels(
             val supplierArticlesRecived = refTabelleSupplierArticlesRecived.get().await().children
                 .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
 
+            val suppliersSA = refTabelleSuppliersSA.get().await().children
+                .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
+
             _uiState.update { it.copy(
                 articlesBaseDonneECB = articles,
                 categoriesECB = categories,
                 tabelleSupplierArticlesRecived=supplierArticlesRecived,
+                tabelleSuppliersSA =suppliersSA,
                 isLoading = false
             ) }
         } catch (e: Exception) {
@@ -507,6 +512,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
     val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
+    val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
     val showOnlyWithFilter: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null

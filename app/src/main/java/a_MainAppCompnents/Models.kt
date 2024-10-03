@@ -4,6 +4,9 @@ data class TabelleSupplierArticlesRecived(
     val aa_vid: Long = 0,
     val a_c_idarticle_c: Long,
     val a_d_nomarticlefinale_c: String,
+    var idSupplierTSA : Int = 0,
+    var nomSupplierTSA : String? = null,
+    var nmbrCat: Int = 0,
     val trouve_c: Boolean,
     val a_u_prix_1_q1_c: Double,
     var a_q_prixachat_c: Double,
@@ -22,6 +25,19 @@ data class TabelleSupplierArticlesRecived(
     val totalquantity: Int,
     val etatdecommendcolum: Int
 )
+
+data class TabelleSuppliersSA(
+    var vidSupplierSA: Long = 0,
+    var nomSupplierSA: String = "",
+    var bonDuSupplierSA: String = "",
+    val couleurSA: String = "#FFFFFF", // Default color
+    var currentCreditBalanceSA: Double = 0.0, // New field for current credit balance
+    var isLongTermCreditSA : Boolean = false     ,
+    var ignoreItProdectsSA : Boolean = false     ,
+
+    ) {
+    constructor() : this(0)
+}
 
 data class BaseDonneECBTabelle(
     var idArticleECB: Int = 0,

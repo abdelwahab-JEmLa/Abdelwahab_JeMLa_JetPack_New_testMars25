@@ -251,49 +251,7 @@ fun DisplayField(
     }
 }
 
-@Composable
-fun CategoryHeaderECB(
-    category: CategoriesTabelleECB,
-    viewModel: HeadOfViewModels,
-) {
-    val context = LocalContext.current
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            viewModel.tempImageUri?.let { uri ->
-                viewModel.addNewParentArticle(uri, category)
-            }
-        }
-    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = category.nomCategorieInCategoriesTabele,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-            IconButton(
-                onClick = {
-                    viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                    viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
-                },
-                modifier = Modifier.padding(end = 16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Article")
-            }
-        }
-    }
-}
 
 @Composable
 fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
