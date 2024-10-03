@@ -28,7 +28,7 @@ import java.io.IOException
 
 class HeadOfViewModels(
     private val context: Context,
-    private val repositoryCreatAndEditDataBase: RepositeryCreatAndEditeDataBase
+    private val repositoryCreatAndEditDataBase: RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
@@ -78,6 +78,25 @@ class HeadOfViewModels(
             handleError("Failed to load data from Firebase", e)
         }
     }
+    fun startProgress() {
+        _uploadProgress.value = 0f
+    }
+
+    fun updateProgress(progress: Float) {
+        _uploadProgress.value = progress.coerceIn(0f, 100f)
+    }
+
+    fun completeProgress() {
+        _uploadProgress.value = 100f
+    }
+
+    fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
+        _currentEditedArticle.value = article
+    }
+/*2->Section Suppliers Commendes Manager -------------------*/
+
+
+/*1->Section Creat + Handel IMGs Articles -------------------*/
 
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
@@ -223,21 +242,7 @@ class HeadOfViewModels(
         }
     }
 
-    fun startProgress() {
-        _uploadProgress.value = 0f
-    }
 
-    fun updateProgress(progress: Float) {
-        _uploadProgress.value = progress.coerceIn(0f, 100f)
-    }
-
-    fun completeProgress() {
-        _uploadProgress.value = 100f
-    }
-
-    fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
-        _currentEditedArticle.value = article
-    }
 
     fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
         val updatedArticle = repositoryCreatAndEditDataBase.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
@@ -426,7 +431,7 @@ class HeadOfViewModels(
         val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
         // Delete the image from Firebase Storage
-        val imageRef = storageImgsRef.child("${articleId}_${colorIndex}")
+        val imageRef = storageImgsRef.child("${articleId}_${colorIndex}"/*TODO fait que ca delete au format ("jpg"ou  "webp")*/)
         imageRef.delete().addOnSuccessListener {
             // Image deleted successfully from Firebase Storage
         }.addOnFailureListener { exception ->
@@ -501,12 +506,12 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
 
 class HeadOfViewModelFactory(
     private val context: Context,
-    private val repositeryCreatAndEditeDataBase: RepositeryCreatAndEditeDataBase
+    private val repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase: RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(context, repositeryCreatAndEditeDataBase) as T
+            return HeadOfViewModels(context, repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

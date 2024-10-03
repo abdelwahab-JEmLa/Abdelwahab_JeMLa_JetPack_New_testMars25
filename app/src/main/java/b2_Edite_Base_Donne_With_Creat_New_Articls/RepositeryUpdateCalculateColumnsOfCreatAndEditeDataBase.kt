@@ -1,6 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-class RepositeryCreatAndEditeDataBase {
+class RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase {
     fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
         currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
 
@@ -112,5 +112,4 @@ class RepositeryCreatAndEditeDataBase {
             Boolean::class.java -> field.setBoolean(this, value.toBoolean())
         }
     }
-
 }

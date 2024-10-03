@@ -70,7 +70,7 @@ import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModelFactory
 import b2_Edite_Base_Donne_With_Creat_New_Articls.HeadOfViewModels
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
-import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryCreatAndEditeDataBase
+import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
@@ -98,13 +98,13 @@ class MainActivity : ComponentActivity() {
     private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
-    private val repositeryCreatAndEditeDataBase by lazy {
-        RepositeryCreatAndEditeDataBase()
+    private val repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase by lazy {
+        RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase()
     }
     private val headOfViewModels: HeadOfViewModels by viewModels {
         HeadOfViewModelFactory(
             context = this@MainActivity,
-            repositeryCreatAndEditeDataBase = repositeryCreatAndEditeDataBase
+            repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase = repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
         )
     }
 
