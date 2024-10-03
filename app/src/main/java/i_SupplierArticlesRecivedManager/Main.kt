@@ -1,12 +1,9 @@
 package i_SupplierArticlesRecivedManager
 
 
-import a_MainAppCompnents.BaseDonneECBTabelle
-import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.HeadOfViewModels
+import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import a_MainAppCompnents.TabelleSuppliersSA
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,14 +18,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import b2_Edite_Base_Donne_With_Creat_New_Articls.DisponibilityOverlayECB
@@ -58,12 +53,14 @@ fun Fragment_SupplierArticlesRecivedManager(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentEditedArticle by viewModel.currentEditedArticle.collectAsState()
-    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
 
     var filterNonDispo by remember { mutableStateOf(false) }
+    var suppliersFlotingButtons by remember { mutableStateOf(false) }
+
     var reloadImageTrigger by remember { mutableStateOf(0) }  // Add this line
 
     val gridState = rememberLazyGridState()
@@ -84,12 +81,12 @@ fun Fragment_SupplierArticlesRecivedManager(
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.vidSupplierSA
                     }
-                    if (articlesSupplier.isNotEmpty() || supplier.vidSupplierSA > 2) {
+                    if (articlesSupplier.isNotEmpty() || supplier.nomSupplierSA != "Finde") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeaderECB(supplier = supplier, viewModel = viewModel)
+                            SupplierHeader(supplier = supplier, viewModel = viewModel)
                         }
-                        items(articlesInCategory) { article ->
-                            ArticleItemECB(
+                        items(articlesSupplier) { article ->
+                            ArticleItem(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
@@ -102,7 +99,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 }
             }
         }
-
+           //TODO Ajoute un autre  Floating Action Buttons  dragable qui s affiche suppliersFlotingButtons et fait qui soit on fun separe
         // Floating Action Buttons
         Box(
             modifier = Modifier
@@ -122,6 +119,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
                 onChangeGridColumns = { gridColumns = it } ,
+                onToggleDisplayeSuppButtons =  {suppliersFlotingButtons!=suppliersFlotingButtons}
             )
         }
 
@@ -162,9 +160,9 @@ fun Fragment_SupplierArticlesRecivedManager(
 }
 
 @Composable
-fun ArticleItemECB(
-    article: BaseDonneECBTabelle,
-    onClickOnImg: (BaseDonneECBTabelle) -> Unit,
+fun ArticleItem(
+    article: TabelleSupplierArticlesRecived,
+    onClickOnImg: (TabelleSupplierArticlesRecived) -> Unit,
     viewModel: HeadOfViewModels,
     reloadTrigger: Int
 ) {
@@ -182,21 +180,20 @@ fun ArticleItemECB(
                 contentAlignment = Alignment.Center
             ) {
 
-                DisplayeImageECB(
+                DisplayeImage(
                     article = article,
                     viewModel = viewModel,
                     index = 0,
                     reloadKey = reloadTrigger
                 )
-                DisponibilityOverlayECB(article.diponibilityState)
             }
-            AutoResizedTextECB(text = article.nomArticleFinale)
+            AutoResizedTextECB(text = article.a_d_nomarticlefinale_c)
         }
     }
 }
 
 @Composable
-fun SupplierHeaderECB(
+fun SupplierHeader(
     supplier: TabelleSuppliersSA,
     viewModel: HeadOfViewModels,
 ) {

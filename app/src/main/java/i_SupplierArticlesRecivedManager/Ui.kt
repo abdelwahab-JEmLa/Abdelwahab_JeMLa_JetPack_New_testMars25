@@ -2,8 +2,8 @@ package i_SupplierArticlesRecivedManager
 
 
 import a_MainAppCompnents.BaseDonneECBTabelle
-import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.HeadOfViewModels
+import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -354,7 +354,7 @@ private fun ColorCard(
                     .aspectRatio(1f)
             ) {
 
-                DisplayeImageECB(article=article,
+                DisplayeImage(article=article,
                     viewModel=viewModel,
                     index=index,
                     reloadKey =relodeTigger
@@ -406,17 +406,17 @@ private fun ColorCard(
 }
 
 @Composable
-fun DisplayeImageECB(
-    article: BaseDonneECBTabelle,
+fun DisplayeImage(
+    article: TabelleSupplierArticlesRecived,
     viewModel: HeadOfViewModels,
     index: Int = 0,
     reloadKey: Any = Unit
 ) {
     val context = LocalContext.current
     val baseImagePath =
-        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_${index + 1}"
     val downloadsImagePath =
-        "${viewModel.dossiesStandartImages}/${article.idArticleECB}_${index + 1}"
+        "${viewModel.dossiesStandartImages}/${article.a_c_idarticle_c}_${index + 1}"
 
     val imageExist = remember( reloadKey) {
         listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
