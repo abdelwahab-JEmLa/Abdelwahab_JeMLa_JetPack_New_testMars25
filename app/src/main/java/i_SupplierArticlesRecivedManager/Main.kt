@@ -1,4 +1,4 @@
-package b2_Edite_Base_Donne_With_Creat_New_Articls
+package i_SupplierArticlesRecivedManager
 
 import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.HeadOfViewModels
@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
-fun MainFragmentEditDatabaseWithCreateNewArticles(
+fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
 ) {

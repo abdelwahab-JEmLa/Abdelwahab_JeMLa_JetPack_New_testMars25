@@ -1,4 +1,4 @@
-package b2_Edite_Base_Donne_With_Creat_New_Articls
+package a_MainAppCompnents
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -39,6 +40,8 @@ class HeadOfViewModels(
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
+    private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("finale")
+
     val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
@@ -69,9 +72,13 @@ class HeadOfViewModels(
                 .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
                 .sortedBy { it.idClassementCategorieInCategoriesTabele }
 
+            val supplierArticlesRecived = refTabelleSupplierArticlesRecived.get().await().children
+                .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
+
             _uiState.update { it.copy(
                 articlesBaseDonneECB = articles,
                 categoriesECB = categories,
+                tabelleSupplierArticlesRecived=supplierArticlesRecived,
                 isLoading = false
             ) }
         } catch (e: Exception) {
@@ -499,6 +506,7 @@ class HeadOfViewModels(
 data class CreatAndEditeInBaseDonnRepositeryModels(
     val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
     val showOnlyWithFilter: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null

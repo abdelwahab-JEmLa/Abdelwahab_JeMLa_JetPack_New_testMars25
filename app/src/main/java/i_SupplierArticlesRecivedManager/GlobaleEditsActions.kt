@@ -1,4 +1,4 @@
-package b2_Edite_Base_Donne_With_Creat_New_Articls
+package i_SupplierArticlesRecivedManager
 
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement

@@ -1,5 +1,8 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
+
 class RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase {
     fun toggleFilter(currentState: CreatAndEditeInBaseDonnRepositeryModels) =
         currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)

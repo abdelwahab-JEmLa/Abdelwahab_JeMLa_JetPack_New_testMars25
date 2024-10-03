@@ -1,5 +1,27 @@
-package b2_Edite_Base_Donne_With_Creat_New_Articls
+package a_MainAppCompnents
 
+data class TabelleSupplierArticlesRecived(
+    val aa_vid: Long = 0,
+    val a_c_idarticle_c: Long,
+    val a_d_nomarticlefinale_c: String,
+    val trouve_c: Boolean,
+    val a_u_prix_1_q1_c: Double,
+    var a_q_prixachat_c: Double,
+    val a_l_nmbunite_c: Int,
+    val a_r_prixdevent_c: Double,
+    val nomclient: String,
+    val datedachate: String,
+    val a_d_nomarticlefinale_c_1: String,
+    val quantityachete_c_1: Int,
+    val a_d_nomarticlefinale_c_2: String,
+    val quantityachete_c_2: Int,
+    val a_d_nomarticlefinale_c_3: String,
+    val quantityachete_c_3: Int,
+    val a_d_nomarticlefinale_c_4: String,
+    val quantityachete_c_4: Int,
+    val totalquantity: Int,
+    val etatdecommendcolum: Int
+)
 
 data class BaseDonneECBTabelle(
     var idArticleECB: Int = 0,
