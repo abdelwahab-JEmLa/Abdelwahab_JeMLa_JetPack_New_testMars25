@@ -81,8 +81,6 @@ fun ArticleDetailWindow(
     }
 }
 
-
-
 @Composable
 fun DisplayColorsCards(
     article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
@@ -127,10 +125,6 @@ private fun ColorCard(
     relodeTigger: Int,
 
     ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-
-
 
     Card(
         modifier = Modifier
