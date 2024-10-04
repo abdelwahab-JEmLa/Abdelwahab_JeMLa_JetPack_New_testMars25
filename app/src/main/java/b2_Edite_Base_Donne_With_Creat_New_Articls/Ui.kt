@@ -72,9 +72,9 @@ import java.io.File
 enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
     TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
     PrixAchats(listOf("monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>")),
-    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),     //TODO fait que si itsNewArticle ne pas l affiche
-    Benfices(listOf("benificeClient" to "b.c")),     //TODO fait que si itsNewArticle ne pas l affiche
-    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))      //TODO fait que si itsNewArticle ne pas l affiche
+    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),
+    Benfices(listOf("benificeClient" to "b.c")),
+    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
 }
 
 @Composable
@@ -82,11 +82,13 @@ fun ArticleDetailWindow(
     article: BaseDonneECBTabelle,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
-    modifier: Modifier, onReloadTrigger: () -> Unit, relodeTigger: Int
+    modifier: Modifier,
+    onReloadTrigger: () -> Unit,
+    relodeTigger: Int
 ) {
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
-    var itsNewArticle by remember { mutableStateOf(false) }     //   TODO fait que  si article.monPrixAchat ==0.0 de metre true
+    val itsNewArticle by remember { mutableStateOf(article.monPrixAchat == 0.0) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -102,7 +104,7 @@ fun ArticleDetailWindow(
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
 
-                    DisplayColorsCards(article,viewModel, onDismiss= onDismiss,
+                    DisplayColorsCards(article, viewModel, onDismiss = onDismiss,
                         onReloadTrigger = onReloadTrigger,
                         relodeTigger = relodeTigger
                     )
@@ -129,8 +131,8 @@ fun ArticleDetailWindow(
                         Row(modifier = modifier.fillMaxWidth()) {
                             fieldsGroup.fields.forEach { (column, abbr) ->
                                 when (fieldsGroup) {
-                                    FieldsDisplayer.BenficesEntre -> {
-                                        if (article.clienPrixVentUnite > 0) {
+                                    FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
+                                        if (!itsNewArticle) {
                                             InfoBoxWhithVoiceInpute(
                                                 columnToChange = column,
                                                 abbreviation = abbr,
@@ -164,7 +166,7 @@ fun ArticleDetailWindow(
                     ArticleToggleButton(article, viewModel, modifier)
 
                     // Article name
-                    AutoResizedTextECB(       //TODO fait que si itsNewArticle ne pas l affiche
+                    AutoResizedTextECB(
                         text = article.nomArticleFinale.capitalize(Locale.current),
                         fontSize = 25.sp,
                         color = MaterialTheme.colorScheme.error,
@@ -184,6 +186,7 @@ fun ArticleDetailWindow(
         }
     }
 }
+
 
 @Composable
 fun InfoBoxWhithVoiceInpute(
@@ -219,6 +222,60 @@ fun InfoBoxWhithVoiceInpute(
         )
     }
 }
+@Composable
+fun OutlineTextECB(
+    columnToChange: String,
+    abbreviation: String,
+    currentChangingField: String,
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier = Modifier,
+    onValueChanged: (String) -> Unit
+) {
+
+    var textFieldValue by remember { mutableStateOf(
+        article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
+    val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
+    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    val roundedValue = try {
+        labelValue.toDouble()
+            .let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
+    } catch (e: NumberFormatException) {
+        labelValue
+    }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    OutlinedTextField(
+        value = textValue,
+        onValueChange = { newValue ->
+            textFieldValue = newValue.replace(',', '.')
+            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
+            onValueChanged(columnToChange)
+        },
+        label = {
+            AutoResizedText(
+                text = "$abbreviation$roundedValue",
+                color = Color.Red,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        textStyle = TextStyle(color = Color.Blue, textAlign = TextAlign.Center, fontSize = 14.sp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(65.dp),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                keyboardController?.hide()
+            }
+        )
+    )
+}
+
 @Composable
 fun DisplayField(
     columnToChange: String,
@@ -508,59 +565,6 @@ private fun AddColorCard(onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun OutlineTextECB(
-    columnToChange: String,
-    abbreviation: String,
-    currentChangingField: String,
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels,
-    modifier: Modifier = Modifier,
-    onValueChanged: (String) -> Unit
-) {
-
-    var textFieldValue by remember { mutableStateOf(
-        article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
-    val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
-    val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
-    val roundedValue = try {
-        labelValue.toDouble()
-            .let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
-    } catch (e: NumberFormatException) {
-        labelValue
-    }
-
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    OutlinedTextField(
-        value = textValue,
-        onValueChange = { newValue ->
-            textFieldValue = newValue.replace(',', '.')
-            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
-            onValueChanged(columnToChange)
-        },
-        label = {
-            AutoResizedText(
-                text = "$abbreviation$roundedValue",
-                color = Color.Red,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        textStyle = TextStyle(color = Color.Blue, textAlign = TextAlign.Center, fontSize = 14.sp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(65.dp),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = {
-                keyboardController?.hide()
-            }
-        )
-    )
-}
 
 @Composable
 fun CalculationButtons(

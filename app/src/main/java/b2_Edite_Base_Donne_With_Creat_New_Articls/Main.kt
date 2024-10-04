@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,7 +43,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
-    var reloadTrigger by remember { mutableStateOf(0) }  // Add this line
+    var reloadTrigger by remember { mutableIntStateOf(0) }  // Add this line
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
 
@@ -71,7 +72,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
-                                }  ,
+                                } ,
                                 viewModel,
                                 reloadTrigger
                             )

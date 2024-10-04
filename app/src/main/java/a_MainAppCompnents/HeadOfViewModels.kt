@@ -47,7 +47,7 @@ class HeadOfViewModels(
     private val refTabelleSuppliersSA = FirebaseDatabase.getInstance().getReference("")
 
     val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
-    private val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
+    private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
     var tempImageUri: Uri? = null
 
@@ -64,7 +64,7 @@ class HeadOfViewModels(
 
     private suspend fun initDataFromFirebase() {
         try {
-            _uiState.update { it.copy(isLoading = true) }//TODO fait lence le suive de _uploadProgress
+            _uiState.update { it.copy(isLoading = true) } //TODO fait lence le suive de _uploadProgress
 
             val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
                 snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
