@@ -16,6 +16,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,8 +55,9 @@ class HeadOfViewModels(
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress
     // Constants
-    private  val MAX_WIDTH = 1024
-    private  val MAX_HEIGHT = 1024
+    private val MAX_WIDTH = 1024
+    private val MAX_HEIGHT = 1024
+
     init {
         viewModelScope.launch {
             initDataFromFirebase()
@@ -64,35 +66,54 @@ class HeadOfViewModels(
 
     private suspend fun initDataFromFirebase() {
         try {
-            _uiState.update { it.copy(isLoading = true) } //TODO fait lence le suive de _uploadProgress
+            _uiState.update { it.copy(isLoading = true) }
+            updateProgressWithDelay(0f)  // Start progress
 
+            // Fetch articles
+            updateProgressWithDelay(20f)
             val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
                 snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
                     idArticleECB = snapshot.key?.toIntOrNull() ?: 0
                 }
             }
 
+            // Fetch categories
+            updateProgressWithDelay(40f)
             val categories = refCategorieTabelee.get().await().children
                 .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
                 .sortedBy { it.idClassementCategorieInCategoriesTabele }
 
+            // Fetch supplier articles
+            updateProgressWithDelay(60f)
             val supplierArticlesRecived = refTabelleSupplierArticlesRecived.get().await().children
                 .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
 
+            // Fetch suppliers
+            updateProgressWithDelay(80f)
             val suppliersSA = refTabelleSuppliersSA.get().await().children
                 .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
 
+            // Update UI state
+            updateProgressWithDelay(100f)
             _uiState.update { it.copy(
                 articlesBaseDonneECB = articles,
                 categoriesECB = categories,
-                tabelleSupplierArticlesRecived=supplierArticlesRecived,
-                tabelleSuppliersSA =suppliersSA,
+                tabelleSupplierArticlesRecived = supplierArticlesRecived,
+                tabelleSuppliersSA = suppliersSA,
                 isLoading = false
             ) }
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
+        } finally {
+            _uploadProgress.value = 0f  // Reset progress
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
+    private suspend fun updateProgressWithDelay(progress: Float, delay: Long = 100) {
+        _uploadProgress.value = progress
+        delay(delay)  // Add a small delay to simulate progress
+    }
+
     fun startProgress() {
         _uploadProgress.value = 0f
     }
@@ -108,6 +129,7 @@ class HeadOfViewModels(
     fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
         _currentEditedArticle.value = article
     }
+
 /*2->Section Suppliers Commendes Manager -------------------*/
 
 

@@ -1,5 +1,7 @@
 package a_MainAppCompnents
 
+
+
 data class TabelleSupplierArticlesRecived(
     val aa_vid: Long = 0,
     val a_c_idarticle_c: Long,
@@ -23,10 +25,9 @@ data class TabelleSupplierArticlesRecived(
     val a_d_nomarticlefinale_c_4: String = "",
     val quantityachete_c_4: Int = 0,
     val totalquantity: Int = 0,
-    val etatdecommendcolum: Int ,
+    val etatdecommendcolum: Int,
     var disponibility :String? = null,
-
-    )
+)
 
 data class TabelleSuppliersSA(
     var vidSupplierSA: Long = 0,
@@ -34,10 +35,9 @@ data class TabelleSuppliersSA(
     var bonDuSupplierSA: String = "",
     val couleurSA: String = "#FFFFFF", // Default color
     var currentCreditBalanceSA: Double = 0.0, // New field for current credit balance
-    var isLongTermCreditSA : Boolean = false     ,
-    var ignoreItProdectsSA : Boolean = false     ,
-
-    ) {
+    var isLongTermCreditSA : Boolean = false,
+    var ignoreItProdectsSA : Boolean = false,
+) {
     constructor() : this(0)
 }
 
