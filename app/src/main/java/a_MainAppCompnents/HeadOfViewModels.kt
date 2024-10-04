@@ -16,6 +16,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,8 +45,8 @@ class HeadOfViewModels(
 
     private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
     private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
-    private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("")
-    private val refTabelleSuppliersSA = FirebaseDatabase.getInstance().getReference("")
+    private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("telegram")
+    private val refTabelleSuppliersSA = FirebaseDatabase.getInstance().getReference("F_Suppliers")
 
     val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
@@ -85,8 +86,7 @@ class HeadOfViewModels(
 
             // Fetch supplier articles
             updateProgressWithDelay(60f)
-            val supplierArticlesRecived = refTabelleSupplierArticlesRecived.get().await().children
-                .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
+            val supplierArticlesRecived = viewModelScope.async { fetchSupplierArticles() }.await()
 
             // Fetch suppliers
             updateProgressWithDelay(80f)
@@ -109,6 +109,22 @@ class HeadOfViewModels(
             _uiState.update { it.copy(isLoading = false) }
         }
     }
+
+    private suspend fun fetchSupplierArticles(): List<TabelleSupplierArticlesRecived> =
+        refTabelleSupplierArticlesRecived.get().await().children.mapNotNull { snapshot ->
+            try {
+                val map = snapshot.value as? Map<String, Any?>
+                if (map != null) {
+                    TabelleSupplierArticlesRecived.fromMap(map)
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("HeadOfViewModels", "Error parsing TabelleSupplierArticlesRecived", e)
+                null
+            }
+        }
+
     private suspend fun updateProgressWithDelay(progress: Float, delay: Long = 100) {
         _uploadProgress.value = progress
         delay(delay)  // Add a small delay to simulate progress

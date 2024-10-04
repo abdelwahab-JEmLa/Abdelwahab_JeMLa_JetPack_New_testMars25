@@ -3,32 +3,65 @@ package a_MainAppCompnents
 
 
 data class TabelleSupplierArticlesRecived(
-    val aa_vid: Long = 0,
-    val a_c_idarticle_c: Long,
-    val a_d_nomarticlefinale_c: String,
-    var idSupplierTSA : Int = 0,
-    var nomSupplierTSA : String? = null,
-    var nmbrCat: Int = 0,
-    val trouve_c: Boolean,
-    val a_u_prix_1_q1_c: Double,
-    var a_q_prixachat_c: Double,
-    val a_l_nmbunite_c: Int = 0,
-    val a_r_prixdevent_c: Double,
-    val nomclient: String,
-    val datedachate: String,
+    val aa_vid: String = "",
+    val a_c_idarticle_c: String = "",
+    val a_d_nomarticlefinale_c: String = "",
+    var idSupplierTSA: String = "",
+    var nomSupplierTSA: String = "",
+    var nmbrCat: String = "",
+    val trouve_c: String = "",
+    val a_u_prix_1_q1_c: String = "",
+    var a_q_prixachat_c: String = "",
+    val a_l_nmbunite_c: String = "",
+    val a_r_prixdevent_c: String = "",
+    val nomclient: String = "",
+    val datedachate: String = "",
     val a_d_nomarticlefinale_c_1: String = "",
-    val quantityachete_c_1: Int = 0,
+    val quantityachete_c_1: String = "",
     val a_d_nomarticlefinale_c_2: String = "",
-    val quantityachete_c_2: Int = 0,
+    val quantityachete_c_2: String = "",
     val a_d_nomarticlefinale_c_3: String = "",
-    val quantityachete_c_3: Int = 0,
+    val quantityachete_c_3: String = "",
     val a_d_nomarticlefinale_c_4: String = "",
-    val quantityachete_c_4: Int = 0,
-    val totalquantity: Int = 0,
-    val etatdecommendcolum: Int,
-    var disponibility :String? = null,
-)
+    val quantityachete_c_4: String = "",
+    val totalquantity: String = "",
+    val etatdecommendcolum: String = "",
+    var disponibility: String = ""
+) {
+    constructor() : this("")
 
+    companion object {
+        fun fromMap(map: Map<String, Any?>): TabelleSupplierArticlesRecived {
+            return TabelleSupplierArticlesRecived(
+                aa_vid = (map["a00"] as? String) ?: "",
+                a_c_idarticle_c = (map["a01"] as? String) ?: "",
+                a_d_nomarticlefinale_c = (map["a02"] as? String) ?: "",
+                idSupplierTSA = (map["a03"] as? String) ?: "",
+                nomSupplierTSA = (map["a04"] as? String) ?: "",
+                nmbrCat = (map["a05"] as? String) ?: "",
+                trouve_c = (map["a06"] as? String) ?: "",
+                a_u_prix_1_q1_c = (map["a07"] as? String) ?: "",
+                a_q_prixachat_c = (map["a08"] as? String) ?: "",
+                a_l_nmbunite_c = (map["a09"] as? String) ?: "",
+                a_r_prixdevent_c = (map["a10"] as? String) ?: "",
+                nomclient = (map["a11"] as? String) ?: "",
+                datedachate = (map["a12"] as? String) ?: "",
+                a_d_nomarticlefinale_c_1 = (map["a13"] as? String) ?: "",
+                quantityachete_c_1 = (map["a14"] as? String) ?: "",
+                a_d_nomarticlefinale_c_2 = (map["a15"] as? String) ?: "",
+                quantityachete_c_2 = (map["a16"] as? String) ?: "",
+                a_d_nomarticlefinale_c_3 = (map["a17"] as? String) ?: "",
+                quantityachete_c_3 = (map["a18"] as? String) ?: "",
+                a_d_nomarticlefinale_c_4 = (map["a19"] as? String) ?: "",
+                quantityachete_c_4 = (map["a20"] as? String) ?: "",
+                totalquantity = (map["a21"] as? String) ?: "",
+                etatdecommendcolum = (map["a22"] as? String) ?: "",
+                disponibility = (map["a23"] as? String) ?: ""
+            )
+        }
+    }
+}
+       //telegram
 data class TabelleSuppliersSA(
     var vidSupplierSA: Long = 0,
     var nomSupplierSA: String = "",
