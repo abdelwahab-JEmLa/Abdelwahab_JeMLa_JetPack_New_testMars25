@@ -42,6 +42,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,7 +89,12 @@ fun ArticleDetailWindow(
 ) {
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
-    val itsNewArticle by remember { mutableStateOf(article.monPrixAchat == 0.0) }
+
+    // Use derivedStateOf to recalculate itsNewArticle whenever article changes
+    val itsNewArticle by remember(article) { derivedStateOf { article.monPrixAchat == 0.0 } }
+
+    // Local reloadTrigger to force recomposition
+    var localReloadTrigger by remember { mutableStateOf(0) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -102,11 +108,13 @@ fun ArticleDetailWindow(
                 modifier = modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(modifier = modifier.fillMaxWidth())  {
-
-                    DisplayColorsCards(article, viewModel, onDismiss = onDismiss,
-                        onReloadTrigger = onReloadTrigger,
-                        relodeTigger = relodeTigger
+                Column(modifier = modifier.fillMaxWidth()) {
+                    DisplayColorsCards(
+                        article = article,
+                        viewModel = viewModel,
+                        onDismiss = onDismiss,
+                        onReloadTrigger = { localReloadTrigger++ },
+                        relodeTigger = localReloadTrigger
                     )
 
                     // TOP_ROW fields
@@ -190,6 +198,7 @@ fun ArticleDetailWindow(
                             onClick = {
                                 val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
                                 viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
+                                localReloadTrigger++
                                 onReloadTrigger()
                             }
                         ) {
@@ -199,6 +208,7 @@ fun ArticleDetailWindow(
                             onClick = {
                                 val nextId = viewModel.getNextArticleId(article.idArticleECB)
                                 viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
+                                localReloadTrigger++
                                 onReloadTrigger()
                             }
                         ) {
@@ -210,7 +220,6 @@ fun ArticleDetailWindow(
         }
     }
 }
-
 
 @Composable
 fun InfoBoxWhithVoiceInpute(
@@ -536,26 +545,30 @@ fun DisplayeImageECB(
     reloadKey: Any = Unit
 ) {
     val context = LocalContext.current
-    val baseImagePath =
-        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
-    val downloadsImagePath =
-        "${viewModel.dossiesStandartImages}/${article.idArticleECB}_${index + 1}"
+    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
+    val downloadsImagePath = "${viewModel.dossiesStandartImages}/${article.idArticleECB}_${index + 1}"
 
-    val imageExist = remember( reloadKey) {
-        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-            listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
-                File("$path.$extension").exists()
-            }?.let { "$it.$extension" }
-        }
+    val imageExist by remember(article.idArticleECB, reloadKey) {
+        mutableStateOf(
+            listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+                listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
+                    File("$path.$extension").exists()
+                }?.let { "$it.$extension" }
+            }
+        )
     }
 
     val imageSource = imageExist ?: R.drawable.blanc
 
+    // Use a unique key for the ImageRequest
+    val requestKey = "${article.idArticleECB}_${index}_$reloadKey"
+
     val painter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
+        ImageRequest.Builder(context)
             .data(imageSource)
             .size(Size(1000, 1000))
             .crossfade(true)
+            .setParameter("key", requestKey, memoryCacheKey = requestKey)
             .build()
     )
 
@@ -566,6 +579,7 @@ fun DisplayeImageECB(
         contentScale = ContentScale.Fit
     )
 }
+
 @Composable
 private fun AddColorCard(onClick: () -> Unit) {
     Card(
