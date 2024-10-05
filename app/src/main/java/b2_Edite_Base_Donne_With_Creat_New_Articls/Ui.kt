@@ -225,6 +225,27 @@ fun ArticleDetailWindow(
         }
     }
 }
+@Composable
+fun ArticleToggleButton(
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = { viewModel.toggleAffichageUniteState(article) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (article.affichageUniteState)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.error
+        ),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = if (article.affichageUniteState) "Cacher les Unités" else "Afficher les Unités"
+        )
+    }
+}
 
 @Composable
 fun InfoBoxWhithVoiceInpute(
@@ -615,19 +636,4 @@ private fun AddColorCard(onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun ArticleToggleButton(
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels,
-    modifier: Modifier
-) {
-    Button(
-        onClick = { viewModel },
-        colors = ButtonDefaults.buttonColors(containerColor = if (article.affichageUniteState) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error),
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Text(text = if (article.affichageUniteState) "Cacher les Unités" else "Afficher les Unités")
-    }
-}
 

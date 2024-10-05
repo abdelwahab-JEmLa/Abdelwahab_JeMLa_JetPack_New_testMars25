@@ -231,7 +231,31 @@ class HeadOfViewModels(
             }
         }
     }
+    fun toggleAffichageUniteState(article: BaseDonneECBTabelle) {
+        val updatedArticle = article.copy(affichageUniteState = !article.affichageUniteState)
 
+        _uiState.update { state ->
+            val updatedArticles = state.articlesBaseDonneECB.map {
+                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+            }
+            state.copy(articlesBaseDonneECB = updatedArticles)
+        }
+
+        viewModelScope.launch {
+            try {
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                articleRef.child("affichageUniteState").setValue(updatedArticle.affichageUniteState)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Article affichageUniteState updated successfully in Firebase")
+                    }
+                    .addOnFailureListener { e ->
+                        handleError("Failed to update article affichageUniteState in Firebase", e)
+                    }
+            } catch (e: Exception) {
+                handleError("Failed to update article affichageUniteState in Firebase", e)
+            }
+        }
+    }
     private fun updateLocalAndRemoteArticle(updatedArticle: BaseDonneECBTabelle) {
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
