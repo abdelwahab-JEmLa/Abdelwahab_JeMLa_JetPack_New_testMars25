@@ -28,10 +28,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -110,6 +110,10 @@ fun ArticleDetailWindow(
 
     val itsNewArticle by remember(article) { derivedStateOf { article.monPrixAchat == 0.0 } }
     var localReloadTrigger by remember { mutableStateOf(0) }
+
+    // Check if current article is the first or last
+    val isFirstArticle = viewModel.isFirstArticle(article.idArticleECB)
+    val isLastArticle = viewModel.isLastArticle(article.idArticleECB)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -209,42 +213,53 @@ fun ArticleDetailWindow(
                         onCheckedChange = { displayeInOutlines = it }
                     )
                 }
-
                 // Floating "Previous" button on the left
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
+                        .align(Alignment.CenterStart)
                         .padding(start = 8.dp)
                 ) {
                     FloatingActionButton(
                         onClick = {
-                            val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
-                            viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
-                            localReloadTrigger++
-                            currentChangingField=""
-                            onReloadTrigger()
+                            if (!isFirstArticle) {
+                                val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
+                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
+                                localReloadTrigger++
+                                currentChangingField = ""
+                                onReloadTrigger()
+                            }
                         }
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Previous",
+                            tint = if (isFirstArticle) Color.Gray else Color.White
+                        )
                     }
                 }
 
                 // Floating "Next" button on the right
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
+                        .align(Alignment.CenterEnd)
                         .padding(end = 8.dp)
                 ) {
                     FloatingActionButton(
                         onClick = {
-                            val nextId = viewModel.getNextArticleId(article.idArticleECB)
-                            viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
-                            localReloadTrigger++
-                            currentChangingField=""
-                            onReloadTrigger()
+                            if (!isLastArticle) {
+                                val nextId = viewModel.getNextArticleId(article.idArticleECB)
+                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
+                                localReloadTrigger++
+                                currentChangingField = ""
+                                onReloadTrigger()
+                            }
                         }
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = "Next",
+                            tint = if (isLastArticle) Color.Gray else Color.White
+                        )
                     }
                 }
             }

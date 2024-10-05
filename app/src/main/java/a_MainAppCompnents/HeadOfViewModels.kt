@@ -240,6 +240,7 @@ class HeadOfViewModels(
             }
             state.copy(articlesBaseDonneECB = updatedArticles)
         }
+        updateCurrentEditedArticle(updatedArticle)
 
         viewModelScope.launch {
             try {
@@ -256,7 +257,7 @@ class HeadOfViewModels(
             }
         }
     }
-    private fun updateLocalAndRemoteArticle(updatedArticle: BaseDonneECBTabelle) {
+    private fun updateLocalAndFireBaseArticle(updatedArticle: BaseDonneECBTabelle) {
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
                 if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
@@ -289,7 +290,13 @@ class HeadOfViewModels(
             }
         }
     }
+    fun isFirstArticle(id: Int): Boolean {
+        return _uiState.value.articlesBaseDonneECB.firstOrNull()?.idArticleECB == id
+    }
 
+    fun isLastArticle(id: Int): Boolean {
+        return _uiState.value.articlesBaseDonneECB.lastOrNull()?.idArticleECB == id
+    }
     fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
         _currentEditedArticle.value = article
     }
@@ -561,7 +568,7 @@ class HeadOfViewModels(
                 copyImage(uri, fileName)
 
                 val updatedArticle = updateArticleWithNewColor(article, nextColorField)
-                updateLocalAndRemoteArticle(updatedArticle)
+                updateLocalAndFireBaseArticle(updatedArticle)
             } catch (e: Exception) {
                 handleError("Failed to add color to article", e)
             }
@@ -628,9 +635,9 @@ class HeadOfViewModels(
         viewModelScope.launch {
             when (colorIndex) {
                 1 -> deleteArticle(article)
-                2 -> updateLocalAndRemoteArticle(article.copy(couleur2 = ""))
-                3 -> updateLocalAndRemoteArticle(article.copy(couleur3 = ""))
-                4 -> updateLocalAndRemoteArticle(article.copy(couleur4 = ""))
+                2 -> updateLocalAndFireBaseArticle(article.copy(couleur2 = ""))
+                3 -> updateLocalAndFireBaseArticle(article.copy(couleur3 = ""))
+                4 -> updateLocalAndFireBaseArticle(article.copy(couleur4 = ""))
             }
             deleteColorImage(article.idArticleECB, colorIndex)
         }
@@ -689,7 +696,7 @@ class HeadOfViewModels(
                     4 -> article.copy(couleur4 = "Couleur_4")
                     else -> article
                 }
-                updateLocalAndRemoteArticle(updatedArticle)
+                updateLocalAndFireBaseArticle(updatedArticle)
             } catch (e: Exception) {
                 handleError("Failed to process new image", e)
             }
