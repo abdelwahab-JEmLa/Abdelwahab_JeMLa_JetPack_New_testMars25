@@ -12,7 +12,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.Dispatchers
@@ -312,8 +316,6 @@ class HeadOfViewModels(
         }
     }
 
-
-
     fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
         val updatedArticle = repositoryCreatAndEditDataBase.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
         updateLocalAndRemoteArticle(updatedArticle)
@@ -331,14 +333,27 @@ class HeadOfViewModels(
 
         viewModelScope.launch {
             try {
-                refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle).await()
-                Log.d(TAG, "Article updated successfully in Firebase")
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                articleRef.runTransaction(object : Transaction.Handler {
+                    override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                        mutableData.value = updatedArticle
+                        return Transaction.success(mutableData)
+                    }
+
+                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                        if (error != null) {
+                            handleError("Failed to update article in Firebase", error.toException())
+                        } else {
+                            Log.d(TAG, "Article updated successfully in Firebase")
+                        }
+                    }
+                })
             } catch (e: Exception) {
                 handleError("Failed to update article in Firebase", e)
+                // Implement retry logic here if needed
             }
         }
     }
-
     fun toggleFilter() {
         _uiState.update { repositoryCreatAndEditDataBase.toggleFilter(it) }
     }

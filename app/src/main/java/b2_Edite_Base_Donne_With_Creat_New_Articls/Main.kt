@@ -110,11 +110,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             )
         }
 
-
-        // Use the current edited article if it matches the given article, otherwise use the original article
-        val displayedArticle = currentEditedArticle?.takeIf { it.idArticleECB == dialogeDisplayeDetailleChanger?.idArticleECB }
-            ?: dialogeDisplayeDetailleChanger
-
         dialogeDisplayeDetailleChanger?.let { article ->
             ArticleDetailWindow(
                 article = article,

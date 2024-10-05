@@ -16,6 +16,7 @@ class RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase {
         return article.copy().apply {
             calculateWithoutCondition(columnToChange, textFieldValue, newValue)
             calculateWithCondition(columnToChange, newValue)
+            validateCalculations()
         }
     }
 
@@ -113,6 +114,18 @@ class RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase {
             Double::class.java -> field.setDouble(this, value.toDoubleOrNull() ?: 0.0)
             String::class.java -> field.set(this, value)
             Boolean::class.java -> field.setBoolean(this, value.toBoolean())
+        }
+    }
+
+    private fun BaseDonneECBTabelle.validateCalculations() {
+        if (nmbrUnite == 0) {
+            monPrixAchatUniter = 0.0
+            monPrixVentUniter = 0.0
+            monBeneficeUniter = 0.0
+        } else {
+            monPrixAchatUniter = monPrixAchat / nmbrUnite
+            monPrixVentUniter = monPrixVent / nmbrUnite
+            monBeneficeUniter = monBenfice / nmbrUnite
         }
     }
 }

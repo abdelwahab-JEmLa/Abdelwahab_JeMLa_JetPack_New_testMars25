@@ -70,13 +70,28 @@ import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
-enum class FieldsDisplayer(val fields: List<Pair<String, String>>) {
-    TOP_ROW(listOf("clienPrixVentUnite" to "c.pU", "nmbrCaron" to "n.c", "nmbrUnite" to "n.u")),
-    PrixAchats(listOf("monPrixAchatUniter" to "U/", "monPrixAchat" to "m.pA>")),
-    BenficesEntre(listOf("benificeTotaleEn2" to "b.E2", "benficeTotaleEntreMoiEtClien" to "b.EN")),
-    Benfices(listOf("benificeClient" to "b.c")),
-    MonPrixVent(listOf("monPrixVentUniter" to "u/", "monPrixVent" to "M.P.V"))
+enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
+    TOP_ROW(listOf(
+        Triple("clienPrixVentUnite", "c.pU", true),
+        Triple("nmbrCaron", "n.c", true),
+        Triple("nmbrUnite", "n.u", true),
+        Triple("nomArticleFinale", "Name", true)
+    )),
+    PrixAchats(listOf(
+        Triple("monPrixAchatUniter", "U/", true),
+        Triple("monPrixAchat", "m.pA>", true)
+    )),
+    BenficesEntre(listOf(
+        Triple("benificeTotaleEn2", "b.E2", false),
+        Triple("benficeTotaleEntreMoiEtClien", "b.EN", false)
+    )),
+    Benfices(listOf(Triple("benificeClient", "b.c", false))),
+    MonPrixVent(listOf(
+        Triple("monPrixVentUniter", "u/", false),
+        Triple("monPrixVent", "M.P.V", false)
+    ))
 }
+
 
 @Composable
 fun ArticleDetailWindow(
@@ -173,7 +188,7 @@ fun ArticleDetailWindow(
                     ArticleToggleButton(article, viewModel, modifier)
 
                     // Article name
-                    AutoResizedTextECB(
+                    AutoResizedTextECB(      //TODO charge le dons  FieldsDisplayer et fait que le outline et l update l accepte
                         text = article.nomArticleFinale.capitalize(Locale.current),
                         fontSize = 25.sp,
                         color = MaterialTheme.colorScheme.error,
@@ -255,6 +270,7 @@ fun InfoBoxWhithVoiceInpute(
         )
     }
 }
+
 @Composable
 fun OutlineTextECB(
     columnToChange: String,
@@ -265,16 +281,19 @@ fun OutlineTextECB(
     modifier: Modifier = Modifier,
     onValueChanged: (String) -> Unit
 ) {
-
     var textFieldValue by remember { mutableStateOf(
-        article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: "") }
+        article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+    ) }
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
     val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
-    val roundedValue = try {
-        labelValue.toDouble()
-            .let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
-    } catch (e: NumberFormatException) {
-        labelValue
+    val roundedValue = when {
+        columnToChange == "nomArticleFinale" -> labelValue
+        else -> try {
+            labelValue.toDouble()
+                .let { if (it % 1 == 0.0) it.toInt().toString() else String.format("%.1f", it) }
+        } catch (e: NumberFormatException) {
+            labelValue
+        }
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -298,7 +317,10 @@ fun OutlineTextECB(
             .fillMaxWidth()
             .height(65.dp),
         keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
+            keyboardType = when (columnToChange) {
+                "nomArticleFinale" -> KeyboardType.Text
+                else -> KeyboardType.Number
+            },
             imeAction = ImeAction.Done
         ),
         keyboardActions = KeyboardActions(
@@ -308,7 +330,6 @@ fun OutlineTextECB(
         )
     )
 }
-
 @Composable
 fun DisplayField(
     columnToChange: String,
