@@ -93,7 +93,7 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
         Triple("monPrixVentUniter", "u/", false),
         Triple("monPrixVent", "M.P.V", false)
     )) ,
-    NomArticle(listOf(Triple("nomArticleFinale", "Name", true))),
+    NomArticle(listOf(Triple("nomArticleFinale", "", true))),
 }
 
 @Composable
@@ -199,11 +199,10 @@ fun ArticleDetailWindow(
                 // Floating switch at the top-right
                 Row(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp),
+                        .align(Alignment.TopEnd),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Display in Outlines", style = MaterialTheme.typography.bodySmall)
+                    Text("", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.width(8.dp))
                     Switch(
                         checked = displayeInOutlines,
@@ -214,7 +213,7 @@ fun ArticleDetailWindow(
                 // Floating "Previous" button on the left
                 Box(
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
+                        .align(Alignment.BottomStart)
                         .padding(start = 8.dp)
                 ) {
                     FloatingActionButton(
@@ -233,7 +232,7 @@ fun ArticleDetailWindow(
                 // Floating "Next" button on the right
                 Box(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
+                        .align(Alignment.BottomEnd)
                         .padding(end = 8.dp)
                 ) {
                     FloatingActionButton(
