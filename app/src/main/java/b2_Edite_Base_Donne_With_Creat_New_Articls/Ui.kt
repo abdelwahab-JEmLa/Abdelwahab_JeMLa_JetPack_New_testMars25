@@ -216,7 +216,7 @@ fun ArticleDetailWindow(
                 // Floating "Previous" button on the left
                 Box(
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
+                        .align(Alignment.BottomStart)
                         .padding(start = 8.dp)
                 ) {
                     FloatingActionButton(
@@ -241,7 +241,7 @@ fun ArticleDetailWindow(
                 // Floating "Next" button on the right
                 Box(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
+                        .align(Alignment.BottomEnd)
                         .padding(end = 8.dp)
                 ) {
                     FloatingActionButton(
