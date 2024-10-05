@@ -11,7 +11,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -35,7 +34,6 @@ import java.io.IOException
 
 class HeadOfViewModels(
     private val context: Context,
-    private val repositoryCreatAndEditDataBase: RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
@@ -111,6 +109,160 @@ class HeadOfViewModels(
         } finally {
             _uploadProgress.value = 0f  // Reset progress
             _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
+        val updatedArticle = article.copy().apply {
+            // Update the specific field
+            when (columnToChange) {
+                "nomArticleFinale" -> nomArticleFinale = textFieldValue
+                "nmbrUnite" -> nmbrUnite = textFieldValue.toIntOrNull() ?: nmbrUnite
+                "clienPrixVentUnite" -> clienPrixVentUnite = textFieldValue.toDoubleOrNull() ?: clienPrixVentUnite
+                "monPrixVent" -> monPrixVent = textFieldValue.toDoubleOrNull() ?: monPrixVent
+                "monBenfice" -> monBenfice = textFieldValue.toDoubleOrNull() ?: monBenfice
+                "benificeClient" -> benificeClient = textFieldValue.toDoubleOrNull() ?: benificeClient
+                "monPrixAchat" -> monPrixAchat = textFieldValue.toDoubleOrNull() ?: monPrixAchat
+                "monPrixAchatUniter" -> monPrixAchatUniter = textFieldValue.toDoubleOrNull() ?: monPrixAchatUniter
+                "monPrixVentUniter" -> monPrixVentUniter = textFieldValue.toDoubleOrNull() ?: monPrixVentUniter
+                "monBeneficeUniter" -> monBeneficeUniter = textFieldValue.toDoubleOrNull() ?: monBeneficeUniter
+                else -> {
+                    Log.w(TAG, "Unhandled column: $columnToChange")
+                }
+            }
+
+            // Only recalculate if it's not the nomArticleFinale field
+            if (columnToChange != "nomArticleFinale") {
+                // Calculate derived values
+                prixDeVentTotaleChezClient = nmbrUnite * clienPrixVentUnite
+                benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
+                benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
+
+                // Recalculate based on the updated field
+                when (columnToChange) {
+                    "monPrixVent" -> {
+                        monBenfice = monPrixVent - monPrixAchat
+                        monPrixVentUniter = monPrixVent / nmbrUnite
+                        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+                        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+                    }
+                    "monBenfice" -> {
+                        monPrixVent = monBenfice + monPrixAchat
+                        monPrixVentUniter = monPrixVent / nmbrUnite
+                        monBeneficeUniter = monBenfice / nmbrUnite
+                        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+                    }
+                    "benificeClient" -> {
+                        monPrixVent = prixDeVentTotaleChezClient - benificeClient
+                        monBenfice = monPrixVent - monPrixAchat
+                        monPrixVentUniter = monPrixVent / nmbrUnite
+                        monBeneficeUniter = monBenfice / nmbrUnite
+                    }
+                    "monPrixAchat" -> {
+                        monPrixAchatUniter = monPrixAchat / nmbrUnite
+                        monBenfice = monPrixVent - monPrixAchat
+                        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+                        benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
+                        benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
+                    }
+                    "monPrixAchatUniter" -> {
+                        monPrixAchat = monPrixAchatUniter * nmbrUnite
+                        monBenfice = monPrixVent - monPrixAchat
+                        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+                        benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
+                        benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
+                    }
+                    "monPrixVentUniter" -> {
+                        monPrixVent = monPrixVentUniter * nmbrUnite
+                        monBenfice = monPrixVent - monPrixAchat
+                        monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
+                        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+                    }
+                    "monBeneficeUniter" -> {
+                        monBenfice = monBeneficeUniter * nmbrUnite
+                        monPrixVentUniter = monPrixAchatUniter + monBeneficeUniter
+                        monPrixVent = monPrixVentUniter * nmbrUnite
+                        benificeClient = prixDeVentTotaleChezClient - monPrixVent
+                    }
+                }
+
+                // Validate calculations
+                if (nmbrUnite == 0) {
+                    monPrixAchatUniter = 0.0
+                    monPrixVentUniter = 0.0
+                    monBeneficeUniter = 0.0
+                } else {
+                    monPrixAchatUniter = monPrixAchat / nmbrUnite
+                    monPrixVentUniter = monPrixVent / nmbrUnite
+                    monBeneficeUniter = monBenfice / nmbrUnite
+                }
+            }
+        }
+
+        _uiState.update { state ->
+            val updatedArticles = state.articlesBaseDonneECB.map {
+                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+            }
+            state.copy(articlesBaseDonneECB = updatedArticles)
+        }
+
+        updateCurrentEditedArticle(updatedArticle)
+
+        viewModelScope.launch {
+            try {
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                articleRef.runTransaction(object : Transaction.Handler {
+                    override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                        mutableData.value = updatedArticle
+                        return Transaction.success(mutableData)
+                    }
+
+                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                        if (error != null) {
+                            handleError("Failed to update article in Firebase", error.toException())
+                        } else {
+                            Log.d(TAG, "Article updated successfully in Firebase")
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                handleError("Failed to update article in Firebase", e)
+                // Implement retry logic here if needed
+            }
+        }
+    }
+
+    private fun updateLocalAndRemoteArticle(updatedArticle: BaseDonneECBTabelle) {
+        _uiState.update { state ->
+            val updatedArticles = state.articlesBaseDonneECB.map {
+                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+            }
+            state.copy(articlesBaseDonneECB = updatedArticles)
+        }
+
+        updateCurrentEditedArticle(updatedArticle)
+
+        viewModelScope.launch {
+            try {
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                articleRef.runTransaction(object : Transaction.Handler {
+                    override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                        mutableData.value = updatedArticle
+                        return Transaction.success(mutableData)
+                    }
+
+                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                        if (error != null) {
+                            handleError("Failed to update article in Firebase", error.toException())
+                        } else {
+                            Log.d(TAG, "Article updated successfully in Firebase")
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                handleError("Failed to update article in Firebase", e)
+                // Implement retry logic here if needed
+            }
         }
     }
 
@@ -316,46 +468,11 @@ class HeadOfViewModels(
         }
     }
 
-    fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
-        val updatedArticle = repositoryCreatAndEditDataBase.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
-        updateLocalAndRemoteArticle(updatedArticle)
-    }
 
-    private fun updateLocalAndRemoteArticle(updatedArticle: BaseDonneECBTabelle) {
-        _uiState.update { state ->
-            val updatedArticles = state.articlesBaseDonneECB.map {
-                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
-            }
-            state.copy(articlesBaseDonneECB = updatedArticles)
-        }
-
-        updateCurrentEditedArticle(updatedArticle)
-
-        viewModelScope.launch {
-            try {
-                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
-                articleRef.runTransaction(object : Transaction.Handler {
-                    override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                        mutableData.value = updatedArticle
-                        return Transaction.success(mutableData)
-                    }
-
-                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
-                        if (error != null) {
-                            handleError("Failed to update article in Firebase", error.toException())
-                        } else {
-                            Log.d(TAG, "Article updated successfully in Firebase")
-                        }
-                    }
-                })
-            } catch (e: Exception) {
-                handleError("Failed to update article in Firebase", e)
-                // Implement retry logic here if needed
-            }
-        }
-    }
     fun toggleFilter() {
-        _uiState.update { repositoryCreatAndEditDataBase.toggleFilter(it) }
+        _uiState.update { currentState ->
+            currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
+        }
     }
 
     fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB) {
@@ -593,12 +710,11 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
 
 class HeadOfViewModelFactory(
     private val context: Context,
-    private val repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase: RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(context, repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase) as T
+            return HeadOfViewModels(context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

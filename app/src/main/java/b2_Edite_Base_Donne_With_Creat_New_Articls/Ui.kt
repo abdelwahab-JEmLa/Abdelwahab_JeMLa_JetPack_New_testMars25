@@ -54,10 +54,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -187,13 +185,6 @@ fun ArticleDetailWindow(
 
                     ArticleToggleButton(article, viewModel, modifier)
 
-                    // Article name
-                    AutoResizedTextECB(      //TODO charge le dons  FieldsDisplayer et fait que le outline et l update l accepte
-                        text = article.nomArticleFinale.capitalize(Locale.current),
-                        fontSize = 25.sp,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = modifier.fillMaxWidth()
-                    )
                     // Display in Outlines switch
                     Row(
                         modifier = modifier.fillMaxWidth(),
@@ -302,7 +293,8 @@ fun OutlineTextECB(
         value = textValue,
         onValueChange = { newValue ->
             textFieldValue = newValue.replace(',', '.')
-            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
+            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)     //TODO regle updateAndCalculateAuthersField pour que ca peut update         columnToChange == "nomArticleFinale" -> labelValue
+
             onValueChanged(columnToChange)
         },
         label = {

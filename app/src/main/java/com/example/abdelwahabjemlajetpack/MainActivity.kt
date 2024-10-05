@@ -1,6 +1,8 @@
 package com.example.abdelwahabjemlajetpack
 
 import ZA_Learn_WhelPiker.PickerExample
+import a_MainAppCompnents.HeadOfViewModelFactory
+import a_MainAppCompnents.HeadOfViewModels
 import a_RoomDB.AppDatabase
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -67,10 +69,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
-import a_MainAppCompnents.HeadOfViewModelFactory
-import a_MainAppCompnents.HeadOfViewModels
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
-import b2_Edite_Base_Donne_With_Creat_New_Articls.RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
 import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
@@ -98,14 +97,9 @@ class MainActivity : ComponentActivity() {
     private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
-    private val repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase by lazy {
-        RepositeryUpdateCalculateColumnsOfCreatAndEditeDataBase()
-    }
     private val headOfViewModels: HeadOfViewModels by viewModels {
         HeadOfViewModelFactory(
-            context = this@MainActivity,
-            repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase = repositeryUpdateCalculateColumnsOfCreatAndEditeDataBase
-        )
+            context = this@MainActivity,)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
