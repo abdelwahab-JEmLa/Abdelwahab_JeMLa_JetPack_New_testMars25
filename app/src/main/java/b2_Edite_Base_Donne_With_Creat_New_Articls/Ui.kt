@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
@@ -102,10 +103,7 @@ fun ArticleDetailWindow(
     var displayeInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
 
-    // Use derivedStateOf to recalculate itsNewArticle whenever article changes
     val itsNewArticle by remember(article) { derivedStateOf { article.monPrixAchat == 0.0 } }
-
-    // Local reloadTrigger to force recomposition
     var localReloadTrigger by remember { mutableStateOf(0) }
 
     Dialog(
@@ -116,108 +114,119 @@ fun ArticleDetailWindow(
             modifier = modifier.fillMaxSize(),
             shape = MaterialTheme.shapes.large
         ) {
-            Card(
-                modifier = modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(modifier = modifier.fillMaxWidth()) {
-                    DisplayColorsCards(
-                        article = article,
-                        viewModel = viewModel,
-                        onDismiss = onDismiss,
-                        onReloadTrigger = { localReloadTrigger++ },
-                        relodeTigger = localReloadTrigger
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Floating switch
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Display in Outlines", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(8.dp))
+                    Switch(
+                        checked = displayeInOutlines,
+                        onCheckedChange = { displayeInOutlines = it }
                     )
+                }
 
-                    // TOP_ROW fields
-                    Row(modifier = modifier.fillMaxWidth()) {
-                        FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
-                            DisplayField(
-                                columnToChange = column,
-                                abbreviation = abbr,
-                                currentChangingField = currentChangingField,
-                                article = article,
-                                viewModel = viewModel,
-                                displayeInOutlines = displayeInOutlines,
-                                modifier = modifier
-                                    .weight(1f)
-                                    .height(67.dp)
-                            ) { currentChangingField = column }
+                // Main content
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 56.dp), // Add padding to accommodate the floating switch
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        DisplayColorsCards(
+                            article = article,
+                            viewModel = viewModel,
+                            onDismiss = onDismiss,
+                            onReloadTrigger = { localReloadTrigger++ },
+                            relodeTigger = localReloadTrigger
+                        )
+
+                        // TOP_ROW fields
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
+                                DisplayField(
+                                    columnToChange = column,
+                                    abbreviation = abbr,
+                                    currentChangingField = currentChangingField,
+                                    article = article,
+                                    viewModel = viewModel,
+                                    displayeInOutlines = displayeInOutlines,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(67.dp)
+                                ) { currentChangingField = column }
+                            }
                         }
-                    }
 
-                    // Remaining FieldsDisplayer groups
-                    FieldsDisplayer.entries.drop(1).forEach { fieldsGroup ->
-                        Row(modifier = modifier.fillMaxWidth()) {
-                            fieldsGroup.fields.forEach { (column, abbr) ->
-                                when (fieldsGroup) {
-                                    FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
-                                        if (!itsNewArticle) {
-                                            InfoBoxWhithVoiceInpute(
+                        // Remaining FieldsDisplayer groups
+                        FieldsDisplayer.entries.drop(1).forEach { fieldsGroup ->
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                fieldsGroup.fields.forEach { (column, abbr) ->
+                                    when (fieldsGroup) {
+                                        FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
+                                            if (!itsNewArticle) {
+                                                InfoBoxWhithVoiceInpute(
+                                                    columnToChange = column,
+                                                    abbreviation = abbr,
+                                                    article = article,
+                                                    displayeInOutlines = displayeInOutlines,
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(67.dp)
+                                                )
+                                            }
+                                        }
+                                        else -> {
+                                            DisplayField(
                                                 columnToChange = column,
                                                 abbreviation = abbr,
+                                                currentChangingField = currentChangingField,
                                                 article = article,
+                                                viewModel = viewModel,
                                                 displayeInOutlines = displayeInOutlines,
-                                                modifier = modifier
+                                                modifier = Modifier
                                                     .weight(1f)
                                                     .height(67.dp)
-                                            )
+                                            ) { currentChangingField = column }
                                         }
-                                    }
-                                    else -> {
-                                        DisplayField(
-                                            columnToChange = column,
-                                            abbreviation = abbr,
-                                            currentChangingField = currentChangingField,
-                                            article = article,
-                                            viewModel = viewModel,
-                                            displayeInOutlines = displayeInOutlines,
-                                            modifier = modifier
-                                                .weight(1f)
-                                                .height(67.dp)
-                                        ) { currentChangingField = column }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    ArticleToggleButton(article, viewModel, modifier)
+                        ArticleToggleButton(article, viewModel, Modifier.fillMaxWidth())
 
-                    // Display in Outlines switch
-                    Row(
-                        modifier = modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Display in Outlines")
-                        Spacer(modifier.weight(1f))
-                        Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
-                    }
-                    Row(
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Button(
-                            onClick = {
-                                val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
-                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
-                                localReloadTrigger++
-                                onReloadTrigger()
-                            }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Previous")
-                        }
-                        Button(
-                            onClick = {
-                                val nextId = viewModel.getNextArticleId(article.idArticleECB)
-                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
-                                localReloadTrigger++
-                                onReloadTrigger()
+                            Button(
+                                onClick = {
+                                    val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
+                                    viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
+                                    localReloadTrigger++
+                                    onReloadTrigger()
+                                }
+                            ) {
+                                Text("Previous")
                             }
-                        ) {
-                            Text("Next")
+                            Button(
+                                onClick = {
+                                    val nextId = viewModel.getNextArticleId(article.idArticleECB)
+                                    viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
+                                    localReloadTrigger++
+                                    onReloadTrigger()
+                                }
+                            ) {
+                                Text("Next")
+                            }
                         }
                     }
                 }
