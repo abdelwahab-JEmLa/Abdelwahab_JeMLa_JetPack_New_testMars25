@@ -73,7 +73,6 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
         Triple("clienPrixVentUnite", "c.pU", true),
         Triple("nmbrCaron", "n.c", true),
         Triple("nmbrUnite", "n.u", true),
-        Triple("nomArticleFinale", "Name", true)
     )),
     PrixAchats(listOf(
         Triple("monPrixAchatUniter", "U/", true),
@@ -87,9 +86,9 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
     MonPrixVent(listOf(
         Triple("monPrixVentUniter", "u/", false),
         Triple("monPrixVent", "M.P.V", false)
-    ))
+    )) ,
+    NomArticle(listOf(Triple("nomArticleFinale", "Name", true))),
 }
-
 
 @Composable
 fun ArticleDetailWindow(
