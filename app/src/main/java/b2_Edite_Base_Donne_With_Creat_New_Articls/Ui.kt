@@ -23,17 +23,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -115,29 +121,18 @@ fun ArticleDetailWindow(
             shape = MaterialTheme.shapes.large
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Floating switch
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Display in Outlines", style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.width(8.dp))
-                    Switch(
-                        checked = displayeInOutlines,
-                        onCheckedChange = { displayeInOutlines = it }
-                    )
-                }
-
-                // Main content
+                // Main scrollable content
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 56.dp), // Add padding to accommodate the floating switch
+                        .fillMaxSize()
+                        .padding(top = 56.dp, start = 56.dp, end = 56.dp), // Add padding for floating elements
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
                         DisplayColorsCards(
                             article = article,
                             viewModel = viewModel,
@@ -200,34 +195,59 @@ fun ArticleDetailWindow(
                         }
 
                         ArticleToggleButton(article, viewModel, Modifier.fillMaxWidth())
+                    }
+                }
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Button(
-                                onClick = {
-                                    val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
-                                    viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
-                                    localReloadTrigger++
-                                    onReloadTrigger()
-                                }
-                            ) {
-                                Text("Previous")
-                            }
-                            Button(
-                                onClick = {
-                                    val nextId = viewModel.getNextArticleId(article.idArticleECB)
-                                    viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
-                                    localReloadTrigger++
-                                    onReloadTrigger()
-                                }
-                            ) {
-                                Text("Next")
-                            }
+                // Floating switch at the top-right
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Display in Outlines", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(8.dp))
+                    Switch(
+                        checked = displayeInOutlines,
+                        onCheckedChange = { displayeInOutlines = it }
+                    )
+                }
+
+                // Floating "Previous" button on the left
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 8.dp)
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
+                            viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
+                            localReloadTrigger++
+                            currentChangingField=""
+                            onReloadTrigger()
                         }
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
+                    }
+                }
+
+                // Floating "Next" button on the right
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 8.dp)
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            val nextId = viewModel.getNextArticleId(article.idArticleECB)
+                            viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
+                            localReloadTrigger++
+                            currentChangingField=""
+                            onReloadTrigger()
+                        }
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
                     }
                 }
             }
