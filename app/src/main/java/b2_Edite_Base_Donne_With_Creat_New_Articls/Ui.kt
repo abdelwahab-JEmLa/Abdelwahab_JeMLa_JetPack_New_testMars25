@@ -32,7 +32,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -124,8 +123,7 @@ fun ArticleDetailWindow(
                 // Main scrollable content
                 Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 56.dp, start = 56.dp, end = 56.dp), // Add padding for floating elements
+                        .fillMaxSize(), // Add padding for floating elements
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     Column(
@@ -342,7 +340,7 @@ fun OutlineTextECB(
         value = textValue,
         onValueChange = { newValue ->
             textFieldValue = newValue.replace(',', '.')
-            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)     //TODO regle updateAndCalculateAuthersField pour que ca peut update         columnToChange == "nomArticleFinale" -> labelValue
+            viewModel.updateAndCalculateAuthersField(textFieldValue, columnToChange, article)
 
             onValueChanged(columnToChange)
         },
