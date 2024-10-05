@@ -135,8 +135,8 @@ fun ArticleDetailWindow(
                             article = article,
                             viewModel = viewModel,
                             onDismiss = onDismiss,
-                            onReloadTrigger = { localReloadTrigger++ },
-                            relodeTigger = localReloadTrigger
+                            onReloadTrigger = onReloadTrigger,
+                            relodeTigger = relodeTigger
                         )
 
                         // TOP_ROW fields
