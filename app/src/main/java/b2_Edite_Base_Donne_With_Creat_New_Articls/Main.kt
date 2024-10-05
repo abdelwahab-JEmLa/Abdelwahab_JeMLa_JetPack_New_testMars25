@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -43,9 +44,14 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
-    var reloadTrigger by remember { mutableIntStateOf(0) }  // Add this line
+    var reloadTrigger by remember { mutableIntStateOf(0) }
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+
+    // Effect to update dialogeDisplayeDetailleChanger when currentEditedArticle changes
+    LaunchedEffect(currentEditedArticle) {
+        dialogeDisplayeDetailleChanger = currentEditedArticle
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -109,7 +115,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         val displayedArticle = currentEditedArticle?.takeIf { it.idArticleECB == dialogeDisplayeDetailleChanger?.idArticleECB }
             ?: dialogeDisplayeDetailleChanger
 
-        displayedArticle?.let { article ->
+        dialogeDisplayeDetailleChanger?.let { article ->
             ArticleDetailWindow(
                 article = article,
                 onDismiss = {
@@ -118,7 +124,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 
                     // Check if the article is new or if key changes occurred
                     if (article.nomCategorie.contains("New", ignoreCase = true) ||
-                        article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB) {
+                        article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB
+                    ) {
                         // Trigger image reload
                         coroutineScope.launch {
                             for (i in 1..4) {
@@ -134,7 +141,9 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                     }
                 },
                 viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadTrigger += 1}, relodeTigger = reloadTrigger
+                modifier = Modifier.padding(horizontal = 3.dp),
+                onReloadTrigger = { reloadTrigger += 1 },
+                relodeTigger = reloadTrigger
             )
         }
     }

@@ -110,6 +110,26 @@ class HeadOfViewModels(
         }
     }
 
+    fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
+        _currentEditedArticle.value = article
+    }
+
+    fun getArticleById(id: Int): BaseDonneECBTabelle? {
+        return _uiState.value.articlesBaseDonneECB.find { it.idArticleECB == id }
+    }
+
+    fun getPreviousArticleId(currentId: Int): Int {
+        val articles = _uiState.value.articlesBaseDonneECB
+        val currentIndex = articles.indexOfFirst { it.idArticleECB == currentId }
+        return if (currentIndex > 0) articles[currentIndex - 1].idArticleECB else articles.last().idArticleECB
+    }
+
+    fun getNextArticleId(currentId: Int): Int {
+        val articles = _uiState.value.articlesBaseDonneECB
+        val currentIndex = articles.indexOfFirst { it.idArticleECB == currentId }
+        return if (currentIndex < articles.size - 1) articles[currentIndex + 1].idArticleECB else articles.first().idArticleECB
+    }
+
     private suspend fun fetchSupplierArticles(): List<TabelleSupplierArticlesRecived> =
         refTabelleSupplierArticlesRecived.get().await().children.mapNotNull { snapshot ->
             try {
@@ -142,9 +162,6 @@ class HeadOfViewModels(
         _uploadProgress.value = 100f
     }
 
-    fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
-        _currentEditedArticle.value = article
-    }
 
 /*2->Section Suppliers Commendes Manager -------------------*/
 

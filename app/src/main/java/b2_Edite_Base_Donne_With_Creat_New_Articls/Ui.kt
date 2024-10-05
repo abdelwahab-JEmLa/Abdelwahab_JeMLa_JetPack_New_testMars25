@@ -102,7 +102,7 @@ fun ArticleDetailWindow(
                 modifier = modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(modifier = modifier.fillMaxWidth()) {
+                Column(modifier = modifier.fillMaxWidth())  {
 
                     DisplayColorsCards(article, viewModel, onDismiss = onDismiss,
                         onReloadTrigger = onReloadTrigger,
@@ -162,7 +162,6 @@ fun ArticleDetailWindow(
                         }
                     }
 
-                    CalculationButtons(article, viewModel, modifier)
                     ArticleToggleButton(article, viewModel, modifier)
 
                     // Article name
@@ -180,6 +179,31 @@ fun ArticleDetailWindow(
                         Text("Display in Outlines")
                         Spacer(modifier.weight(1f))
                         Switch(checked = displayeInOutlines, onCheckedChange = { displayeInOutlines = it })
+                    }
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Button(
+                            onClick = {
+                                val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
+                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
+                                onReloadTrigger()
+                            }
+                        ) {
+                            Text("Previous")
+                        }
+                        Button(
+                            onClick = {
+                                val nextId = viewModel.getNextArticleId(article.idArticleECB)
+                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
+                                onReloadTrigger()
+                            }
+                        ) {
+                            Text("Next")
+                        }
                     }
                 }
             }
@@ -562,36 +586,6 @@ private fun AddColorCard(onClick: () -> Unit) {
                 )
             }
         }
-    }
-}
-
-
-@Composable
-fun CalculationButtons(
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels,
-    modifier: Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            ,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Button(onClick = {
-            viewModel.updateAndCalculateAuthersField(
-                (article.monPrixAchat / article.nmbrUnite).toString(),
-                "monPrixAchat",
-                article
-            )
-        }) { Text("/") }
-        Button(onClick = {
-            viewModel.updateAndCalculateAuthersField(
-                (article.monPrixAchat * article.nmbrUnite).toString(),
-                "monPrixAchat",
-                article
-            )
-        }) { Text("*") }
     }
 }
 
