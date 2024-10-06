@@ -82,7 +82,17 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                uiState.tabelleSuppliersSA.forEach { supplier ->
+                val filteredSuppliers = if (showOnlyWithFilter) {
+                    uiState.tabelleSuppliersSA.filter { supplier ->
+                        uiState.tabelleSupplierArticlesRecived.any { article ->
+                            article.idSupplierTSA.toLong() == supplier.idSupplierSu && article.itsInFindedAskSupplierSA
+                        }
+                    }
+                } else {
+                    uiState.tabelleSuppliersSA
+                }
+
+                filteredSuppliers.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
@@ -91,7 +101,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
                                 coroutineScope.launch {
-                                    val supplierIndex = uiState.tabelleSuppliersSA.indexOf(supplier)
+                                    val supplierIndex = filteredSuppliers.indexOf(supplier)
                                     if (supplierIndex != -1) {
                                         gridState.animateScrollToItem(supplierIndex)
                                     }
