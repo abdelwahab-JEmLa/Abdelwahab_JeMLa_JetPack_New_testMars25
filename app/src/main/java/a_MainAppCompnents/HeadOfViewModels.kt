@@ -100,13 +100,12 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
-    fun moveArticleNonFindToSupplier(fromSupp: Long, toSupp: Long) {
+    fun moveArticleNonFindToSupplier(
+        articlesToMove: List<TabelleSupplierArticlesRecived>,
+        toSupp: Long
+    ) {
         viewModelScope.launch {
             try {
-                val articlesToMove = _uiState.value.tabelleSupplierArticlesRecived.filter {
-                    it.idSupplierTSA.toLong() == fromSupp && it.itsInFindedAskSupplierSA
-                }
-
                 articlesToMove.forEach { article ->
                     // Update the article in the local state
                     _uiState.update { currentState ->
@@ -129,7 +128,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
-
 
 
 

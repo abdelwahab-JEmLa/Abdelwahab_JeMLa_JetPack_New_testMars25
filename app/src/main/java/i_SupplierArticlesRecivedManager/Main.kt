@@ -54,7 +54,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -76,7 +75,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     val coroutineScope = rememberCoroutineScope()
 
     var supplierHeaderisHandled by remember { mutableStateOf<Long?>(null) }
-    var showOnlyWithFilter by remember { mutableStateOf(false) }
+    var showButtonsWherNotEmpty by remember { mutableStateOf(false) }
 
     var animatingSupplier by remember { mutableStateOf<Long?>(null) }
 
@@ -93,8 +92,7 @@ fun Fragment_SupplierArticlesRecivedManager(
             ) {
                 uiState.tabelleSuppliersSA.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                        it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
-                                (supplierHeaderisHandled == null || it.idSupplierTSA.toLong() == supplierHeaderisHandled)
+                        it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
 
                     if ((articlesSupplier.isNotEmpty() || animatingSupplier == supplier.idSupplierSu) &&
@@ -159,17 +157,18 @@ fun Fragment_SupplierArticlesRecivedManager(
                 allArticles = uiState.tabelleSupplierArticlesRecived,
                 suppliers = uiState.tabelleSuppliersSA,
                 viewModel = viewModel,
-                supplierHeaderisHandled = supplierHeaderisHandled,
-                showOnlyWithFilter = showOnlyWithFilter,
-                onToggleFilter = { showOnlyWithFilter = !showOnlyWithFilter },
-                onFirstClickFlotButt = { supplier ->
-                    supplierHeaderisHandled = supplier.idSupplierSu
-                },
-                onSecondClick = { fromSupplier, toSupplier ->
+                showOnlyWithFilter = showButtonsWherNotEmpty,
+                onToggleFilter = { showButtonsWherNotEmpty = !showButtonsWherNotEmpty },
+                onClickFlotButt = { toSupplier ->
                     coroutineScope.launch {
-                        animatingSupplier = fromSupplier
-                        delay(300) // Attendre que l'animation de disparition soit terminée
-                        viewModel.moveArticleNonFindToSupplier(fromSupp = fromSupplier, toSupp = toSupplier)
+                        val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
+                            it.itsInFindedAskSupplierSA
+                        }
+
+                        viewModel.moveArticleNonFindToSupplier(
+                            articlesToMove = filterBytabelleSupplierArticlesRecived,
+                            toSupp = toSupplier
+                        )
                         animatingSupplier = null
                         supplierHeaderisHandled = null
                     }
@@ -311,15 +310,15 @@ fun SuppliersFloatingButtonsSA(
     allArticles: List<TabelleSupplierArticlesRecived>,
     suppliers: List<TabelleSuppliersSA>,
     viewModel: HeadOfViewModels,
-    supplierHeaderisHandled: Long?,
     showOnlyWithFilter: Boolean,
     onToggleFilter: () -> Unit,
-    onFirstClickFlotButt: (TabelleSuppliersSA) -> Unit,
-    onSecondClick: (Long, Long) -> Unit
+    onClickFlotButt: (Long) -> Unit
 ) {
     val filteredSuppliers = if (showOnlyWithFilter) {
         suppliers.filter { supplier ->
-            allArticles.any { article -> article.idSupplierTSA.toLong() == supplier.idSupplierSu }
+            allArticles.any { article ->
+                article.idSupplierTSA.toLong() == supplier.idSupplierSu && !article.itsInFindedAskSupplierSA
+            }
         }
     } else {
         suppliers
@@ -331,13 +330,7 @@ fun SuppliersFloatingButtonsSA(
     ) {
         filteredSuppliers.forEach { supplier ->
             FloatingActionButton(
-                onClick = {
-                    if (supplierHeaderisHandled == null) {
-                        onFirstClickFlotButt(supplier)
-                    } else if (supplierHeaderisHandled != supplier.idSupplierSu) {
-                        onSecondClick(supplierHeaderisHandled, supplier.idSupplierSu)
-                    }
-                },
+                onClick = { onClickFlotButt(supplier.idSupplierSu) },
                 modifier = Modifier.size(56.dp)
             ) {
                 Text(
