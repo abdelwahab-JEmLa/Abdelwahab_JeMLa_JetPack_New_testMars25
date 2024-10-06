@@ -217,39 +217,25 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
             val totalItems = dataMap.size
             var processedItems = 0
-            var maxIdArticle = 0L
 
-            // Find the maximum idArticle
-            dataMap.forEach { (_, value) ->
-                val idArticle = (value["a01"] as? Number)?.toLong() ?: 0L
-                if (idArticle > maxIdArticle) {
-                    maxIdArticle = idArticle
-                }
-            }
-            Log.d("TransferData", "Maximum idArticle found: $maxIdArticle")
 
             dataMap.forEach { (_, value) ->
                 val idArticle = (value["a01"] as? Number)?.toLong() ?: 0L
                 Log.d("TransferData", "Processing item with idArticle: $idArticle")
 
-                val itsNewArticleFromeBacKE = value["a13"] as? String == "" &&
-                        value["a15"] as? String == "" &&
-                        value["a17"] as? String == "" &&
-                        value["a19"] as? String == ""
-                val generatedID = if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
-                Log.d("TransferData", "Generated ID: $generatedID, New article: $itsNewArticleFromeBacKE")
+                val itsNewArticleFromeBacKE = value["a10"] as? String == "" &&
+                        value["a12"] as? String == "" &&
+                        value["a14"] as? String == "" &&
+                        value["a16"] as? String == ""
 
                 // Filter entries where totalquantity is empty or null
-                val totalQuantity = (value["a21"] as? Number)?.toInt()
+                val totalQuantity = (value["a18"] as? Number)?.toInt()
                 if (totalQuantity != null && totalQuantity > 0) {
                     Log.d("TransferData", "Valid total quantity: $totalQuantity")
 
                     // Find the corresponding article in articlesBaseDonneECB
-                    val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticleECB.toLong() == generatedID }
-
-
-
-                    val article = fromMap(value, generatedID, correspondingArticle)
+                    val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticleECB.toLong() == idArticle }
+                    val article = fromMap(value, correspondingArticle,itsNewArticleFromeBacKE)
                     Log.d("TransferData", "Created article with aa_vid: ${article.aa_vid}")
                     refDestination.child(article.aa_vid.toString()).setValue(article).await()
 
@@ -273,33 +259,37 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
-    private fun fromMap(map: Map<String, Any?>, generatedID: Long, lastSupplierIdBuyedFrom: Int): TabelleSupplierArticlesRecived {
+    private fun fromMap(
+        map: Map<String, Any?>,
+        correspondingArticle: BaseDonneECBTabelle?,
+        itsNewArticleFromeBacKE: Boolean
+    ): TabelleSupplierArticlesRecived {
         return TabelleSupplierArticlesRecived(
             aa_vid = nextVid++,
-            a_c_idarticle_c = generatedID,
-            a_d_nomarticlefinale_c = (map["a02"] as? String) ?: "",
-            idSupplierTSA = lastSupplierIdBuyedFrom,
-            nomSupplierTSA = map["a04"] as? String,
-            nmbrCat = (map["a05"] as? String)?.toIntOrNull() ?: 0,
-            trouve_c = (map["a06"] as? String)?.toBoolean() ?: false,
-            a_u_prix_1_q1_c = (map["a07"] as? String)?.toDoubleOrNull() ?: 0.0,
-            a_q_prixachat_c = (map["a08"] as? String)?.toDoubleOrNull() ?: 0.0,
-            a_l_nmbunite_c = (map["a09"] as? String)?.toIntOrNull() ?: 0,
-            a_r_prixdevent_c = (map["a10"] as? String)?.toDoubleOrNull() ?: 0.0,
-            nomclient = (map["a08"] as? String) ?: "",
-            datedachate = (map["a09"] as? String) ?: "",
-            a_d_nomarticlefinale_c_1 = (map["a10"] as? String) ?: "",
+            a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? Number)?.toLong() ?: 0L),
+            a_d_nomarticlefinale_c = map["a02"] as? String ?: "",
+            idSupplierTSA = correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 0,
+            nmbrCat = correspondingArticle?.nmbrCat ?: 0,
+            trouve_c = false,
+            a_u_prix_1_q1_c = correspondingArticle?.monPrixVent ?: 0.0,
+            a_q_prixachat_c = correspondingArticle?.monPrixAchat ?: 0.0,
+            a_l_nmbunite_c = correspondingArticle?.nmbrUnite ?: 0,
+            a_r_prixdevent_c = correspondingArticle?.monPrixVent ?: 0.0,
+            nomclient = map["a08"] as? String ?: "",
+            datedachate = map["a09"] as? String ?: "",
+            a_d_nomarticlefinale_c_1 = map["a10"] as? String ?: "",
             quantityachete_c_1 = (map["a11"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_2 = (map["a12"] as? String) ?: "",
+            a_d_nomarticlefinale_c_2 = map["a12"] as? String ?: "",
             quantityachete_c_2 = (map["a13"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_3 = (map["a14"] as? String) ?: "",
+            a_d_nomarticlefinale_c_3 = map["a14"] as? String ?: "",
             quantityachete_c_3 = (map["a15"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_4 = (map["a16"] as? String) ?: "",
+            a_d_nomarticlefinale_c_4 = map["a16"] as? String ?: "",
             quantityachete_c_4 = (map["a17"] as? String)?.toIntOrNull() ?: 0,
             totalquantity = (map["a18"] as? String)?.toIntOrNull() ?: 0,
-            etatdecommendcolum = (map["a19"] as? String)?.toIntOrNull() ?: 0,
+            etatdecommendcolum = (map["a19"] as? String)?.toIntOrNull() ?: 0
         )
     }
+
     private suspend fun transferFirebaseDataArticlesAcheteModele(
         context: android.content.Context,
         articleDao: ArticleDao,
