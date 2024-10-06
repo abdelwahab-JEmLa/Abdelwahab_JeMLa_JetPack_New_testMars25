@@ -100,6 +100,36 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
+    fun moveArticleNonFindToSupplier(fromSupp: Long, toSupp: Long) {
+        viewModelScope.launch {
+            try {
+                val articlesToMove = _uiState.value.tabelleSupplierArticlesRecived.filter {
+                    it.idSupplierTSA.toLong() == fromSupp && it.itsInFindedAskSupplierSA
+                }
+
+                articlesToMove.forEach { article ->
+                    // Update the article in the local state
+                    _uiState.update { currentState ->
+                        val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
+                            if (it.a_c_idarticle_c == article.a_c_idarticle_c) {
+                                it.copy(idSupplierTSA = toSupp.toInt(), itsInFindedAskSupplierSA = false)
+                            } else it
+                        }
+                        currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
+                    }
+
+                    // Update the article in the database
+                    refTabelleSupplierArticlesRecived.child(article.a_c_idarticle_c.toString()).apply {
+                        child("idSupplierTSA").setValue(toSupp.toInt())
+                        child("itsInFindedAskSupplierSA").setValue(false)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in moveArticleNonFindToSupplier", e)
+            }
+        }
+    }
+
 
 
 
