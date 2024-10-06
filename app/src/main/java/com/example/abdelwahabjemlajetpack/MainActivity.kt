@@ -164,7 +164,8 @@ class MainActivity : ComponentActivity() {
                                 boardStatistiquesStatViewModel,
                                 classementsArticlesViewModel
                             ),
-                            onToggleNavBar = { isNavBarVisible = !isNavBarVisible }
+                            onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
+                            headOfViewModels = headOfViewModels
                         )
                     }
                 }
@@ -208,7 +209,7 @@ fun AppNavHost(
     database: AppDatabase,
     viewModels: AppViewModels,
     onToggleNavBar: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier, headOfViewModels: HeadOfViewModels
 ) {
     var localProgress by remember { mutableStateOf(0f) }
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
@@ -224,6 +225,7 @@ fun AppNavHost(
                 editeBaseDonneViewModel = viewModels.editeBaseDonneViewModel,
                 articleDao = database.articleDao(),
                 boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
+                headOfViewModels = headOfViewModels,
             )
         }
         composable("A_Edite_Base_Screen") {
@@ -337,7 +339,8 @@ fun MainScreen(
     navController: NavHostController,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
     articleDao: ArticleDao,
-    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    headOfViewModels: HeadOfViewModels
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -346,7 +349,7 @@ fun MainScreen(
             TopAppBar(
                 coroutineScope = coroutineScope,
                 editeBaseDonneViewModel = editeBaseDonneViewModel,
-                articleDao = articleDao
+                articleDao = articleDao, headOfViewModels = headOfViewModels
             )
         }
     ) { paddingValues ->

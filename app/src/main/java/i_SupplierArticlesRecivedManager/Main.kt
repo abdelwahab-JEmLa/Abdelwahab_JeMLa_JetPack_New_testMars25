@@ -146,7 +146,7 @@ fun ArticleItem(
     viewModel: HeadOfViewModels,
     reloadTrigger: Int
 ) {
-    Card(
+    Card(   //TODO fait que si article itsInFindedAskSupplierSA = "Ask Supplier"
         modifier = Modifier
             .fillMaxWidth()
             .padding(4.dp)
@@ -167,8 +167,11 @@ fun ArticleItem(
                     reloadKey = reloadTrigger
                 )
             }
-            article.disponibility?.let { DisponibilityOverlayECB(it) }
+            article.itsInFindedAskSupplierSA?.let { DisponibilityOverlayECB(it.toString()) }
             AutoResizedTextECB(text = article.a_d_nomarticlefinale_c)
+            //TODO ajoute une Floating button start botton au click
+              //  .clickable { onClickDisplayeInfoWin (article) },
+
         }
     }
 }

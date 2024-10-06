@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
+import a_MainAppCompnents.HeadOfViewModels
 import a_RoomDB.BaseDonne
 import android.content.Context
 import android.util.Log
@@ -55,7 +56,7 @@ import kotlinx.coroutines.withContext
 fun TopAppBar(
     coroutineScope: CoroutineScope,
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    articleDao: ArticleDao
+    articleDao: ArticleDao, headOfViewModels: HeadOfViewModels
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var dialogOpen by remember { mutableStateOf(false) }
@@ -192,7 +193,8 @@ fun TopAppBar(
         onDismiss = { dialogOpen = false },
         onStartImport = { showProgressBar = true },
         onProgressUpdate = { newProgress -> progress = newProgress },
-        onFinishImport = { showProgressBar = false }
+        onFinishImport = { showProgressBar = false },
+        headOfViewModels
     )
 }
 
@@ -420,7 +422,8 @@ private fun Dialog(
     onDismiss: () -> Unit,
     onStartImport: () -> Unit,
     onProgressUpdate: (Float) -> Unit,
-    onFinishImport: () -> Unit
+    onFinishImport: () -> Unit,
+    headOfViewModels: HeadOfViewModels
 ) {
     var showNameListDialog by remember { mutableStateOf(false) }
 
@@ -482,19 +485,13 @@ private fun Dialog(
                         tint2 = Color.Black,
                         onClick = {
                             coroutineScope.launch {
-                                onStartImport()
-                                importFromFirebaseToDataBaseDonne(
-                                    refFireBase = "e_DBJetPackExport",
-                                    editeBaseDonneViewModel
+
+                                headOfViewModels.trensfertData(articleDao,
+                                    editeBaseDonneViewModel,
+                                    context
                                 )
-                                transferFirebaseDataArticlesAcheteModele(
-                                    context,
-                                    articleDao,
-                                    onProgressUpdate
-                                )
-                                onFinishImport()
+
                             }
-                            onDismiss()
                         }
                     )
                     DialogButton(

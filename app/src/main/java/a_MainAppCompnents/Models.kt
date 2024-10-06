@@ -26,40 +26,10 @@ data class TabelleSupplierArticlesRecived(
     val quantityachete_c_4: Int = 0,
     val totalquantity: Int = 0,
     val etatdecommendcolum: Int = 0,
-    var disponibility: String? = null
+    var itsInFindedAskSupplierSA: Boolean = false,
 ) {
     constructor() : this(0L)
 
-    companion object {
-        fun fromMap(map: Map<String, Any?>): TabelleSupplierArticlesRecived {
-            return TabelleSupplierArticlesRecived(
-                aa_vid = (map["a00"] as? String)?.toLongOrNull() ?: 0L,
-                a_c_idarticle_c = (map["a01"] as? String)?.toLongOrNull() ?: 0L,
-                a_d_nomarticlefinale_c = (map["a02"] as? String) ?: "",
-                idSupplierTSA = (map["a03"] as? String)?.toIntOrNull() ?: 0,
-                nomSupplierTSA = map["a04"] as? String,
-                nmbrCat = (map["a05"] as? String)?.toIntOrNull() ?: 0,
-                trouve_c = (map["a06"] as? String)?.toBoolean() ?: false,
-                a_u_prix_1_q1_c = (map["a07"] as? String)?.toDoubleOrNull() ?: 0.0,
-                a_q_prixachat_c = (map["a08"] as? String)?.toDoubleOrNull() ?: 0.0,
-                a_l_nmbunite_c = (map["a09"] as? String)?.toIntOrNull() ?: 0,
-                a_r_prixdevent_c = (map["a10"] as? String)?.toDoubleOrNull() ?: 0.0,
-                nomclient = (map["a11"] as? String) ?: "",
-                datedachate = (map["a12"] as? String) ?: "",
-                a_d_nomarticlefinale_c_1 = (map["a13"] as? String) ?: "",
-                quantityachete_c_1 = (map["a14"] as? String)?.toIntOrNull() ?: 0,
-                a_d_nomarticlefinale_c_2 = (map["a15"] as? String) ?: "",
-                quantityachete_c_2 = (map["a16"] as? String)?.toIntOrNull() ?: 0,
-                a_d_nomarticlefinale_c_3 = (map["a17"] as? String) ?: "",
-                quantityachete_c_3 = (map["a18"] as? String)?.toIntOrNull() ?: 0,
-                a_d_nomarticlefinale_c_4 = (map["a19"] as? String) ?: "",
-                quantityachete_c_4 = (map["a20"] as? String)?.toIntOrNull() ?: 0,
-                totalquantity = (map["a21"] as? String)?.toIntOrNull() ?: 0,
-                etatdecommendcolum = (map["a22"] as? String)?.toIntOrNull() ?: 0,
-                disponibility = map["a23"] as? String
-            )
-        }
-    }
 }
        //telegram
 data class TabelleSuppliersSA(

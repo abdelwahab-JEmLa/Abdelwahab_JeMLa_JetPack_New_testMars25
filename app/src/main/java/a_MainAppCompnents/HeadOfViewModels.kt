@@ -7,19 +7,26 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import b_Edite_Base_Donne.ArticleDao
+import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import c_ManageBonsClients.roundToOneDecimal
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
+import com.example.abdelwahabjemlajetpack.importFromFirebaseToDataBaseDonne
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
+import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,10 +38,9 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import kotlin.math.roundToInt
 
-class HeadOfViewModels(
-    private val context: Context,
-) : ViewModel() {
+class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
@@ -45,21 +51,26 @@ class HeadOfViewModels(
     private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
 
-    private val refDBJetPackExport = FirebaseDatabase.getInstance().getReference("e_DBJetPackExport")
-    private val refCategorieTabelee = FirebaseDatabase.getInstance().getReference("H_CategorieTabele")
-    private val refTabelleSupplierArticlesRecived = FirebaseDatabase.getInstance().getReference("telegram")
-    private val refTabelleSuppliersSA = FirebaseDatabase.getInstance().getReference("F_Suppliers")
+    private val _uploadProgress = MutableStateFlow(0f)
+    val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
 
-    val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
+    private val firebaseDatabase = FirebaseDatabase.getInstance()
+    private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
+    private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
+    private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("telegram")
+    private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
+    private val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
     var tempImageUri: Uri? = null
 
-    private val _uploadProgress = MutableStateFlow(0f)
-    val uploadProgress: StateFlow<Float> = _uploadProgress
-    // Constants
-    private val MAX_WIDTH = 1024
-    private val MAX_HEIGHT = 1024
+    companion object {
+        private const val MAX_WIDTH = 1024
+        private const val MAX_HEIGHT = 1024
+        private const val PROGRESS_UPDATE_DELAY = 100L
+        private const val TAG = "HeadOfViewModels"
+
+    }
 
     init {
         viewModelScope.launch {
@@ -70,47 +81,350 @@ class HeadOfViewModels(
     private suspend fun initDataFromFirebase() {
         try {
             _uiState.update { it.copy(isLoading = true) }
-            updateProgressWithDelay(0f)  // Start progress
+            updateProgressWithDelay(0f)
 
-            // Fetch articles
+            val articles = fetchArticles()
             updateProgressWithDelay(20f)
-            val articles = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-                snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
-                    idArticleECB = snapshot.key?.toIntOrNull() ?: 0
-                }
-            }
 
-            // Fetch categories
+            val categories = fetchCategories()
             updateProgressWithDelay(40f)
-            val categories = refCategorieTabelee.get().await().children
-                .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
-                .sortedBy { it.idClassementCategorieInCategoriesTabele }
 
-            // Fetch supplier articles
+            val supplierArticlesRecived = fetchSupplierArticles()
             updateProgressWithDelay(60f)
-            val supplierArticlesRecived = viewModelScope.async { fetchSupplierArticles() }.await()
 
-            // Fetch suppliers
+            val suppliersSA = fetchSuppliers()
             updateProgressWithDelay(80f)
-            val suppliersSA = refTabelleSuppliersSA.get().await().children
-                .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
 
-            // Update UI state
+            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA)
             updateProgressWithDelay(100f)
-            _uiState.update { it.copy(
-                articlesBaseDonneECB = articles,
-                categoriesECB = categories,
-                tabelleSupplierArticlesRecived = supplierArticlesRecived,
-                tabelleSuppliersSA = suppliersSA,
-                isLoading = false
-            ) }
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
         } finally {
-            _uploadProgress.value = 0f  // Reset progress
+            _uploadProgress.value = 0f
             _uiState.update { it.copy(isLoading = false) }
         }
     }
+
+    private suspend fun fetchArticles() = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+        snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
+            idArticleECB = snapshot.key?.toIntOrNull() ?: 0
+        }
+    }
+
+    private suspend fun fetchCategories() = refCategorieTabelee.get().await().children
+        .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
+        .sortedBy { it.idClassementCategorieInCategoriesTabele }
+
+    private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
+        .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
+
+    private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
+        .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
+
+    private fun updateUiState(
+        articles: List<BaseDonneECBTabelle>,
+        categories: List<CategoriesTabelleECB>,
+        supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
+        suppliersSA: List<TabelleSuppliersSA>
+    ) {
+        _uiState.update { it.copy(
+            articlesBaseDonneECB = articles,
+            categoriesECB = categories,
+            tabelleSupplierArticlesRecived = supplierArticlesRecived,
+            tabelleSuppliersSA = suppliersSA,
+            isLoading = false
+        ) }
+    }
+
+    private suspend fun updateProgressWithDelay(progress: Float, delay: Long = PROGRESS_UPDATE_DELAY) {
+        _uploadProgress.value = progress.coerceIn(0f, 100f)
+        delay(delay)
+    }
+
+
+
+    private fun updateTotalProgress(currentStep: Int, totalSteps: Int) {
+        _uploadProgress.value = (currentStep.toFloat() / totalSteps.toFloat() * 100f).roundToInt().toFloat()
+    }
+
+    private fun updateStepProgress(currentStep: Int, totalSteps: Int, stepProgress: Float) {
+        val stepSize = 100f / totalSteps
+        val baseProgress = stepSize * (currentStep - 1)
+        val additionalProgress = stepSize * (stepProgress / 100f)
+        _uploadProgress.value = (baseProgress + additionalProgress).roundToInt().toFloat()
+    }
+
+    /*2->Section Suppliers Commendes Manager -------------------*/
+    fun trensfertData(
+        articleDao: ArticleDao,
+        editeBaseDonneViewModel: EditeBaseDonneViewModel,
+        context: Context
+    ) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                _uploadProgress.value = 0f
+
+                val totalSteps = 3
+                var currentStep = 0
+
+                // Step 1: Import from Firebase to DataBaseDonne
+                updateTotalProgress(currentStep++, totalSteps)
+                importFromFirebaseToDataBaseDonne("e_DBJetPackExport", editeBaseDonneViewModel)
+                updateStepProgress(currentStep, totalSteps, 100f)
+
+                // Step 2: Transfer Firebase Data ArticlesAcheteModele
+                updateTotalProgress(currentStep++, totalSteps)
+                transferFirebaseDataArticlesAcheteModele(context, articleDao) { progress ->
+                    updateStepProgress(currentStep, totalSteps, progress)
+                }
+
+                // Step 3: Transfer from Telegram to SupplierArticlesRecived
+                updateTotalProgress(currentStep++, totalSteps)
+                transfertFromeTelegramToSupplierArticlesRecived(context) { progress ->
+                    updateStepProgress(currentStep, totalSteps, progress)
+                }
+
+                _uploadProgress.value = 100f
+            } catch (e: Exception) {
+                handleError("Import process failed", e)
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    private var nextVid = 1L
+
+    private suspend fun transfertFromeTelegramToSupplierArticlesRecived(
+        context: Context,
+        onProgressUpdate: (Float) -> Unit
+    ) {
+        try {
+            var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
+
+            try {
+                val firestore = Firebase.firestore
+                val querySnapshot = firestore.collection("HistoriqueDesFactures").get().await()
+                fireStorHistoriqueDesFactures = querySnapshot.documents.mapNotNull { document ->
+                    document.toObject(ArticlesAcheteModele::class.java)
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error getting documents: ", e)
+            }
+
+            val refSource = firebaseDatabase.getReference("telegram")
+            val refDestination = firebaseDatabase.getReference("SupplierArticlesRecived")
+
+            refDestination.removeValue().await()
+
+            val dataSnapshot = refSource.get().await()
+            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+
+            val totalItems = dataMap.size
+            var processedItems = 0
+            var maxIdArticle = 0L
+
+            // Find the maximum idArticle
+            dataMap.forEach { (_, value) ->
+                val idArticle = (value["idarticle_c"] as? Number)?.toLong() ?: 0L
+                if (idArticle > maxIdArticle) {
+                    maxIdArticle = idArticle
+                }
+            }
+
+            dataMap.forEach { (_, value) ->
+                val idArticle = (value["idarticle_c"] as? Number)?.toLong() ?: 0L
+                val nomClient = value["nomclient_c"] as? String ?: ""
+
+                val matchingFireStoreHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient }
+                val monPrixVentFireStoreBM = matchingFireStoreHistorique?.monPrixVentFireStoreBM ?: 0.0
+
+                val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
+                        value["nomarticlefinale_c_2"] as? String == "" &&
+                        value["nomarticlefinale_c_3"] as? String == "" &&
+                        value["nomarticlefinale_c_4"] as? String == ""
+                val generatedID = if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
+
+                // Filter entries where totalquantity is empty or null
+                val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
+                if (totalQuantity != null && totalQuantity > 0) {
+                    val article = fromMap(value, generatedID, monPrixVentFireStoreBM)
+                    refDestination.child(article.aa_vid.toString()).setValue(article).await()
+
+                    processedItems++
+                    onProgressUpdate(processedItems.toFloat() / totalItems * 100)
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("transferFirebaseData", "Failed to transfer data", e)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun fromMap(map: Map<String, Any?>, generatedID: Long, monPrixVentFireStoreBM: Double): TabelleSupplierArticlesRecived {
+        return TabelleSupplierArticlesRecived(
+            aa_vid = nextVid++, // Use nextVid and increment it
+            a_c_idarticle_c = generatedID,
+            a_d_nomarticlefinale_c = (map["a02"] as? String) ?: "",
+            idSupplierTSA = (map["a03"] as? String)?.toIntOrNull() ?: 0,
+            nomSupplierTSA = map["a04"] as? String,
+            nmbrCat = (map["a05"] as? String)?.toIntOrNull() ?: 0,
+            trouve_c = (map["a06"] as? String)?.toBoolean() ?: false,
+            a_u_prix_1_q1_c = (map["a07"] as? String)?.toDoubleOrNull() ?: 0.0,
+            a_q_prixachat_c = (map["a08"] as? String)?.toDoubleOrNull() ?: 0.0,
+            a_l_nmbunite_c = (map["a09"] as? String)?.toIntOrNull() ?: 0,
+            a_r_prixdevent_c = monPrixVentFireStoreBM,
+            nomclient = (map["a11"] as? String) ?: "",
+            datedachate = (map["a12"] as? String) ?: "",
+            a_d_nomarticlefinale_c_1 = (map["a13"] as? String) ?: "",
+            quantityachete_c_1 = (map["a14"] as? String)?.toIntOrNull() ?: 0,
+            a_d_nomarticlefinale_c_2 = (map["a15"] as? String) ?: "",
+            quantityachete_c_2 = (map["a16"] as? String)?.toIntOrNull() ?: 0,
+            a_d_nomarticlefinale_c_3 = (map["a17"] as? String) ?: "",
+            quantityachete_c_3 = (map["a18"] as? String)?.toIntOrNull() ?: 0,
+            a_d_nomarticlefinale_c_4 = (map["a19"] as? String) ?: "",
+            quantityachete_c_4 = (map["a20"] as? String)?.toIntOrNull() ?: 0,
+            totalquantity = (map["a21"] as? String)?.toIntOrNull() ?: 0,
+            etatdecommendcolum = (map["a22"] as? String)?.toIntOrNull() ?: 0,
+        )
+    }
+    private suspend fun transferFirebaseDataArticlesAcheteModele(
+        context: android.content.Context,
+        articleDao: ArticleDao,
+        onProgressUpdate: (Float) -> Unit
+    ) {
+        var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
+
+        try {
+            val firestore = Firebase.firestore
+            val querySnapshot = firestore.collection("HistoriqueDesFactures").get().await()
+            fireStorHistoriqueDesFactures = querySnapshot.documents.mapNotNull { document ->
+                document.toObject(ArticlesAcheteModele::class.java)
+            }
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error getting documents: ", e)
+        }
+
+        val refSource = Firebase.database.getReference("ArticlesAcheteModele")
+        val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
+        try {
+            refDestination.removeValue().await()
+
+            val dataSnapshot = refSource.get().await()
+            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+
+            val totalItems = dataMap.size
+            var processedItems = 0
+            var maxIdArticle = 0
+
+            // Find the maximum idArticle
+            dataMap.forEach { (_, value) ->
+                val idArticle = (value["idarticle_c"] as? Long) ?: 0
+                if (idArticle > maxIdArticle) {
+                    maxIdArticle = idArticle.toInt()
+                }
+            }
+
+            dataMap.forEach { (_, value) ->
+                val idArticle = (value["idarticle_c"] as? Long) ?: 0
+                val nomClient = value["nomclient_c"] as? String ?: ""
+
+                val baseDonne = articleDao.getArticleById(idArticle)
+
+                val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient  }
+                val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
+
+                val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
+                        value["nomarticlefinale_c_2"] as? String == "" &&
+                        value["nomarticlefinale_c_3"] as? String == "" &&
+                        value["nomarticlefinale_c_4"] as? String == ""
+                val generatedID=  if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
+
+                // Filter entries where totalquantity is empty or null
+                val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
+                if (totalQuantity != null && totalQuantity > 0) {
+                    val article = baseDonne?.let {
+                        ArticlesAcheteModele(
+                            vid = (value["id"] as? Long) ?: 0,
+                            idArticle = generatedID.toLong(),
+                            nomArticleFinale = if (itsNewArticleFromeBacKE) (value["nomarticlefinale_c"] as? String)?.uppercase() ?: "" else value["nomarticlefinale_c"] as? String ?: "",
+                            prixAchat = if (itsNewArticleFromeBacKE) 0.0 else it.monPrixAchat,
+                            nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
+                            clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
+                            nomClient = nomClient,
+                            dateDachate = value["datedachate"] as? String ?: "",
+                            nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
+                            quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
+                            nomCouleur2 = value["nomarticlefinale_c_2"] as? String ?: "",
+                            quantityAcheteCouleur2 = (value["quantityachete_c_2"] as? Number)?.toInt() ?: 0,
+                            nomCouleur3 = value["nomarticlefinale_c_3"] as? String ?: "",
+                            quantityAcheteCouleur3 = (value["quantityachete_c_3"] as? Number)?.toInt() ?: 0,
+                            nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
+                            quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
+                            totalQuantity = totalQuantity,
+                            nonTrouveState = false,
+                            verifieState = false,
+                            typeEmballage = if (baseDonne.cartonState == "itsCarton"|| baseDonne.cartonState == "Carton") "Carton" else "Boit",
+                            choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
+                            monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
+                            monPrixVentFireStoreBM = monPrixVentFireStoreBM ,
+
+                            ).apply {
+                            monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
+
+                            monBenificeFireStoreBM =   roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
+                            monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
+                            totalProfitFireStoreBM =  roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
+
+                            monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
+                            monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
+                            totalProfitBM = roundToOneDecimal(totalQuantity*monBenificeBM)
+
+                            monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
+                            monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
+                            benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
+                            clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
+                        }
+                    }
+
+                    if (article != null) {
+                        refDestination.child(article.vid.toString()).setValue(article).await()
+                    }
+                }
+
+                processedItems++
+                onProgressUpdate(processedItems.toFloat() / totalItems)
+            }
+
+            // Display success message when data transfer is completed
+            withContext(Dispatchers.Main) {
+                if (processedItems == totalItems) {
+                    Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Data transfer failed", Toast.LENGTH_LONG).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("transferFirebaseData", "Failed to transfer data", e)
+
+            // Display failure message with error details
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+
+
+
+    /*1->Section Creat + Handel IMGs Articles -------------------*/
 
     fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
         val updatedArticle = article.copy().apply {
@@ -317,43 +631,16 @@ class HeadOfViewModels(
         return if (currentIndex < articles.size - 1) articles[currentIndex + 1].idArticleECB else articles.first().idArticleECB
     }
 
-    private suspend fun fetchSupplierArticles(): List<TabelleSupplierArticlesRecived> =
-        refTabelleSupplierArticlesRecived.get().await().children.mapNotNull { snapshot ->
-            try {
-                val map = snapshot.value as? Map<String, Any?>
-                if (map != null) {
-                    TabelleSupplierArticlesRecived.fromMap(map)
-                } else {
-                    null
-                }
-            } catch (e: Exception) {
-                Log.e("HeadOfViewModels", "Error parsing TabelleSupplierArticlesRecived", e)
-                null
-            }
-        }
-
-    private suspend fun updateProgressWithDelay(progress: Float, delay: Long = 100) {
-        _uploadProgress.value = progress
-        delay(delay)  // Add a small delay to simulate progress
-    }
-
-    fun startProgress() {
-        _uploadProgress.value = 0f
-    }
-
-    fun updateProgress(progress: Float) {
-        _uploadProgress.value = progress.coerceIn(0f, 100f)
-    }
-
-    fun completeProgress() {
-        _uploadProgress.value = 100f
-    }
 
 
-/*2->Section Suppliers Commendes Manager -------------------*/
 
 
-/*1->Section Creat + Handel IMGs Articles -------------------*/
+
+
+
+
+
+
 
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
@@ -362,7 +649,7 @@ class HeadOfViewModels(
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
             //TODO fait que les operations soit enregstre don une list a chaque foit termine il se coche check termine et aller au prochen pour le converti et update le stoage
             try {
-                startProgress()
+                updateProgressWithDelay(0f)
 
                 // Convert image to WebP format
                 val webpImage = withContext(Dispatchers.IO) {
@@ -376,20 +663,22 @@ class HeadOfViewModels(
                 // Upload the WebP image
                 val uploadTask = storageRef.putBytes(webpImage)
 
-                uploadTask.addOnProgressListener { taskSnapshot ->
-                    val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount)
-                    updateProgress(progress.toFloat())
-                }.await()
+                updateProgressWithDelay(50f)
+
+//                uploadTask.addOnProgressListener { taskSnapshot ->
+//                    val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount)
+//                    updateProgressWithDelay(progress.toFloat())
+//                }.await()
 
                 val downloadUrl = storageRef.downloadUrl.await() //TODO pk le sortie n ai pas on webp
                 //HeadOfViewModels         D  Image uploaded successfully: 1066_1.jpg, URL: https://firebasestorage.googleapis.com/v0/b/abdelwahab-jemla-com.appspot.com/o/Images%20Articles%20Data%20Base%2F1066_1.jpg?alt=media&token=611f4ed5-d094-496d-ba9e-23bdd42f7388
                 Log.d(TAG, "Image uploaded successfully: $fileName, URL: $downloadUrl")
 
-                completeProgress()
+                updateProgressWithDelay(100f)
 
             } catch (e: Exception) {
                 handleError("Failed to upload image", e)
-                completeProgress() // Reset progress on error
+                updateProgressWithDelay(100f)
             }
         }
     }
@@ -472,9 +761,7 @@ class HeadOfViewModels(
         // You might want to update your UI or error state here
     }
 
-    companion object {
-        private const val TAG = "HeadOfViewModels"
-    }
+
 
     private suspend fun copyImage(sourceUri: Uri, fileName: String) {
         withContext(Dispatchers.IO) {
