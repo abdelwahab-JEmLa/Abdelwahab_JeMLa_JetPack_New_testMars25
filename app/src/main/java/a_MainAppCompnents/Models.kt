@@ -73,6 +73,7 @@ data class BaseDonneECBTabelle(
     var nomCategorie: String = "",
     var neaon1: Double = 0.0,
     var lastUpdateState: String = "",
+    var lastSupplierIdBuyedFrom: Long = 0,
     var cartonState: String = "",
     var dateCreationCategorie: String = "",
     var prixDeVentTotaleChezClient: Double = 0.0,

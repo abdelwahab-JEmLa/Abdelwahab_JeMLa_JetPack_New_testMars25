@@ -155,6 +155,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     }
 
     /*2->Section Suppliers Commendes Manager -------------------*/
+
+    /*3->Section Imports FireBase And Stor-------------------*/
+
     fun trensfertData(
         articleDao: ArticleDao,
         editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -201,18 +204,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         onProgressUpdate: (Float) -> Unit
     ) {
         try {
-            var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
-
-            try {
-                val firestore = Firebase.firestore
-                val querySnapshot = firestore.collection("HistoriqueDesFactures").get().await()
-                fireStorHistoriqueDesFactures = querySnapshot.documents.mapNotNull { document ->
-                    document.toObject(ArticlesAcheteModele::class.java)
-                }
-            } catch (e: Exception) {
-                Log.e("Firestore", "Error getting documents: ", e)
-            }
-
             val refSource = firebaseDatabase.getReference("telegram")
             val refDestination = firebaseDatabase.getReference("SupplierArticlesRecived")
 
@@ -235,10 +226,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
             dataMap.forEach { (_, value) ->
                 val idArticle = (value["idarticle_c"] as? Number)?.toLong() ?: 0L
-                val nomClient = value["nomclient_c"] as? String ?: ""
-
-                val matchingFireStoreHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient }
-                val monPrixVentFireStoreBM = matchingFireStoreHistorique?.monPrixVentFireStoreBM ?: 0.0
 
                 val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
                         value["nomarticlefinale_c_2"] as? String == "" &&
@@ -249,7 +236,11 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 // Filter entries where totalquantity is empty or null
                 val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
                 if (totalQuantity != null && totalQuantity > 0) {
-                    val article = fromMap(value, generatedID, monPrixVentFireStoreBM)
+                    // Find the corresponding article in articlesBaseDonneECB
+                    val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticleECB.toLong() == generatedID }
+                    val lastSupplierIdBuyedFrom = correspondingArticle?.lastSupplierIdBuyedFrom ?: 0
+
+                    val article = fromMap(value, generatedID, lastSupplierIdBuyedFrom.toInt())
                     refDestination.child(article.aa_vid.toString()).setValue(article).await()
 
                     processedItems++
@@ -268,19 +259,19 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
-    private fun fromMap(map: Map<String, Any?>, generatedID: Long, monPrixVentFireStoreBM: Double): TabelleSupplierArticlesRecived {
+    private fun fromMap(map: Map<String, Any?>, generatedID: Long, lastSupplierIdBuyedFrom: Int): TabelleSupplierArticlesRecived {
         return TabelleSupplierArticlesRecived(
-            aa_vid = nextVid++, // Use nextVid and increment it
+            aa_vid = nextVid++,
             a_c_idarticle_c = generatedID,
             a_d_nomarticlefinale_c = (map["a02"] as? String) ?: "",
-            idSupplierTSA = (map["a03"] as? String)?.toIntOrNull() ?: 0,
+            idSupplierTSA = lastSupplierIdBuyedFrom,
             nomSupplierTSA = map["a04"] as? String,
             nmbrCat = (map["a05"] as? String)?.toIntOrNull() ?: 0,
             trouve_c = (map["a06"] as? String)?.toBoolean() ?: false,
             a_u_prix_1_q1_c = (map["a07"] as? String)?.toDoubleOrNull() ?: 0.0,
             a_q_prixachat_c = (map["a08"] as? String)?.toDoubleOrNull() ?: 0.0,
             a_l_nmbunite_c = (map["a09"] as? String)?.toIntOrNull() ?: 0,
-            a_r_prixdevent_c = monPrixVentFireStoreBM,
+            a_r_prixdevent_c = (map["a10"] as? String)?.toDoubleOrNull() ?: 0.0,
             nomclient = (map["a11"] as? String) ?: "",
             datedachate = (map["a12"] as? String) ?: "",
             a_d_nomarticlefinale_c_1 = (map["a13"] as? String) ?: "",
