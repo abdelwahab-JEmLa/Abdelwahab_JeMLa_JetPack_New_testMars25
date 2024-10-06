@@ -170,15 +170,18 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 var currentStep = 0
 
                 // Step 1: Import from Firebase to DataBaseDonne
+                updateTotalProgress(currentStep++, totalSteps)
                 importFromFirebaseToDataBaseDonne("e_DBJetPackExport", editeBaseDonneViewModel)
                 updateStepProgress(currentStep, totalSteps, 100f)
 
                 // Step 2: Transfer Firebase Data ArticlesAcheteModele
+                updateTotalProgress(currentStep++, totalSteps)
                 transferFirebaseDataArticlesAcheteModele(context, articleDao) { progress ->
                     updateStepProgress(currentStep, totalSteps, progress)
                 }
 
                 // Step 3: Transfer from Telegram to SupplierArticlesRecived
+                updateTotalProgress(currentStep++, totalSteps)
                 transfertFromeTelegramToSupplierArticlesRecived(context) { progress ->
                     updateStepProgress(currentStep, totalSteps, progress)
                 }
@@ -247,7 +250,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 Log.d("TransferData", "Progress: $progress%")
                 onProgressUpdate(progress)
             }
-
             initDataFromFirebase()
 
             Log.d("TransferData", "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems")
