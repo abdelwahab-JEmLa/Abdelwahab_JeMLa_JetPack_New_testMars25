@@ -57,10 +57,11 @@ fun Fragment_SupplierArticlesRecivedManager(
     var filterNonDispo by remember { mutableStateOf(false) }
     var suppliersFlotingButtons by remember { mutableStateOf(false) }
 
-    var reloadImageTrigger by remember { mutableStateOf(0) }  // Add this line
+    var reloadImageTrigger by remember { mutableStateOf(0) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -77,7 +78,8 @@ fun Fragment_SupplierArticlesRecivedManager(
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
-                    if (articlesSupplier.isNotEmpty() || supplier.nomSupplierSu != "Find") {
+
+                    if (articlesSupplier.isNotEmpty() || (supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define")) {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeader(supplier = supplier, viewModel = viewModel)
                         }
@@ -86,7 +88,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
-                                }  ,
+                                },
                                 viewModel,
                                 reloadImageTrigger
                             )
@@ -95,8 +97,9 @@ fun Fragment_SupplierArticlesRecivedManager(
                 }
             }
         }
-           //TODO Ajoute un autre  Floating Action Buttons  dragable qui s affiche suppliersFlotingButtons et fait qui soit on fun separe
+        //TODO Ajoute un autre  Floating Action Buttons  dragable qui s affiche suppliersFlotingButtons et fait qui soit on fun separe
         // Floating Action Buttons
+
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)

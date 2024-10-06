@@ -39,7 +39,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import kotlin.math.roundToInt
-
+/* Start*/
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
@@ -122,7 +122,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
         .sortedBy { supplier ->
             when (supplier.idSupplierSu) {
-                10L, 9L  -> 0
+                10L, 9L  -> 0 // Place 9 and 10 at the beginning
                 else -> supplier.idSupplierSu + 2 // Shift other IDs to ensure 9 and 10 come first
             }
         }
@@ -279,7 +279,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             aa_vid = nextVid++,
             a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? String)?.toLong() ?: 0L),
             a_d_nomarticlefinale_c = map["a02"] as? String ?: "",
-            idSupplierTSA = correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10,
+            idSupplierTSA = if ((correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10)==0)10 else(correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10) ,
             nmbrCat = correspondingArticle?.nmbrCat ?: 0,
             trouve_c = false,
             a_u_prix_1_q1_c = correspondingArticle?.monPrixVent ?: 0.0,
