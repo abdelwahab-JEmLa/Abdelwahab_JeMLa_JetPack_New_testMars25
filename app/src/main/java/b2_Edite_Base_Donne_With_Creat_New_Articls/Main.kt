@@ -125,7 +125,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                         coroutineScope.launch {
                             for (i in 1..4) {
                                 val fileName = "${article.idArticleECB}_$i.jpg"
-                                val sourceFile = File(viewModel.dossiesStandartImages, fileName)
+                                val sourceFile = File(viewModel.dossiesStandartOFImages, fileName)
                                 if (sourceFile.exists()) {
                                     viewModel.setImagesInStorageFireBase(article.idArticleECB, i)
                                 }

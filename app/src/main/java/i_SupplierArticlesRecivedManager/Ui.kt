@@ -164,7 +164,7 @@ fun DisplayeImage(
     val baseImagePath =
         "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_${index + 1}"
     val downloadsImagePath =
-        "${viewModel.dossiesStandartImages}/${article.a_c_idarticle_c}_${index + 1}"
+        "${viewModel.dossiesStandartOFImages}/${article.a_c_idarticle_c}_${index + 1}"
 
     val imageExist = remember( reloadKey) {
         listOf("jpg", "webp").firstNotNullOfOrNull { extension ->

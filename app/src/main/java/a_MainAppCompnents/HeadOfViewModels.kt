@@ -59,7 +59,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
     private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("telegram")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
-    private val dossiesStandartImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
+    val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
     var tempImageUri: Uri? = null
@@ -645,7 +645,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
             val fileName = "${articleId}_$colorIndex.jpg"
-            val localFile = File(dossiesStandartImages, fileName)
+            val localFile = File(dossiesStandartOFImages, fileName)
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
             //TODO fait que les operations soit enregstre don une list a chaque foit termine il se coche check termine et aller au prochen pour le converti et update le stoage
             try {
@@ -766,11 +766,11 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private suspend fun copyImage(sourceUri: Uri, fileName: String) {
         withContext(Dispatchers.IO) {
             try {
-                if (!dossiesStandartImages.exists()) {
-                    dossiesStandartImages.mkdirs()
+                if (!dossiesStandartOFImages.exists()) {
+                    dossiesStandartOFImages.mkdirs()
                 }
 
-                val destFile = File(dossiesStandartImages, fileName)
+                val destFile = File(dossiesStandartOFImages, fileName)
 
                 context.contentResolver.openInputStream(sourceUri)?.use { input ->
                     destFile.outputStream().use { output ->
