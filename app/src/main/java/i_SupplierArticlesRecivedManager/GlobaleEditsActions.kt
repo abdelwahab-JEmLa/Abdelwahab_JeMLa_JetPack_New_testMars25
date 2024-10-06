@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
-fun FloatingActionButtons(
+fun FloatingActionButtonsSA(
     showFloatingButtons: Boolean,
     onToggleNavBar: () -> Unit,
     onToggleFloatingButtons: () -> Unit,

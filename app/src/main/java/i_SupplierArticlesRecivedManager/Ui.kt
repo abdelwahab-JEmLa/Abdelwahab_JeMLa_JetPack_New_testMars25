@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import b2_Edite_Base_Donne_With_Creat_New_Articls.AutoResizedTextECB
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
@@ -38,11 +39,11 @@ import java.io.File
 
 
 @Composable
-fun ArticleDetailWindow(
+fun ArticleDetailWindowSA(
     article: TabelleSupplierArticlesRecived,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
-    modifier: Modifier, onReloadTrigger: () -> Unit, relodeTigger: Int
+    modifier: Modifier
 ) {
 
     Dialog(
@@ -59,9 +60,8 @@ fun ArticleDetailWindow(
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
 
-                    DisplayColorsCards( article,viewModel, onDismiss = onDismiss,
-                        onReloadTrigger = onReloadTrigger,
-                        relodeTigger = relodeTigger
+                    DisplayColorsCardsSA( article,viewModel, onDismiss = onDismiss,
+
                     )
 
                     // Article name
@@ -79,11 +79,9 @@ fun ArticleDetailWindow(
 }
 
 @Composable
-fun DisplayColorsCards(
+fun DisplayColorsCardsSA(
     article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
     onDismiss: () -> Unit,
-    onReloadTrigger: () -> Unit,
-    relodeTigger: Int
 ) {
     val couleursList = listOf(
         article.a_d_nomarticlefinale_c_1,
@@ -98,28 +96,25 @@ fun DisplayColorsCards(
         modifier = modifier.fillMaxWidth()
     ) {
         itemsIndexed(couleursList) { index, couleur ->
-            ColorCard(
+            ColorCardSA(
                 article,
                 index,
                 couleur,
                 viewModel,
                 onDismiss,
-                onReloadTrigger,
-                relodeTigger,)
+                )
         }
 
     }
 }
 
 @Composable
-private fun ColorCard(
+private fun ColorCardSA(
     article: TabelleSupplierArticlesRecived,
     index: Int,
     couleur: String,
     viewModel: HeadOfViewModels,
     onDismiss: () -> Unit,
-    onReloadTrigger: () -> Unit,
-    relodeTigger: Int,
 
     ) {
 
@@ -139,22 +134,21 @@ private fun ColorCard(
                     .aspectRatio(1f)
             ) {
 
-                DisplayeImage(article=article,
+                DisplayeImageSA(article=article,
                     viewModel=viewModel,
                     index=index,
-                    reloadKey =relodeTigger
                 )
 
             }
             Spacer(modifier = Modifier.height(8.dp))
-            AutoResizedTextECB(text = couleur)
+            AutoResizedTextSA(text = couleur)
         }
     }
 
 }
 
 @Composable
-fun DisplayeImage(
+fun DisplayeImageSA(
     article: TabelleSupplierArticlesRecived,
     viewModel: HeadOfViewModels,
     index: Int = 0,

@@ -1,46 +1,23 @@
 package i_SupplierArticlesRecivedManager
 
-
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import a_MainAppCompnents.TabelleSuppliersSA
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.TextDecrease
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.launch
 
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
@@ -55,13 +32,12 @@ fun Fragment_SupplierArticlesRecivedManager(
     var gridColumns by remember { mutableStateOf(2) }
 
     var filterNonDispo by remember { mutableStateOf(false) }
-    var suppliersFlotingButtons by remember { mutableStateOf(false) }
+    var suppliersFloatingButtons by remember { mutableStateOf(false) }
 
     var reloadImageTrigger by remember { mutableStateOf(0) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
-
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -79,34 +55,32 @@ fun Fragment_SupplierArticlesRecivedManager(
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
 
-                    if (articlesSupplier.size !=0 && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
+                    if (articlesSupplier.isNotEmpty() && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeader(supplier = supplier, viewModel = viewModel)
+                            SupplierHeaderSA(supplier = supplier, viewModel = viewModel)
                         }
                         items(articlesSupplier) { article ->
-                            ArticleItem(
+                            ArticleItemSA(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
                                 },
-                                viewModel,
-                                reloadImageTrigger
+                                viewModel = viewModel,
                             )
                         }
                     }
                 }
             }
         }
-        //TODO Ajoute un autre  Floating Action Buttons  dragable qui s affiche suppliersFlotingButtons et fait qui soit on fun separe
-        // Floating Action Buttons
 
+        // Floating Action Buttons
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .zIndex(1f)
         ) {
-            FloatingActionButtons(
+            FloatingActionButtonsSA(
                 showFloatingButtons = showFloatingButtons,
                 onToggleNavBar = onToggleNavBar,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
@@ -117,9 +91,32 @@ fun Fragment_SupplierArticlesRecivedManager(
                 showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
-                onChangeGridColumns = { gridColumns = it } ,
-                onToggleDisplayeSuppButtons =  {suppliersFlotingButtons!=suppliersFlotingButtons}
+                onChangeGridColumns = { gridColumns = it },
+                onToggleDisplayeSuppButtons = { suppliersFloatingButtons = !suppliersFloatingButtons }
             )
+        }
+
+        // Suppliers Floating Buttons
+        if (suppliersFloatingButtons) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+                    .zIndex(1f)
+            ) {
+                SuppliersFloatingButtonsSA(
+                    suppliers = uiState.tabelleSuppliersSA,
+                    onSupplierSelected = { supplier ->
+                        // Handle supplier selection
+                        coroutineScope.launch {
+                            val supplierIndex = uiState.tabelleSuppliersSA.indexOf(supplier)
+                            if (supplierIndex != -1) {
+                                gridState.animateScrollToItem(supplierIndex)
+                            }
+                        }
+                    }
+                )
+            }
         }
 
         // Use the current edited article if it matches the given article, otherwise use the original article
@@ -127,30 +124,36 @@ fun Fragment_SupplierArticlesRecivedManager(
             ?: dialogeDisplayeDetailleChanger
 
         displayedArticle?.let { article ->
-            ArticleDetailWindow(
+            ArticleDetailWindowSA(
                 article = article,
                 onDismiss = {
                     dialogeDisplayeDetailleChanger = null
                     viewModel.updateCurrentEditedArticle(null)
-                 },
+                },
                 viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp), onReloadTrigger = {reloadImageTrigger += 1}, relodeTigger = reloadImageTrigger
+                modifier = Modifier.padding(horizontal = 3.dp),
             )
         }
     }
 }
 
 @Composable
-fun ArticleItem(
+fun ArticleItemSA(
     article: TabelleSupplierArticlesRecived,
     onClickOnImg: (TabelleSupplierArticlesRecived) -> Unit,
     viewModel: HeadOfViewModels,
-    reloadTrigger: Int
 ) {
-    Card(   //TODO fait que si article itsInFindedAskSupplierSA = "Ask Supplier"
+    val cardColor = if (article.itsInFindedAskSupplierSA) {
+        Color.Yellow.copy(alpha = 0.3f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(4.dp)
+            .padding(4.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             Box(
@@ -160,29 +163,30 @@ fun ArticleItem(
                     .clickable { onClickOnImg(article) },
                 contentAlignment = Alignment.Center
             ) {
-
-                DisplayeImage(
+                DisplayeImageSA(
                     article = article,
                     viewModel = viewModel,
                     index = 0,
-                    reloadKey = reloadTrigger
                 )
             }
-            article.itsInFindedAskSupplierSA?.let { DisponibilityOverlayECB(it.toString()) }
-            AutoResizedTextECB(text = article.a_d_nomarticlefinale_c)
-            //TODO ajoute une Floating button start botton au click
-              //  .clickable { onClickDisplayeInfoWin (article) },
+            article.itsInFindedAskSupplierSA?.let { DisponibilityOverlaySA(it.toString()) }
+            AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
 
+            FloatingActionButton(
+                onClick = { viewModel.changeAskSupplier(it) },
+                modifier = Modifier.align(Alignment.Start)
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = "Change Ask Supplier")
+            }
         }
     }
 }
 
 @Composable
-fun SupplierHeader(
+fun SupplierHeaderSA(
     supplier: TabelleSuppliersSA,
     viewModel: HeadOfViewModels,
 ) {
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -201,8 +205,9 @@ fun SupplierHeader(
         }
     }
 }
+
 @Composable
-fun OverlayContentECB(color: Color, icon: ImageVector) {
+fun OverlayContentSA(color: Color, icon: ImageVector) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -214,11 +219,27 @@ fun OverlayContentECB(color: Color, icon: ImageVector) {
 }
 
 @Composable
-fun DisponibilityOverlayECB(state: String) {
+fun DisponibilityOverlaySA(state: String) {
     when (state) {
-        "Ask WHer" -> OverlayContentECB(color = Color.Black, icon = Icons.Default.TextDecrease)
-        "TO Find" -> OverlayContentECB(color = Color.Gray, icon = Icons.Default.Person)
+        "Ask WHer" -> OverlayContentSA(color = Color.Black, icon = Icons.Default.TextDecrease)
+        "TO Find" -> OverlayContentSA(color = Color.Gray, icon = Icons.Default.Person)
     }
 }
 
+@Composable
+fun SuppliersFloatingButtonsSA(
+    suppliers: List<TabelleSuppliersSA>,
+    onSupplierSelected: (TabelleSuppliersSA) -> Unit
+) {
+    Column {
+        suppliers.forEach { supplier ->
+            FloatingActionButton(
+                onClick = { onSupplierSelected(supplier) },
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                Text(supplier.nomSupplierSu.take(2))
+            }
+        }
+    }
+}
 
