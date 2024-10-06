@@ -72,13 +72,48 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     }
 
+    fun changeAskSupplier(article: TabelleSupplierArticlesRecived) {
+        viewModelScope.launch {
+            try {
+                // Toggle the boolean status
+                val newStatus = !article.itsInFindedAskSupplierSA
+
+
+                // Update the local state
+                _uiState.update { currentState ->
+                    val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
+                        if (it.a_c_idarticle_c == article.a_c_idarticle_c) it.copy(itsInFindedAskSupplierSA = newStatus) else it
+                    }
+                    currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
+                }
+
+                // Update the currentSupplierArticle if it matches the updated article
+                _currentSupplierArticle.update {
+                    it?.takeIf { it.a_c_idarticle_c == article.a_c_idarticle_c }?.copy(itsInFindedAskSupplierSA = newStatus)
+                }
+                // Update the article in the database
+                refTabelleSupplierArticlesRecived.child(article.a_c_idarticle_c.toString()).child("itsInFindedAskSupplierSA").setValue(newStatus)
+
+            } catch (e: Exception) {
+                // Handle the error silently or log it if necessary
+                // Log.e(TAG, "Error in changeAskSupplier", e)
+            }
+        }
+    }
+
+
+
+/*2->Section Suppliers Commendes Manager -------------------*/
+
+    /* Start*/
+
     init {
         viewModelScope.launch {
             initDataFromFirebase()
         }
     }
 
-    suspend fun initDataFromFirebase() {
+    private suspend fun initDataFromFirebase() {
         try {
             _uiState.update { it.copy(isLoading = true) }
             updateProgressWithDelay(0f)
@@ -158,7 +193,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         _uploadProgress.value = (baseProgress + additionalProgress).roundToInt().toFloat()
     }
 
-    /*2->Section Suppliers Commendes Manager -------------------*/
 
     /*3->Section Imports FireBase And Stor-------------------*/
 

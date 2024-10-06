@@ -34,8 +34,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     var filterNonDispo by remember { mutableStateOf(false) }
     var suppliersFloatingButtons by remember { mutableStateOf(false) }
 
-    var reloadImageTrigger by remember { mutableStateOf(0) }
-
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -160,7 +158,7 @@ fun ArticleItemSA(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clickable { onClickOnImg(article) },
+                    .clickable { viewModel.changeAskSupplier(article) },
                 contentAlignment = Alignment.Center
             ) {
                 DisplayeImageSA(
@@ -169,14 +167,19 @@ fun ArticleItemSA(
                     index = 0,
                 )
             }
-            article.itsInFindedAskSupplierSA?.let { DisponibilityOverlaySA(it.toString()) }
+
+            DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
             AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
 
-            FloatingActionButton(
-                onClick = { viewModel.changeAskSupplier(it) },
-                modifier = Modifier.align(Alignment.Start)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
             ) {
-                Icon(Icons.Filled.Edit, contentDescription = "Change Ask Supplier")
+                FloatingActionButton(
+                    onClick = { onClickOnImg(article) }
+                ) {
+                    Icon(Icons.Filled.Info, contentDescription = null)
+                }
             }
         }
     }
