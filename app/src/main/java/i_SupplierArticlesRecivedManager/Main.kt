@@ -92,13 +92,22 @@ fun Fragment_SupplierArticlesRecivedManager(
             ) {
                 uiState.tabelleSuppliersSA.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                        it.idSupplierTSA.toLong() == supplier.idSupplierSu
+                        it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
+                                (supplierHeaderisHandled == null || it.itsInFindedAskSupplierSA)
                     }
 
                     if ((articlesSupplier.isNotEmpty() || animatingSupplier == supplier.idSupplierSu) &&
                         supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeaderSA(supplier = supplier, viewModel = viewModel)
+                            SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
+                                coroutineScope.launch {
+                                    val supplierIndex = uiState.tabelleSuppliersSA.indexOf(supplier)
+                                    if (supplierIndex != -1) {
+                                        gridState.animateScrollToItem(supplierIndex)
+                                    }
+                                    supplierHeaderisHandled = it.idSupplierSu
+                                }
+                            })
                         }
                         items(
                             items = articlesSupplier,
@@ -247,6 +256,7 @@ fun ArticleItemSA(
 fun SupplierHeaderSA(
     supplier: TabelleSuppliersSA,
     viewModel: HeadOfViewModels,
+    onHeaderClick: (TabelleSuppliersSA) -> Unit
 ) {
     val backgroundColor = remember(supplier.couleurSu) {
         Color(android.graphics.Color.parseColor(supplier.couleurSu))
@@ -258,7 +268,10 @@ fun SupplierHeaderSA(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-
+            .clickable {
+                isClicked = true
+                onHeaderClick(supplier)
+            }
             .scale(scale),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
