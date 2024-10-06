@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
@@ -84,6 +85,7 @@ import g_BoardStatistiques.f_2_CreditsClients.CreditsClientsViewModel
 import g_BoardStatistiques.f_2_CreditsClients.FragmentCreditsClients
 import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
+import i_SupplierArticlesRecivedManager.Fragment_SupplierArticlesRecivedManager
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -203,8 +205,6 @@ fun CustomNavigationBar(
     }
 }
 
-
-
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -236,6 +236,11 @@ fun AppNavHost(
         }
         composable("C_ManageBonsClients") {
             FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel)
+        }
+        composable("Fragment_SupplierArticlesRecivedManager") {
+            Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,
+                onToggleNavBar = onToggleNavBar,
+            )
         }
         composable("FragmentEntreBonsGro") {
             FragmentEntreBonsGro(database.articleDao())
@@ -310,12 +315,13 @@ object NavigationItems {
     fun getItems() = listOf(
         Screen.MainScreen,
         Screen.ManageBonsClients,
+        Screen.Fragment_SupplierArticlesRecivedManager,
         Screen.EntreBonsGro,
         Screen.Credits,
         Screen.CreditsClients,
         Screen.FactoryClassemntsArticles,
         Screen.EditBaseScreen,
-        Screen.EditDatabaseWithCreateNewArticles
+        Screen.EditDatabaseWithCreateNewArticles ,
     )
 }
 
@@ -331,8 +337,8 @@ data class AppViewModels(
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
     data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
     data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
-    data  object ManageBonsClients : Screen("C_ManageBonsClients",
-        Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
+    data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
+    data  object Fragment_SupplierArticlesRecivedManager : Screen("Fragment_SupplierArticlesRecivedManager", Icons.Default.LiveTv, "Fragment_SupplierArticlesRecivedManager", Color(0xFFF44336))
     data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
     data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
     data   object EditBaseScreen : Screen("A_Edite_Base_Screen", Icons.Default.Edit, "Edit Base", Color(0xFF2196F3))

@@ -1,6 +1,5 @@
 package i_SupplierArticlesRecivedManager
 
-import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,9 +17,6 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-
 
 @Composable
 fun AutoResizedTextECB(

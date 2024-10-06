@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
-
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
@@ -119,7 +118,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                 onToggleDisplayeSuppButtons =  {suppliersFlotingButtons!=suppliersFlotingButtons}
             )
         }
-
 
         // Use the current edited article if it matches the given article, otherwise use the original article
         val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
