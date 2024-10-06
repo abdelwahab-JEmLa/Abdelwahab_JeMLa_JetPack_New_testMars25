@@ -79,7 +79,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
 
-                    if (articlesSupplier.isNotEmpty() || (supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define")) {
+                    if (articlesSupplier.size !=0 && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeader(supplier = supplier, viewModel = viewModel)
                         }
