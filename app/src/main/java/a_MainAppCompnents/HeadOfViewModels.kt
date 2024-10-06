@@ -217,9 +217,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
             val totalItems = dataMap.size
             var processedItems = 0
+            var skippedItems = 0
 
-
-            dataMap.forEach { (_, value) ->
+            dataMap.forEach { (key, value) ->
                 val idArticle = (value["a01"] as? Number)?.toLong() ?: 0L
                 Log.d("TransferData", "Processing item with idArticle: $idArticle")
 
@@ -228,29 +228,32 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                         value["a14"] as? String == "" &&
                         value["a16"] as? String == ""
 
-                // Filter entries where totalquantity is empty or null
-                val totalQuantity = (value["a18"] as? Number)?.toInt()
-                if (totalQuantity != null && totalQuantity > 0) {
+                // Safely parse totalQuantity, defaulting to 0 if null or invalid
+                val totalQuantity = (value["a18"] as? String)?.toIntOrNull() ?: 0
+
+                if (totalQuantity > 0) {
                     Log.d("TransferData", "Valid total quantity: $totalQuantity")
 
                     // Find the corresponding article in articlesBaseDonneECB
                     val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticleECB.toLong() == idArticle }
-                    val article = fromMap(value, correspondingArticle,itsNewArticleFromeBacKE)
+                    val article = fromMap(value, correspondingArticle, itsNewArticleFromeBacKE)
                     Log.d("TransferData", "Created article with aa_vid: ${article.aa_vid}")
                     refDestination.child(article.aa_vid.toString()).setValue(article).await()
 
                     processedItems++
-                    val progress = processedItems.toFloat() / totalItems * 100
-                    Log.d("TransferData", "Progress: $progress%")
-                    onProgressUpdate(progress)
                 } else {
-                    Log.d("TransferData", "Skipping item due to invalid total quantity")
+                    Log.d("TransferData", "Skipping item $key due to invalid total quantity: $totalQuantity")
+                    skippedItems++
                 }
+
+                val progress = (processedItems + skippedItems).toFloat() / totalItems * 100
+                Log.d("TransferData", "Progress: $progress%")
+                onProgressUpdate(progress)
             }
 
-            Log.d("TransferData", "Data transfer completed successfully")
+            Log.d("TransferData", "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems")
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             Log.e("TransferData", "Failed to transfer data", e)
@@ -259,6 +262,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
+
     private fun fromMap(
         map: Map<String, Any?>,
         correspondingArticle: BaseDonneECBTabelle?,
