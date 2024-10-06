@@ -77,7 +77,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
-                    if (articlesSupplier.isNotEmpty() || supplier.nomSupplierSu != "Finde") {
+                    if (articlesSupplier.isNotEmpty() || supplier.nomSupplierSu != "Find") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeader(supplier = supplier, viewModel = viewModel)
                         }

@@ -29,9 +29,8 @@ data class TabelleSupplierArticlesRecived(
     var itsInFindedAskSupplierSA: Boolean = false,
 ) {
     constructor() : this(0L)
-
 }
-       //telegram
+
 data class TabelleSuppliersSA(
     var idSupplierSu: Long = 0,
     var nomSupplierSu: String = "",

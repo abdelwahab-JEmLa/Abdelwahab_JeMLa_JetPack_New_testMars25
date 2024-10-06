@@ -273,7 +273,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             aa_vid = nextVid++,
             a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? String)?.toLong() ?: 0L),
             a_d_nomarticlefinale_c = map["a02"] as? String ?: "",
-            idSupplierTSA = correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 0,
+            idSupplierTSA = correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10,
             nmbrCat = correspondingArticle?.nmbrCat ?: 0,
             trouve_c = false,
             a_u_prix_1_q1_c = correspondingArticle?.monPrixVent ?: 0.0,
