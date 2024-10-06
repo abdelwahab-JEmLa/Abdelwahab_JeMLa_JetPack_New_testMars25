@@ -57,7 +57,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
-    private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("telegram")
+    private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
     val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
@@ -205,7 +205,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     ) {
         try {
             val refSource = firebaseDatabase.getReference("telegram")
-            val refDestination = firebaseDatabase.getReference("SupplierArticlesRecived")
+            val refDestination = firebaseDatabase.getReference("K_SupplierArticlesRecived")
 
             refDestination.removeValue().await()
 
