@@ -120,6 +120,12 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
+        .sortedBy { supplier ->
+            when (supplier.idSupplierSu) {
+                10L, 9L  -> 0
+                else -> supplier.idSupplierSu + 2 // Shift other IDs to ensure 9 and 10 come first
+            }
+        }
 
     private fun updateUiState(
         articles: List<BaseDonneECBTabelle>,
