@@ -84,6 +84,7 @@ import g_BoardStatistiques.f_2_CreditsClients.CreditsClientsViewModel
 import g_BoardStatistiques.f_2_CreditsClients.FragmentCreditsClients
 import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -180,6 +181,7 @@ fun CustomNavigationBar(
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
+
     NavigationBar {
         items.forEach { screen ->
             NavigationBarItem(
@@ -213,6 +215,7 @@ fun AppNavHost(
 ) {
     var localProgress by remember { mutableStateOf(0f) }
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     NavHost(
         navController = navController,
@@ -253,16 +256,22 @@ fun AppNavHost(
                     viewModels.classementsArticlesViewModel,
                     onToggleNavBar = onToggleNavBar,
                     onUpdateStart = {
-                        viewModels.headOfViewModels.startProgress()
-                        localProgress = 0f
+                        coroutineScope.launch {
+                            viewModels.headOfViewModels.updateProgressWithDelay(0f)
+                            localProgress = 0f
+                        }
                     },
                     onUpdateProgress = { progress ->
-                        localProgress = progress
-                        viewModels.headOfViewModels.updateProgress(progress)
+                        coroutineScope.launch {
+                            localProgress = progress
+                            viewModels.headOfViewModels.updateProgressWithDelay(progress)
+                        }
                     },
                     onUpdateComplete = {
-                        viewModels.headOfViewModels.completeProgress()
-                        localProgress = 0f
+                        coroutineScope.launch {
+                            viewModels.headOfViewModels.updateProgressWithDelay(100f)
+                            localProgress = 0f
+                        }
                     }
                 )
             }

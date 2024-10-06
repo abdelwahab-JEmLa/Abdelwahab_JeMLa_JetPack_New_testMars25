@@ -136,7 +136,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         ) }
     }
 
-    private suspend fun updateProgressWithDelay(progress: Float, delay: Long = PROGRESS_UPDATE_DELAY) {
+    suspend fun updateProgressWithDelay(progress: Float, delay: Long = PROGRESS_UPDATE_DELAY) {
         _uploadProgress.value = progress.coerceIn(0f, 100f)
         delay(delay)
     }
