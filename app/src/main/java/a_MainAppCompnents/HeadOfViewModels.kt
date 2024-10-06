@@ -78,7 +78,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
-    private suspend fun initDataFromFirebase() {
+    suspend fun initDataFromFirebase() {
         try {
             _uiState.update { it.copy(isLoading = true) }
             updateProgressWithDelay(0f)

@@ -485,13 +485,13 @@ private fun Dialog(
                         tint2 = Color.Black,
                         onClick = {
                             coroutineScope.launch {
-
                                 headOfViewModels.trensfertData(articleDao,
                                     editeBaseDonneViewModel,
                                     context
                                 )
-
+                                headOfViewModels.initDataFromFirebase()
                             }
+                            onDismiss()
                         }
                     )
                     DialogButton(
