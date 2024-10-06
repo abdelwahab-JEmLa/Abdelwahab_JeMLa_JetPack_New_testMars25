@@ -489,7 +489,6 @@ private fun Dialog(
                                     editeBaseDonneViewModel,
                                     context
                                 )
-                                headOfViewModels.initDataFromFirebase()
                             }
                             onDismiss()
                         }

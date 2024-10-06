@@ -170,18 +170,15 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 var currentStep = 0
 
                 // Step 1: Import from Firebase to DataBaseDonne
-                updateTotalProgress(currentStep++, totalSteps)
                 importFromFirebaseToDataBaseDonne("e_DBJetPackExport", editeBaseDonneViewModel)
                 updateStepProgress(currentStep, totalSteps, 100f)
 
                 // Step 2: Transfer Firebase Data ArticlesAcheteModele
-                updateTotalProgress(currentStep++, totalSteps)
                 transferFirebaseDataArticlesAcheteModele(context, articleDao) { progress ->
                     updateStepProgress(currentStep, totalSteps, progress)
                 }
 
                 // Step 3: Transfer from Telegram to SupplierArticlesRecived
-                updateTotalProgress(currentStep++, totalSteps)
                 transfertFromeTelegramToSupplierArticlesRecived(context) { progress ->
                     updateStepProgress(currentStep, totalSteps, progress)
                 }
@@ -220,7 +217,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             var skippedItems = 0
 
             dataMap.forEach { (key, value) ->
-                val idArticle = (value["a01"] as? Number)?.toLong() ?: 0L
+                val idArticle = (value["a01"] as? String)?.toLong() ?: 0L
                 Log.d("TransferData", "Processing item with idArticle: $idArticle")
 
                 val itsNewArticleFromeBacKE = value["a10"] as? String == "" &&
@@ -251,6 +248,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 onProgressUpdate(progress)
             }
 
+            initDataFromFirebase()
+
             Log.d("TransferData", "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems")
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems", Toast.LENGTH_SHORT).show()
@@ -270,7 +269,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     ): TabelleSupplierArticlesRecived {
         return TabelleSupplierArticlesRecived(
             aa_vid = nextVid++,
-            a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? Number)?.toLong() ?: 0L),
+            a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? String)?.toLong() ?: 0L),
             a_d_nomarticlefinale_c = map["a02"] as? String ?: "",
             idSupplierTSA = correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 0,
             nmbrCat = correspondingArticle?.nmbrCat ?: 0,
