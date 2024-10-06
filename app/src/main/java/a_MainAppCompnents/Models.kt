@@ -33,13 +33,13 @@ data class TabelleSupplierArticlesRecived(
 }
        //telegram
 data class TabelleSuppliersSA(
-    var vidSupplierSA: Long = 0,
-    var nomSupplierSA: String = "",
-    var bonDuSupplierSA: String = "",
-    val couleurSA: String = "#FFFFFF", // Default color
-    var currentCreditBalanceSA: Double = 0.0, // New field for current credit balance
-    var isLongTermCreditSA : Boolean = false,
-    var ignoreItProdectsSA : Boolean = false,
+    var idSupplierSu: Long = 0,
+    var nomSupplierSu: String = "",
+    var bonDuSupplierSu: String = "",
+    val couleurSu: String = "#FFFFFF", // Default color
+    var currentCreditBalance: Double = 0.0, // New field for current credit balance
+    var longTermCredit : Boolean = false,
+    var ignoreItProdects: Boolean = false,
 ) {
     constructor() : this(0)
 }

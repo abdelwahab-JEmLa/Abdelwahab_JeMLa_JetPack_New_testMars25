@@ -75,9 +75,9 @@ fun Fragment_SupplierArticlesRecivedManager(
             ) {
                 uiState.tabelleSuppliersSA.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                        it.idSupplierTSA.toLong() == supplier.vidSupplierSA
+                        it.idSupplierTSA.toLong() == supplier.idSupplierSu
                     }
-                    if (articlesSupplier.isNotEmpty() || supplier.nomSupplierSA != "Finde") {
+                    if (articlesSupplier.isNotEmpty() || supplier.nomSupplierSu != "Finde") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeader(supplier = supplier, viewModel = viewModel)
                         }
@@ -191,7 +191,7 @@ fun SupplierHeader(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = supplier.nomSupplierSA,
+                text = supplier.nomSupplierSu,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
