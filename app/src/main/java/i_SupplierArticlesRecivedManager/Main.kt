@@ -5,6 +5,10 @@ import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import a_MainAppCompnents.TabelleSuppliersSA
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -46,8 +51,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,8 +75,10 @@ fun Fragment_SupplierArticlesRecivedManager(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    var supplierHeaderisHandled by remember { mutableStateOf(0L) }
+    var supplierHeaderisHandled by remember { mutableStateOf<Long?>(null) }
     var showOnlyWithFilter by remember { mutableStateOf(false) }
+
+    var animatingSupplier by remember { mutableStateOf<Long?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -82,41 +91,34 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                val filteredSuppliers = if (showOnlyWithFilter) {
-                    uiState.tabelleSuppliersSA.filter { supplier ->
-                        uiState.tabelleSupplierArticlesRecived.any { article ->
-                            article.idSupplierTSA.toLong() == supplier.idSupplierSu && article.itsInFindedAskSupplierSA
-                        }
-                    }
-                } else {
-                    uiState.tabelleSuppliersSA
-                }
-
-                filteredSuppliers.forEach { supplier ->
+                uiState.tabelleSuppliersSA.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                        it.idSupplierTSA.toLong() == supplier.idSupplierSu
+                        it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
+                                (supplierHeaderisHandled == null || it.idSupplierTSA.toLong() == supplierHeaderisHandled)
                     }
 
-                    if (articlesSupplier.isNotEmpty() && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
+                    if ((articlesSupplier.isNotEmpty() || animatingSupplier == supplier.idSupplierSu) &&
+                        supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
-                                coroutineScope.launch {
-                                    val supplierIndex = filteredSuppliers.indexOf(supplier)
-                                    if (supplierIndex != -1) {
-                                        gridState.animateScrollToItem(supplierIndex)
-                                    }
-                                    supplierHeaderisHandled = it.idSupplierSu
-                                }
-                            })
+                            SupplierHeaderSA(supplier = supplier, viewModel = viewModel)
                         }
-                        items(articlesSupplier) { article ->
-                            ArticleItemSA(
-                                article = article,
-                                onClickOnImg = { clickedArticle ->
-                                    dialogeDisplayeDetailleChanger = clickedArticle
-                                },
-                                viewModel = viewModel,
-                            )
+                        items(
+                            items = articlesSupplier,
+                            key = { it.a_c_idarticle_c }
+                        ) { article ->
+                            AnimatedVisibility(
+                                visible = animatingSupplier != supplier.idSupplierSu,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically()
+                            ) {
+                                ArticleItemSA(
+                                    article = article,
+                                    onClickOnImg = { clickedArticle ->
+                                        dialogeDisplayeDetailleChanger = clickedArticle
+                                    },
+                                    viewModel = viewModel,
+                                )
+                            }
                         }
                     }
                 }
@@ -159,7 +161,19 @@ fun Fragment_SupplierArticlesRecivedManager(
                 viewModel = viewModel,
                 supplierHeaderisHandled = supplierHeaderisHandled,
                 showOnlyWithFilter = showOnlyWithFilter,
-                onToggleFilter = { showOnlyWithFilter = !showOnlyWithFilter }
+                onToggleFilter = { showOnlyWithFilter = !showOnlyWithFilter },
+                onFirstClickFlotButt = { supplier ->
+                    supplierHeaderisHandled = supplier.idSupplierSu
+                },
+                onSecondClick = { fromSupplier, toSupplier ->
+                    coroutineScope.launch {
+                        animatingSupplier = fromSupplier
+                        delay(300) // Attendre que l'animation de disparition soit terminée
+                        viewModel.moveArticleNonFindToSupplier(fromSupp = fromSupplier, toSupp = toSupplier)
+                        animatingSupplier = null
+                        supplierHeaderisHandled = null
+                    }
+                }
             )
         }
 
@@ -234,7 +248,6 @@ fun ArticleItemSA(
 fun SupplierHeaderSA(
     supplier: TabelleSuppliersSA,
     viewModel: HeadOfViewModels,
-    onHeaderClick: (TabelleSuppliersSA) -> Unit
 ) {
     val backgroundColor = remember(supplier.couleurSu) {
         Color(android.graphics.Color.parseColor(supplier.couleurSu))
@@ -246,10 +259,7 @@ fun SupplierHeaderSA(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable {
-                isClicked = true
-                onHeaderClick(supplier)
-            }
+
             .scale(scale),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
@@ -301,9 +311,11 @@ fun SuppliersFloatingButtonsSA(
     allArticles: List<TabelleSupplierArticlesRecived>,
     suppliers: List<TabelleSuppliersSA>,
     viewModel: HeadOfViewModels,
-    supplierHeaderisHandled: Long,
+    supplierHeaderisHandled: Long?,
     showOnlyWithFilter: Boolean,
-    onToggleFilter: () -> Unit
+    onToggleFilter: () -> Unit,
+    onFirstClickFlotButt: (TabelleSuppliersSA) -> Unit,
+    onSecondClick: (Long, Long) -> Unit
 ) {
     val filteredSuppliers = if (showOnlyWithFilter) {
         suppliers.filter { supplier ->
@@ -313,24 +325,36 @@ fun SuppliersFloatingButtonsSA(
         suppliers
     }
 
-    Column {
+    Column(
+        modifier = Modifier.padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         filteredSuppliers.forEach { supplier ->
             FloatingActionButton(
                 onClick = {
-                    viewModel.moveArticleNonFindToSupplier(fromSupp = supplierHeaderisHandled, toSupp = supplier.idSupplierSu)
+                    if (supplierHeaderisHandled == null) {
+                        onFirstClickFlotButt(supplier)
+                    } else if (supplierHeaderisHandled != supplier.idSupplierSu) {
+                        onSecondClick(supplierHeaderisHandled, supplier.idSupplierSu)
+                    }
                 },
-                modifier = Modifier.padding(vertical = 4.dp)
+                modifier = Modifier.size(56.dp)
             ) {
-                Text(supplier.nomSupplierSu.take(2))
+                Text(
+                    text = supplier.nomSupplierSu.take(2),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
             }
         }
+
         FloatingActionButton(
             onClick = { onToggleFilter() },
-            modifier = Modifier.padding(vertical = 4.dp)
+            modifier = Modifier.size(56.dp)
         ) {
             Icon(
-                if (showOnlyWithFilter) Icons.Default.FilterAlt else Icons.Default.FilterAltOff,
-                contentDescription = "Filter articles with supplier"
+                imageVector = if (showOnlyWithFilter) Icons.Default.FilterAlt else Icons.Default.FilterAltOff,
+                contentDescription = "Toggle filter"
             )
         }
     }
