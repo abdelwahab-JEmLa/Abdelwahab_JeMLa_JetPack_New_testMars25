@@ -202,14 +202,18 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         onProgressUpdate: (Float) -> Unit
     ) {
         try {
+            Log.d("TransferData", "Starting data transfer from Telegram to SupplierArticlesRecived")
             val refSource = firebaseDatabase.getReference("telegram")
             val refDestination = firebaseDatabase.getReference("K_SupplierArticlesRecived")
 
+            Log.d("TransferData", "Removing existing data from destination")
             refDestination.removeValue().await()
 
+            Log.d("TransferData", "Fetching data from source")
             val dataSnapshot = refSource.get().await()
 
             val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+            Log.d("TransferData", "Fetched ${dataMap.size} items from source")
 
             val totalItems = dataMap.size
             var processedItems = 0
@@ -217,47 +221,58 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
             // Find the maximum idArticle
             dataMap.forEach { (_, value) ->
-                val idArticle = (value["idarticle_c"] as? Number)?.toLong() ?: 0L
+                val idArticle = (value["a01"] as? Number)?.toLong() ?: 0L
                 if (idArticle > maxIdArticle) {
                     maxIdArticle = idArticle
                 }
             }
+            Log.d("TransferData", "Maximum idArticle found: $maxIdArticle")
 
             dataMap.forEach { (_, value) ->
-                val idArticle = (value["idarticle_c"] as? Number)?.toLong() ?: 0L
+                val idArticle = (value["a01"] as? Number)?.toLong() ?: 0L
+                Log.d("TransferData", "Processing item with idArticle: $idArticle")
 
-                val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
-                        value["nomarticlefinale_c_2"] as? String == "" &&
-                        value["nomarticlefinale_c_3"] as? String == "" &&
-                        value["nomarticlefinale_c_4"] as? String == ""
+                val itsNewArticleFromeBacKE = value["a13"] as? String == "" &&
+                        value["a15"] as? String == "" &&
+                        value["a17"] as? String == "" &&
+                        value["a19"] as? String == ""
                 val generatedID = if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
+                Log.d("TransferData", "Generated ID: $generatedID, New article: $itsNewArticleFromeBacKE")
 
                 // Filter entries where totalquantity is empty or null
-                val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
+                val totalQuantity = (value["a21"] as? Number)?.toInt()
                 if (totalQuantity != null && totalQuantity > 0) {
+                    Log.d("TransferData", "Valid total quantity: $totalQuantity")
+
                     // Find the corresponding article in articlesBaseDonneECB
                     val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticleECB.toLong() == generatedID }
-                    val lastSupplierIdBuyedFrom = correspondingArticle?.lastSupplierIdBuyedFrom ?: 0
 
-                    val article = fromMap(value, generatedID, lastSupplierIdBuyedFrom.toInt())
+
+
+                    val article = fromMap(value, generatedID, correspondingArticle)
+                    Log.d("TransferData", "Created article with aa_vid: ${article.aa_vid}")
                     refDestination.child(article.aa_vid.toString()).setValue(article).await()
 
                     processedItems++
-                    onProgressUpdate(processedItems.toFloat() / totalItems * 100)
+                    val progress = processedItems.toFloat() / totalItems * 100
+                    Log.d("TransferData", "Progress: $progress%")
+                    onProgressUpdate(progress)
+                } else {
+                    Log.d("TransferData", "Skipping item due to invalid total quantity")
                 }
             }
 
+            Log.d("TransferData", "Data transfer completed successfully")
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Log.e("transferFirebaseData", "Failed to transfer data", e)
+            Log.e("TransferData", "Failed to transfer data", e)
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
-
     private fun fromMap(map: Map<String, Any?>, generatedID: Long, lastSupplierIdBuyedFrom: Int): TabelleSupplierArticlesRecived {
         return TabelleSupplierArticlesRecived(
             aa_vid = nextVid++,
@@ -271,18 +286,18 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             a_q_prixachat_c = (map["a08"] as? String)?.toDoubleOrNull() ?: 0.0,
             a_l_nmbunite_c = (map["a09"] as? String)?.toIntOrNull() ?: 0,
             a_r_prixdevent_c = (map["a10"] as? String)?.toDoubleOrNull() ?: 0.0,
-            nomclient = (map["a11"] as? String) ?: "",
-            datedachate = (map["a12"] as? String) ?: "",
-            a_d_nomarticlefinale_c_1 = (map["a13"] as? String) ?: "",
-            quantityachete_c_1 = (map["a14"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_2 = (map["a15"] as? String) ?: "",
-            quantityachete_c_2 = (map["a16"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_3 = (map["a17"] as? String) ?: "",
-            quantityachete_c_3 = (map["a18"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_4 = (map["a19"] as? String) ?: "",
-            quantityachete_c_4 = (map["a20"] as? String)?.toIntOrNull() ?: 0,
-            totalquantity = (map["a21"] as? String)?.toIntOrNull() ?: 0,
-            etatdecommendcolum = (map["a22"] as? String)?.toIntOrNull() ?: 0,
+            nomclient = (map["a08"] as? String) ?: "",
+            datedachate = (map["a09"] as? String) ?: "",
+            a_d_nomarticlefinale_c_1 = (map["a10"] as? String) ?: "",
+            quantityachete_c_1 = (map["a11"] as? String)?.toIntOrNull() ?: 0,
+            a_d_nomarticlefinale_c_2 = (map["a12"] as? String) ?: "",
+            quantityachete_c_2 = (map["a13"] as? String)?.toIntOrNull() ?: 0,
+            a_d_nomarticlefinale_c_3 = (map["a14"] as? String) ?: "",
+            quantityachete_c_3 = (map["a15"] as? String)?.toIntOrNull() ?: 0,
+            a_d_nomarticlefinale_c_4 = (map["a16"] as? String) ?: "",
+            quantityachete_c_4 = (map["a17"] as? String)?.toIntOrNull() ?: 0,
+            totalquantity = (map["a18"] as? String)?.toIntOrNull() ?: 0,
+            etatdecommendcolum = (map["a19"] as? String)?.toIntOrNull() ?: 0,
         )
     }
     private suspend fun transferFirebaseDataArticlesAcheteModele(
