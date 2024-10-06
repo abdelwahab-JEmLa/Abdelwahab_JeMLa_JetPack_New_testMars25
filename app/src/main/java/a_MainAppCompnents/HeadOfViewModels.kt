@@ -141,8 +141,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         delay(delay)
     }
 
-
-
     private fun updateTotalProgress(currentStep: Int, totalSteps: Int) {
         _uploadProgress.value = (currentStep.toFloat() / totalSteps.toFloat() * 100f).roundToInt().toFloat()
     }
@@ -210,6 +208,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             refDestination.removeValue().await()
 
             val dataSnapshot = refSource.get().await()
+
             val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
 
             val totalItems = dataMap.size
