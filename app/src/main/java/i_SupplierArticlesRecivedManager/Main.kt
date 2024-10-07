@@ -84,8 +84,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    var animatingSupplier by remember { mutableStateOf<Long?>(null) }
-
     var toggleCtrlToFilterToMove by remember { mutableStateOf(false) }
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
 
@@ -112,22 +110,12 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                     }
 
-                    if ((articlesSupplier.isNotEmpty() || animatingSupplier == supplier.idSupplierSu) &&
-                        supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
+                    if (articlesSupplier.isNotEmpty()  && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
-                                animatingSupplier = null
                             })
                         }
-                        items(
-                            items = articlesSupplier,
-                            key = { it.a_c_idarticle_c }
-                        ) { article ->
-                            AnimatedVisibility(
-                                visible = animatingSupplier != supplier.idSupplierSu,
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
+                        items(articlesSupplier) { article ->
                                 ArticleItemSA(
                                     article = article,
                                     onClickOnImg = { clickedArticle ->
@@ -135,7 +123,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                                     },
                                     viewModel = viewModel,
                                 )
-                            }
                         }
                     }
                 }
@@ -174,7 +161,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 articlesToMove = filterBytabelleSupplierArticlesRecived,
                                 toSupp = idSupplier
                             )
-                            animatingSupplier = null
                             toggleCtrlToFilterToMove = false
                         } else {
                             idSupplierOfFloatingButtonClicked = when (idSupplierOfFloatingButtonClicked) {
