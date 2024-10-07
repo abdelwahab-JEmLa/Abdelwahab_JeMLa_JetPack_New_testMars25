@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -33,7 +35,9 @@ fun FloatingActionButtonsSA(
     showFloatingButtons: Boolean,
     onToggleFloatingButtons: () -> Unit,
     onToggleSuppDescriptions: () -> Unit,
-    onChangeGridColumns: (Int) -> Unit
+    onToggleToFilterToMove: () -> Unit,
+    onChangeGridColumns: (Int) -> Unit,
+    filterSuppHandledNow: Boolean
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
@@ -47,6 +51,9 @@ fun FloatingActionButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
+                    Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.FilterAlt, "Filter To Move") {
+                        onToggleToFilterToMove()
+                    },
                     Triple( Icons.Default.Details, "Toggle Suppliers Description") {
                         onToggleSuppDescriptions()
                     },

@@ -80,11 +80,13 @@ fun Fragment_SupplierArticlesRecivedManager(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    var supplierHeaderisHandled by remember { mutableStateOf<Long?>(null) }
     var showSuupWherNotEmptyFlotBS by remember { mutableStateOf(false) }
     var showDescreptionFlotBS by remember { mutableStateOf(false) }
 
     var animatingSupplier by remember { mutableStateOf<Long?>(null) }
+
+    var filterSuppHandledNow by remember { mutableStateOf(false) }
+    var supplierFlotBisHandled by remember { mutableStateOf<Long?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -97,10 +99,16 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                uiState.tabelleSuppliersSA.forEach { supplier ->
+                val filterSupp = if (supplierFlotBisHandled != null) {
+                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == supplierFlotBisHandled }
+                } else {
+                    uiState.tabelleSuppliersSA
+                }
+
+                filterSupp.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
-                                (supplierHeaderisHandled == null || it.itsInFindedAskSupplierSA)
+                                (!filterSuppHandledNow || it.itsInFindedAskSupplierSA)
                     }
 
                     if ((articlesSupplier.isNotEmpty() || animatingSupplier == supplier.idSupplierSu) &&
@@ -108,11 +116,16 @@ fun Fragment_SupplierArticlesRecivedManager(
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
                                 coroutineScope.launch {
-                                    val supplierIndex = uiState.tabelleSuppliersSA.indexOf(supplier)
-                                    if (supplierIndex != -1) {
-                                        gridState.animateScrollToItem(supplierIndex)
+                                    if (filterSuppHandledNow) {
+                                        val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
+                                            it.itsInFindedAskSupplierSA
+                                        }
+                                        viewModel.moveArticleNonFindToSupplier(
+                                            articlesToMove = filterBytabelleSupplierArticlesRecived,
+                                            toSupp = it.idSupplierSu
+                                        )
+                                        animatingSupplier = null
                                     }
-                                    supplierHeaderisHandled = it.idSupplierSu
                                 }
                             })
                         }
@@ -149,8 +162,12 @@ fun Fragment_SupplierArticlesRecivedManager(
             FloatingActionButtonsSA(
                 showFloatingButtons = showFloatingButtons,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleSuppDescriptions={ showDescreptionFlotBS = !showDescreptionFlotBS },
+                onToggleSuppDescriptions = { showDescreptionFlotBS = !showDescreptionFlotBS },
                 onChangeGridColumns = { gridColumns = it },
+                onToggleToFilterToMove = {
+                    filterSuppHandledNow = !filterSuppHandledNow
+                },
+                filterSuppHandledNow = filterSuppHandledNow
             )
         }
 
@@ -166,18 +183,9 @@ fun Fragment_SupplierArticlesRecivedManager(
                 suppliers = uiState.tabelleSuppliersSA,
                 showDescreptionFlotBS = showDescreptionFlotBS,
                 showOnlyWithFilter = showSuupWherNotEmptyFlotBS,
-                onClickFlotButt = { toSupplier ->
-                    coroutineScope.launch {
-                        val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
-                            it.itsInFindedAskSupplierSA
-                        }
-                        viewModel.moveArticleNonFindToSupplier(
-                            articlesToMove = filterBytabelleSupplierArticlesRecived,
-                            toSupp = toSupplier
-                        )
-                        animatingSupplier = null
-                        supplierHeaderisHandled = null
-                    }
+                supplierFlotBisHandled = supplierFlotBisHandled,
+                onClickFlotButt = { supplier ->
+                    supplierFlotBisHandled = supplier
                 }
             )
         }
@@ -198,13 +206,15 @@ fun Fragment_SupplierArticlesRecivedManager(
         }
     }
 }
+
 @Composable
 fun SuppliersFloatingButtonsSA(
     allArticles: List<TabelleSupplierArticlesRecived>,
     suppliers: List<TabelleSuppliersSA>,
     showOnlyWithFilter: Boolean,
     onClickFlotButt: (Long) -> Unit,
-    showDescreptionFlotBS: Boolean
+    showDescreptionFlotBS: Boolean,
+    supplierFlotBisHandled: Long?
 ) {
     var expendSuppFloatingButtons by remember { mutableStateOf(false) }
     var dragOffsetY by remember { mutableStateOf(0f) }
@@ -254,14 +264,12 @@ fun SuppliersFloatingButtonsSA(
                         }
                     }
                 }
-                var isClicked by remember { mutableStateOf(false) }
                 FloatingActionButton(
                     onClick = {
                         onClickFlotButt(supplier.idSupplierSu)
-                        isClicked = !isClicked
                     },
                     modifier = Modifier.size(56.dp),
-                    containerColor = if (isClicked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    containerColor = if (supplierFlotBisHandled == supplier.idSupplierSu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                 ) {
                     Text(
                         text = supplier.nomSupplierSu.take(3),
