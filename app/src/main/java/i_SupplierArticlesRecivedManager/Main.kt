@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -52,11 +54,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
@@ -159,14 +164,13 @@ fun Fragment_SupplierArticlesRecivedManager(
             SuppliersFloatingButtonsSA(
                 allArticles = uiState.tabelleSupplierArticlesRecived,
                 suppliers = uiState.tabelleSuppliersSA,
-                showDescreptionFlotBS=showDescreptionFlotBS,
+                showDescreptionFlotBS = showDescreptionFlotBS,
                 showOnlyWithFilter = showSuupWherNotEmptyFlotBS,
                 onClickFlotButt = { toSupplier ->
                     coroutineScope.launch {
                         val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
                             it.itsInFindedAskSupplierSA
                         }
-
                         viewModel.moveArticleNonFindToSupplier(
                             articlesToMove = filterBytabelleSupplierArticlesRecived,
                             toSupp = toSupplier
@@ -194,7 +198,89 @@ fun Fragment_SupplierArticlesRecivedManager(
         }
     }
 }
+@Composable
+fun SuppliersFloatingButtonsSA(
+    allArticles: List<TabelleSupplierArticlesRecived>,
+    suppliers: List<TabelleSuppliersSA>,
+    showOnlyWithFilter: Boolean,
+    onClickFlotButt: (Long) -> Unit,
+    showDescreptionFlotBS: Boolean
+) {
+    var expendSuppFloatingButtons by remember { mutableStateOf(false) }
+    var dragOffsetY by remember { mutableStateOf(0f) }
 
+    val filteredSuppliers = if (showOnlyWithFilter) {
+        suppliers.filter { supplier ->
+            allArticles.any { article ->
+                article.idSupplierTSA.toLong() == supplier.idSupplierSu && !article.itsInFindedAskSupplierSA
+            }
+        }
+    } else {
+        suppliers
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    dragOffsetY += dragAmount.y
+                }
+            },
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        filteredSuppliers.forEach { supplier ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                if (showDescreptionFlotBS) {
+                    Card(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .heightIn(min = 30.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.CenterStart,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = supplier.nomSupplierSu,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                var isClicked by remember { mutableStateOf(false) }
+                FloatingActionButton(
+                    onClick = {
+                        onClickFlotButt(supplier.idSupplierSu)
+                        isClicked = !isClicked
+                    },
+                    modifier = Modifier.size(56.dp),
+                    containerColor = if (isClicked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                ) {
+                    Text(
+                        text = supplier.nomSupplierSu.take(3),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        FloatingActionButton(
+            onClick = { expendSuppFloatingButtons = !expendSuppFloatingButtons }
+        ) {
+            Icon(
+                if (expendSuppFloatingButtons) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                contentDescription = "Toggle Floating Buttons"
+            )
+        }
+    }
+}
 @Composable
 fun ArticleItemSA(
     article: TabelleSupplierArticlesRecived,
@@ -311,72 +397,4 @@ fun DisponibilityOverlaySA(state: String) {
     }
 }
 
-@Composable
-fun SuppliersFloatingButtonsSA(    //TODO fait que ca soit dragable
-    allArticles: List<TabelleSupplierArticlesRecived>,
-    suppliers: List<TabelleSuppliersSA>,
-    showOnlyWithFilter: Boolean,
-    onClickFlotButt: (Long) -> Unit,
-    showDescreptionFlotBS: Boolean
-) {
-    var expendSuppFloatingButtons by remember { mutableStateOf(false) }
 
-    val filteredSuppliers = if (showOnlyWithFilter) {
-        suppliers.filter { supplier ->
-            allArticles.any { article ->
-                article.idSupplierTSA.toLong() == supplier.idSupplierSu && !article.itsInFindedAskSupplierSA
-            }
-        }
-    } else {
-        suppliers
-    }
-
-    Column(
-        modifier = Modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        filteredSuppliers.forEach { supplier ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                if (showDescreptionFlotBS) {
-                    Card(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .heightIn(min = 30.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.CenterStart,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Text(
-                                text = supplier.nomSupplierSu,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-                FloatingActionButton(
-                    onClick = { onClickFlotButt(supplier.idSupplierSu) },
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Text(
-                        text = supplier.nomSupplierSu.take(3),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-        }
-        FloatingActionButton(onClick = {expendSuppFloatingButtons!=expendSuppFloatingButtons}) {
-            Icon(
-                if (expendSuppFloatingButtons) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-                contentDescription = "Toggle Floating Buttons"
-            )
-        }
-    }
-
-}
