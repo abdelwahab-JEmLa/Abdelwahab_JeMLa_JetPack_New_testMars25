@@ -116,13 +116,13 @@ fun Fragment_SupplierArticlesRecivedManager(
                             })
                         }
                         items(articlesSupplier) { article ->
-                                ArticleItemSA(
-                                    article = article,
-                                    onClickOnImg = { clickedArticle ->
-                                        dialogeDisplayeDetailleChanger = clickedArticle
-                                    },
-                                    viewModel = viewModel,
-                                )
+                            ArticleItemSA(
+                                article = article,
+                                onClickOnImg = { clickedArticle ->
+                                    dialogeDisplayeDetailleChanger = clickedArticle
+                                },
+                                viewModel = viewModel,
+                            )
                         }
                     }
                 }
@@ -334,6 +334,9 @@ fun ArticleItemSA(
         MaterialTheme.colorScheme.surface
     }
 
+    // Add a remember key to force recomposition when the article changes
+    val reloadKey = remember(article) { System.currentTimeMillis() }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -352,6 +355,7 @@ fun ArticleItemSA(
                     article = article,
                     viewModel = viewModel,
                     index = 0,
+                    reloadKey = reloadKey
                 )
             }
 

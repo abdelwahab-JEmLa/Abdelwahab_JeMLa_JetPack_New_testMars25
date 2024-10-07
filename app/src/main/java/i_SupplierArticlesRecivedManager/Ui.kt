@@ -160,7 +160,7 @@ fun DisplayeImageSA(
     val downloadsImagePath =
         "${viewModel.dossiesStandartOFImages}/${article.a_c_idarticle_c}_${index + 1}"
 
-    val imageExist = remember( reloadKey) {
+    val imageExist = remember(reloadKey) {
         listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
             listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
                 File("$path.$extension").exists()
