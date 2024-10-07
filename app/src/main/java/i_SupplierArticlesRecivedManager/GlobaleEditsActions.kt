@@ -13,8 +13,8 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Moving
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun FloatingActionButtonsSA(
+fun GlobaleControlsFloatingsButtonsSA(
     showFloatingButtons: Boolean,
     onToggleFloatingButtons: () -> Unit,
     onToggleToFilterToMove: () -> Unit,
@@ -50,7 +50,7 @@ fun FloatingActionButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
-                    Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.FilterAlt, "Filter To Move") {
+                    Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.Moving, "Filter To Move") {
                         onToggleToFilterToMove()
                     },
                     Triple(Icons.Default.GridView, "Change Grid") {

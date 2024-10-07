@@ -81,17 +81,13 @@ fun Fragment_SupplierArticlesRecivedManager(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
 
-    var suppliersFloatingButtons by remember { mutableStateOf(true) }
-
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    var showDescreptionFlotBS by remember { mutableStateOf(false) }
-
     var animatingSupplier by remember { mutableStateOf<Long?>(null) }
 
-    var filterSuppHandledNow by remember { mutableStateOf(false) }
-    var supplierFlotBisHandled by remember { mutableStateOf<Long?>(null) }
+    var toggleCtrlToFilterToMove by remember { mutableStateOf(false) }
+    var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -104,8 +100,8 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                val filterSupp = if (supplierFlotBisHandled != null) {
-                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == supplierFlotBisHandled }
+                val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
+                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
                 } else {
                     uiState.tabelleSuppliersSA
                 }
@@ -113,7 +109,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 filterSupp.forEach { supplier ->
                     val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
-                                (!filterSuppHandledNow || it.itsInFindedAskSupplierSA)
+                                (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                     }
 
                     if ((articlesSupplier.isNotEmpty() || animatingSupplier == supplier.idSupplierSu) &&
@@ -153,31 +149,24 @@ fun Fragment_SupplierArticlesRecivedManager(
                 .padding(16.dp)
                 .zIndex(1f)
         ) {
-            FloatingActionButtonsSA(
+            GlobaleControlsFloatingsButtonsSA(
                 showFloatingButtons = showFloatingButtons,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
                 onChangeGridColumns = { gridColumns = it },
                 onToggleToFilterToMove = {
-                    filterSuppHandledNow = !filterSuppHandledNow
+                    toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
                 },
-                filterSuppHandledNow = filterSuppHandledNow
+                filterSuppHandledNow = toggleCtrlToFilterToMove
             )
         }
 
-        AnimatedVisibility(
-            visible = suppliersFloatingButtons,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp)
-                .zIndex(1f)
-        ) {
             SuppliersFloatingButtonsSA(
                 allArticles = uiState.tabelleSupplierArticlesRecived,
                 suppliers = uiState.tabelleSuppliersSA,
-                supplierFlotBisHandled = supplierFlotBisHandled,
+                supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
                 onClickFlotButt = { idSupplier ->
                     coroutineScope.launch {
-                        if (filterSuppHandledNow) {
+                        if (toggleCtrlToFilterToMove) {
                             val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
                                 it.itsInFindedAskSupplierSA
                             }
@@ -186,9 +175,9 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 toSupp = idSupplier
                             )
                             animatingSupplier = null
-                            filterSuppHandledNow = false
+                            toggleCtrlToFilterToMove = false
                         } else {
-                            supplierFlotBisHandled = when (supplierFlotBisHandled) {
+                            idSupplierOfFloatingButtonClicked = when (idSupplierOfFloatingButtonClicked) {
                                 idSupplier -> null  // Deselect if the same supplier is clicked again
                                 else -> idSupplier  // Select the new supplier
                             }
@@ -196,7 +185,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     }
                 }
             )
-        }
+
 
 
         // Use the current edited article if it matches the given article, otherwise use the original article
