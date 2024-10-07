@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Moving
@@ -36,11 +37,13 @@ fun GlobaleControlsFloatingsButtonsSA(
     onToggleFloatingButtons: () -> Unit,
     onToggleToFilterToMove: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
-    filterSuppHandledNow: Boolean
+    filterSuppHandledNow: Boolean,
+    onToggleReorderMode: () -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
     var showContentDescription by remember { mutableStateOf(false) }
+    var onToggleReorderModeCliked by remember { mutableStateOf(false) }
 
     Column {
         if (showFloatingButtons) {
@@ -50,6 +53,10 @@ fun GlobaleControlsFloatingsButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
+                    Triple(if (onToggleReorderModeCliked) Icons.Default.Close else Icons.Default.FastRewind, "Reorder mode") {
+                        onToggleReorderMode()
+                        onToggleReorderModeCliked=!onToggleReorderModeCliked
+                    },
                     Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.Moving, "Filter To Move") {
                         onToggleToFilterToMove()
                     },
@@ -86,7 +93,7 @@ fun GlobaleControlsFloatingsButtonsSA(
                             }
                         }
                         FloatingActionButton(
-                            onClick = onClick,
+                            onClick = onClick,//The feature "unit conversions on arbitrary expressions" is experimental and should be enabled explicitly. You can also change the original type of this expression to (...) -> Unit
                             modifier = Modifier.size(56.dp)
                         ) {
                             Icon(icon, contentDescription = contentDescription)

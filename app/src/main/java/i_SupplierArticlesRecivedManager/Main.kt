@@ -86,6 +86,8 @@ fun Fragment_SupplierArticlesRecivedManager(
 
     var toggleCtrlToFilterToMove by remember { mutableStateOf(false) }
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
+    var itsReorderMode by remember { mutableStateOf(false) }
+    var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -112,8 +114,10 @@ fun Fragment_SupplierArticlesRecivedManager(
 
                     if (articlesSupplier.isNotEmpty()  && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
-                            })
+                            SupplierHeaderSA(
+                                supplier = supplier,
+                                viewModel = viewModel,
+                            )
                         }
                         items(articlesSupplier) { article ->
                             ArticleItemSA(
@@ -143,36 +147,53 @@ fun Fragment_SupplierArticlesRecivedManager(
                 onToggleToFilterToMove = {
                     toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
                 },
-                filterSuppHandledNow = toggleCtrlToFilterToMove
+                filterSuppHandledNow = toggleCtrlToFilterToMove,
+                onToggleReorderMode = { itsReorderMode = !itsReorderMode }
             )
         }
 
-            SuppliersFloatingButtonsSA(
-                allArticles = uiState.tabelleSupplierArticlesRecived,
-                suppliers = uiState.tabelleSuppliersSA,
-                supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
-                onClickFlotButt = { idSupplier ->
-                    coroutineScope.launch {
+        SuppliersFloatingButtonsSA(
+            allArticles = uiState.tabelleSupplierArticlesRecived,
+            suppliers = uiState.tabelleSuppliersSA,
+            supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
+            onClickFlotButt = { idSupplier ->
+                coroutineScope.launch {
+                    if (itsReorderMode) {
+                        if (holdedIdSupplierForMove == null) {
+                            holdedIdSupplierForMove = idSupplier
+                        } else if (holdedIdSupplierForMove != idSupplier) {
+                            viewModel.goUpAndshiftsAutersDownSupplierPositions(
+                                holdedIdSupplierForMove!!,
+                                idSupplier
+                            )
+                            holdedIdSupplierForMove = null
+                        } else {
+                            holdedIdSupplierForMove = null
+                        }
+                    } else {
                         if (toggleCtrlToFilterToMove) {
-                            val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
-                                it.itsInFindedAskSupplierSA
-                            }
+                            val filterBytabelleSupplierArticlesRecived =
+                                uiState.tabelleSupplierArticlesRecived.filter {
+                                    it.itsInFindedAskSupplierSA
+                                }
                             viewModel.moveArticleNonFindToSupplier(
                                 articlesToMove = filterBytabelleSupplierArticlesRecived,
                                 toSupp = idSupplier
                             )
                             toggleCtrlToFilterToMove = false
                         } else {
-                            idSupplierOfFloatingButtonClicked = when (idSupplierOfFloatingButtonClicked) {
-                                idSupplier -> null  // Deselect if the same supplier is clicked again
-                                else -> idSupplier  // Select the new supplier
-                            }
+                            idSupplierOfFloatingButtonClicked =
+                                when (idSupplierOfFloatingButtonClicked) {
+                                    idSupplier -> null  // Deselect if the same supplier is clicked again
+                                    else -> idSupplier  // Select the new supplier
+                                }
                         }
                     }
                 }
-            )
-
-
+            },
+            isSelectedForeHolder = { holdedIdSupplierForMove =it },
+            itsReorderMode = itsReorderMode
+        )
 
         // Use the current edited article if it matches the given article, otherwise use the original article
         val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
@@ -196,7 +217,9 @@ fun SuppliersFloatingButtonsSA(
     allArticles: List<TabelleSupplierArticlesRecived>,
     suppliers: List<TabelleSuppliersSA>,
     onClickFlotButt: (Long) -> Unit,
-    supplierFlotBisHandled: Long?
+    supplierFlotBisHandled: Long?,
+    itsReorderMode: Boolean,
+    isSelectedForeHolder: (Long) -> Unit,
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -262,7 +285,7 @@ fun SuppliersFloatingButtonsSA(
                         supplier = supplier,
                         showDescription = showDescriptionFlotBS,
                         isSelected = supplierFlotBisHandled == supplier.idSupplierSu,
-                        onClick = { onClickFlotButt(supplier.idSupplierSu) }
+                        onClick = { if (itsReorderMode) isSelectedForeHolder(supplier.idSupplierSu) else {onClickFlotButt(supplier.idSupplierSu)} }
                     )
                 }
             }
@@ -380,7 +403,6 @@ fun ArticleItemSA(
 fun SupplierHeaderSA(
     supplier: TabelleSuppliersSA,
     viewModel: HeadOfViewModels,
-    onHeaderClick: (TabelleSuppliersSA) -> Unit
 ) {
     val backgroundColor = remember(supplier.couleurSu) {
         Color(android.graphics.Color.parseColor(supplier.couleurSu))
@@ -394,7 +416,6 @@ fun SupplierHeaderSA(
             .padding(8.dp)
             .clickable {
                 isClicked = true
-                onHeaderClick(supplier)
             }
             .scale(scale),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)

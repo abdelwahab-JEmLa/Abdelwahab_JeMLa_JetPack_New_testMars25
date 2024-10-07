@@ -129,7 +129,42 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
+    fun goUpAndshiftsAutersDownSupplierPositions(fromSupplierId: Long, toSupplierId: Long) {
+        viewModelScope.launch {
+            val currentSuppliers = _uiState.value.tabelleSuppliersSA
+            val updatedSuppliers = reorderSuppliers(currentSuppliers, fromSupplierId, toSupplierId)
+            _uiState.update { currentState ->
+                currentState.copy(tabelleSuppliersSA = updatedSuppliers)
+            }
+            updateFirebaseAndLocaleSuppliers(updatedSuppliers)
+        }
+    }
 
+    private fun reorderSuppliers(suppliers: List<TabelleSuppliersSA>, fromSupplierId: Long, toSupplierId: Long): List<TabelleSuppliersSA> {
+        val fromIndex = suppliers.indexOfFirst { it.idSupplierSu == fromSupplierId }
+        val toIndex = suppliers.indexOfFirst { it.idSupplierSu == toSupplierId }
+
+        if (fromIndex == -1 || toIndex == -1) return suppliers
+
+        return suppliers.mapIndexed { index, supplier ->
+            when (index) {
+                toIndex -> supplier.copy(classmentSupplier = fromIndex.toDouble())
+                in minOf(fromIndex, toIndex)..maxOf(fromIndex, toIndex) -> {
+                    val newPosition = if (fromIndex < toIndex) index - 1 else index + 1
+                    supplier.copy(classmentSupplier = newPosition.toDouble())
+                }
+                else -> supplier
+            }
+        }.sortedBy { it.classmentSupplier }
+    }
+
+    private suspend fun updateFirebaseAndLocaleSuppliers(suppliers: List<TabelleSuppliersSA>) {
+        // Implement Firebase update logic here
+        // For example:
+        suppliers.forEach { supplier ->
+            refTabelleSuppliersSA.child(supplier.idSupplierSu.toString()).setValue(supplier)
+        }
+    }
 
 /*2->Section Suppliers Commendes Manager -------------------*/
 
@@ -183,10 +218,21 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-        .sortedBy { supplier ->
-            when (supplier.idSupplierSu) {
-                10L, 9L  -> 0 // Place 9 and 10 at the beginning
-                else -> supplier.idSupplierSu + 2 // Shift other IDs to ensure 9 and 10 come first
+        .map { supplier ->
+            supplier.apply {
+                classmentSupplier = when (idSupplierSu) {
+                    10L -> 1.0
+                    9L -> 2.0
+                    else -> 3.0 // Start the increment from 3.0
+                }
+            }
+        }
+        .sortedBy { it.classmentSupplier }
+        .mapIndexed { index, supplier ->
+            supplier.apply {
+                if (classmentSupplier >= 3.0) {
+                    classmentSupplier = index.toDouble() + 3.0
+                }
             }
         }
 

@@ -39,7 +39,8 @@ data class TabelleSuppliersSA(
     var currentCreditBalance: Double = 0.0, // New field for current credit balance
     var longTermCredit : Boolean = false,
     var ignoreItProdects: Boolean = false,
-) {
+    var classmentSupplier: Double = 0.0,
+    ) {
     constructor() : this(0)
 }
 
