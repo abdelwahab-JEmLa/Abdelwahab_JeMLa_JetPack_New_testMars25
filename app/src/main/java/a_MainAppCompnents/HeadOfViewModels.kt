@@ -38,6 +38,9 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 /* Start*/
 class HeadOfViewModels(private val context: Context) : ViewModel() {
@@ -63,13 +66,13 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
     var tempImageUri: Uri? = null
+    private val currentDate: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
     companion object {
         private const val MAX_WIDTH = 1024
         private const val MAX_HEIGHT = 1024
         private const val PROGRESS_UPDATE_DELAY = 100L
         private const val TAG = "HeadOfViewModels"
-
     }
 
     fun changeAskSupplier(article: TabelleSupplierArticlesRecived) {
@@ -100,12 +103,14 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
+
     fun moveArticleNonFindToSupplier(
         articlesToMove: List<TabelleSupplierArticlesRecived>,
         toSupp: Long
     ) {
         viewModelScope.launch {
             try {
+
                 articlesToMove.forEach { article ->
                     // Update the article in the local state
                     _uiState.update { currentState ->
@@ -117,10 +122,28 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                         currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
                     }
 
-                    // Update the article in the database
+                    // Update the article in the TabelleSupplierArticlesRecived database
                     refTabelleSupplierArticlesRecived.child(article.a_c_idarticle_c.toString()).apply {
                         child("idSupplierTSA").setValue(toSupp.toInt())
                         child("itsInFindedAskSupplierSA").setValue(false)
+                    }
+
+                    // Update the corresponding BaseDonneECBTabelle entry
+                    refDBJetPackExport.child(article.a_c_idarticle_c.toString()).apply {
+                        child("lastIdSupplierChoseToBuy").setValue(toSupp)
+                        child("dateLastIdSupplierChoseToBuy").setValue(currentDate)
+                    }
+
+                    // Update the currentEditedArticle if it matches the updated article
+                    _currentEditedArticle.update { currentArticle ->
+                        if (currentArticle?.idArticleECB?.toLong() == article.a_c_idarticle_c) {
+                            currentArticle.copy(
+                                lastIdSupplierChoseToBuy = toSupp,
+                                dateLastIdSupplierChoseToBuy = currentDate
+                            )
+                        } else {
+                            currentArticle
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -128,7 +151,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
-
     fun goUpAndshiftsAutersDownSupplierPositions(fromSupplierId: Long, toSupplierId: Long) {
         viewModelScope.launch {
             val currentSuppliers = _uiState.value.tabelleSuppliersSA
@@ -209,6 +231,10 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
+    private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
+        .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
+        .sortedBy { it.classmentSupplier }
+
     private suspend fun fetchCategories() = refCategorieTabelee.get().await().children
         .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
         .sortedBy { it.idClassementCategorieInCategoriesTabele }
@@ -216,25 +242,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
         .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
 
-    private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
-        .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-        .map { supplier ->
-            supplier.apply {
-                classmentSupplier = when (idSupplierSu) {
-                    10L -> 1.0
-                    9L -> 2.0
-                    else -> 3.0 // Start the increment from 3.0
-                }
-            }
-        }
-        .sortedBy { it.classmentSupplier }
-        .mapIndexed { index, supplier ->
-            supplier.apply {
-                if (classmentSupplier >= 3.0) {
-                    classmentSupplier = index.toDouble() + 3.0
-                }
-            }
-        }
 
     private fun updateUiState(
         articles: List<BaseDonneECBTabelle>,
@@ -387,7 +394,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             aa_vid = nextVid++,
             a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? String)?.toLong() ?: 0L),
             a_d_nomarticlefinale_c = map["a02"] as? String ?: "",
-            idSupplierTSA = if ((correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10)==0)10 else(correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10) ,
+            idSupplierTSA = generate(correspondingArticle),
             nmbrCat = correspondingArticle?.nmbrCat ?: 0,
             trouve_c = false,
             a_u_prix_1_q1_c = correspondingArticle?.monPrixVent ?: 0.0,
@@ -408,6 +415,15 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             etatdecommendcolum = (map["a19"] as? String)?.toIntOrNull() ?: 0
         )
     }
+
+    private fun generate(correspondingArticle: BaseDonneECBTabelle?) =
+        if ((correspondingArticle?.lastSupplierIdBuyedFrom?.toInt()
+                ?: 10) == 0
+        ) 10 else (correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10)
+            //TODO fait que si  correspondingArticle.dateLastSupplierIdBuyedFrom et plus proche on date que dateLastIdSupplierChoseToBuy= lastSupplierIdBuyedFrom
+            //sinon   lastIdSupplierChoseToBuy
+            //si une des 2 et null choisi l autre
+
 
     private suspend fun transferFirebaseDataArticlesAcheteModele(
         context: android.content.Context,
