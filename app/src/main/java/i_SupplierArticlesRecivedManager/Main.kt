@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -26,8 +27,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.FilterAltOff
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
@@ -52,6 +53,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
@@ -68,14 +70,14 @@ fun Fragment_SupplierArticlesRecivedManager(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
 
-    var filterNonDispo by remember { mutableStateOf(false) }
     var suppliersFloatingButtons by remember { mutableStateOf(false) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
     var supplierHeaderisHandled by remember { mutableStateOf<Long?>(null) }
-    var showButtonsWherNotEmpty by remember { mutableStateOf(false) }
+    var showSuupWherNotEmptyFlotBS by remember { mutableStateOf(false) }
+    var showDescreptionFlotBS by remember { mutableStateOf(false) }
 
     var animatingSupplier by remember { mutableStateOf<Long?>(null) }
 
@@ -141,17 +143,9 @@ fun Fragment_SupplierArticlesRecivedManager(
         ) {
             FloatingActionButtonsSA(
                 showFloatingButtons = showFloatingButtons,
-                onToggleNavBar = onToggleNavBar,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleFilter = {
-                    viewModel.toggleFilter()
-                    filterNonDispo = !filterNonDispo
-                },
-                showOnlyWithFilter = uiState.showOnlyWithFilter,
-                viewModel = viewModel,
-                coroutineScope = coroutineScope,
+                onToggleSuppDescriptions={ showDescreptionFlotBS = !showDescreptionFlotBS },
                 onChangeGridColumns = { gridColumns = it },
-                onToggleDisplayeSuppButtons = { suppliersFloatingButtons = !suppliersFloatingButtons }
             )
         }
 
@@ -165,9 +159,8 @@ fun Fragment_SupplierArticlesRecivedManager(
             SuppliersFloatingButtonsSA(
                 allArticles = uiState.tabelleSupplierArticlesRecived,
                 suppliers = uiState.tabelleSuppliersSA,
-                viewModel = viewModel,
-                showOnlyWithFilter = showButtonsWherNotEmpty,
-                onToggleFilter = { showButtonsWherNotEmpty = !showButtonsWherNotEmpty },
+                showDescreptionFlotBS=showDescreptionFlotBS,
+                showOnlyWithFilter = showSuupWherNotEmptyFlotBS,
                 onClickFlotButt = { toSupplier ->
                     coroutineScope.launch {
                         val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
@@ -319,14 +312,15 @@ fun DisponibilityOverlaySA(state: String) {
 }
 
 @Composable
-fun SuppliersFloatingButtonsSA(
+fun SuppliersFloatingButtonsSA(    //TODO fait que ca soit dragable
     allArticles: List<TabelleSupplierArticlesRecived>,
     suppliers: List<TabelleSuppliersSA>,
-    viewModel: HeadOfViewModels,
     showOnlyWithFilter: Boolean,
-    onToggleFilter: () -> Unit,
-    onClickFlotButt: (Long) -> Unit
+    onClickFlotButt: (Long) -> Unit,
+    showDescreptionFlotBS: Boolean
 ) {
+    var expendSuppFloatingButtons by remember { mutableStateOf(false) }
+
     val filteredSuppliers = if (showOnlyWithFilter) {
         suppliers.filter { supplier ->
             allArticles.any { article ->
@@ -342,26 +336,47 @@ fun SuppliersFloatingButtonsSA(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         filteredSuppliers.forEach { supplier ->
-            FloatingActionButton(
-                onClick = { onClickFlotButt(supplier.idSupplierSu) },
-                modifier = Modifier.size(56.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
             ) {
-                Text(
-                    text = supplier.nomSupplierSu.take(2),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
+                if (showDescreptionFlotBS) {
+                    Card(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .heightIn(min = 30.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.CenterStart,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = supplier.nomSupplierSu,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                FloatingActionButton(
+                    onClick = { onClickFlotButt(supplier.idSupplierSu) },
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Text(
+                        text = supplier.nomSupplierSu.take(3),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
-        }
 
-        FloatingActionButton(
-            onClick = { onToggleFilter() },
-            modifier = Modifier.size(56.dp)
-        ) {
+        }
+        FloatingActionButton(onClick = {expendSuppFloatingButtons!=expendSuppFloatingButtons}) {
             Icon(
-                imageVector = if (showOnlyWithFilter) Icons.Default.FilterAlt else Icons.Default.FilterAltOff,
-                contentDescription = "Toggle filter"
+                if (expendSuppFloatingButtons) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                contentDescription = "Toggle Floating Buttons"
             )
         }
     }
+
 }
