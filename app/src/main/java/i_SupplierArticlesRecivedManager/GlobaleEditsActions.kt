@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Details
+import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileUpload
@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 fun FloatingActionButtonsSA(
     showFloatingButtons: Boolean,
     onToggleFloatingButtons: () -> Unit,
-    onToggleSuppDescriptions: () -> Unit,
     onToggleToFilterToMove: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
     filterSuppHandledNow: Boolean
@@ -54,17 +53,11 @@ fun FloatingActionButtonsSA(
                     Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.FilterAlt, "Filter To Move") {
                         onToggleToFilterToMove()
                     },
-                    Triple( Icons.Default.Details, "Toggle Suppliers Description") {
-                        onToggleSuppDescriptions()
-                    },
-                    Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
-                        showContentDescription = !showContentDescription
-                    },
                     Triple(Icons.Default.GridView, "Change Grid") {
                         currentGridColumns = (currentGridColumns % maxGridColumns) + 1
                         onChangeGridColumns(currentGridColumns)
                     },
-                    Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
+                    Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Dehaze, "Toggle Description") {
                         showContentDescription = !showContentDescription
                     }
                 )

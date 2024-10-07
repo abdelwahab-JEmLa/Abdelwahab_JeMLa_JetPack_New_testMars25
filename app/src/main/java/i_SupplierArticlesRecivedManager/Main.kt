@@ -31,8 +31,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
@@ -83,7 +86,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    var showSuupWherNotEmptyFlotBS by remember { mutableStateOf(false) }
     var showDescreptionFlotBS by remember { mutableStateOf(false) }
 
     var animatingSupplier by remember { mutableStateOf<Long?>(null) }
@@ -154,7 +156,6 @@ fun Fragment_SupplierArticlesRecivedManager(
             FloatingActionButtonsSA(
                 showFloatingButtons = showFloatingButtons,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onToggleSuppDescriptions = { showDescreptionFlotBS = !showDescreptionFlotBS },
                 onChangeGridColumns = { gridColumns = it },
                 onToggleToFilterToMove = {
                     filterSuppHandledNow = !filterSuppHandledNow
@@ -173,8 +174,6 @@ fun Fragment_SupplierArticlesRecivedManager(
             SuppliersFloatingButtonsSA(
                 allArticles = uiState.tabelleSupplierArticlesRecived,
                 suppliers = uiState.tabelleSuppliersSA,
-                showDescreptionFlotBS = showDescreptionFlotBS,
-                showOnlyWithFilter = showSuupWherNotEmptyFlotBS,
                 supplierFlotBisHandled = supplierFlotBisHandled,
                 onClickFlotButt = { idSupplier ->
                     coroutineScope.launch {
@@ -189,16 +188,16 @@ fun Fragment_SupplierArticlesRecivedManager(
                             animatingSupplier = null
                             filterSuppHandledNow = false
                         } else {
-                            // Scroll to the SupplierHeaderSA of the selected supplier
-                            val supplierIndex = uiState.tabelleSuppliersSA.indexOfFirst { it.idSupplierSu == idSupplier }
-                            if (supplierIndex != -1) {
-                                gridState.scrollToItem(supplierIndex * (gridColumns + 1))
+                            supplierFlotBisHandled = when (supplierFlotBisHandled) {
+                                idSupplier -> null  // Deselect if the same supplier is clicked again
+                                else -> idSupplier  // Select the new supplier
                             }
                         }
                     }
                 }
             )
         }
+
 
         // Use the current edited article if it matches the given article, otherwise use the original article
         val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
@@ -221,25 +220,27 @@ fun Fragment_SupplierArticlesRecivedManager(
 fun SuppliersFloatingButtonsSA(
     allArticles: List<TabelleSupplierArticlesRecived>,
     suppliers: List<TabelleSuppliersSA>,
-    showOnlyWithFilter: Boolean,
     onClickFlotButt: (Long) -> Unit,
-    showDescreptionFlotBS: Boolean,
     supplierFlotBisHandled: Long?
 ) {
-    var expendSuppFloatingButtons by remember { mutableStateOf(false) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var isExpanded by remember { mutableStateOf(false) }
+    var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
+    var showDescriptionFlotBS by remember { mutableStateOf(false) }
 
-    val filteredSuppliers = if (showOnlyWithFilter) {
-        suppliers.filter { supplier ->
-            allArticles.any { article ->
-                article.idSupplierTSA.toLong() == supplier.idSupplierSu && !article.itsInFindedAskSupplierSA
+    val filteredSuppliers = remember(suppliers, allArticles, filterButtonsWhereArtNotEmpty) {
+        if (filterButtonsWhereArtNotEmpty) {
+            suppliers.filter { supplier ->
+                allArticles.any { article ->
+                    article.idSupplierTSA.toLong() == supplier.idSupplierSu && !article.itsInFindedAskSupplierSA
+                }
             }
+        } else {
+            suppliers
         }
-    } else {
-        suppliers
     }
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .padding(8.dp)
             .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
@@ -248,56 +249,101 @@ fun SuppliersFloatingButtonsSA(
                     change.consume()
                     dragOffset += Offset(dragAmount.x, dragAmount.y)
                 }
-            },
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            }
     ) {
-        items(filteredSuppliers) { supplier ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                reverseLayout = true
             ) {
-                if (showDescreptionFlotBS) {
-                    Card(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .heightIn(min = 30.dp)
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Box(
-                            contentAlignment = Alignment.CenterStart,
-                            modifier = Modifier.padding(horizontal = 8.dp)
+                        FloatingActionButton(
+                            onClick = { filterButtonsWhereArtNotEmpty = !filterButtonsWhereArtNotEmpty }
                         ) {
-                            Text(
-                                text = supplier.nomSupplierSu,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                            Icon(
+                                if (filterButtonsWhereArtNotEmpty) Icons.Default.Close else Icons.Default.FilterAlt,
+                                contentDescription = if (filterButtonsWhereArtNotEmpty) "Clear filter" else "Filter suppliers"
+                            )
+                        }
+                        FloatingActionButton(
+                            onClick = { showDescriptionFlotBS = !showDescriptionFlotBS }
+                        ) {
+                            Icon(
+                                if (showDescriptionFlotBS) Icons.Default.Close else Icons.Default.Dehaze,
+                                contentDescription = if (showDescriptionFlotBS) "Hide descriptions" else "Show descriptions"
                             )
                         }
                     }
                 }
-                FloatingActionButton(
-                    onClick = {
-                        onClickFlotButt(supplier.idSupplierSu)
-                    },
-                    modifier = Modifier.size(56.dp),
-                    containerColor = if (supplierFlotBisHandled == supplier.idSupplierSu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-                ) {
-                    Text(
-                        text = supplier.nomSupplierSu.take(3),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
+                items(filteredSuppliers) { supplier ->
+                    SupplierButton(
+                        supplier = supplier,
+                        showDescription = showDescriptionFlotBS,
+                        isSelected = supplierFlotBisHandled == supplier.idSupplierSu,
+                        onClick = { onClickFlotButt(supplier.idSupplierSu) }
                     )
                 }
             }
         }
-        item {
-            FloatingActionButton(
-                onClick = { expendSuppFloatingButtons = !expendSuppFloatingButtons }
+        FloatingActionButton(
+            onClick = { isExpanded = !isExpanded },
+            modifier = Modifier.align(Alignment.BottomEnd)
+        ) {
+            Icon(
+                if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                contentDescription = if (isExpanded) "Collapse supplier list" else "Expand supplier list"
+            )
+        }
+    }
+}
+
+@Composable
+private fun SupplierButton(
+    supplier: TabelleSuppliersSA,
+    showDescription: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        if (showDescription) {
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+                    .heightIn(min = 30.dp)
             ) {
-                Icon(
-                    if (expendSuppFloatingButtons) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-                    contentDescription = "Toggle Floating Buttons"
-                )
+                Box(
+                    contentAlignment = Alignment.CenterStart,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    Text(
+                        text = supplier.nomSupplierSu,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
+        }
+        FloatingActionButton(
+            onClick = onClick,
+            modifier = Modifier.size(56.dp),
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+        ) {
+            Text(
+                text = supplier.nomSupplierSu.take(3),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
