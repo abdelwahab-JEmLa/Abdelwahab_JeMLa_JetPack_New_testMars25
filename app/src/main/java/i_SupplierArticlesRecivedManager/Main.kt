@@ -23,11 +23,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -52,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -75,7 +78,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
 
-    var suppliersFloatingButtons by remember { mutableStateOf(false) }
+    var suppliersFloatingButtons by remember { mutableStateOf(true) }
 
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
@@ -115,18 +118,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                         supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeaderSA(supplier = supplier, viewModel = viewModel, onHeaderClick = {
-                                coroutineScope.launch {
-                                    if (filterSuppHandledNow) {
-                                        val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
-                                            it.itsInFindedAskSupplierSA
-                                        }
-                                        viewModel.moveArticleNonFindToSupplier(
-                                            articlesToMove = filterBytabelleSupplierArticlesRecived,
-                                            toSupp = it.idSupplierSu
-                                        )
-                                        animatingSupplier = null
-                                    }
-                                }
+                                animatingSupplier = null
                             })
                         }
                         items(
@@ -184,8 +176,26 @@ fun Fragment_SupplierArticlesRecivedManager(
                 showDescreptionFlotBS = showDescreptionFlotBS,
                 showOnlyWithFilter = showSuupWherNotEmptyFlotBS,
                 supplierFlotBisHandled = supplierFlotBisHandled,
-                onClickFlotButt = { supplier ->
-                    supplierFlotBisHandled = supplier
+                onClickFlotButt = { idSupplier ->
+                    coroutineScope.launch {
+                        if (filterSuppHandledNow) {
+                            val filterBytabelleSupplierArticlesRecived = uiState.tabelleSupplierArticlesRecived.filter {
+                                it.itsInFindedAskSupplierSA
+                            }
+                            viewModel.moveArticleNonFindToSupplier(
+                                articlesToMove = filterBytabelleSupplierArticlesRecived,
+                                toSupp = idSupplier
+                            )
+                            animatingSupplier = null
+                            filterSuppHandledNow = false
+                        } else {
+                            // Scroll to the SupplierHeaderSA of the selected supplier
+                            val supplierIndex = uiState.tabelleSuppliersSA.indexOfFirst { it.idSupplierSu == idSupplier }
+                            if (supplierIndex != -1) {
+                                gridState.scrollToItem(supplierIndex * (gridColumns + 1))
+                            }
+                        }
+                    }
                 }
             )
         }
@@ -217,7 +227,7 @@ fun SuppliersFloatingButtonsSA(
     supplierFlotBisHandled: Long?
 ) {
     var expendSuppFloatingButtons by remember { mutableStateOf(false) }
-    var dragOffsetY by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
 
     val filteredSuppliers = if (showOnlyWithFilter) {
         suppliers.filter { supplier ->
@@ -229,19 +239,19 @@ fun SuppliersFloatingButtonsSA(
         suppliers
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .padding(8.dp)
-            .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+            .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    dragOffsetY += dragAmount.y
+                    dragOffset += Offset(dragAmount.x, dragAmount.y)
                 }
             },
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        filteredSuppliers.forEach { supplier ->
+        items(filteredSuppliers) { supplier ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -279,13 +289,15 @@ fun SuppliersFloatingButtonsSA(
                 }
             }
         }
-        FloatingActionButton(
-            onClick = { expendSuppFloatingButtons = !expendSuppFloatingButtons }
-        ) {
-            Icon(
-                if (expendSuppFloatingButtons) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-                contentDescription = "Toggle Floating Buttons"
-            )
+        item {
+            FloatingActionButton(
+                onClick = { expendSuppFloatingButtons = !expendSuppFloatingButtons }
+            ) {
+                Icon(
+                    if (expendSuppFloatingButtons) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                    contentDescription = "Toggle Floating Buttons"
+                )
+            }
         }
     }
 }
