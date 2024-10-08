@@ -83,6 +83,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import b2_Edite_Base_Donne_With_Creat_New_Articls.AutoResizedTextECB
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -115,28 +116,16 @@ fun Fragment_SupplierArticlesRecivedManager(
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
     var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.weight(1f),
-            floatingActionButton = {
-                GlobaleControlsFloatingsButtonsSA(
-                    showFloatingButtons = showFloatingButtons,
-                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                    onChangeGridColumns = { gridColumns = it },
-                    onToggleToFilterToMove = {
-                        toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
-                    },
-                    filterSuppHandledNow = toggleCtrlToFilterToMove,
-                    onToggleReorderMode = { itsReorderMode = !itsReorderMode }  ,
-                    onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore }
-                )
-            }
-        ) { paddingValues ->
+            modifier = Modifier.fillMaxSize()
+        ) { padding ->
             LazyVerticalGrid(
                 columns = GridCells.Fixed(gridColumns),
                 state = gridState,
-                contentPadding = paddingValues,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
                 val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
                     uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
@@ -172,12 +161,32 @@ fun Fragment_SupplierArticlesRecivedManager(
                                         lastAskArticleChanged = null
                                     }
                                 },
-                                modifier = Modifier,
+                                modifier=modifier,
                             )
                         }
                     }
                 }
             }
+        }
+
+        // Floating Action Buttons
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .zIndex(1f)
+        ) {
+            GlobaleControlsFloatingsButtonsSA(
+                showFloatingButtons = showFloatingButtons,
+                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                onChangeGridColumns = { gridColumns = it },
+                onToggleToFilterToMove = {
+                    toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
+                },
+                filterSuppHandledNow = toggleCtrlToFilterToMove,
+                onToggleReorderMode = { itsReorderMode = !itsReorderMode }  ,
+                onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore }
+            )
         }
 
         SuppliersFloatingButtonsSA(
