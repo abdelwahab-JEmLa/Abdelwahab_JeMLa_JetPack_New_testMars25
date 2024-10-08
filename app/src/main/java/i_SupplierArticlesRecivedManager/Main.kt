@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
@@ -122,7 +121,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                         items(articlesSupplier) { article ->
                             ArticleItemSA(
                                 article = article,
-                                onClickOnImg = { clickedArticle ->
+                                onFirstClickOnImg = { clickedArticle ->
                                     dialogeDisplayeDetailleChanger = clickedArticle
                                 },
                                 viewModel = viewModel,
@@ -348,9 +347,11 @@ private fun SupplierButton(
 @Composable
 fun ArticleItemSA(
     article: TabelleSupplierArticlesRecived,
-    onClickOnImg: (TabelleSupplierArticlesRecived) -> Unit,
+    onFirstClickOnImg: (TabelleSupplierArticlesRecived) -> Unit,
     viewModel: HeadOfViewModels,
 ) {
+    var lastImageClicked by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
+
     val cardColor = if (article.itsInFindedAskSupplierSA) {
         Color.Yellow.copy(alpha = 0.3f)
     } else {
@@ -371,7 +372,15 @@ fun ArticleItemSA(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clickable { viewModel.changeAskSupplier(article) },
+                    .clickable {
+                        if (lastImageClicked == null) {
+                            onFirstClickOnImg(article)
+                            lastImageClicked = article
+                        } else {
+                            viewModel.changeAskSupplier(article)
+                            lastImageClicked=null
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 DisplayeImageSA(
@@ -384,17 +393,6 @@ fun ArticleItemSA(
 
             DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
             AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                FloatingActionButton(
-                    onClick = { onClickOnImg(article) }
-                ) {
-                    Icon(Icons.Filled.Info, contentDescription = null)
-                }
-            }
         }
     }
 }
