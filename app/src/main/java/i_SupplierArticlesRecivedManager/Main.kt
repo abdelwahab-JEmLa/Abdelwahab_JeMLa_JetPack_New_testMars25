@@ -266,7 +266,7 @@ fun Fragment_SupplierArticlesRecivedManager(
         }
     }
 @Composable
-private fun SingleColorImageSA(
+fun SingleColorImageSA(
     article: TabelleSupplierArticlesRecived,
     viewModel: HeadOfViewModels,
     reloadKey: Long
@@ -342,8 +342,8 @@ private fun SingleColorImageSA(
 }
 
 @Composable
-private fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels,
-                             reloadKey: Any = Unit
+fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels,
+                     reloadKey: Any = Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),

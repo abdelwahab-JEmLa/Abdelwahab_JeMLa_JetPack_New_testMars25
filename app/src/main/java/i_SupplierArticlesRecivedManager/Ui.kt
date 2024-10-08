@@ -4,6 +4,7 @@ package i_SupplierArticlesRecivedManager
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +46,7 @@ fun ArticleDetailWindowSA(
     viewModel: HeadOfViewModels,
     modifier: Modifier
 ) {
+    val reloadKey = remember(article) { System.currentTimeMillis() }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -60,10 +62,18 @@ fun ArticleDetailWindowSA(
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
 
-                    DisplayColorsCardsSA( article,viewModel, onDismiss = onDismiss,
+                    Box(
+                        modifier = modifier
+                            .height(250.dp)
+                            .clickable { onDismiss() },
 
-                    )
-
+                        ){
+                        if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
+                            SingleColorImageSA(article, viewModel,reloadKey)
+                        } else {
+                            MultiColorGridSA(article, viewModel,reloadKey)
+                        }
+                    }
                     // Article name
                     AutoResizedTextECB(
                         text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
