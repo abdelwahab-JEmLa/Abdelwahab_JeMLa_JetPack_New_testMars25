@@ -416,14 +416,39 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         )
     }
 
-    private fun generate(correspondingArticle: BaseDonneECBTabelle?) =
-        if ((correspondingArticle?.lastSupplierIdBuyedFrom?.toInt()
-                ?: 10) == 0
-        ) 10 else (correspondingArticle?.lastSupplierIdBuyedFrom?.toInt() ?: 10)
-            //TODO fait que si  correspondingArticle.dateLastSupplierIdBuyedFrom et plus proche on date que dateLastIdSupplierChoseToBuy= lastSupplierIdBuyedFrom
-            //sinon   lastIdSupplierChoseToBuy
-            //si une des 2 et null choisi l autre
+    private fun generate(correspondingArticle: BaseDonneECBTabelle?): Int {
+        if (correspondingArticle == null) {
+            return 10 // Default value if correspondingArticle is null
+        }
 
+        val lastSupplierIdBuyedFrom = correspondingArticle.lastSupplierIdBuyedFrom ?: 0
+        val lastIdSupplierChoseToBuy = correspondingArticle.lastIdSupplierChoseToBuy
+
+        // Parse dates, defaulting to epoch time if parsing fails
+        val dateLastSupplierIdBuyedFrom = correspondingArticle.dateLastSupplierIdBuyedFrom.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+            } catch (e: Exception) {
+                0L
+            }
+        } ?: 0L
+
+        val dateLastIdSupplierChoseToBuy = correspondingArticle.dateLastIdSupplierChoseToBuy.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+            } catch (e: Exception) {
+                0L
+            }
+        } ?: 0L
+
+        return when {
+            dateLastSupplierIdBuyedFrom > dateLastIdSupplierChoseToBuy -> lastSupplierIdBuyedFrom.toInt()
+            dateLastIdSupplierChoseToBuy > dateLastSupplierIdBuyedFrom -> lastIdSupplierChoseToBuy.toInt()
+            lastSupplierIdBuyedFrom.toInt() != 0 -> lastSupplierIdBuyedFrom.toInt()
+            lastIdSupplierChoseToBuy.toInt() != 0 -> lastIdSupplierChoseToBuy.toInt()
+            else -> 10 // Default value if both IDs are 0
+        }
+    }
 
     private suspend fun transferFirebaseDataArticlesAcheteModele(
         context: android.content.Context,
