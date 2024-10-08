@@ -139,3 +139,9 @@ data class CategoriesTabelleECB(
     var idClassementCategorieInCategoriesTabele: Double = 0.0,
     val nomCategorieInCategoriesTabele: String = "",
 )
+data class MapArticleInSupplierStore(
+    val vid: Long = 0,
+    val idPlace: Long = 0,
+    val namePlace: String = "",
+    val inRightOfPlace: Boolean = false,
+)
