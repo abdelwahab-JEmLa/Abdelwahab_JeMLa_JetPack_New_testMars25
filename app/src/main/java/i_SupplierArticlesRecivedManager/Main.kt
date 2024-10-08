@@ -9,6 +9,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -45,6 +45,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,11 +63,23 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import b2_Edite_Base_Donne_With_Creat_New_Articls.AutoResizedTextECB
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.size.Size
+import com.example.abdelwahabjemlajetpack.R
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
@@ -250,7 +263,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                 // Image content
                 Box(
                     modifier = modifier
-                        .height(250.dp)
                         .clickable { onArticleClick(article) },
 
                     ){
@@ -265,6 +277,100 @@ fun Fragment_SupplierArticlesRecivedManager(
             }
         }
     }
+
+@Composable
+fun ArticleDetailWindowSA(
+    article: TabelleSupplierArticlesRecived,
+    onDismiss: () -> Unit,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier
+) {
+    val reloadKey = remember(article) { System.currentTimeMillis() }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Card(
+                modifier = modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(modifier = modifier.fillMaxWidth()) {
+
+                    Box(
+                        modifier = modifier
+                            .clickable { onDismiss() },
+
+                        ){
+                        if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
+                            SingleColorImageSA(article, viewModel,reloadKey)
+                        } else {
+                            MultiColorGridSA(article, viewModel,reloadKey)
+                        }
+                    }
+                    // Article name
+                    AutoResizedTextECB( //TODO pk les autosize ne s affichon pas
+                        //c comme le box du images prendre tout l ecran fait que
+                        //le box suive les images apre les autres s affichon
+                        text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
+                        fontSize = 25.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = modifier.fillMaxWidth()
+                    )
+                    AutoResizedTextECB(
+                        text = article.nomclient.capitalize(Locale.current),
+                        fontSize = 25.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DisplayeImageSA(
+    article: TabelleSupplierArticlesRecived,
+    viewModel: HeadOfViewModels,
+    index: Int = 0,
+    reloadKey: Any = Unit
+) {
+    val context = LocalContext.current
+    val baseImagePath =
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_${index + 1}"
+
+
+    val imageExist = remember(reloadKey) {
+        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+            listOf(baseImagePath).firstOrNull { path ->
+                File("$path.$extension").exists()
+            }?.let { "$it.$extension" }
+        }
+    }
+
+    val imageSource = imageExist ?: R.drawable.blanc
+
+    val painter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(imageSource)
+            .size(Size(1000, 1000))
+            .crossfade(true)
+            .build()
+    )
+
+    Image(
+        painter = painter,
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Fit
+    )
+}
+
 @Composable
 fun SingleColorImageSA(
     article: TabelleSupplierArticlesRecived,
