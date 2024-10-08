@@ -87,6 +87,8 @@ fun Fragment_SupplierArticlesRecivedManager(
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
     var itsReorderMode by remember { mutableStateOf(false) }
     var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
+    var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
+    var lastDialogeOpned by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -121,10 +123,19 @@ fun Fragment_SupplierArticlesRecivedManager(
                         items(articlesSupplier) { article ->
                             ArticleItemSA(
                                 article = article,
-                                onFirstClickOnImg = { clickedArticle ->
-                                    dialogeDisplayeDetailleChanger = clickedArticle
-                                },
                                 viewModel = viewModel,
+                                onArticleClick = { clickedArticle ->
+
+                                    val vidClicked = clickedArticle.aa_vid .toLong()
+
+                                    if (lastAskArticleChanged != vidClicked) {
+                                        viewModel.changeAskSupplier(clickedArticle)
+                                        lastAskArticleChanged = vidClicked
+                                    } else {
+                                        dialogeDisplayeDetailleChanger = clickedArticle
+                                        lastAskArticleChanged=null
+                                    }
+                                }
                             )
                         }
                     }
@@ -210,6 +221,46 @@ fun Fragment_SupplierArticlesRecivedManager(
         }
     }
 }
+    @Composable
+    fun ArticleItemSA(
+        article: TabelleSupplierArticlesRecived,
+        viewModel: HeadOfViewModels,
+        onArticleClick: (TabelleSupplierArticlesRecived) -> Unit
+    ) {
+        val cardColor = if (article.itsInFindedAskSupplierSA) {
+            Color.Yellow.copy(alpha = 0.3f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        }
+
+        val reloadKey = remember(article) { System.currentTimeMillis() }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            colors = CardDefaults.cardColors(containerColor = cardColor)
+        ) {
+            Column(modifier = Modifier.padding(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clickable { onArticleClick(article) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    DisplayeImageSA(
+                        article = article,
+                        viewModel = viewModel,
+                        index = 0,
+                        reloadKey = reloadKey
+                    )
+                }
+                DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
+                AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
+            }
+        }
+    }
 
 @Composable
 fun SuppliersFloatingButtonsSA(
@@ -344,60 +395,7 @@ private fun SupplierButton(
         }
     }
 }
-@Composable
-fun ArticleItemSA(
-    article: TabelleSupplierArticlesRecived,
-    onFirstClickOnImg: (TabelleSupplierArticlesRecived) -> Unit,
-    viewModel: HeadOfViewModels,
-) {
-    var lastImageClicked by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
-    val cardColor = if (article.itsInFindedAskSupplierSA) {
-        Color.Yellow.copy(alpha = 0.3f)
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-
-    val reloadKey = remember(article) { System.currentTimeMillis() }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clickable {
-                        if (article.itsInFindedAskSupplierSA) {
-                            viewModel.changeAskSupplier(article)
-                            lastImageClicked = null
-                        } else if (lastImageClicked != article) {
-                            onFirstClickOnImg(article)
-                            lastImageClicked = article
-                        } else {
-                            viewModel.changeAskSupplier(article)
-                            lastImageClicked = null
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                DisplayeImageSA(
-                    article = article,
-                    viewModel = viewModel,
-                    index = 0,
-                    reloadKey = reloadKey
-                )
-            }
-
-            DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
-            AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
-        }
-    }
-}
 
 @Composable
 fun SupplierHeaderSA(
