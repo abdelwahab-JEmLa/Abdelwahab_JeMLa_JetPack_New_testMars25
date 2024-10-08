@@ -270,6 +270,7 @@ suspend fun trensfertBonSuppAuDataBaseArticles(
                     child("monPrixVentUniter").setValue(calculatedPriceVentUniter)
                     child("dateCreationCategorie").setValue(dateCreationCategorie)
                     child("lastSupplierIdBuyedFrom").setValue(article.supplierIdBG)
+                    child("dateLastSupplierIdBuyedFrom").setValue(dateCreationCategorie)
 
                 }
 
