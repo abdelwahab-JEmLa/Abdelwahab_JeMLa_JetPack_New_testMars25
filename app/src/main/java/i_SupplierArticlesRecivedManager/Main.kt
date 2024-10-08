@@ -74,7 +74,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.zIndex
 import b2_Edite_Base_Donne_With_Creat_New_Articls.AutoResizedTextECB
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -110,73 +109,75 @@ fun Fragment_SupplierArticlesRecivedManager(
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) { padding ->
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(gridColumns),
-                state = gridState,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
-                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-                } else {
-                    uiState.tabelleSuppliersSA
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(gridColumns),
+                    state = gridState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
+                        uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+                    } else {
+                        uiState.tabelleSuppliersSA
+                    }
+
+                    filterSupp.forEach { supplier ->
+                        val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
+                            it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
+                                    (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
+                        }
+
+                        if (articlesSupplier.isNotEmpty() && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
+                            item(span = { GridItemSpan(gridColumns) }) {
+                                SupplierHeaderSA(
+                                    supplier = supplier,
+                                    viewModel = viewModel,
+                                )
+                            }
+                            items(articlesSupplier) { article ->
+                                ArticleItemSA(
+                                    article = article,
+                                    viewModel = viewModel,
+                                    onArticleClick = { clickedArticle ->
+                                        val vidClicked = clickedArticle.aa_vid.toLong()
+
+                                        if (lastAskArticleChanged != vidClicked) {
+                                            viewModel.changeAskSupplier(clickedArticle)
+                                            lastAskArticleChanged = vidClicked
+                                        } else {
+                                            dialogeDisplayeDetailleChanger = clickedArticle
+                                            lastAskArticleChanged = null
+                                        }
+                                    },
+                                    modifier = modifier,
+                                )
+                            }
+                        }
+                    }
                 }
 
-                filterSupp.forEach { supplier ->
-                    val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                        it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
-                                (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
-                    }
-
-                    if (articlesSupplier.isNotEmpty()  && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
-                        item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeaderSA(
-                                supplier = supplier,
-                                viewModel = viewModel,
-                            )
-                        }
-                        items(articlesSupplier) { article ->
-                            ArticleItemSA(
-                                article = article,
-                                viewModel = viewModel,
-                                onArticleClick = { clickedArticle ->
-
-                                    val vidClicked = clickedArticle.aa_vid .toLong()
-
-                                    if (lastAskArticleChanged != vidClicked) {
-                                        viewModel.changeAskSupplier(clickedArticle)
-                                        lastAskArticleChanged = vidClicked
-                                    } else {
-                                        dialogeDisplayeDetailleChanger = clickedArticle
-                                        lastAskArticleChanged=null
-                                    }
-                                },
-                                modifier=modifier,
-                            )
-                        }
-                    }
+                // Floating Action Buttons
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    GlobaleControlsFloatingsButtonsSA(
+                        showFloatingButtons = showFloatingButtons,
+                        onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                        onChangeGridColumns = { gridColumns = it },
+                        onToggleToFilterToMove = {
+                            toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
+                        },
+                        filterSuppHandledNow = toggleCtrlToFilterToMove,
+                        onToggleReorderMode = { itsReorderMode = !itsReorderMode }
+                    )
                 }
             }
-        }
-
-        // Floating Action Buttons
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .zIndex(1f)
-        ) {
-            GlobaleControlsFloatingsButtonsSA(
-                showFloatingButtons = showFloatingButtons,
-                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onChangeGridColumns = { gridColumns = it },
-                onToggleToFilterToMove = {
-                    toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
-                },
-                filterSuppHandledNow = toggleCtrlToFilterToMove,
-                onToggleReorderMode = { itsReorderMode = !itsReorderMode }
-            )
         }
 
         SuppliersFloatingButtonsSA(
@@ -218,7 +219,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     }
                 }
             },
-            isSelectedForeHolder = { holdedIdSupplierForMove =it },
+            isSelectedForeHolder = { holdedIdSupplierForMove = it },
             itsReorderMode = itsReorderMode
         )
 
