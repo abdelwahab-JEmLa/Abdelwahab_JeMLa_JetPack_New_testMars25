@@ -67,7 +67,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.LoadImageFromPathBC
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
@@ -248,20 +247,6 @@ fun Fragment_SupplierArticlesRecivedManager(
             colors = CardDefaults.cardColors(containerColor = cardColor)
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clickable { onArticleClick(article) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    DisplayeImageSA(
-                        article = article,
-                        viewModel = viewModel,
-                        index = 0,
-                        reloadKey = reloadKey
-                    )
-                }
                 // Image content
                 Box(
                     modifier = modifier
@@ -270,9 +255,9 @@ fun Fragment_SupplierArticlesRecivedManager(
 
                     ){
                     if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
-                        SingleColorImageSA(article)
+                        SingleColorImageSA(article, viewModel,reloadKey)
                     } else {
-                        MultiColorGridSA(article, viewModel)
+                        MultiColorGridSA(article, viewModel,reloadKey)
                     }
                 }
                 DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
@@ -281,7 +266,11 @@ fun Fragment_SupplierArticlesRecivedManager(
         }
     }
 @Composable
-private fun SingleColorImageSA(article: TabelleSupplierArticlesRecived) {
+private fun SingleColorImageSA(
+    article: TabelleSupplierArticlesRecived,
+    viewModel: HeadOfViewModels,
+    reloadKey: Long
+) {
     Card(
         modifier = Modifier.fillMaxSize(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -294,8 +283,11 @@ private fun SingleColorImageSA(article: TabelleSupplierArticlesRecived) {
             val jpgExists = File(imagePathJpg).exists()
 
             if (webpExists || jpgExists) {
-                LoadImageFromPathBC(imagePath = imagePathWithoutExt, modifier = Modifier.fillMaxSize())
-            } else {
+                DisplayeImageSA(article=article,
+                    viewModel=viewModel,
+                    index=0,
+                    reloadKey
+                )            } else {
                 // Display rotated article name for empty articles
                 Box(
                     modifier = Modifier
@@ -350,7 +342,9 @@ private fun SingleColorImageSA(article: TabelleSupplierArticlesRecived) {
 }
 
 @Composable
-private fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels) {
+private fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels,
+                             reloadKey: Any = Unit
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize()
@@ -365,7 +359,7 @@ private fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel:
         items(colorData.size) { index ->
             val (quantity, colorName) = colorData[index]
             if (quantity > 0) {
-                ColorItemCard(article, index, quantity, colorName, viewModel)
+                ColorItemCard(article, index, quantity, colorName, viewModel,reloadKey)
             }
         }
     }
@@ -378,6 +372,9 @@ private fun ColorItemCard(
     quantity: Int,
     colorName: String?,
     viewModel: HeadOfViewModels
+    ,
+    reloadKey: Any = Unit
+
 ) {
     Card(
         modifier = Modifier
@@ -405,6 +402,7 @@ private fun ColorItemCard(
                 DisplayeImageSA(article=article,
                     viewModel=viewModel,
                     index=index,
+                    reloadKey
                 )
             } else {
                 Text(
