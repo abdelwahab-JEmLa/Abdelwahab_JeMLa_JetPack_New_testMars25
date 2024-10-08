@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -55,6 +56,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -65,13 +67,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.LoadImageFromPathBC
 import kotlinx.coroutines.launch
+import java.io.File
 import kotlin.math.roundToInt
 
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
+    modifier: Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
@@ -88,7 +93,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     var itsReorderMode by remember { mutableStateOf(false) }
     var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
-    var lastDialogeOpned by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -135,7 +139,8 @@ fun Fragment_SupplierArticlesRecivedManager(
                                         dialogeDisplayeDetailleChanger = clickedArticle
                                         lastAskArticleChanged=null
                                     }
-                                }
+                                },
+                                modifier=modifier,
                             )
                         }
                     }
@@ -225,7 +230,8 @@ fun Fragment_SupplierArticlesRecivedManager(
     fun ArticleItemSA(
         article: TabelleSupplierArticlesRecived,
         viewModel: HeadOfViewModels,
-        onArticleClick: (TabelleSupplierArticlesRecived) -> Unit
+        onArticleClick: (TabelleSupplierArticlesRecived) -> Unit,
+        modifier: Modifier
     ) {
         val cardColor = if (article.itsInFindedAskSupplierSA) {
             Color.Yellow.copy(alpha = 0.3f)
@@ -256,12 +262,175 @@ fun Fragment_SupplierArticlesRecivedManager(
                         reloadKey = reloadKey
                     )
                 }
+                // Image content
+                Box(
+                    modifier = modifier
+                        .height(250.dp)
+                        .clickable { onArticleClick(article) },
+
+                    ){
+                    if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
+                        SingleColorImageSA(article)
+                    } else {
+                        MultiColorGridSA(article, viewModel)
+                    }
+                }
                 DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
                 AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
             }
         }
     }
+@Composable
+private fun SingleColorImageSA(article: TabelleSupplierArticlesRecived) {
+    Card(
+        modifier = Modifier.fillMaxSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_1"
+            val imagePathWebp = "$imagePathWithoutExt.webp"
+            val imagePathJpg = "$imagePathWithoutExt.jpg"
+            val webpExists = File(imagePathWebp).exists()
+            val jpgExists = File(imagePathJpg).exists()
 
+            if (webpExists || jpgExists) {
+                LoadImageFromPathBC(imagePath = imagePathWithoutExt, modifier = Modifier.fillMaxSize())
+            } else {
+                // Display rotated article name for empty articles
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.6f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = article.a_d_nomarticlefinale_c,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .rotate(45f)
+                            .padding(4.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            if (!article.a_d_nomarticlefinale_c_1.contains("Sta", ignoreCase = true)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Text(
+                        text = article.a_d_nomarticlefinale_c_1,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.6f))
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .background(Color.White.copy(alpha = 0.6f))
+            ) {
+                Text(
+                    text = "${article.totalquantity}",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.6f))
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val colorData = listOf(
+            article.quantityachete_c_1 to article.a_d_nomarticlefinale_c_1,
+            article.quantityachete_c_2 to article.a_d_nomarticlefinale_c_2,
+            article.quantityachete_c_3 to article.a_d_nomarticlefinale_c_3,
+            article.quantityachete_c_4 to article.a_d_nomarticlefinale_c_4
+        )
+
+        items(colorData.size) { index ->
+            val (quantity, colorName) = colorData[index]
+            if (quantity > 0) {
+                ColorItemCard(article, index, quantity, colorName, viewModel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorItemCard(
+    article: TabelleSupplierArticlesRecived,
+    index: Int,
+    quantity: Int,
+    colorName: String?,
+    viewModel: HeadOfViewModels
+) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxSize()
+            .aspectRatio(1f),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF40E0D0) // Bleu turquoise
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            val imagePathWithoutExt = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.a_c_idarticle_c}_${index + 1}"
+            val imagePathWebp = "$imagePathWithoutExt.webp"
+            val imagePathJpg = "$imagePathWithoutExt.jpg"
+            val webpExists = File(imagePathWebp).exists()
+            val jpgExists = File(imagePathJpg).exists()
+
+            if (webpExists || jpgExists) {
+                DisplayeImageSA(article=article,
+                    viewModel=viewModel,
+                    index=index,
+                )
+            } else {
+                Text(
+                    text = colorName ?: "",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .rotate(45f)
+                        .background(Color.White.copy(alpha = 0.6f))
+                        .padding(4.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Text(
+                text = quantity.toString(),
+                color = Color.Red,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .background(Color.White.copy(alpha = 0.6f))
+                    .padding(4.dp),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 @Composable
 fun SuppliersFloatingButtonsSA(
     allArticles: List<TabelleSupplierArticlesRecived>,

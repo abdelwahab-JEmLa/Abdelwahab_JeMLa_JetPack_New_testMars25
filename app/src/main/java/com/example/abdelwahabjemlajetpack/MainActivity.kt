@@ -240,6 +240,7 @@ fun AppNavHost(
         composable("Fragment_SupplierArticlesRecivedManager") {
             Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,
                 onToggleNavBar = onToggleNavBar,
+                modifier=modifier
             )
         }
         composable("FragmentEntreBonsGro") {

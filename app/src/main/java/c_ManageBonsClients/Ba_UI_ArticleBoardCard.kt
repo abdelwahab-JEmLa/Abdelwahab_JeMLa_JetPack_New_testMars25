@@ -352,7 +352,7 @@ private fun SingleColorImage(article: ArticlesAcheteModele) {
                 }
             }
             Box(
-                modifier = Modifier//TODO augment le size du box et text
+                modifier = Modifier
                     .align(Alignment.TopStart)
                     .background(Color.White.copy(alpha = 0.6f))
             ) {
