@@ -106,10 +106,10 @@ fun Fragment_SupplierArticlesRecivedManager(
     var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize()
-        ) { padding ->
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize()) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(gridColumns),
                 state = gridState,
@@ -129,7 +129,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                     }
 
-                    if (articlesSupplier.isNotEmpty()  && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
+                    if (articlesSupplier.isNotEmpty() && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             SupplierHeaderSA(
                                 supplier = supplier,
@@ -141,50 +141,48 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 article = article,
                                 viewModel = viewModel,
                                 onArticleClick = { clickedArticle ->
-
-                                    val vidClicked = clickedArticle.aa_vid .toLong()
+                                    val vidClicked = clickedArticle.aa_vid.toLong()
 
                                     if (lastAskArticleChanged != vidClicked) {
                                         viewModel.changeAskSupplier(clickedArticle)
                                         lastAskArticleChanged = vidClicked
                                     } else {
                                         dialogeDisplayeDetailleChanger = clickedArticle
-                                        lastAskArticleChanged=null
+                                        lastAskArticleChanged = null
                                     }
                                 },
-                                modifier=modifier,
+                                modifier = modifier,
                             )
                         }
                     }
                 }
             }
-        }
 
-        // Floating Action Buttons
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .zIndex(1f)
-        ) {
-            GlobaleControlsFloatingsButtonsSA(
-                showFloatingButtons = showFloatingButtons,
-                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onChangeGridColumns = { gridColumns = it },
-                onToggleToFilterToMove = {
-                    toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
-                },
-                filterSuppHandledNow = toggleCtrlToFilterToMove,
-                onToggleReorderMode = { itsReorderMode = !itsReorderMode }
-            )
-        }
+            // Floating Action Buttons
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .zIndex(1f)
+            ) {
+                GlobaleControlsFloatingsButtonsSA(
+                    showFloatingButtons = showFloatingButtons,
+                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                    onChangeGridColumns = { gridColumns = it },
+                    onToggleToFilterToMove = {
+                        toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
+                    },
+                    filterSuppHandledNow = toggleCtrlToFilterToMove,
+                    onToggleReorderMode = { itsReorderMode = !itsReorderMode }
+                )
+            }
 
-        SuppliersFloatingButtonsSA(
-            allArticles = uiState.tabelleSupplierArticlesRecived,
-            suppliers = uiState.tabelleSuppliersSA,
-            supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
-            onClickFlotButt = { idSupplier ->
-                coroutineScope.launch {
+            SuppliersFloatingButtonsSA(
+                allArticles = uiState.tabelleSupplierArticlesRecived,
+                suppliers = uiState.tabelleSuppliersSA,
+                supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
+                onClickFlotButt = { idSupplier ->   //TODO extract
+                    coroutineScope.launch {
                     if (itsReorderMode) {
                         if (holdedIdSupplierForMove == null) {
                             holdedIdSupplierForMove = idSupplier
@@ -216,25 +214,26 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 }
                         }
                     }
-                }
-            },
-            isSelectedForeHolder = { holdedIdSupplierForMove =it },
-            itsReorderMode = itsReorderMode
-        )
-
-        // Use the current edited article if it matches the given article, otherwise use the original article
-        val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
-            ?: dialogeDisplayeDetailleChanger
-
-        displayedArticle?.let { article ->
-            ArticleDetailWindowSA(
-                article = article,
-                onDismiss = {
-                    dialogeDisplayeDetailleChanger = null
+                    }
                 },
-                viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp),
+                isSelectedForeHolder = { holdedIdSupplierForMove = it },
+                itsReorderMode = itsReorderMode
             )
+
+            // Article detail window
+            val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
+                ?: dialogeDisplayeDetailleChanger
+
+            displayedArticle?.let { article ->
+                ArticleDetailWindowSA(
+                    article = article,
+                    onDismiss = {
+                        dialogeDisplayeDetailleChanger = null
+                    },
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(horizontal = 3.dp),
+                )
+            }
         }
     }
 }
