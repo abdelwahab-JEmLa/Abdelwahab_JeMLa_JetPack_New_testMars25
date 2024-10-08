@@ -358,7 +358,6 @@ fun ArticleItemSA(
         MaterialTheme.colorScheme.surface
     }
 
-    // Add a remember key to force recomposition when the article changes
     val reloadKey = remember(article) { System.currentTimeMillis() }
 
     Card(
@@ -373,12 +372,15 @@ fun ArticleItemSA(
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .clickable {
-                        if (lastImageClicked == null) {
+                        if (article.itsInFindedAskSupplierSA) {
+                            viewModel.changeAskSupplier(article)
+                            lastImageClicked = null
+                        } else if (lastImageClicked != article) {
                             onFirstClickOnImg(article)
                             lastImageClicked = article
                         } else {
                             viewModel.changeAskSupplier(article)
-                            lastImageClicked=null
+                            lastImageClicked = null
                         }
                     },
                 contentAlignment = Alignment.Center
