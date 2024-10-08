@@ -140,8 +140,8 @@ data class CategoriesTabelleECB(
     val nomCategorieInCategoriesTabele: String = "",
 )
 data class MapArticleInSupplierStore(
-    val vid: Long = 0,
     val idPlace: Long = 0,
     val namePlace: String = "",
+    val idSupplierOfStore: Long = 0,
     val inRightOfPlace: Boolean = false,
 )

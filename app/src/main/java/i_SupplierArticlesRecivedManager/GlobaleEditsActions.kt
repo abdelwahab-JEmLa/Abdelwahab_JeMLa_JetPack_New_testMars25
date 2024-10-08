@@ -38,12 +38,14 @@ fun GlobaleControlsFloatingsButtonsSA(
     onToggleToFilterToMove: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
     filterSuppHandledNow: Boolean,
-    onToggleReorderMode: () -> Unit
+    onToggleReorderMode: () -> Unit,
+    onDisplyeWindosMapArticleInSupplierStore: () -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
     var showContentDescription by remember { mutableStateOf(false) }
     var onToggleReorderModeCliked by remember { mutableStateOf(false) }
+    var onDisplyeWindosMapArticleInSupplierStoreClickFolower by remember { mutableStateOf(false) }
 
     Column {
         if (showFloatingButtons) {
@@ -53,6 +55,10 @@ fun GlobaleControlsFloatingsButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
+                    Triple(if (onDisplyeWindosMapArticleInSupplierStoreClickFolower) Icons.Default.Close else Icons.Default.FastRewind, "onDisplyeWindosMapArticleInSupplierStore") {
+                        onDisplyeWindosMapArticleInSupplierStore()
+                        onDisplyeWindosMapArticleInSupplierStoreClickFolower=!onDisplyeWindosMapArticleInSupplierStoreClickFolower
+                    },
                     Triple(if (onToggleReorderModeCliked) Icons.Default.Close else Icons.Default.FastRewind, "Reorder mode") {
                         onToggleReorderMode()
                         onToggleReorderModeCliked=!onToggleReorderModeCliked

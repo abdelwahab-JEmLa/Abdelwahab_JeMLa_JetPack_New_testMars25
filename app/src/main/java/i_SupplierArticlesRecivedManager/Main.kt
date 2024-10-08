@@ -1,6 +1,8 @@
 package i_SupplierArticlesRecivedManager
 
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
+import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import a_MainAppCompnents.TabelleSuppliersSA
 import androidx.compose.animation.AnimatedVisibility
@@ -16,6 +18,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +36,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
@@ -40,11 +44,14 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,6 +74,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -105,6 +113,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     var itsReorderMode by remember { mutableStateOf(false) }
     var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
+    var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()) {
         Scaffold(
@@ -118,7 +127,8 @@ fun Fragment_SupplierArticlesRecivedManager(
                         toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
                     },
                     filterSuppHandledNow = toggleCtrlToFilterToMove,
-                    onToggleReorderMode = { itsReorderMode = !itsReorderMode }
+                    onToggleReorderMode = { itsReorderMode = !itsReorderMode }  ,
+                    onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore }
                 )
             }
         ) { paddingValues ->
@@ -228,7 +238,139 @@ fun Fragment_SupplierArticlesRecivedManager(
             modifier = Modifier.padding(horizontal = 3.dp),
         )
     }
+    if (windosMapArticleInSupplierStore)
+        WindosMapArticleInSupplierStore(
+            uiState=  uiState,
+        onDismiss = {
+            windosMapArticleInSupplierStore = false
+        },
+        viewModel = viewModel,
+        modifier = Modifier.padding(horizontal = 3.dp),
+        idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked,
+    )
 }
+
+// WindosMapArticleInSupplierStore.kt
+@Composable
+fun WindosMapArticleInSupplierStore(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    onDismiss: () -> Unit,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier,
+    idSupplierOfFloatingButtonClicked: Long?
+) {
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Card(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(uiState.mapArticleInSupplierStore) { place ->
+                            PlaceItem(place = place)
+                        }
+                    }
+                }
+
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Add Place")
+                }
+            }
+        }
+    }
+
+    if (showAddDialog) {
+        AddPlaceDialog(
+            onDismiss = { showAddDialog = false },
+            onAddPlace = { name ->
+                viewModel.addNewPlace(name,idSupplierOfFloatingButtonClicked)
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun PlaceItem(place: MapArticleInSupplierStore) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = place.namePlace,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (place.inRightOfPlace) "Right Side" else "Left Side",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (place.inRightOfPlace) Color.Blue else Color.Red
+            )
+        }
+    }
+}
+
+
+@Composable
+fun AddPlaceDialog(
+    onDismiss: () -> Unit,
+    onAddPlace: (String) -> Unit
+) {
+    var newPlaceName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New Place") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = newPlaceName,
+                    onValueChange = { newPlaceName = it },
+                    label = { Text("Place Name") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onAddPlace(newPlaceName) }) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
 @Composable
 fun ArticleItemSA(
         article: TabelleSupplierArticlesRecived,
@@ -271,6 +413,7 @@ fun ArticleItemSA(
             }
         }
 }
+
 
 @Composable
 fun ArticleDetailWindowSA(

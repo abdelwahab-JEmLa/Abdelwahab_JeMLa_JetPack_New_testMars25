@@ -54,6 +54,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
 
+    private val _mapArticleInSupplierStore = MutableStateFlow<MapArticleInSupplierStore?>(null)
+    val mapArticleInSupplierStore: StateFlow<MapArticleInSupplierStore?> = _mapArticleInSupplierStore.asStateFlow()
+
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
 
@@ -62,6 +65,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
     private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
+    private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
     val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
@@ -74,6 +78,41 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val PROGRESS_UPDATE_DELAY = 100L
         private const val TAG = "HeadOfViewModels"
     }
+
+    fun addNewPlace(name: String, idSupplierOfFloatingButtonClicked: Long?) {
+        viewModelScope.launch {
+            idSupplierOfFloatingButtonClicked?.let { supplierId ->
+                val currentMaxId = _uiState.value.mapArticleInSupplierStore.maxOfOrNull { it.idPlace } ?: 0
+
+                val newPlaceLeft = MapArticleInSupplierStore(
+                    idPlace = currentMaxId + 1,
+                    namePlace = name,
+                    idSupplierOfStore = supplierId,
+                    inRightOfPlace = false
+                )
+
+                val newPlaceRight = MapArticleInSupplierStore(
+                    idPlace = currentMaxId + 2,
+                    namePlace = name,
+                    idSupplierOfStore = supplierId,
+                    inRightOfPlace = true
+                )
+
+                // Ajouter à Firebase
+                refMapArticleInSupplierStore.child(newPlaceLeft.idPlace.toString()).setValue(newPlaceLeft)
+                refMapArticleInSupplierStore.child(newPlaceRight.idPlace.toString()).setValue(newPlaceRight)
+
+                // Mettre à jour l'état local
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        mapArticleInSupplierStore = currentState.mapArticleInSupplierStore + listOf(newPlaceLeft, newPlaceRight)
+                    )
+                }
+            }
+        }
+    }
+
+
 
     fun changeAskSupplier(article: TabelleSupplierArticlesRecived) {
         viewModelScope.launch {
@@ -215,7 +254,10 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             val suppliersSA = fetchSuppliers()
             updateProgressWithDelay(80f)
 
-            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA)
+            val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
+            updateProgressWithDelay(90f)
+
+            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore)
             updateProgressWithDelay(100f)
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
@@ -239,6 +281,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
         .sortedBy { it.idClassementCategorieInCategoriesTabele }
 
+    private suspend fun fetchMapArticleInSupplierStore() = refMapArticleInSupplierStore.get().await().children
+        .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
+
     private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
         .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
 
@@ -247,13 +292,15 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         articles: List<BaseDonneECBTabelle>,
         categories: List<CategoriesTabelleECB>,
         supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
-        suppliersSA: List<TabelleSuppliersSA>
+        suppliersSA: List<TabelleSuppliersSA> ,
+        mapArticleInSupplierStore: List<MapArticleInSupplierStore> ,
     ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
             categoriesECB = categories,
             tabelleSupplierArticlesRecived = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,
+            mapArticleInSupplierStore = mapArticleInSupplierStore,
             isLoading = false
         ) }
     }
@@ -1176,6 +1223,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
     val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
     val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
+    val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
     val showOnlyWithFilter: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
