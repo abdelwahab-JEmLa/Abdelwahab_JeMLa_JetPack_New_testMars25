@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.AlertDialog
@@ -51,6 +52,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -250,7 +252,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     }
 
     if (windosMapArticleInSupplierStore)
-        WindosMapArticleInSupplierStore(
+        WindowsMapArticleInSupplierStore(
             uiState=  uiState,
         onDismiss = {
             windosMapArticleInSupplierStore = false
@@ -261,18 +263,18 @@ fun Fragment_SupplierArticlesRecivedManager(
             gridColumns
         )
 }
-//Title:WindosMapArticleInSupplierStore
+//Title:WindowsMapArticleInSupplierStore
 @Composable
-fun WindosMapArticleInSupplierStore(
+fun WindowsMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
     gridColumns: Int
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
-    var showNonPlacedAricles by remember { mutableStateOf<MapArticleInSupplierStore?>(null)  }
+    var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -284,21 +286,43 @@ fun WindosMapArticleInSupplierStore(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Card(
-                    modifier = modifier
+                    modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
+                        columns = GridCells.Fixed(gridColumns),
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(uiState.mapArticleInSupplierStore) { place ->
-                            PlaceItem(place = place,
-                                modifier = modifier,
-                                onClickToDisplayeNonPlaced ={showNonPlacedAricles=it}
-                            )
+                        uiState.mapArticleInSupplierStore.forEach { place ->
+                            val articlesPlace = uiState.tabelleSupplierArticlesRecived.filter {
+                                it.idInStoreOfSupp?.toLong() == place.idPlace
+                            }
+
+                            item(span = { GridItemSpan(gridColumns) }) {
+                                StickyHeaderStimler(
+                                    place = place,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClickToDisplayNonPlaced = { showNonPlacedArticles = it }
+                                )
+                            }
+
+                            items(articlesPlace) { article ->
+                                ArticleItemOfPlace(
+                                    article = article,
+                                    onDismissWithUpdate = { clickedArticle ->
+                                        viewModel.updateArticlePlacement(
+                                            clickedArticle.a_c_idarticle_c,
+                                            place.idPlace,
+                                            place.idSupplierOfStore
+                                        )
+                                        onDismiss()
+                                    },
+                                    viewModel = viewModel
+                                )
+                            }
                         }
                     }
                 }
@@ -312,7 +336,7 @@ fun WindosMapArticleInSupplierStore(
                     Icon(Icons.Filled.Add, contentDescription = "Add Place")
                 }
                 FloatingActionButton(
-                    onClick = { showNonPlacedAricles = null },
+                    onClick = { showNonPlacedArticles = null },
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(16.dp)
@@ -322,10 +346,10 @@ fun WindosMapArticleInSupplierStore(
             }
         }
     }
-    showNonPlacedAricles?.let { place ->
-        WindosOFNonPlacedArticles(
+    showNonPlacedArticles?.let { place ->
+        WindowsOfNonPlacedArticles(
             uiState = uiState,
-            onDismiss = { showNonPlacedAricles = null },
+            onDismiss = { showNonPlacedArticles = null },
             modifier = Modifier,
             gridColumns = gridColumns,
             place = place,
@@ -344,7 +368,75 @@ fun WindosMapArticleInSupplierStore(
 }
 
 @Composable
-fun WindosOFNonPlacedArticles(
+fun StickyHeaderStimler(
+    place: MapArticleInSupplierStore,
+    modifier: Modifier = Modifier,
+    onClickToDisplayNonPlaced: (MapArticleInSupplierStore) -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = place.namePlace,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            IconButton(onClick = { onClickToDisplayNonPlaced(place) }) {
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = "More options",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ArticleItemOfPlace(
+    article: TabelleSupplierArticlesRecived,
+    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
+    viewModel: HeadOfViewModels
+) {
+    var showArticleDetails by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .clickable { showArticleDetails = true },
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = article.a_d_nomarticlefinale_c, style = MaterialTheme.typography.bodyLarge)
+            Text(text = "ID: ${article.a_c_idarticle_c}", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+
+    if (showArticleDetails) {
+        WindowArticleDetail(
+            article = article,
+            onDismissWithUpdate = {
+                onDismissWithUpdate(article)
+                showArticleDetails = false
+            },
+            viewModel = viewModel,
+            modifier = Modifier.padding(horizontal = 3.dp),
+        )
+    }
+}
+@Composable
+fun WindowsOfNonPlacedArticles(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onDismiss: () -> Unit,
     modifier: Modifier,
@@ -444,7 +536,7 @@ fun ArticleItem(
 }
 //Title:PlaceItem
 @Composable
-fun PlaceItem(place: MapArticleInSupplierStore,
+fun StickyHeader(place: MapArticleInSupplierStore,
               onClickToDisplayeNonPlaced:(MapArticleInSupplierStore)-> Unit,
               modifier: Modifier
 ) {
