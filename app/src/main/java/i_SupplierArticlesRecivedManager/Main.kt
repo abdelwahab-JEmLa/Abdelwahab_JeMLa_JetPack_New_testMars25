@@ -257,8 +257,10 @@ fun Fragment_SupplierArticlesRecivedManager(
         viewModel = viewModel,
         modifier = Modifier.padding(horizontal = 3.dp),
         idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked,
-            gridColumns
-    )
+            gridColumns, onClickToDisplayeDetaille = {
+                dialogeDisplayeDetailleChanger=it
+            }
+        )
 }
 @Composable
 fun WindosMapArticleInSupplierStore(
@@ -267,7 +269,7 @@ fun WindosMapArticleInSupplierStore(
     viewModel: HeadOfViewModels,
     modifier: Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
-    gridColumns: Int
+    gridColumns: Int, onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedAricles by remember { mutableStateOf(false) }
@@ -324,7 +326,7 @@ fun WindosMapArticleInSupplierStore(
             modifier = Modifier,
             gridColumns = gridColumns,
             idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-            viewModel = viewModel
+            viewModel = viewModel, onClickToDisplayeDetaille = onClickToDisplayeDetaille
         )
     }
     if (showAddDialog) {
@@ -346,6 +348,7 @@ fun NonPlacedArticles(
     gridColumns: Int,
     idSupplierOfFloatingButtonClicked: Long?,
     viewModel: HeadOfViewModels,
+    onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
 
@@ -375,6 +378,7 @@ fun NonPlacedArticles(
                         items(articlesSupplier) { article ->
                             ArticleItem(
                                 article = article,
+                                onClickToDisplayeDetaille,
                             )
                         }
                     }
@@ -396,10 +400,13 @@ fun NonPlacedArticles(
 @Composable
 fun ArticleItem(
     article: TabelleSupplierArticlesRecived,
-) {
+    onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit,
+
+    ) {
     Card(
         modifier = Modifier
-            .padding(4.dp) ,
+            .padding(4.dp)
+            .clickable { onClickToDisplayeDetaille(article) },
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
@@ -411,7 +418,6 @@ fun ArticleItem(
         }
     }
 }
-
 
 @Composable
 fun PlaceItem(place: MapArticleInSupplierStore) {
