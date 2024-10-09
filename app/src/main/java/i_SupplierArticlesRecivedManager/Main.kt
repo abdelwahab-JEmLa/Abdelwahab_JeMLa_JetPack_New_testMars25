@@ -239,7 +239,7 @@ fun Fragment_SupplierArticlesRecivedManager(
         ?: dialogeDisplayeDetailleChanger
 
     displayedArticle?.let { article ->
-        ArticleDetailWindowSA(
+        WindowArticleDetail(
             article = article,
             onDismiss = {
                 dialogeDisplayeDetailleChanger = null
@@ -389,7 +389,9 @@ fun WindosOFNonPlacedArticles(
                                         place.idPlace,
                                         place.idSupplierOfStore
                                     )
+                                    onDismiss()
                                 },
+                                viewModel=viewModel
                             )
                         }
                     }
@@ -412,11 +414,14 @@ fun WindosOFNonPlacedArticles(
 fun ArticleItem(
     article: TabelleSupplierArticlesRecived,
     onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit,
+    viewModel: HeadOfViewModels,
     ) {
+    var showNonPlacedAricles by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null)  }
+
     Card(
         modifier = Modifier
             .padding(4.dp)
-            .clickable { onClickToDisplayeDetaille(article) },
+            .clickable { showNonPlacedAricles= article},
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
@@ -426,6 +431,17 @@ fun ArticleItem(
             Text(text = article.a_d_nomarticlefinale_c, style = MaterialTheme.typography.bodyLarge)
             Text(text = "ID: ${article.a_c_idarticle_c}", style = MaterialTheme.typography.bodySmall)
         }
+    }
+    showNonPlacedAricles?.let { articleDisplaye ->
+        WindowArticleDetail(
+            article = articleDisplaye,
+            onDismiss = {
+                onClickToDisplayeDetaille(articleDisplaye)
+                showNonPlacedAricles=null
+            },
+            viewModel = viewModel,
+            modifier = Modifier.padding(horizontal = 3.dp),
+        )
     }
 }
 //Title:PlaceItem
@@ -538,9 +554,9 @@ fun ArticleItemSA(
         }
 }
 
-//ArticleDetailWindowSA
+//WindowArticleDetail
 @Composable
-fun ArticleDetailWindowSA(
+fun WindowArticleDetail(
     article: TabelleSupplierArticlesRecived,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
