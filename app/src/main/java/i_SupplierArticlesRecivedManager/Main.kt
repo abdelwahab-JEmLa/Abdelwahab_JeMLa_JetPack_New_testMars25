@@ -262,6 +262,7 @@ fun Fragment_SupplierArticlesRecivedManager(
             }
         )
 }
+//Title:WindosMapArticleInSupplierStore
 @Composable
 fun WindosMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -272,7 +273,7 @@ fun WindosMapArticleInSupplierStore(
     gridColumns: Int, onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
-    var showNonPlacedAricles by remember { mutableStateOf<Long?>(null)  }
+    var showNonPlacedAricles by remember { mutableStateOf<MapArticleInSupplierStore?>(null)  }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -322,14 +323,15 @@ fun WindosMapArticleInSupplierStore(
             }
         }
     }
-    showNonPlacedAricles?.let { idSupp ->
-        NonPlacedArticles(
+    showNonPlacedAricles?.let { place ->
+        WindosOFNonPlacedArticles(
             uiState = uiState,
             onDismiss = { showNonPlacedAricles = null },
             modifier = Modifier,
             gridColumns = gridColumns,
-            idSupplierOfFloatingButtonClicked = idSupp,
-            viewModel = viewModel, onClickToDisplayeDetaille = onClickToDisplayeDetaille
+            idSupplierOfFloatingButtonClicked = place.idSupplierOfStore,
+            place = place,
+            viewModel = viewModel
         )
     }
     if (showAddDialog) {
@@ -344,14 +346,14 @@ fun WindosMapArticleInSupplierStore(
 }
 
 @Composable
-fun NonPlacedArticles(
+fun WindosOFNonPlacedArticles(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onDismiss: () -> Unit,
     modifier: Modifier,
     gridColumns: Int,
     idSupplierOfFloatingButtonClicked: Long?,
     viewModel: HeadOfViewModels,
-    onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit,
+    place: MapArticleInSupplierStore,
 ) {
     val gridState = rememberLazyGridState()
 
@@ -381,7 +383,13 @@ fun NonPlacedArticles(
                         items(articlesSupplier) { article ->
                             ArticleItem(
                                 article = article,
-                                onClickToDisplayeDetaille,
+                                onClickToDisplayeDetaille = { clickedArticle ->
+                                    viewModel.updateArticlePlacement(
+                                        clickedArticle.a_c_idarticle_c,
+                                        place.idPlace,
+                                        place.idSupplierOfStore
+                                    )
+                                },
                             )
                         }
                     }
@@ -423,7 +431,7 @@ fun ArticleItem(
 //Title:PlaceItem
 @Composable
 fun PlaceItem(place: MapArticleInSupplierStore,
-              onClickToDisplayeNonPlaced:(Long)-> Unit,
+              onClickToDisplayeNonPlaced:(MapArticleInSupplierStore)-> Unit,
               modifier: Modifier
 ) {
     Card(
@@ -438,9 +446,7 @@ fun PlaceItem(place: MapArticleInSupplierStore,
                 .fillMaxWidth()
         ) {
             Row (modifier = modifier
-                .clickable { onClickToDisplayeNonPlaced(place.idSupplierOfStore) }){
-
-
+                .clickable { onClickToDisplayeNonPlaced(place) }){
             Text(
                 text = place.namePlace,
                 style = MaterialTheme.typography.titleMedium,
@@ -582,6 +588,14 @@ fun ArticleDetailWindowSA(
                         color = MaterialTheme.colorScheme.error,
                         modifier = modifier.fillMaxWidth()
                     )
+                    Button(
+                        onClick = {
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                    ) {
+                        Text("Close")
+                    }
                 }
             }
         }

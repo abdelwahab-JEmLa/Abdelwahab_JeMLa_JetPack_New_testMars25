@@ -23,6 +23,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -77,6 +79,54 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val MAX_HEIGHT = 1024
         private const val PROGRESS_UPDATE_DELAY = 100L
         private const val TAG = "HeadOfViewModels"
+    }
+
+    fun updateArticlePlacement(articleId: Long, placeId: Long, supplierId: Long) {
+        viewModelScope.launch {
+            // Update the local state
+            val updatedArticles = _uiState.value.tabelleSupplierArticlesRecived.map { article ->
+                if (article.a_c_idarticle_c == articleId) {
+                    article.copy(idInStoreOfSupp = placeId)
+                } else {
+                    article
+                }
+            }
+            _uiState.update { it.copy(tabelleSupplierArticlesRecived = updatedArticles) }
+
+            // Update Firestore
+            val firestore = FirebaseFirestore.getInstance()
+            val batch = firestore.batch()
+
+            // Update in K_SupplierArticlesRecived collection
+            val articleRef = firestore.collection("K_SupplierArticlesRecived")
+                .document(articleId.toString())
+            batch.update(articleRef, "idInStoreOfSupp", placeId)
+
+            // Add to F_SupplierArticlesFireS collection
+            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
+            val docRef = supplierArticlesRef
+                .document(supplierId.toString())
+                .collection("historiquesAchats")
+                .document(articleId.toString())
+
+            val article = updatedArticles.find { it.a_c_idarticle_c == articleId }
+            article?.let {
+                val lineData = hashMapOf(
+                    "idInStoreOfSupp" to placeId,
+                    "a_c_idarticle_c" to it.a_c_idarticle_c,
+                    "a_d_nomarticlefinale_c" to it.a_d_nomarticlefinale_c,
+                    // Add other fields as needed
+                )
+                batch.set(docRef, lineData, SetOptions.merge())
+            }
+
+            // Commit the batch
+            batch.commit().addOnSuccessListener {
+                Log.d(TAG, "Article placement updated successfully")
+            }.addOnFailureListener { e ->
+                Log.w(TAG, "Error updating article placement", e)
+            }
+        }
     }
 
     fun addNewPlace(name: String, idSupplierOfFloatingButtonClicked: Long?) {
