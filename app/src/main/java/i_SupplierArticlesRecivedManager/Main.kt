@@ -312,7 +312,7 @@ fun WindowsMapArticleInSupplierStore(
                                 PlacesItem(
                                     articlesOfPlace = articlesOfPlace,
                                     modifier = Modifier.fillMaxWidth(),
-                                    viewModel = viewModel
+                                    viewModel = viewModel, onDismiss = { showNonPlacedArticles = null }
                                 )
                             }
                         }
@@ -396,7 +396,7 @@ fun StickyHeaderStimler(
 fun PlacesItem(
     modifier: Modifier = Modifier,
     articlesOfPlace: List<TabelleSupplierArticlesRecived>,
-    viewModel: HeadOfViewModels
+    viewModel: HeadOfViewModels, onDismiss: () -> Unit
 ) {
     Card(
         modifier = modifier
@@ -412,7 +412,8 @@ fun PlacesItem(
             items(articlesOfPlace) { article ->
                 ArticleItemOfPlace(
                     article = article,
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    onDismiss
                 )
             }
         }
@@ -422,7 +423,8 @@ fun PlacesItem(
 @Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
-    viewModel: HeadOfViewModels
+    viewModel: HeadOfViewModels,
+    onDismiss: () -> Unit
 ) {
     var showArticleDetails by remember { mutableStateOf(false) }
 
@@ -444,7 +446,8 @@ fun ArticleItemOfPlace(
     if (showArticleDetails) {
         WindowArticleDetail(
             article = article,
-            onDismissWithUpdate = {},
+            onDismissWithUpdate = {showArticleDetails=false
+                onDismiss()},
             viewModel = viewModel,
             modifier = Modifier.padding(horizontal = 3.dp),
         )
