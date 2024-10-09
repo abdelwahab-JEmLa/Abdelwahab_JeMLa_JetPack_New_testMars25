@@ -78,32 +78,52 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-    fun updateArticlePlacement(
+    fun addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
         placeId: Long,
-        idCombinedIdArticleIdSupplier: String
+        idCombinedIdArticleIdSupplier: String,
+        idArticle: Long,
+        idSupp: Long
     ) {
         viewModelScope.launch {
             try {
-                // Update the local state
-                val updatedArticles = _uiState.value.placesOfArticelsInEacheSupplierSrore.map { article ->
-                    if (article.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier) {
-                        article.copy(idPlace = placeId)
-                    } else {
-                        article
-                    }
+                // Check if the article exists in the current list
+                val existingArticle = _uiState.value.placesOfArticelsInEacheSupplierSrore.find {
+                    it.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier
                 }
+
+                val updatedArticles = if (existingArticle != null) {
+                    // Update existing article
+                    _uiState.value.placesOfArticelsInEacheSupplierSrore.map { article ->
+                        if (article.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier) {
+                            article.copy(idPlace = placeId)
+                        } else {
+                            article
+                        }
+                    }
+                } else {
+                    // Add new article
+                    val newArticle = PlacesOfArticelsInEacheSupplierSrore(
+                        idCombinedIdArticleIdSupplier = idCombinedIdArticleIdSupplier,
+                        idPlace = placeId,
+                        idArticle = idArticle,
+                        idSupplierSu = idSupp
+                    )
+                    _uiState.value.placesOfArticelsInEacheSupplierSrore + newArticle
+                }
+
+                // Update the local state
                 _uiState.update { it.copy(placesOfArticelsInEacheSupplierSrore = updatedArticles) }
 
-                // Update the Firebase Realtime Database
-                val updatedArticle = updatedArticles.find { it.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier }
-                if (updatedArticle != null) {
-                    refPlacesOfArticelsInEacheSupplierSrore.child(idCombinedIdArticleIdSupplier).setValue(updatedArticle)
+                // Update or add to Firebase Realtime Database
+                val articleToUpdate = updatedArticles.find { it.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier }
+                if (articleToUpdate != null) {
+                    refPlacesOfArticelsInEacheSupplierSrore.child(idCombinedIdArticleIdSupplier).setValue(articleToUpdate)
                 } else {
                     throw Exception("Article not found for updating in Firebase")
                 }
             } catch (e: Exception) {
                 // Handle the error (e.g., log it or update UI to show error message)
-                Log.e("UpdateArticlePlacement", "Error updating article placement", e)
+                Log.e("AddOrUpdateArticlePlacement", "Error adding or updating article placement", e)
                 // You might want to revert the local state update here if the Firebase update fails
             }
         }

@@ -476,9 +476,11 @@ fun WindowsOfNonPlacedArticles(
                                 article = article,
                                 onDismissWithUpdate = { clickedArticle ->
                                     val idCombinedIdArticleIdSupplier =  "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
-                                    viewModel.updateArticlePlacement(
+                                    viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
                                         idCombinedIdArticleIdSupplier=idCombinedIdArticleIdSupplier,
                                         placeId= place.idPlace,
+                                        idArticle  = clickedArticle.a_c_idarticle_c,
+                                        idSupp = place.idSupplierOfStore
                                     )
                                     onDismiss()
                                 },
