@@ -68,6 +68,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
     private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
+    private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
     private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
@@ -313,7 +314,10 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
             updateProgressWithDelay(90f)
 
-            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore)
+            val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
+            updateProgressWithDelay(95f)
+
+            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore,placesOfArticelsInEacheSupplierSrore)
             updateProgressWithDelay(100f)
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
@@ -343,6 +347,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
         .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
 
+    private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = refPlacesOfArticelsInEacheSupplierSrore.get().await().children
+        .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
 
     private fun updateUiState(
         articles: List<BaseDonneECBTabelle>,
@@ -350,6 +356,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
         suppliersSA: List<TabelleSuppliersSA> ,
         mapArticleInSupplierStore: List<MapArticleInSupplierStore> ,
+        placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> ,
+
     ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
@@ -357,6 +365,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             tabelleSupplierArticlesRecived = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,
             mapArticleInSupplierStore = mapArticleInSupplierStore,
+            placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
+
             isLoading = false
         ) }
     }
@@ -1280,6 +1290,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
     val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
     val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
+    val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
     val showOnlyWithFilter: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null

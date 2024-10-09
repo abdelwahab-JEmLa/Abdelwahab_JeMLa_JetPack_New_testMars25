@@ -140,6 +140,12 @@ data class CategoriesTabelleECB(
     var idClassementCategorieInCategoriesTabele: Double = 0.0,
     val nomCategorieInCategoriesTabele: String = "",
 )
+data class PlacesOfArticelsInEacheSupplierSrore(
+    val idCombinedIdArticleIdSupplier: String = "",
+    val idPlace: Long= 0,
+    val idArticle: Long = 0,
+    val idSupplierSu: Long= 0,
+)
 data class MapArticleInSupplierStore(
     val idPlace: Long = 0,
     val namePlace: String = "",
