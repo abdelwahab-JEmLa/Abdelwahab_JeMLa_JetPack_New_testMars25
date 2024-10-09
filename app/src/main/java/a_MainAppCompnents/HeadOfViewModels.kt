@@ -98,7 +98,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
 
             // Update Firebase Realtime Database
-            refMapArticleInSupplierStore.child(articleId.toString()).setValue(placeId)
+            refTabelleSupplierArticlesRecived.child(articleId.toString()).setValue(updatedArticles)
 
             val firestore = FirebaseFirestore.getInstance()
             val batch = firestore.batch()

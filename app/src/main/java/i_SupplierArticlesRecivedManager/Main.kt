@@ -77,7 +77,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -294,24 +293,21 @@ fun WindowsMapArticleInSupplierStore(
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        val distinctPlaces = uiState.mapArticleInSupplierStore.distinctBy { it.namePlace }
+                        val Places = uiState.mapArticleInSupplierStore
 
-                        distinctPlaces.forEach { placeDist ->
-                            val placesOfName = uiState.mapArticleInSupplierStore.filter {
-                                it.namePlace == placeDist.namePlace
-                            }
+                        Places.forEach {place ->
 
                             item(span = { GridItemSpan(2) }) {
                                 StickyHeaderStimler(
-                                    place = placeDist,
+                                    place = place,
                                     modifier = Modifier.fillMaxWidth(),
                                     onClickToDisplayNonPlaced = { showNonPlacedArticles = it }
                                 )
                             }
 
-                            items(placesOfName) { place ->
+                            items(Places) { placeItem ->
                                 val articlesOfPlace = uiState.tabelleSupplierArticlesRecived.filter {
-                                    it.idInStoreOfSupp?.toLong() == place.idPlace
+                                    it.idInStoreOfSupp?.toLong() == placeItem.idPlace
                                 }
                                 PlacesItem(
                                     articlesOfPlace = articlesOfPlace,
@@ -416,7 +412,6 @@ fun PlacesItem(
             items(articlesOfPlace) { article ->
                 ArticleItemOfPlace(
                     article = article,
-                    onDismissWithUpdate = {},
                     viewModel = viewModel
                 )
             }
@@ -427,7 +422,6 @@ fun PlacesItem(
 @Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
-    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
     viewModel: HeadOfViewModels
 ) {
     var showArticleDetails by remember { mutableStateOf(false) }
@@ -450,10 +444,7 @@ fun ArticleItemOfPlace(
     if (showArticleDetails) {
         WindowArticleDetail(
             article = article,
-            onDismissWithUpdate = {
-                onDismissWithUpdate(article)
-                showArticleDetails = false
-            },
+            onDismissWithUpdate = {},
             viewModel = viewModel,
             modifier = Modifier.padding(horizontal = 3.dp),
         )
