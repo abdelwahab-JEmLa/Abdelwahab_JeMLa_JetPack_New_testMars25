@@ -260,7 +260,6 @@ fun Fragment_SupplierArticlesRecivedManager(
         viewModel = viewModel,
         modifier = Modifier.padding(horizontal = 3.dp),
         idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked,
-            gridColumns
         )
 }
 //Title:WindowsMapArticleInSupplierStore
@@ -271,7 +270,6 @@ fun WindowsMapArticleInSupplierStore(
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
-    gridColumns: Int
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
@@ -292,34 +290,32 @@ fun WindowsMapArticleInSupplierStore(
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(gridColumns),
+                        columns = GridCells.Fixed(2),
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        uiState.mapArticleInSupplierStore.forEach { place ->
-                            val articlesPlace = uiState.tabelleSupplierArticlesRecived.filter {
-                                it.idInStoreOfSupp?.toLong() == place.idPlace
+                        val distinctPlaces = uiState.mapArticleInSupplierStore.distinctBy { it.namePlace }
+
+                        distinctPlaces.forEach { placeDist ->
+                            val placesOfName = uiState.mapArticleInSupplierStore.filter {
+                                it.namePlace == placeDist.namePlace
                             }
 
-                            item(span = { GridItemSpan(gridColumns) }) {
+                            item(span = { GridItemSpan(2) }) {
                                 StickyHeaderStimler(
-                                    place = place,
+                                    place = placeDist,
                                     modifier = Modifier.fillMaxWidth(),
                                     onClickToDisplayNonPlaced = { showNonPlacedArticles = it }
                                 )
                             }
 
-                            items(articlesPlace) { article ->
-                                ArticleItemOfPlace(
-                                    article = article,
-                                    onDismissWithUpdate = { clickedArticle ->
-                                        viewModel.updateArticlePlacement(
-                                            clickedArticle.a_c_idarticle_c,
-                                            place.idPlace,
-                                            place.idSupplierOfStore
-                                        )
-                                        onDismiss()
-                                    },
+                            items(placesOfName) { place ->
+                                val articlesOfPlace = uiState.tabelleSupplierArticlesRecived.filter {
+                                    it.idInStoreOfSupp?.toLong() == place.idPlace
+                                }
+                                PlacesItem(
+                                    articlesOfPlace = articlesOfPlace,
+                                    modifier = Modifier.fillMaxWidth(),
                                     viewModel = viewModel
                                 )
                             }
@@ -351,7 +347,7 @@ fun WindowsMapArticleInSupplierStore(
             uiState = uiState,
             onDismiss = { showNonPlacedArticles = null },
             modifier = Modifier,
-            gridColumns = gridColumns,
+            gridColumns = 2,
             place = place,
             viewModel = viewModel
         )
@@ -401,6 +397,34 @@ fun StickyHeaderStimler(
 }
 
 @Composable
+fun PlacesItem(
+    modifier: Modifier = Modifier,
+    articlesOfPlace: List<TabelleSupplierArticlesRecived>,
+    viewModel: HeadOfViewModels
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 300.dp)
+        ) {
+            items(articlesOfPlace) { article ->
+                ArticleItemOfPlace(
+                    article = article,
+                    onDismissWithUpdate = {},
+                    viewModel = viewModel
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
     onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
@@ -435,6 +459,7 @@ fun ArticleItemOfPlace(
         )
     }
 }
+
 @Composable
 fun WindowsOfNonPlacedArticles(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -532,39 +557,6 @@ fun ArticleItem(
             viewModel = viewModel,
             modifier = Modifier.padding(horizontal = 3.dp),
         )
-    }
-}
-//Title:PlaceItem
-@Composable
-fun StickyHeader(place: MapArticleInSupplierStore,
-              onClickToDisplayeNonPlaced:(MapArticleInSupplierStore)-> Unit,
-              modifier: Modifier
-) {
-    Card(
-        modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
-        ) {
-            Row (modifier = modifier
-                .clickable { onClickToDisplayeNonPlaced(place) }){
-            Text(
-                text = place.namePlace,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (place.inRightOfPlace) "R" else "L",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (place.inRightOfPlace) Color.Blue else Color.Red
-            )
-            }
-        }
     }
 }
 
