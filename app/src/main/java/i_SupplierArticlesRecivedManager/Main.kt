@@ -248,6 +248,7 @@ fun Fragment_SupplierArticlesRecivedManager(
             modifier = Modifier.padding(horizontal = 3.dp),
         )
     }
+
     if (windosMapArticleInSupplierStore)
         WindosMapArticleInSupplierStore(
             uiState=  uiState,
@@ -257,9 +258,7 @@ fun Fragment_SupplierArticlesRecivedManager(
         viewModel = viewModel,
         modifier = Modifier.padding(horizontal = 3.dp),
         idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked,
-            gridColumns, onClickToDisplayeDetaille = {
-                dialogeDisplayeDetailleChanger=it
-            }
+            gridColumns
         )
 }
 //Title:WindosMapArticleInSupplierStore
@@ -270,7 +269,7 @@ fun WindosMapArticleInSupplierStore(
     viewModel: HeadOfViewModels,
     modifier: Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
-    gridColumns: Int, onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit
+    gridColumns: Int
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedAricles by remember { mutableStateOf<MapArticleInSupplierStore?>(null)  }
@@ -329,7 +328,6 @@ fun WindosMapArticleInSupplierStore(
             onDismiss = { showNonPlacedAricles = null },
             modifier = Modifier,
             gridColumns = gridColumns,
-            idSupplierOfFloatingButtonClicked = place.idSupplierOfStore,
             place = place,
             viewModel = viewModel
         )
@@ -351,7 +349,6 @@ fun WindosOFNonPlacedArticles(
     onDismiss: () -> Unit,
     modifier: Modifier,
     gridColumns: Int,
-    idSupplierOfFloatingButtonClicked: Long?,
     viewModel: HeadOfViewModels,
     place: MapArticleInSupplierStore,
 ) {
@@ -378,8 +375,9 @@ fun WindosOFNonPlacedArticles(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                            it.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked
+                            it.idSupplierTSA.toLong() == place.idSupplierOfStore
                         }
+
                         items(articlesSupplier) { article ->
                             ArticleItem(
                                 article = article,

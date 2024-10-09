@@ -56,8 +56,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
 
-    private val _mapArticleInSupplierStore = MutableStateFlow<MapArticleInSupplierStore?>(null)
-    val mapArticleInSupplierStore: StateFlow<MapArticleInSupplierStore?> = _mapArticleInSupplierStore.asStateFlow()
+    private val _viewModelMapArticleInSupplierStore = MutableStateFlow<List<MapArticleInSupplierStore>>(emptyList())
+    val viewModelMapArticleInSupplierStore: StateFlow<List<MapArticleInSupplierStore>> = _viewModelMapArticleInSupplierStore.asStateFlow()
 
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
@@ -81,6 +81,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
+    fun clearViewModelMapArticleInSupplierStore() {
+        _viewModelMapArticleInSupplierStore.value = emptyList()
+    }
     fun updateArticlePlacement(articleId: Long, placeId: Long, supplierId: Long) {
         viewModelScope.launch {
             // Update the local state
@@ -93,7 +96,10 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
             _uiState.update { it.copy(tabelleSupplierArticlesRecived = updatedArticles) }
 
-            // Update Firestore
+
+            // Update Firebase Realtime Database
+            refMapArticleInSupplierStore.child(articleId.toString()).setValue(placeId)
+
             val firestore = FirebaseFirestore.getInstance()
             val batch = firestore.batch()
 
