@@ -241,7 +241,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     displayedArticle?.let { article ->
         WindowArticleDetail(
             article = article,
-            onDismiss = {
+            onDismissWithUpdate = {
                 dialogeDisplayeDetailleChanger = null
             },
             viewModel = viewModel,
@@ -383,7 +383,7 @@ fun WindosOFNonPlacedArticles(
                         items(articlesSupplier) { article ->
                             ArticleItem(
                                 article = article,
-                                onClickToDisplayeDetaille = { clickedArticle ->
+                                onDismissWithUpdate = { clickedArticle ->
                                     viewModel.updateArticlePlacement(
                                         clickedArticle.a_c_idarticle_c,
                                         place.idPlace,
@@ -413,7 +413,7 @@ fun WindosOFNonPlacedArticles(
 @Composable
 fun ArticleItem(
     article: TabelleSupplierArticlesRecived,
-    onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit,
+    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
     viewModel: HeadOfViewModels,
     ) {
     var showNonPlacedAricles by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null)  }
@@ -435,8 +435,8 @@ fun ArticleItem(
     showNonPlacedAricles?.let { articleDisplaye ->
         WindowArticleDetail(
             article = articleDisplaye,
-            onDismiss = {
-                onClickToDisplayeDetaille(articleDisplaye)
+            onDismissWithUpdate = {
+                onDismissWithUpdate(articleDisplaye)
                 showNonPlacedAricles=null
             },
             viewModel = viewModel,
@@ -558,14 +558,14 @@ fun ArticleItemSA(
 @Composable
 fun WindowArticleDetail(
     article: TabelleSupplierArticlesRecived,
-    onDismiss: () -> Unit,
+    onDismissWithUpdate: () -> Unit,
     viewModel: HeadOfViewModels,
     modifier: Modifier
 ) {
     val reloadKey = remember(article) { System.currentTimeMillis() }
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = onDismissWithUpdate,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -581,7 +581,7 @@ fun WindowArticleDetail(
                         article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0
                     Box(
                         modifier = modifier
-                            .clickable { onDismiss() }
+                            .clickable { onDismissWithUpdate() }
                             .height(if (ifStat) 250.dp else 500.dp)
                         ){
 
@@ -606,11 +606,11 @@ fun WindowArticleDetail(
                     )
                     Button(
                         onClick = {
-                            onDismiss()
+                            onDismissWithUpdate()
                         },
                         modifier = Modifier
                     ) {
-                        Text("Close")
+                        Text("Close And Update Place")
                     }
                 }
             }
