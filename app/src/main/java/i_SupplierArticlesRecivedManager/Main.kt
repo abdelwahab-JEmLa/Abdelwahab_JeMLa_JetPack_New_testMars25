@@ -256,19 +256,21 @@ fun Fragment_SupplierArticlesRecivedManager(
         viewModel = viewModel,
         modifier = Modifier.padding(horizontal = 3.dp),
         idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked,
+            gridColumns
     )
 }
 
-// WindosMapArticleInSupplierStore.kt
 @Composable
 fun WindosMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
     modifier: Modifier,
-    idSupplierOfFloatingButtonClicked: Long?
+    idSupplierOfFloatingButtonClicked: Long?,
+    gridColumns: Int
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var showNonPlacedAricles by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -304,10 +306,27 @@ fun WindosMapArticleInSupplierStore(
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Add Place")
                 }
+                FloatingActionButton(
+                    onClick = { showNonPlacedAricles = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription =null)
+                }
             }
         }
     }
-
+    if (showNonPlacedAricles) {
+        NonPlacedArticles(
+            uiState=uiState,
+            onDismiss = { showNonPlacedAricles = false },
+            modifier = Modifier  ,
+            gridColumns   ,
+                    idSupplierOfFloatingButtonClicked   ,
+            viewModel
+        )
+    }
     if (showAddDialog) {
         AddPlaceDialog(
             onDismiss = { showAddDialog = false },
@@ -319,6 +338,57 @@ fun WindosMapArticleInSupplierStore(
     }
 }
 
+@Composable
+fun NonPlacedArticles(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    onDismiss: () -> Unit,
+    modifier: Modifier,
+    gridColumns: Int,
+    idSupplierOfFloatingButtonClicked: Long?,
+    viewModel: HeadOfViewModels,
+    ) {
+    val gridState = rememberLazyGridState()
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Card(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(gridColumns),
+                        state = gridState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
+                            it.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked
+                        }
+                        items(articlesSupplier) { article ->
+                            //TODO cree
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    dismissButton = {
+        Button(onClick = onDismiss) {
+            Text("Cancel")
+        }
+    }
+    )
+}
 @Composable
 fun PlaceItem(place: MapArticleInSupplierStore) {
     Card(
