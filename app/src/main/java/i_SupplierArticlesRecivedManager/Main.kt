@@ -383,12 +383,7 @@ fun PlacesItem(
                 .fillMaxWidth()
                 .heightIn(max = 300.dp)
         ) {
-            val articlesForThisPlace = uiState.tabelleSupplierArticlesRecived.filter { article ->
-                uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-                    place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                            place.idPlace == placeItem.idPlace
-                }
-            }
+            val articlesForThisPlace = articleFilter(uiState, placeItem)
 
             items(articlesForThisPlace) { article ->
                 ArticleItemOfPlace(
@@ -398,6 +393,16 @@ fun PlacesItem(
                 )
             }
         }
+    }
+}
+
+private fun articleFilter(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    placeItem: MapArticleInSupplierStore
+) = uiState.tabelleSupplierArticlesRecived.filter { article ->
+    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                place.idPlace == placeItem.idPlace
     }
 }
 
@@ -446,6 +451,7 @@ fun WindowsOfNonPlacedArticles(
     place: MapArticleInSupplierStore,
 ) {
     val gridState = rememberLazyGridState()
+    var searchText by remember { mutableStateOf("") }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -456,36 +462,56 @@ fun WindowsOfNonPlacedArticles(
             shape = MaterialTheme.shapes.large
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Card(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(gridColumns),
-                        state = gridState,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                            it.idSupplierTSA.toLong() == place.idSupplierOfStore
-                        }
+                Column(modifier = Modifier.fillMaxSize()) {
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        label = { Text("Search Articles") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    )
 
-                        items(articlesSupplier) { article ->
-                            ArticleItem(
-                                article = article,
-                                onDismissWithUpdate = { clickedArticle ->
-                                    val idCombinedIdArticleIdSupplier =  "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
-                                    viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
-                                        idCombinedIdArticleIdSupplier=idCombinedIdArticleIdSupplier,
-                                        placeId= place.idPlace,
-                                        idArticle  = clickedArticle.a_c_idarticle_c,
-                                        idSupp = place.idSupplierOfStore
-                                    )
-                                    onDismiss()
-                                },
-                                viewModel=viewModel
-                            )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(gridColumns),
+                            state = gridState,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            val articlesSupplier = if (searchText.isEmpty()) {
+                                uiState.tabelleSupplierArticlesRecived.filter { article ->
+                                    article.idSupplierTSA.toLong() == place.idSupplierOfStore &&
+                                            !uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
+                                                placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
+                                            }
+                                }
+                            } else {
+                                uiState.tabelleSupplierArticlesRecived.filter { article ->
+                                    article.a_d_nomarticlefinale_c.contains(searchText, ignoreCase = true)
+                                }
+                            }
+
+                            items(articlesSupplier) { article ->
+                                ArticleItem(
+                                    article = article,
+                                    onDismissWithUpdate = { clickedArticle ->
+                                        val idCombinedIdArticleIdSupplier = "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
+                                        viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
+                                            idCombinedIdArticleIdSupplier = idCombinedIdArticleIdSupplier,
+                                            placeId = place.idPlace,
+                                            idArticle = clickedArticle.a_c_idarticle_c,
+                                            idSupp = place.idSupplierOfStore
+                                        )
+                                        onDismiss()
+                                    },
+                                    viewModel = viewModel
+                                )
+                            }
                         }
                     }
                 }
