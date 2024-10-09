@@ -507,6 +507,10 @@ fun WindowsOfNonPlacedArticles(
                                             idArticle = clickedArticle.a_c_idarticle_c,
                                             idSupp = place.idSupplierOfStore
                                         )
+                                        viewModel.moveArticleNonFindToSupplier(
+                                            listOf(clickedArticle),  // Wrap the single article in a list
+                                            place.idSupplierOfStore
+                                        )
                                         onDismiss()
                                     },
                                     viewModel = viewModel
