@@ -272,7 +272,7 @@ fun WindosMapArticleInSupplierStore(
     gridColumns: Int, onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
-    var showNonPlacedAricles by remember { mutableStateOf(false) }
+    var showNonPlacedAricles by remember { mutableStateOf<Long?>(null)  }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -295,7 +295,10 @@ fun WindosMapArticleInSupplierStore(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(uiState.mapArticleInSupplierStore) { place ->
-                            PlaceItem(place = place)
+                            PlaceItem(place = place,
+                                modifier = modifier,
+                                onClickToDisplayeNonPlaced ={showNonPlacedAricles=it}
+                            )
                         }
                     }
                 }
@@ -309,7 +312,7 @@ fun WindosMapArticleInSupplierStore(
                     Icon(Icons.Filled.Add, contentDescription = "Add Place")
                 }
                 FloatingActionButton(
-                    onClick = { showNonPlacedAricles = true },
+                    onClick = { showNonPlacedAricles = null },
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(16.dp)
@@ -319,13 +322,13 @@ fun WindosMapArticleInSupplierStore(
             }
         }
     }
-    if (showNonPlacedAricles) {
+    showNonPlacedAricles?.let { idSupp ->
         NonPlacedArticles(
             uiState = uiState,
-            onDismiss = { showNonPlacedAricles = false },
+            onDismiss = { showNonPlacedAricles = null },
             modifier = Modifier,
             gridColumns = gridColumns,
-            idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
+            idSupplierOfFloatingButtonClicked = idSupp,
             viewModel = viewModel, onClickToDisplayeDetaille = onClickToDisplayeDetaille
         )
     }
@@ -401,7 +404,6 @@ fun NonPlacedArticles(
 fun ArticleItem(
     article: TabelleSupplierArticlesRecived,
     onClickToDisplayeDetaille: (TabelleSupplierArticlesRecived) -> Unit,
-
     ) {
     Card(
         modifier = Modifier
@@ -418,9 +420,12 @@ fun ArticleItem(
         }
     }
 }
-
+//Title:PlaceItem
 @Composable
-fun PlaceItem(place: MapArticleInSupplierStore) {
+fun PlaceItem(place: MapArticleInSupplierStore,
+              onClickToDisplayeNonPlaced:(Long)-> Unit,
+              modifier: Modifier
+) {
     Card(
         modifier = Modifier
             .padding(4.dp)
@@ -432,16 +437,21 @@ fun PlaceItem(place: MapArticleInSupplierStore) {
                 .padding(8.dp)
                 .fillMaxWidth()
         ) {
+            Row (modifier = modifier
+                .clickable { onClickToDisplayeNonPlaced(place.idSupplierOfStore) }){
+
+
             Text(
                 text = place.namePlace,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = if (place.inRightOfPlace) "Right Side" else "Left Side",
+                text = if (place.inRightOfPlace) "R" else "L",
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (place.inRightOfPlace) Color.Blue else Color.Red
             )
+            }
         }
     }
 }
@@ -506,7 +516,6 @@ fun ArticleItemSA(
                 Box(
                     modifier = modifier
                         .height(250.dp)    //TODO que le height = widhth et calcule car quand je change le grid                      columns = GridCells.Fixed(gridColumns),
-
                         //le widhth change et notmalement ca chhange
                         .clickable { onArticleClick(article) },
 
@@ -523,7 +532,7 @@ fun ArticleItemSA(
         }
 }
 
-
+//ArticleDetailWindowSA
 @Composable
 fun ArticleDetailWindowSA(
     article: TabelleSupplierArticlesRecived,
@@ -546,22 +555,22 @@ fun ArticleDetailWindowSA(
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
-
+                    val ifStat =
+                        article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0
                     Box(
                         modifier = modifier
-                            .clickable { onDismiss() },
-
+                            .clickable { onDismiss() }
+                            .height(if (ifStat) 250.dp else 500.dp)
                         ){
-                        if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
+
+                        if (ifStat) {
                             SingleColorImageSA(article, viewModel,reloadKey)
                         } else {
                             MultiColorGridSA(article, viewModel,reloadKey)
                         }
                     }
                     // Article name
-                    AutoResizedTextECB( //TODO pk les autosize ne s affichon pas
-                        //c comme le box du images prendre tout l ecran fait que
-                        //le box suive les images apre les autres s affichon
+                    AutoResizedTextECB(
                         text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
                         fontSize = 25.sp,
                         color = MaterialTheme.colorScheme.error,
