@@ -23,8 +23,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ktx.database
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -44,6 +42,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+
 /* Start*/
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
@@ -55,9 +54,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
-
-    private val _viewModelMapArticleInSupplierStore = MutableStateFlow<List<MapArticleInSupplierStore>>(emptyList())
-    val viewModelMapArticleInSupplierStore: StateFlow<List<MapArticleInSupplierStore>> = _viewModelMapArticleInSupplierStore.asStateFlow()
 
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
@@ -82,56 +78,33 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-    fun clearViewModelMapArticleInSupplierStore() {
-        _viewModelMapArticleInSupplierStore.value = emptyList()
-    }
-    fun updateArticlePlacement(articleId: Long, placeId: Long, supplierId: Long) {
+    fun updateArticlePlacement(
+        placeId: Long,
+        idCombinedIdArticleIdSupplier: String
+    ) {
         viewModelScope.launch {
-            // Update the local state
-            val updatedArticles = _uiState.value.tabelleSupplierArticlesRecived.map { article ->
-                if (article.a_c_idarticle_c == articleId) {
-                    article.copy(idInStoreOfSupp = placeId)
-                } else {
-                    article
+            try {
+                // Update the local state
+                val updatedArticles = _uiState.value.placesOfArticelsInEacheSupplierSrore.map { article ->
+                    if (article.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier) {
+                        article.copy(idPlace = placeId)
+                    } else {
+                        article
+                    }
                 }
-            }
-            _uiState.update { it.copy(tabelleSupplierArticlesRecived = updatedArticles) }
+                _uiState.update { it.copy(placesOfArticelsInEacheSupplierSrore = updatedArticles) }
 
-
-            // Update Firebase Realtime Database
-            refTabelleSupplierArticlesRecived.child(articleId.toString()).setValue(updatedArticles)
-
-            val firestore = FirebaseFirestore.getInstance()
-            val batch = firestore.batch()
-
-            // Update in K_SupplierArticlesRecived collection
-            val articleRef = firestore.collection("K_SupplierArticlesRecived")
-                .document(articleId.toString())
-            batch.update(articleRef, "idInStoreOfSupp", placeId)
-
-            // Add to F_SupplierArticlesFireS collection
-            val supplierArticlesRef = firestore.collection("F_SupplierArticlesFireS")
-            val docRef = supplierArticlesRef
-                .document(supplierId.toString())
-                .collection("historiquesAchats")
-                .document(articleId.toString())
-
-            val article = updatedArticles.find { it.a_c_idarticle_c == articleId }
-            article?.let {
-                val lineData = hashMapOf(
-                    "idInStoreOfSupp" to placeId,
-                    "a_c_idarticle_c" to it.a_c_idarticle_c,
-                    "a_d_nomarticlefinale_c" to it.a_d_nomarticlefinale_c,
-                    // Add other fields as needed
-                )
-                batch.set(docRef, lineData, SetOptions.merge())
-            }
-
-            // Commit the batch
-            batch.commit().addOnSuccessListener {
-                Log.d(TAG, "Article placement updated successfully")
-            }.addOnFailureListener { e ->
-                Log.w(TAG, "Error updating article placement", e)
+                // Update the Firebase Realtime Database
+                val updatedArticle = updatedArticles.find { it.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier }
+                if (updatedArticle != null) {
+                    refPlacesOfArticelsInEacheSupplierSrore.child(idCombinedIdArticleIdSupplier).setValue(updatedArticle)
+                } else {
+                    throw Exception("Article not found for updating in Firebase")
+                }
+            } catch (e: Exception) {
+                // Handle the error (e.g., log it or update UI to show error message)
+                Log.e("UpdateArticlePlacement", "Error updating article placement", e)
+                // You might want to revert the local state update here if the Firebase update fails
             }
         }
     }

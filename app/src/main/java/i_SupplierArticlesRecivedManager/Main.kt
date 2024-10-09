@@ -294,12 +294,9 @@ fun WindowsMapArticleInSupplierStore(
                         val Places = uiState.mapArticleInSupplierStore
 
                             items(Places) { placeItem ->
-                                val articlesOfPlace = uiState.tabelleSupplierArticlesRecived.filter {
-                                    it.idInStoreOfSupp?.toLong() == placeItem.idPlace
-                                }
                                 PlacesItem(
+                                    uiState = uiState,
                                     placeItem=placeItem,
-                                    articlesOfPlace = articlesOfPlace,
                                     modifier = Modifier.fillMaxWidth(),
                                     viewModel = viewModel,
                                     onDismiss = { showNonPlacedArticles = null }   ,
@@ -351,17 +348,18 @@ fun WindowsMapArticleInSupplierStore(
 
 @Composable
 fun PlacesItem(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
     modifier: Modifier = Modifier,
-    articlesOfPlace: List<TabelleSupplierArticlesRecived>,
-    viewModel: HeadOfViewModels, onDismiss: () -> Unit,
-    placeItem: MapArticleInSupplierStore ,
+    viewModel: HeadOfViewModels,
+    onDismiss: () -> Unit,
+    placeItem: MapArticleInSupplierStore,
     onClickToDisplayNonPlaced: (MapArticleInSupplierStore) -> Unit
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable {  onClickToDisplayNonPlaced(placeItem)  },
+            .clickable { onClickToDisplayNonPlaced(placeItem) },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Card {
@@ -383,16 +381,24 @@ fun PlacesItem(
                 .fillMaxWidth()
                 .heightIn(max = 300.dp)
         ) {
-            items(articlesOfPlace) { article ->
+            val articlesForThisPlace = uiState.tabelleSupplierArticlesRecived.filter { article ->
+                uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+                    place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                            place.idPlace == placeItem.idPlace
+                }
+            }
+
+            items(articlesForThisPlace) { article ->
                 ArticleItemOfPlace(
                     article = article,
                     viewModel = viewModel,
-                    onDismiss
+                    onDismiss = onDismiss
                 )
             }
         }
     }
 }
+
 
 @Composable
 fun ArticleItemOfPlace(
@@ -467,10 +473,10 @@ fun WindowsOfNonPlacedArticles(
                             ArticleItem(
                                 article = article,
                                 onDismissWithUpdate = { clickedArticle ->
+                                    val idCombinedIdArticleIdSupplier =  "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
                                     viewModel.updateArticlePlacement(
-                                        clickedArticle.a_c_idarticle_c,
-                                        place.idPlace,
-                                        place.idSupplierOfStore
+                                        idCombinedIdArticleIdSupplier=idCombinedIdArticleIdSupplier,
+                                        placeId= place.idPlace,
                                     )
                                     onDismiss()
                                 },
@@ -504,7 +510,7 @@ fun ArticleItem(
     Card(
         modifier = Modifier
             .padding(4.dp)
-            .clickable { showNonPlacedAricles= article},
+            .clickable { showNonPlacedAricles = article },
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
