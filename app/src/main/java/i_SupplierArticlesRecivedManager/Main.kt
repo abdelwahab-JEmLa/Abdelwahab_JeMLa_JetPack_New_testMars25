@@ -291,7 +291,9 @@ fun WindowsMapArticleInSupplierStore(
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        val Places = uiState.mapArticleInSupplierStore
+                        val Places = uiState.mapArticleInSupplierStore .filter {
+                            it.idSupplierOfStore ==   idSupplierOfFloatingButtonClicked
+                        }
 
                             items(Places) { placeItem ->
                                 PlacesItem(
