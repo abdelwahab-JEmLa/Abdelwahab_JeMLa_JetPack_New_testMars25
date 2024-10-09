@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.AlertDialog
@@ -259,7 +260,6 @@ fun Fragment_SupplierArticlesRecivedManager(
             gridColumns
     )
 }
-
 @Composable
 fun WindosMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -309,29 +309,29 @@ fun WindosMapArticleInSupplierStore(
                 FloatingActionButton(
                     onClick = { showNonPlacedAricles = true },
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.TopStart)
                         .padding(16.dp)
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription =null)
+                    Icon(Icons.Filled.List, contentDescription = "Show Non-Placed Articles")
                 }
             }
         }
     }
     if (showNonPlacedAricles) {
         NonPlacedArticles(
-            uiState=uiState,
+            uiState = uiState,
             onDismiss = { showNonPlacedAricles = false },
-            modifier = Modifier  ,
-            gridColumns   ,
-                    idSupplierOfFloatingButtonClicked   ,
-            viewModel
+            modifier = Modifier,
+            gridColumns = gridColumns,
+            idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
+            viewModel = viewModel
         )
     }
     if (showAddDialog) {
         AddPlaceDialog(
             onDismiss = { showAddDialog = false },
             onAddPlace = { name ->
-                viewModel.addNewPlace(name,idSupplierOfFloatingButtonClicked)
+                viewModel.addNewPlace(name, idSupplierOfFloatingButtonClicked)
                 showAddDialog = false
             }
         )
@@ -346,7 +346,7 @@ fun NonPlacedArticles(
     gridColumns: Int,
     idSupplierOfFloatingButtonClicked: Long?,
     viewModel: HeadOfViewModels,
-    ) {
+) {
     val gridState = rememberLazyGridState()
 
     Dialog(
@@ -367,28 +367,52 @@ fun NonPlacedArticles(
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(gridColumns),
                         state = gridState,
-                        modifier = Modifier
-                            .fillMaxSize()
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                             it.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked
                         }
                         items(articlesSupplier) { article ->
-                            //TODO cree
+                            ArticleItem(
+                                article = article,
+                            )
                         }
                     }
+                }
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    Text("Close")
                 }
             }
         }
     }
+}
 
-    dismissButton = {
-        Button(onClick = onDismiss) {
-            Text("Cancel")
+@Composable
+fun ArticleItem(
+    article: TabelleSupplierArticlesRecived,
+) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp) ,
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = article.a_d_nomarticlefinale_c, style = MaterialTheme.typography.bodyLarge)
+            Text(text = "ID: ${article.a_c_idarticle_c}", style = MaterialTheme.typography.bodySmall)
         }
     }
-    )
 }
+
+
 @Composable
 fun PlaceItem(place: MapArticleInSupplierStore) {
     Card(
