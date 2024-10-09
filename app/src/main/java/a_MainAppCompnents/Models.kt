@@ -8,7 +8,7 @@ data class TabelleSupplierArticlesRecived(
     val a_d_nomarticlefinale_c: String = "",
     var idSupplierTSA: Int = 0,
     var nomSupplierTSA: String? = null,
-    var idInStoreOfSupp: Long? = null,
+    var idInStoreOfSupp: Long = 0,
     var nmbrCat: Int = 0,
     val trouve_c: Boolean = false,
     val a_u_prix_1_q1_c: Double = 0.0,
