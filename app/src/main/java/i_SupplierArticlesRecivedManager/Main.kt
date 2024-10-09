@@ -295,27 +295,19 @@ fun WindowsMapArticleInSupplierStore(
                     ) {
                         val Places = uiState.mapArticleInSupplierStore
 
-                        Places.forEach {place ->
-
-                            item(span = { GridItemSpan(2) }) {
-                                StickyHeaderStimler(
-                                    place = place,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClickToDisplayNonPlaced = { showNonPlacedArticles = it }
-                                )
-                            }
-
                             items(Places) { placeItem ->
                                 val articlesOfPlace = uiState.tabelleSupplierArticlesRecived.filter {
                                     it.idInStoreOfSupp?.toLong() == placeItem.idPlace
                                 }
                                 PlacesItem(
+                                    placeItem=placeItem,
                                     articlesOfPlace = articlesOfPlace,
                                     modifier = Modifier.fillMaxWidth(),
-                                    viewModel = viewModel, onDismiss = { showNonPlacedArticles = null }
+                                    viewModel = viewModel,
+                                    onDismiss = { showNonPlacedArticles = null }   ,
+                                    onClickToDisplayNonPlaced = {showNonPlacedArticles=it}
                                 )
                             }
-                        }
                     }
                 }
 
@@ -396,14 +388,31 @@ fun StickyHeaderStimler(
 fun PlacesItem(
     modifier: Modifier = Modifier,
     articlesOfPlace: List<TabelleSupplierArticlesRecived>,
-    viewModel: HeadOfViewModels, onDismiss: () -> Unit
+    viewModel: HeadOfViewModels, onDismiss: () -> Unit,
+    placeItem: MapArticleInSupplierStore ,
+    onClickToDisplayNonPlaced: (MapArticleInSupplierStore) -> Unit
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable {  onClickToDisplayNonPlaced(placeItem)  },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
+        Card {
+            Row {
+                Text(
+                    text = placeItem.namePlace,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = if (placeItem.inRightOfPlace) "R" else "L",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
