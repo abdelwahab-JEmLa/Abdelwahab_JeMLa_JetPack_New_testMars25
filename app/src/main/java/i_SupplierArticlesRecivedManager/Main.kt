@@ -198,13 +198,28 @@ fun Fragment_SupplierArticlesRecivedManager(
                     } else if (firstClickedSupplierForReorder != clickedSupplierId) {
                         viewModel.reorderSuppliers(firstClickedSupplierForReorder!!, clickedSupplierId)
                         firstClickedSupplierForReorder = null
-                        itsReorderMode = false
                     } else {
                         // Cliquer deux fois sur le même fournisseur annule la réorganisation
                         firstClickedSupplierForReorder = null
                     }
                 } else {
-                    // ... (le code pour le mode non-réorganisation reste inchangé)
+                    if (toggleCtrlToFilterToMove) {
+                        val filterBytabelleSupplierArticlesRecived =
+                            uiState.tabelleSupplierArticlesRecived.filter {
+                                it.itsInFindedAskSupplierSA
+                            }
+                        viewModel.moveArticleNonFindToSupplier(
+                            articlesToMove = filterBytabelleSupplierArticlesRecived,
+                            toSupp = clickedSupplierId
+                        )
+                        toggleCtrlToFilterToMove = false
+                    } else {
+                        idSupplierOfFloatingButtonClicked =
+                            when (idSupplierOfFloatingButtonClicked) {
+                                clickedSupplierId -> null  // Deselect if the same supplier is clicked again
+                                else -> clickedSupplierId  // Select the new supplier
+                            }
+                    }
                 }
             },
             itsReorderMode = itsReorderMode,
