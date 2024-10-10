@@ -66,11 +66,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -240,44 +242,76 @@ fun Fragment_SupplierArticlesRecivedManager(
 
 @Composable
 fun ArticleItemSA(
-        article: TabelleSupplierArticlesRecived,
-        viewModel: HeadOfViewModels,
-        onArticleClick: (TabelleSupplierArticlesRecived) -> Unit,
-        modifier: Modifier
+    article: TabelleSupplierArticlesRecived,
+    viewModel: HeadOfViewModels,
+    onArticleClick: (TabelleSupplierArticlesRecived) -> Unit,
+    modifier: Modifier
 ) {
-        val cardColor = if (article.itsInFindedAskSupplierSA) {
-            Color.Yellow.copy(alpha = 0.3f)
-        } else {
-            MaterialTheme.colorScheme.surface
-        }
+    val cardColor = if (article.itsInFindedAskSupplierSA) {
+        Color.Yellow.copy(alpha = 0.3f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
 
-        val reloadKey = remember(article) { System.currentTimeMillis() }
+    val reloadKey = remember(article) { System.currentTimeMillis() }
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            colors = CardDefaults.cardColors(containerColor = cardColor)
-        ) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.padding(8.dp)) {
-                // Image content
-                Box(
+                SquareLayout(
                     modifier = modifier
-                        .height(250.dp)    //TODO que le height = widhth et calcule car quand je change le grid                      columns = GridCells.Fixed(gridColumns),
-                        //le widhth change et notmalement ca chhange
-                        .clickable { onArticleClick(article) },
-
-                    ){
+                        .fillMaxWidth()
+                        .clickable { onArticleClick(article) }
+                ) {
                     if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
-                        SingleColorImageSA(article, viewModel,reloadKey)
+                        SingleColorImageSA(article, viewModel, reloadKey)
                     } else {
-                        MultiColorGridSA(article, viewModel,reloadKey)
+                        MultiColorGridSA(article, viewModel, reloadKey)
                     }
                 }
                 DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
                 AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
             }
+
+            // aa_vid display at top-end
+            Text(
+                text = "ID: ${article.aa_vid}",
+                color = Color.Blue,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .background(Color.White.copy(alpha = 0.6f))
+                    .padding(4.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp
+            )
         }
+    }
+}
+
+@Composable
+fun SquareLayout(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Layout(
+        content = content,
+        modifier = modifier
+    ) { measurables, constraints ->
+        val size = minOf(constraints.maxWidth, constraints.maxHeight)
+        val placeables = measurables.map { measurable ->
+            measurable.measure(Constraints.fixed(size, size))
+        }
+        layout(size, size) {
+            placeables.forEach { placeable ->
+                placeable.place(0, 0)
+            }
+        }
+    }
 }
 
 //WindowArticleDetail
@@ -488,10 +522,8 @@ private fun ColorItemCard(
     index: Int,
     quantity: Int,
     colorName: String?,
-    viewModel: HeadOfViewModels
-    ,
+    viewModel: HeadOfViewModels,
     reloadKey: Any = Unit
-
 ) {
     Card(
         modifier = Modifier
@@ -533,7 +565,6 @@ private fun ColorItemCard(
                     textAlign = TextAlign.Center
                 )
             }
-
             Text(
                 text = quantity.toString(),
                 color = Color.Red,
@@ -543,6 +574,7 @@ private fun ColorItemCard(
                     .padding(4.dp),
                 textAlign = TextAlign.Center
             )
+
         }
     }
 }
