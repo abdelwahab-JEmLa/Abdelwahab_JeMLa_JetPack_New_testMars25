@@ -1,8 +1,15 @@
 package i_SupplierArticlesRecivedManager
 
+// Assuming these are your custom classes/components
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import a_MainAppCompnents.TabelleSuppliersSA
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
@@ -55,7 +62,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,20 +107,28 @@ fun Fragment_SupplierArticlesRecivedManager(
     var gridColumns by remember { mutableStateOf(2) }
 
     val gridState = rememberLazyGridState()
-    val coroutineScope = rememberCoroutineScope()
 
     var toggleCtrlToFilterToMove by remember { mutableStateOf(false) }
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
     var itsReorderMode by remember { mutableStateOf(false) }
-    var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
     var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
+    val context = LocalContext.current
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            processVoiceInput(spokenText, viewModel, uiState)
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) { padding ->
+
             LazyVerticalGrid(
                 columns = GridCells.Fixed(gridColumns),
                 state = gridState,
@@ -171,20 +185,38 @@ fun Fragment_SupplierArticlesRecivedManager(
                 .padding(16.dp)
                 .zIndex(1f)
         ) {
-            GlobaleControlsFloatingsButtonsSA(
-                showFloatingButtons = showFloatingButtons,
-                onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                onChangeGridColumns = { gridColumns = it },
-                onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
-                filterSuppHandledNow = toggleCtrlToFilterToMove,
-                onToggleReorderMode = {
-                    itsReorderMode = !itsReorderMode
-                    if (!itsReorderMode) {
-                        firstClickedSupplierForReorder = null
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .zIndex(1f)
+            ) {
+                GlobaleControlsFloatingsButtonsSA(
+                    showFloatingButtons = showFloatingButtons,
+                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                    onChangeGridColumns = { gridColumns = it },
+                    onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
+                    filterSuppHandledNow = toggleCtrlToFilterToMove,
+                    onToggleReorderMode = {
+                        itsReorderMode = !itsReorderMode
+                        if (!itsReorderMode) {
+                            firstClickedSupplierForReorder = null
+                        }
+                    },
+                    onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore },
+                    onLaunchVoiceRecognition = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                            putExtra(
+                                RecognizerIntent.EXTRA_PROMPT,
+                                "Parlez maintenant pour mettre à jour cet article..."
+                            )
+                        }
+                        speechRecognizerLauncher.launch(intent)
                     }
-                },
-                onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore }
-            )
+                )
+            }
         }
 
         SuppliersFloatingButtonsSA(
@@ -254,6 +286,25 @@ fun Fragment_SupplierArticlesRecivedManager(
         )
 }
 
+private fun processVoiceInput(spokenText: String, viewModel: HeadOfViewModels, uiState: CreatAndEditeInBaseDonnRepositeryModels) {
+    val parts = spokenText.split("+")
+    if (parts.size == 2) {
+        val articleId = parts[0].trim().toLongOrNull()
+        val supplierName = parts[1].trim()
+
+        if (articleId != null) {
+            val article = uiState.tabelleSupplierArticlesRecived.find { it.aa_vid == articleId}
+            val supplier = uiState.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
+
+            if (article != null && supplier != null) {
+                viewModel.moveArticleNonFindToSupplier(
+                    articlesToMove = listOf(article),
+                    toSupp = supplier.idSupplierSu
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun ArticleItemSA(

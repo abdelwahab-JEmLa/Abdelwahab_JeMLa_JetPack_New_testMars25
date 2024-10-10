@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Moving
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -39,7 +40,8 @@ fun GlobaleControlsFloatingsButtonsSA(
     onChangeGridColumns: (Int) -> Unit,
     filterSuppHandledNow: Boolean,
     onToggleReorderMode: () -> Unit,
-    onDisplyeWindosMapArticleInSupplierStore: () -> Unit
+    onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
+    onLaunchVoiceRecognition: () -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
@@ -55,13 +57,16 @@ fun GlobaleControlsFloatingsButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
+                    Triple(Icons.Default.Mic, "Voice Recognition") {
+                        onLaunchVoiceRecognition()
+                    },
                     Triple(if (onDisplyeWindosMapArticleInSupplierStoreClickFolower) Icons.Default.Close else Icons.Default.FastRewind, "onDisplyeWindosMapArticleInSupplierStore") {
                         onDisplyeWindosMapArticleInSupplierStore()
-                        onDisplyeWindosMapArticleInSupplierStoreClickFolower=!onDisplyeWindosMapArticleInSupplierStoreClickFolower
+                        onDisplyeWindosMapArticleInSupplierStoreClickFolower = !onDisplyeWindosMapArticleInSupplierStoreClickFolower
                     },
                     Triple(if (onToggleReorderModeCliked) Icons.Default.Close else Icons.Default.FastRewind, "Reorder mode") {
                         onToggleReorderMode()
-                        onToggleReorderModeCliked=!onToggleReorderModeCliked
+                        onToggleReorderModeCliked = !onToggleReorderModeCliked
                     },
                     Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.Moving, "Filter To Move") {
                         onToggleToFilterToMove()
@@ -99,7 +104,7 @@ fun GlobaleControlsFloatingsButtonsSA(
                             }
                         }
                         FloatingActionButton(
-                            onClick = onClick,//The feature "unit conversions on arbitrary expressions" is experimental and should be enabled explicitly. You can also change the original type of this expression to (...) -> Unit
+                            onClick = onClick,
                             modifier = Modifier.size(56.dp)
                         ) {
                             Icon(icon, contentDescription = contentDescription)
