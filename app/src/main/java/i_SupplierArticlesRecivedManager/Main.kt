@@ -115,7 +115,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
-    val context = LocalContext.current
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -719,7 +718,8 @@ fun SuppliersFloatingButtonsSA(
                         isSelected = supplierFlotBisHandled == supplier.idSupplierSu,
                         isFirstClickedForReorder = firstClickedSupplierForReorder == supplier.idSupplierSu,
                         isReorderMode = itsReorderMode,
-                        onClick = { onClickFlotButt(supplier.idSupplierSu) }
+                        onClick = { onClickFlotButt(supplier.idSupplierSu) } ,
+                        allArticles = allArticles
                     )
                 }
             }
@@ -739,12 +739,19 @@ fun SuppliersFloatingButtonsSA(
 @Composable
 private fun SupplierButton(
     supplier: TabelleSuppliersSA,
+    allArticles: List<TabelleSupplierArticlesRecived>,
     showDescription: Boolean,
     isSelected: Boolean,
     isFirstClickedForReorder: Boolean,
     isReorderMode: Boolean,
     onClick: () -> Unit
 ) {
+    val totalValue = remember(supplier, allArticles) {
+        allArticles
+            .filter { it.idSupplierTSA.toLong() == supplier.idSupplierSu }
+            .sumOf { it.totalquantity * it.a_u_prix_1_q1_c }
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(bottom = 16.dp)
@@ -754,14 +761,19 @@ private fun SupplierButton(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 8.dp)
-                    .heightIn(min = 30.dp)
+                    .heightIn(min = 60.dp)
             ) {
-                Box(
-                    contentAlignment = Alignment.CenterStart,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                Column(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
+                        text = "Total: $${String.format("%.2f", totalValue)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
                         text = supplier.nomSupplierSu,
+                        style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
