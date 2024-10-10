@@ -89,7 +89,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
-import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -115,6 +114,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     var holdedIdSupplierForMove by remember { mutableStateOf<Long?>(null) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
     var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
+    var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -184,7 +184,12 @@ fun Fragment_SupplierArticlesRecivedManager(
                     toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove
                 },
                 filterSuppHandledNow = toggleCtrlToFilterToMove,
-                onToggleReorderMode = { itsReorderMode = !itsReorderMode }  ,
+                onToggleReorderMode = {
+                    itsReorderMode = !itsReorderMode
+                    if (!itsReorderMode) {
+                        firstClickedSupplierForReorder = null
+                    }
+                },
                 onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore }
             )
         }
@@ -193,43 +198,41 @@ fun Fragment_SupplierArticlesRecivedManager(
             allArticles = uiState.tabelleSupplierArticlesRecived,
             suppliers = uiState.tabelleSuppliersSA,
             supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
-            onClickFlotButt = { idSupplier ->
-                coroutineScope.launch {
-                    if (itsReorderMode) {
-                        if (holdedIdSupplierForMove == null) {
-                            holdedIdSupplierForMove = idSupplier
-                        } else if (holdedIdSupplierForMove != idSupplier) {
-                            viewModel.goUpAndshiftsAutersDownSupplierPositions(
-                                holdedIdSupplierForMove!!,
-                                idSupplier
-                            )
-                            holdedIdSupplierForMove = null
-                        } else {
-                            holdedIdSupplierForMove = null
-                        }
+            onClickFlotButt = { clickedSupplierId ->
+                if (itsReorderMode) {
+                    if (firstClickedSupplierForReorder == null) {
+                        firstClickedSupplierForReorder = clickedSupplierId
+                    } else if (firstClickedSupplierForReorder != clickedSupplierId) {
+                        // Perform the reordering
+                        viewModel.reorderSuppliers(firstClickedSupplierForReorder!!, clickedSupplierId)
+                        // Reset the reorder state
+                        firstClickedSupplierForReorder = null
+                        itsReorderMode = false
                     } else {
-                        if (toggleCtrlToFilterToMove) {
-                            val filterBytabelleSupplierArticlesRecived =
-                                uiState.tabelleSupplierArticlesRecived.filter {
-                                    it.itsInFindedAskSupplierSA
-                                }
-                            viewModel.moveArticleNonFindToSupplier(
-                                articlesToMove = filterBytabelleSupplierArticlesRecived,
-                                toSupp = idSupplier
-                            )
-                            toggleCtrlToFilterToMove = false
-                        } else {
-                            idSupplierOfFloatingButtonClicked =
-                                when (idSupplierOfFloatingButtonClicked) {
-                                    idSupplier -> null  // Deselect if the same supplier is clicked again
-                                    else -> idSupplier  // Select the new supplier
-                                }
+                        // Clicked the same supplier twice, cancel the reorder
+                        firstClickedSupplierForReorder = null
+                    }
+                } else {
+                    if (toggleCtrlToFilterToMove) {
+                        val filterBytabelleSupplierArticlesRecived =
+                            uiState.tabelleSupplierArticlesRecived.filter {
+                                it.itsInFindedAskSupplierSA
+                            }
+                        viewModel.moveArticleNonFindToSupplier(
+                            articlesToMove = filterBytabelleSupplierArticlesRecived,
+                            toSupp = clickedSupplierId
+                        )
+                        toggleCtrlToFilterToMove = false
+                    } else {
+                        idSupplierOfFloatingButtonClicked = when (idSupplierOfFloatingButtonClicked) {
+                            clickedSupplierId -> null  // Deselect if the same supplier is clicked again
+                            else -> clickedSupplierId  // Select the new supplier
                         }
                     }
                 }
             },
-            isSelectedForeHolder = { holdedIdSupplierForMove = it },
-            itsReorderMode = itsReorderMode
+            itsReorderMode = itsReorderMode,
+            firstClickedSupplierForReorder = firstClickedSupplierForReorder
         )
     }
 
@@ -917,7 +920,7 @@ fun SuppliersFloatingButtonsSA(
     onClickFlotButt: (Long) -> Unit,
     supplierFlotBisHandled: Long?,
     itsReorderMode: Boolean,
-    isSelectedForeHolder: (Long) -> Unit,
+    firstClickedSupplierForReorder: Long?
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -983,7 +986,8 @@ fun SuppliersFloatingButtonsSA(
                         supplier = supplier,
                         showDescription = showDescriptionFlotBS,
                         isSelected = supplierFlotBisHandled == supplier.idSupplierSu,
-                        onClick = { if (itsReorderMode) isSelectedForeHolder(supplier.idSupplierSu) else {onClickFlotButt(supplier.idSupplierSu)} }
+                        isFirstClickedForReorder = firstClickedSupplierForReorder == supplier.idSupplierSu,
+                        onClick = { onClickFlotButt(supplier.idSupplierSu) }
                     )
                 }
             }
@@ -1005,6 +1009,7 @@ private fun SupplierButton(
     supplier: TabelleSuppliersSA,
     showDescription: Boolean,
     isSelected: Boolean,
+    isFirstClickedForReorder: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -1033,7 +1038,11 @@ private fun SupplierButton(
         FloatingActionButton(
             onClick = onClick,
             modifier = Modifier.size(56.dp),
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+            containerColor = when {
+                isFirstClickedForReorder -> MaterialTheme.colorScheme.tertiary
+                isSelected -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.secondary
+            }
         ) {
             Text(
                 text = supplier.nomSupplierSu.take(3),
@@ -1043,7 +1052,6 @@ private fun SupplierButton(
         }
     }
 }
-
 
 @Composable
 fun SupplierHeaderSA(

@@ -240,14 +240,18 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
-    fun goUpAndshiftsAutersDownSupplierPositions(fromSupplierId: Long, toSupplierId: Long) {
+    fun reorderSuppliers(firstClickedSupplierId: Long, secondClickedSupplierId: Long) {
+        val currentSuppliers = _uiState.value.tabelleSuppliersSA
+        val reorderedSuppliers = reorderSuppliers(currentSuppliers, firstClickedSupplierId, secondClickedSupplierId)
+
+        // Update the UI state with the new supplier order
+        _uiState.update { currentState ->
+            currentState.copy(tabelleSuppliersSA = reorderedSuppliers)
+        }
+
+        // Update Firebase and local storage
         viewModelScope.launch {
-            val currentSuppliers = _uiState.value.tabelleSuppliersSA
-            val updatedSuppliers = reorderSuppliers(currentSuppliers, fromSupplierId, toSupplierId)
-            _uiState.update { currentState ->
-                currentState.copy(tabelleSuppliersSA = updatedSuppliers)
-            }
-            updateFirebaseAndLocaleSuppliers(updatedSuppliers)
+            updateFirebaseAndLocaleSuppliers(reorderedSuppliers)
         }
     }
 
@@ -275,6 +279,10 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         suppliers.forEach { supplier ->
             refTabelleSuppliersSA.child(supplier.idSupplierSu.toString()).setValue(supplier)
         }
+
+        // If you have local storage, update it here as well
+        // For example:
+        // localDatabase.updateSuppliers(suppliers)
     }
 
 /*2->Section Suppliers Commendes Manager -------------------*/
