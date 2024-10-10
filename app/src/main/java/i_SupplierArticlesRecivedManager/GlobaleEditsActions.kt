@@ -12,11 +12,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Moving
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -39,14 +39,12 @@ fun GlobaleControlsFloatingsButtonsSA(
     onToggleToFilterToMove: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
     filterSuppHandledNow: Boolean,
-    onToggleReorderMode: () -> Unit,
-    onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
+onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
     onLaunchVoiceRecognition: () -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
     var showContentDescription by remember { mutableStateOf(false) }
-    var onToggleReorderModeCliked by remember { mutableStateOf(false) }
     var onDisplyeWindosMapArticleInSupplierStoreClickFolower by remember { mutableStateOf(false) }
 
     Column {
@@ -60,13 +58,9 @@ fun GlobaleControlsFloatingsButtonsSA(
                     Triple(Icons.Default.Mic, "Voice Recognition") {
                         onLaunchVoiceRecognition()
                     },
-                    Triple(if (onDisplyeWindosMapArticleInSupplierStoreClickFolower) Icons.Default.Close else Icons.Default.FastRewind, "onDisplyeWindosMapArticleInSupplierStore") {
+                    Triple(Icons.Default.Place, "onDisplyeWindosMapArticleInSupplierStore") {
                         onDisplyeWindosMapArticleInSupplierStore()
                         onDisplyeWindosMapArticleInSupplierStoreClickFolower = !onDisplyeWindosMapArticleInSupplierStoreClickFolower
-                    },
-                    Triple(if (onToggleReorderModeCliked) Icons.Default.Close else Icons.Default.FastRewind, "Reorder mode") {
-                        onToggleReorderMode()
-                        onToggleReorderModeCliked = !onToggleReorderModeCliked
                     },
                     Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.Moving, "Filter To Move") {
                         onToggleToFilterToMove()

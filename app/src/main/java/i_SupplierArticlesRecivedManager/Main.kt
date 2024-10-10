@@ -42,6 +42,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
@@ -199,12 +200,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                     onChangeGridColumns = { gridColumns = it },
                     onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
                     filterSuppHandledNow = toggleCtrlToFilterToMove,
-                    onToggleReorderMode = {
-                        itsReorderMode = !itsReorderMode
-                        if (!itsReorderMode) {
-                            firstClickedSupplierForReorder = null
-                        }
-                    },
                     onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore },
                     onLaunchVoiceRecognition = {
                         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -260,7 +255,13 @@ fun Fragment_SupplierArticlesRecivedManager(
             firstClickedSupplierForReorder = firstClickedSupplierForReorder ,
             onUpdateVocalArabName = { supplierId, newName ->
                 viewModel.updateSupplierVocalArabName(supplierId, newName)
-            }
+            },
+            onToggleReorderMode = {
+                itsReorderMode = !itsReorderMode
+                if (!itsReorderMode) {
+                    firstClickedSupplierForReorder = null
+                }
+            },
         )
     }
 
@@ -657,6 +658,7 @@ fun SuppliersFloatingButtonsSA(
     supplierFlotBisHandled: Long?,
     itsReorderMode: Boolean,
     firstClickedSupplierForReorder: Long?,
+    onToggleReorderMode: () -> Unit,
     onUpdateVocalArabName: (Long, String) -> Unit
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -664,6 +666,7 @@ fun SuppliersFloatingButtonsSA(
     var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
     var showDescriptionFlotBS by remember { mutableStateOf(true) }
     var showNoms by remember { mutableStateOf(false) }
+    var onToggleReorderModeCliked by remember { mutableStateOf(false) }
 
     val filteredSuppliers = remember(suppliers, allArticles, filterButtonsWhereArtNotEmpty) {
         if (filterButtonsWhereArtNotEmpty) {
@@ -711,7 +714,7 @@ fun SuppliersFloatingButtonsSA(
                 item {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 8.dp)   .widthIn(max=50.dp)
+                        modifier = Modifier.padding(bottom = 8.dp)   .widthIn(max=100.dp)
                     ) {
                         item {
                             FloatingActionButton(
@@ -760,6 +763,19 @@ fun SuppliersFloatingButtonsSA(
                                 )
                             }
                         }
+                        item {
+                            FloatingActionButton(
+                                onClick = { onToggleReorderMode()
+                                    onToggleReorderModeCliked = !onToggleReorderModeCliked
+                                }
+                            ) {
+                                Icon(
+                                    if (onToggleReorderModeCliked) Icons.Default.Close else Icons.Default.Autorenew,
+                                    contentDescription =null
+                                )
+                            }
+                        }
+
                     }
                 }
                 items(filteredSuppliers) { supplier ->
