@@ -823,7 +823,7 @@ private fun SupplierButton(
     }
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,      
         modifier = Modifier.padding(bottom = 16.dp)
             .widthIn(min = 50.dp, max = if (showNoms) 300.dp else 170.dp)
             .heightIn( max = if (showNoms) 100.dp else 40.dp)
@@ -832,7 +832,10 @@ private fun SupplierButton(
             Card(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 8.dp)
+                    .padding(end = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
