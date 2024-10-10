@@ -749,7 +749,7 @@ private fun SupplierButton(
     val totalValue = remember(supplier, allArticles) {
         allArticles
             .filter { it.idSupplierTSA.toLong() == supplier.idSupplierSu }
-            .sumOf { it.totalquantity * it.a_u_prix_1_q1_c }
+            .sumOf { it.totalquantity * it.a_q_prixachat_c }
     }
 
     Row(
