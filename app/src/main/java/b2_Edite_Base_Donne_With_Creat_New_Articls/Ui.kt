@@ -507,23 +507,35 @@ private fun rememberCameraLauncher(
 
 
 @Composable
-private fun AddArticleButton(
+fun AddArticleButton(
     viewModel: HeadOfViewModels,
     category: CategoriesTabelleECB,
-    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit  ,
+    takeFloatingButton:Boolean =false
 ) {
     val context = LocalContext.current
     val cameraLauncher = rememberCameraLauncher(viewModel, category, onNewArticleAdded)
-
-    IconButton(
-        onClick = {
-            viewModel.tempImageUri = viewModel.createTempImageUri(context)
-            viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
-        },
-        modifier = Modifier.padding(end = 16.dp)
-    ) {
-        Icon(Icons.Default.Add, contentDescription = "Add Article")
-    }
+   if (takeFloatingButton) {
+       FloatingActionButton(
+           onClick = {
+               viewModel.tempImageUri = viewModel.createTempImageUri(context)
+               viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+           },
+           modifier = Modifier.padding(end = 16.dp)
+       ) {
+           Icon(Icons.Default.Add, contentDescription = "Add Article")
+       }
+   }  else {
+       IconButton(
+           onClick = {
+               viewModel.tempImageUri = viewModel.createTempImageUri(context)
+               viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+           },
+           modifier = Modifier.padding(end = 16.dp)
+       ) {
+           Icon(Icons.Default.Add, contentDescription = "Add Article")
+       }
+   }
 }
 
 @Composable

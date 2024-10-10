@@ -1,10 +1,12 @@
 package com.example.abdelwahabjemlajetpack
 
 import ZA_Learn_WhelPiker.PickerExample
+import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.HeadOfViewModelFactory
 import a_MainAppCompnents.HeadOfViewModels
 import a_RoomDB.AppDatabase
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -52,8 +54,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,6 +74,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
+import b2_Edite_Base_Donne_With_Creat_New_Articls.ArticleDetailWindow
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
@@ -87,6 +92,7 @@ import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
 import i_SupplierArticlesRecivedManager.Fragment_SupplierArticlesRecivedManager
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -217,6 +223,20 @@ fun AppNavHost(
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+    val currentEditedArticle by headOfViewModels.currentEditedArticle.collectAsState()
+    var reloadTrigger by remember { mutableIntStateOf(0) }
+
+    // Remove this LaunchedEffect as it's overwriting our manual settings
+    LaunchedEffect(currentEditedArticle) {
+        dialogeDisplayeDetailleChanger = currentEditedArticle
+    }
+
+    // Logging for debugging
+    LaunchedEffect(dialogeDisplayeDetailleChanger) {
+        Log.d("MainFragment", "dialogeDisplayeDetailleChanger updated: $dialogeDisplayeDetailleChanger")
+    }
+
     NavHost(
         navController = navController,
         startDestination = "main_screen",
@@ -240,7 +260,8 @@ fun AppNavHost(
         composable("Fragment_SupplierArticlesRecivedManager") {
             Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,
                 onToggleNavBar = onToggleNavBar,
-                modifier=modifier
+                modifier=modifier ,
+                onNewArticleAdded={dialogeDisplayeDetailleChanger=it}
             )
         }
         composable("FragmentEntreBonsGro") {
@@ -289,7 +310,11 @@ fun AppNavHost(
             Box(modifier = Modifier.fillMaxSize()) {
                 MainFragmentEditDatabaseWithCreateNewArticles(
                     viewModel = viewModels.headOfViewModels,
-                    onToggleNavBar = onToggleNavBar
+                    onToggleNavBar = onToggleNavBar ,
+                    onNewArticleAdded={dialogeDisplayeDetailleChanger=it} ,
+                    dialogeDisplayeDetailleChanger=dialogeDisplayeDetailleChanger  ,
+                    onDesmissDialogeDisplayeDetailleChanger={dialogeDisplayeDetailleChanger=null} ,
+                            reloadTrigger=reloadTrigger
                 )
                 if (uploadProgress > 0f && uploadProgress < 100f) {
                     CircularProgressIndicator(
@@ -301,6 +326,41 @@ fun AppNavHost(
             }
         }
     }
+    dialogeDisplayeDetailleChanger?.let { article ->
+        Log.d("MainFragment", "Displaying ArticleDetailWindow for: $article")
+        ArticleDetailWindow(
+            article = article,
+            onDismiss = {
+                Log.d("MainFragment", "ArticleDetailWindow dismissed")
+                dialogeDisplayeDetailleChanger=null
+                headOfViewModels.updateCurrentEditedArticle(null)
+
+                // Check if the article is new or if key changes occurred
+                if (article.nomCategorie.contains("New", ignoreCase = true) ||
+                    article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB
+                ) {
+                    // Trigger image reload
+                    coroutineScope.launch {
+                        for (i in 1..4) {
+                            val fileName = "${article.idArticleECB}_$i.jpg"
+                            val sourceFile = File(headOfViewModels.dossiesStandartOFImages, fileName)
+                            if (sourceFile.exists()) {
+                                headOfViewModels.setImagesInStorageFireBase(article.idArticleECB, i)
+                            }
+                        }
+                        // Increment reloadTrigger to force recomposition
+                        reloadTrigger += 1
+                        Log.d("MainFragment", "Image reload triggered, reloadTrigger: $reloadTrigger")
+                    }
+                }
+            },
+            viewModel = headOfViewModels,
+            modifier = Modifier.padding(horizontal = 3.dp),
+            onReloadTrigger = { reloadTrigger += 1 },
+            reloadTrigger = reloadTrigger
+        )
+    }
+
 }
 
 @Composable

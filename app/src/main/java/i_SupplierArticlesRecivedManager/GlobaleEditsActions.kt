@@ -1,5 +1,8 @@
 package i_SupplierArticlesRecivedManager
 
+import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
+import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import b2_Edite_Base_Donne_With_Creat_New_Articls.AddArticleButton
 
 @Composable
 fun GlobaleControlsFloatingButtonsSA(
@@ -42,7 +46,10 @@ fun GlobaleControlsFloatingButtonsSA(
     filterSuppHandledNow: Boolean,
     onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
     onLaunchVoiceRecognition: () -> Unit,
-    onLaunchAddArticleWindow: () -> Unit
+    onLaunchAddArticleWindow: () -> Unit,
+    viewModel: HeadOfViewModels  ,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
@@ -110,8 +117,15 @@ fun GlobaleControlsFloatingButtonsSA(
                         }
                     }
                 }
+                val newArticlesCate =  uiState.categoriesECB .firstOrNull() { it.nomCategorieInCategoriesTabele.contains("New") }
+                if (newArticlesCate != null) {
+                    AddArticleButton(viewModel= viewModel , category = newArticlesCate, onNewArticleAdded=onNewArticleAdded, takeFloatingButton = true )
+                }
             }
         }
+
+
+
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
                 if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,

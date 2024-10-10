@@ -18,10 +18,8 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,34 +28,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit,
+    dialogeDisplayeDetailleChanger: BaseDonneECBTabelle?,
+    onDesmissDialogeDisplayeDetailleChanger: () -> Unit,
+    reloadTrigger: Int,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentEditedArticle by viewModel.currentEditedArticle.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
-    var reloadTrigger by remember { mutableIntStateOf(0) }
 
-    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
 
-    // Remove this LaunchedEffect as it's overwriting our manual settings
-     LaunchedEffect(currentEditedArticle) {
-         dialogeDisplayeDetailleChanger = currentEditedArticle
-     }
-
-    // Logging for debugging
-    LaunchedEffect(dialogeDisplayeDetailleChanger) {
-        Log.d("MainFragment", "dialogeDisplayeDetailleChanger updated: $dialogeDisplayeDetailleChanger")
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -81,7 +69,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 category = category,
                                 viewModel = viewModel,
                                 onNewArticleAdded = { newArticle ->
-                                    dialogeDisplayeDetailleChanger = newArticle
+                                    onNewArticleAdded(newArticle)
                                     Log.d("MainFragment", "New article added: $newArticle")
                                 }
                             )
@@ -91,7 +79,8 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
                                     Log.d("MainFragment", "Article clicked: $clickedArticle")
-                                    dialogeDisplayeDetailleChanger = clickedArticle
+                                    onNewArticleAdded(clickedArticle)
+
                                     viewModel.updateCurrentEditedArticle(clickedArticle)
                                 },
                                 viewModel = viewModel,
@@ -125,40 +114,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             )
         }
 
-        dialogeDisplayeDetailleChanger?.let { article ->
-            Log.d("MainFragment", "Displaying ArticleDetailWindow for: $article")
-            ArticleDetailWindow(
-                article = article,
-                onDismiss = {
-                    Log.d("MainFragment", "ArticleDetailWindow dismissed")
-                    dialogeDisplayeDetailleChanger = null
-                    viewModel.updateCurrentEditedArticle(null)
-
-                    // Check if the article is new or if key changes occurred
-                    if (article.nomCategorie.contains("New", ignoreCase = true) ||
-                        article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB
-                    ) {
-                        // Trigger image reload
-                        coroutineScope.launch {
-                            for (i in 1..4) {
-                                val fileName = "${article.idArticleECB}_$i.jpg"
-                                val sourceFile = File(viewModel.dossiesStandartOFImages, fileName)
-                                if (sourceFile.exists()) {
-                                    viewModel.setImagesInStorageFireBase(article.idArticleECB, i)
-                                }
-                            }
-                            // Increment reloadTrigger to force recomposition
-                            reloadTrigger += 1
-                            Log.d("MainFragment", "Image reload triggered, reloadTrigger: $reloadTrigger")
-                        }
-                    }
-                },
-                viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp),
-                onReloadTrigger = { reloadTrigger += 1 },
-                reloadTrigger = reloadTrigger
-            )
-        }
     }
 }
 @Composable

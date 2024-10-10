@@ -1,6 +1,7 @@
 package i_SupplierArticlesRecivedManager
 
 // Assuming these are your custom classes/components
+import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
@@ -101,9 +102,11 @@ import kotlin.math.roundToInt
 fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val allModels by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
@@ -124,7 +127,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
-            processVoiceInput(spokenText, viewModel, uiState)
+            processVoiceInput(spokenText, viewModel, allModels)
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -140,13 +143,13 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .padding(padding)
             ) {
                 val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
-                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+                    allModels.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
                 } else {
-                    uiState.tabelleSuppliersSA
+                    allModels.tabelleSuppliersSA
                 }
 
                 filterSupp.forEach { supplier ->
-                    val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
+                    val articlesSupplier = allModels.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
                                 (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                     }
@@ -212,14 +215,17 @@ fun Fragment_SupplierArticlesRecivedManager(
                         }
                         speechRecognizerLauncher.launch(intent)
                     }  ,
-                    onLaunchAddArticleWindow = {}
+                    onLaunchAddArticleWindow = {}  ,
+                    viewModel=viewModel  ,
+                    uiState=allModels ,
+                    onNewArticleAdded=onNewArticleAdded
                 )
             }
         }
 
         SuppliersFloatingButtonsSA(
-            allArticles = uiState.tabelleSupplierArticlesRecived,
-            suppliers = uiState.tabelleSuppliersSA,
+            allArticles = allModels.tabelleSupplierArticlesRecived,
+            suppliers = allModels.tabelleSuppliersSA,
             supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
             onClickFlotButt = { clickedSupplierId ->
                 if (itsReorderMode) {
@@ -235,7 +241,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 } else {
                     if (toggleCtrlToFilterToMove) {
                         val filterBytabelleSupplierArticlesRecived =
-                            uiState.tabelleSupplierArticlesRecived.filter {
+                            allModels.tabelleSupplierArticlesRecived.filter {
                                 it.itsInFindedAskSupplierSA
                             }
                         viewModel.moveArticleNonFindToSupplier(
@@ -283,7 +289,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 
     if (windosMapArticleInSupplierStore)
         WindowsMapArticleInSupplierStore(
-            uiState=  uiState,
+            uiState=  allModels,
         onDismiss = {
             windosMapArticleInSupplierStore = false
         },
