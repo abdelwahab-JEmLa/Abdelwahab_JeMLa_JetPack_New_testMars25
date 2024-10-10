@@ -244,14 +244,19 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         val currentSuppliers = _uiState.value.tabelleSuppliersSA
         val reorderedSuppliers = reorderSuppliers(currentSuppliers, firstClickedSupplierId, secondClickedSupplierId)
 
-        // Update the UI state with the new supplier order
-        _uiState.update { currentState ->
-            currentState.copy(tabelleSuppliersSA = reorderedSuppliers)
+        // Mettre à jour le classement en fonction de la nouvelle position
+        val updatedSuppliers = reorderedSuppliers.mapIndexed { index, supplier ->
+            supplier.copy(classmentSupplier = (index + 1).toDouble())
         }
 
-        // Update Firebase and local storage
+        // Mettre à jour l'état de l'UI avec le nouvel ordre des fournisseurs
+        _uiState.update { currentState ->
+            currentState.copy(tabelleSuppliersSA = updatedSuppliers)
+        }
+
+        // Mettre à jour Firebase et le stockage local
         viewModelScope.launch {
-            updateFirebaseAndLocaleSuppliers(reorderedSuppliers)
+            updateFirebaseAndLocaleSuppliers(updatedSuppliers)
         }
     }
 
@@ -261,27 +266,20 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
         if (fromIndex == -1 || toIndex == -1) return suppliers
 
-        return suppliers.mapIndexed { index, supplier ->
-            when (index) {
-                toIndex -> supplier.copy(classmentSupplier = fromIndex.toDouble())
-                in minOf(fromIndex, toIndex)..maxOf(fromIndex, toIndex) -> {
-                    val newPosition = if (fromIndex < toIndex) index - 1 else index + 1
-                    supplier.copy(classmentSupplier = newPosition.toDouble())
-                }
-                else -> supplier
-            }
-        }.sortedBy { it.classmentSupplier }
+        val mutableList = suppliers.toMutableList()
+        val movedSupplier = mutableList.removeAt(fromIndex)
+        mutableList.add(toIndex, movedSupplier)
+
+        return mutableList
     }
 
     private suspend fun updateFirebaseAndLocaleSuppliers(suppliers: List<TabelleSuppliersSA>) {
-        // Implement Firebase update logic here
-        // For example:
         suppliers.forEach { supplier ->
             refTabelleSuppliersSA.child(supplier.idSupplierSu.toString()).setValue(supplier)
         }
 
-        // If you have local storage, update it here as well
-        // For example:
+        // Si vous avez un stockage local, mettez-le à jour ici aussi
+        // Par exemple:
         // localDatabase.updateSuppliers(suppliers)
     }
 
@@ -336,7 +334,13 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-        .sortedBy { it.classmentSupplier }
+        .sortedWith(compareBy<TabelleSuppliersSA> {
+            when (it.idSupplierSu) {
+                10L -> 0
+                9L -> 1
+                else -> 2
+            }
+        }.thenBy { it.classmentSupplier })
 
     private suspend fun fetchCategories() = refCategorieTabelee.get().await().children
         .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
