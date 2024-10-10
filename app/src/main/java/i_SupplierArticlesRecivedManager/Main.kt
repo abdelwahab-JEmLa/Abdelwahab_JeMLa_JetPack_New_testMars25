@@ -662,7 +662,7 @@ fun SuppliersFloatingButtonsSA(
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isExpanded by remember { mutableStateOf(false) }
     var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
-    var showDescriptionFlotBS by remember { mutableStateOf(false) }
+    var showDescriptionFlotBS by remember { mutableStateOf(true) }
     var showNoms by remember { mutableStateOf(false) }
 
     val filteredSuppliers = remember(suppliers, allArticles, filterButtonsWhereArtNotEmpty) {
@@ -711,7 +711,7 @@ fun SuppliersFloatingButtonsSA(
                 item {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 8.dp)   .widthIn(max=50.dp)
                     ) {
                         item {
                             FloatingActionButton(
@@ -809,14 +809,14 @@ private fun SupplierButton(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(bottom = 16.dp)
+            .widthIn(min = 50.dp, max = if (showNoms) 300.dp else 170.dp)
+            .heightIn( max = if (showNoms) 100.dp else 40.dp)
     ) {
         if (showDescription) {
             Card(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 8.dp)
-                    .heightIn(min = 80.dp)
-                    .widthIn(min = 100.dp, max = if (showNoms) 300.dp else 100.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
