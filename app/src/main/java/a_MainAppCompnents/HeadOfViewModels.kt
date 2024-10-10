@@ -78,7 +78,35 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-    fun addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
+
+    fun updateSupplierVocalArabName(supplierId: Long, newName: String) {
+        viewModelScope.launch {
+            val currentSuppliers = _uiState.value.tabelleSuppliersSA
+            val updatedSuppliers = currentSuppliers.map { supplier ->
+                if (supplier.idSupplierSu == supplierId) {
+                    supplier.copy(nomVocaleArabeDuSupplier = newName)
+                } else {
+                    supplier
+                }
+            }
+
+            // Update local state
+            _uiState.update { currentState ->
+                currentState.copy(tabelleSuppliersSA = updatedSuppliers)
+            }
+
+            // Update Firebase
+            refTabelleSuppliersSA.child(supplierId.toString()).child("nomVocaleArabeDuSupplier").setValue(newName)
+                .addOnSuccessListener {
+                    // Handle success if needed
+                }
+                .addOnFailureListener { e ->
+                    // Handle failure if needed
+                    Log.e("HeadOfViewModels", "Failed to update supplier vocal Arab name", e)
+                }
+        }
+    }
+        fun addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
         placeId: Long,
         idCombinedIdArticleIdSupplier: String,
         idArticle: Long,

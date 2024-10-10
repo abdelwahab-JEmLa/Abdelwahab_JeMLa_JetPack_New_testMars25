@@ -32,7 +32,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -45,6 +48,7 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Button
@@ -254,7 +258,10 @@ fun Fragment_SupplierArticlesRecivedManager(
                 }
             },
             itsReorderMode = itsReorderMode,
-            firstClickedSupplierForReorder = firstClickedSupplierForReorder
+            firstClickedSupplierForReorder = firstClickedSupplierForReorder ,
+            onUpdateVocalArabName = { supplierId, newName ->
+                viewModel.updateSupplierVocalArabName(supplierId, newName)
+            }
         )
     }
 
@@ -650,12 +657,14 @@ fun SuppliersFloatingButtonsSA(
     onClickFlotButt: (Long) -> Unit,
     supplierFlotBisHandled: Long?,
     itsReorderMode: Boolean,
-    firstClickedSupplierForReorder: Long?
+    firstClickedSupplierForReorder: Long?,
+    onUpdateVocalArabName: (Long, String) -> Unit
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isExpanded by remember { mutableStateOf(false) }
     var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
     var showDescriptionFlotBS by remember { mutableStateOf(false) }
+    var showNoms by remember { mutableStateOf(false) }
 
     val filteredSuppliers = remember(suppliers, allArticles, filterButtonsWhereArtNotEmpty) {
         if (filterButtonsWhereArtNotEmpty) {
@@ -666,6 +675,17 @@ fun SuppliersFloatingButtonsSA(
             }
         } else {
             suppliers
+        }
+    }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            supplierFlotBisHandled?.let { supplierId ->
+                onUpdateVocalArabName(supplierId, spokenText)
+            }
         }
     }
 
@@ -690,24 +710,56 @@ fun SuppliersFloatingButtonsSA(
                 reverseLayout = true
             ) {
                 item {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 8.dp)
                     ) {
-                        FloatingActionButton(
-                            onClick = { filterButtonsWhereArtNotEmpty = !filterButtonsWhereArtNotEmpty }
-                        ) {
-                            Icon(
-                                if (filterButtonsWhereArtNotEmpty) Icons.Default.Close else Icons.Default.FilterAlt,
-                                contentDescription = if (filterButtonsWhereArtNotEmpty) "Clear filter" else "Filter suppliers"
-                            )
+                        item {
+                            FloatingActionButton(
+                                onClick = {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour le nom vocal arabe du fournisseur...")
+                                    }
+                                    speechRecognizerLauncher.launch(intent)
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Mic,
+                                    contentDescription = "Update vocal Arab name"
+                                )
+                            }
                         }
-                        FloatingActionButton(
-                            onClick = { showDescriptionFlotBS = !showDescriptionFlotBS }
-                        ) {
-                            Icon(
-                                if (showDescriptionFlotBS) Icons.Default.Close else Icons.Default.Dehaze,
-                                contentDescription = if (showDescriptionFlotBS) "Hide descriptions" else "Show descriptions"
-                            )
+                        item {
+                            FloatingActionButton(
+                                onClick = { filterButtonsWhereArtNotEmpty = !filterButtonsWhereArtNotEmpty }
+                            ) {
+                                Icon(
+                                    if (filterButtonsWhereArtNotEmpty) Icons.Default.Close else Icons.Default.FilterAlt,
+                                    contentDescription = if (filterButtonsWhereArtNotEmpty) "Clear filter" else "Filter suppliers"
+                                )
+                            }
+                        }
+                        item {
+                            FloatingActionButton(
+                                onClick = { showDescriptionFlotBS = !showDescriptionFlotBS }
+                            ) {
+                                Icon(
+                                    if (showDescriptionFlotBS) Icons.Default.Close else Icons.Default.Dehaze,
+                                    contentDescription = if (showDescriptionFlotBS) "Hide descriptions" else "Show descriptions"
+                                )
+                            }
+                        }
+                        item {
+                            FloatingActionButton(
+                                onClick = { showNoms = !showNoms }
+                            ) {
+                                Icon(
+                                    if (showNoms) Icons.Default.Close else Icons.Default.Dehaze,
+                                    contentDescription = if (showNoms) "Hide names" else "Show names"
+                                )
+                            }
                         }
                     }
                 }
@@ -715,15 +767,17 @@ fun SuppliersFloatingButtonsSA(
                     SupplierButton(
                         supplier = supplier,
                         showDescription = showDescriptionFlotBS,
+                        showNoms = showNoms,
                         isSelected = supplierFlotBisHandled == supplier.idSupplierSu,
                         isFirstClickedForReorder = firstClickedSupplierForReorder == supplier.idSupplierSu,
                         isReorderMode = itsReorderMode,
-                        onClick = { onClickFlotButt(supplier.idSupplierSu) } ,
+                        onClick = { onClickFlotButt(supplier.idSupplierSu) },
                         allArticles = allArticles
                     )
                 }
             }
         }
+
         FloatingActionButton(
             onClick = { isExpanded = !isExpanded },
             modifier = Modifier.align(Alignment.BottomEnd)
@@ -744,7 +798,8 @@ private fun SupplierButton(
     isSelected: Boolean,
     isFirstClickedForReorder: Boolean,
     isReorderMode: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    showNoms: Boolean
 ) {
     val totalValue = remember(supplier, allArticles) {
         allArticles
@@ -761,22 +816,31 @@ private fun SupplierButton(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 8.dp)
-                    .heightIn(min = 60.dp)
+                    .heightIn(min = 80.dp)
+                    .widthIn(min = 100.dp, max = if (showNoms) 300.dp else 100.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "Total: $${String.format("%.2f", totalValue)}",
+                        text = "T: $${String.format("%.2f", totalValue)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Text(
-                        text = supplier.nomSupplierSu,
-                        style = MaterialTheme.typography.bodyLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (showNoms) {
+                        Text(
+                            text = supplier.nomSupplierSu,
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = supplier.nomVocaleArabeDuSupplier,
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
@@ -791,7 +855,7 @@ private fun SupplierButton(
             }
         ) {
             Text(
-                text = supplier.nomSupplierSu.take(3),
+                text = supplier.nomVocaleArabeDuSupplier.take(3),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
