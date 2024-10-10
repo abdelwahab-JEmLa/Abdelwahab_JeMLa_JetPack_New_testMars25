@@ -156,7 +156,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 viewModel = viewModel,
                 modifier = Modifier.padding(horizontal = 3.dp),
                 onReloadTrigger = { reloadTrigger += 1 },
-                relodeTigger = reloadTrigger
+                reloadTrigger = reloadTrigger
             )
         }
     }

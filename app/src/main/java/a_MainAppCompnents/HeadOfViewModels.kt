@@ -1113,6 +1113,10 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             }
         }
     }
+    fun getCategoryByName(categoryName: String): CategoriesTabelleECB {
+        return uiState.value.categoriesECB.find { it.nomCategorieInCategoriesTabele == categoryName }
+            ?: throw IllegalArgumentException("Category not found: $categoryName")
+    }
     private  fun calculateNewClassementCate(category: CategoriesTabelleECB): Double {
         return (uiState.value.articlesBaseDonneECB
             .filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }

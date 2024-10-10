@@ -6,6 +6,7 @@ import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.HeadOfViewModels
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -53,6 +54,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,24 +101,49 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
     NomArticle(listOf(Triple("nomArticleFinale", "", true))),
 }
 
+
 @Composable
 fun ArticleDetailWindow(
     article: BaseDonneECBTabelle,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     onReloadTrigger: () -> Unit,
-    relodeTigger: Int
+    reloadTrigger: Int
 ) {
-    var displayeInOutlines by remember { mutableStateOf(true) }
+    var displayInOutlines by remember { mutableStateOf(true) }
     var currentChangingField by remember { mutableStateOf("") }
-
-    val itsNewArticle by remember(article) { derivedStateOf { article.monPrixAchat == 0.0 } }
+    val isNewArticle by remember(article) { derivedStateOf { article.monPrixAchat == 0.0 } }
     var localReloadTrigger by remember { mutableStateOf(0) }
 
-    // Check if current article is the first or last
     val isFirstArticle = viewModel.isFirstArticle(article.idArticleECB)
     val isLastArticle = viewModel.isLastArticle(article.idArticleECB)
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            viewModel.tempImageUri?.let { uri ->
+                coroutineScope.launch {
+                    try {
+                        // Use the current article's category when creating a new article
+                        val category = viewModel.getCategoryByName(article.nomCategorie)
+                        val newArticle = viewModel.addNewParentArticle(uri, category)
+                        viewModel.updateCurrentEditedArticle(newArticle)
+                        localReloadTrigger++
+                        currentChangingField = ""
+                        onReloadTrigger()
+                    } catch (e: Exception) {
+                        Log.e("ArticleDetailWindow", "Failed to add new article", e)
+                        Toast.makeText(context, "Failed to add new article", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -129,8 +156,7 @@ fun ArticleDetailWindow(
             Box(modifier = Modifier.fillMaxSize()) {
                 // Main scrollable content
                 Card(
-                    modifier = Modifier
-                        .fillMaxSize(), // Add padding for floating elements
+                    modifier = Modifier.fillMaxSize(),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     Column(
@@ -143,7 +169,7 @@ fun ArticleDetailWindow(
                             viewModel = viewModel,
                             onDismiss = onDismiss,
                             onReloadTrigger = onReloadTrigger,
-                            relodeTigger = relodeTigger
+                            relodeTigger = reloadTrigger
                         )
 
                         // TOP_ROW fields
@@ -155,7 +181,7 @@ fun ArticleDetailWindow(
                                     currentChangingField = currentChangingField,
                                     article = article,
                                     viewModel = viewModel,
-                                    displayeInOutlines = displayeInOutlines,
+                                    displayeInOutlines = displayInOutlines,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(67.dp)
@@ -169,12 +195,12 @@ fun ArticleDetailWindow(
                                 fieldsGroup.fields.forEach { (column, abbr) ->
                                     when (fieldsGroup) {
                                         FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
-                                            if (!itsNewArticle) {
+                                            if (!isNewArticle) {
                                                 InfoBoxWhithVoiceInpute(
                                                     columnToChange = column,
                                                     abbreviation = abbr,
                                                     article = article,
-                                                    displayeInOutlines = displayeInOutlines,
+                                                    displayeInOutlines = displayInOutlines,
                                                     modifier = Modifier
                                                         .weight(1f)
                                                         .height(67.dp)
@@ -188,7 +214,7 @@ fun ArticleDetailWindow(
                                                 currentChangingField = currentChangingField,
                                                 article = article,
                                                 viewModel = viewModel,
-                                                displayeInOutlines = displayeInOutlines,
+                                                displayeInOutlines = displayInOutlines,
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .height(67.dp)
@@ -206,21 +232,23 @@ fun ArticleDetailWindow(
                 // Floating switch at the top-right
                 Row(
                     modifier = Modifier
-                        .align(Alignment.TopEnd),
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("", style = MaterialTheme.typography.bodySmall)
+                    Text("Display in outlines", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.width(8.dp))
                     Switch(
-                        checked = displayeInOutlines,
-                        onCheckedChange = { displayeInOutlines = it }
+                        checked = displayInOutlines,
+                        onCheckedChange = { displayInOutlines = it }
                     )
                 }
+
                 // Floating "Previous" button on the left
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(start = 8.dp)
+                        .padding(start = 16.dp, bottom = 16.dp)
                 ) {
                     FloatingActionButton(
                         onClick = {
@@ -231,21 +259,22 @@ fun ArticleDetailWindow(
                                 currentChangingField = ""
                                 onReloadTrigger()
                             }
-                        }
+                        },
+                        containerColor = if (isFirstArticle) Color.Gray else MaterialTheme.colorScheme.primary
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Previous",
-                            tint = if (isFirstArticle) Color.Gray else Color.White
+                            tint = Color.White
                         )
                     }
                 }
 
-                // Floating "Next" button on the right
+                // Floating "Next" or "Add" button on the right
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 8.dp)
+                        .padding(end = 16.dp, bottom = 16.dp)
                 ) {
                     FloatingActionButton(
                         onClick = {
@@ -255,18 +284,23 @@ fun ArticleDetailWindow(
                                 localReloadTrigger++
                                 currentChangingField = ""
                                 onReloadTrigger()
+                            } else {
+                                viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                                viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
                             }
-                        }
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
-                            contentDescription = "Next",
-                            tint = if (isLastArticle) Color.Gray else Color.White
+                            imageVector = if (isLastArticle) Icons.Default.Add else Icons.Default.ArrowForward,
+                            contentDescription = if (isLastArticle) "Add New Article" else "Next",
+                            tint = Color.White
                         )
                     }
                 }
             }
         }
+
     }
 }
 @Composable
