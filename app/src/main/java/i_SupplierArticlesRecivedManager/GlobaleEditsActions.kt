@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
@@ -33,14 +34,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GlobaleControlsFloatingsButtonsSA(
+fun GlobaleControlsFloatingButtonsSA(
     showFloatingButtons: Boolean,
     onToggleFloatingButtons: () -> Unit,
     onToggleToFilterToMove: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
     filterSuppHandledNow: Boolean,
-onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
-    onLaunchVoiceRecognition: () -> Unit
+    onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
+    onLaunchVoiceRecognition: () -> Unit,
+    onLaunchAddArticleWindow: () -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6
@@ -55,6 +57,9 @@ onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
+                    Triple(Icons.Default.Add, "Add Article") {
+                        onLaunchAddArticleWindow()
+                    },
                     Triple(Icons.Default.Mic, "Voice Recognition") {
                         onLaunchVoiceRecognition()
                     },
@@ -114,5 +119,8 @@ onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
             )
         }
     }
+
+
 }
+
 

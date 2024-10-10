@@ -1094,8 +1094,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
-    fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB) {
-        viewModelScope.launch {
+    suspend fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB): BaseDonneECBTabelle {
+        return withContext(Dispatchers.IO) {
             try {
                 val newId = getNextArticleId()
                 val fileName = "${newId}_1.jpg"
@@ -1106,12 +1106,13 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 val newArticle = createNewArticle(newId, category, newClassementCate)
                 ensureNewArticlesCategoryExists()
                 updateDataBaseWithNewArticle(newArticle)
+                newArticle
             } catch (e: Exception) {
                 handleError("Failed to process image", e)
+                throw IllegalStateException("Failed to create new article", e)
             }
         }
     }
-
     private  fun calculateNewClassementCate(category: CategoriesTabelleECB): Double {
         return (uiState.value.articlesBaseDonneECB
             .filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }

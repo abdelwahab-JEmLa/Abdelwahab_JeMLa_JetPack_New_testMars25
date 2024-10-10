@@ -5,6 +5,7 @@ import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.HeadOfViewModels
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -67,11 +68,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewModelScope
 import b_Edite_Base_Donne.AutoResizedText
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
+import kotlinx.coroutines.launch
 import java.io.File
 
 enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
@@ -414,22 +417,15 @@ fun DisplayField(
         )
     }
 }
+ //CategoryHeaderECB
+
 
 @Composable
 fun CategoryHeaderECB(
     category: CategoriesTabelleECB,
     viewModel: HeadOfViewModels,
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
 ) {
-    val context = LocalContext.current
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            viewModel.tempImageUri?.let { uri ->
-                viewModel.addNewParentArticle(uri, category)
-            }
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -446,16 +442,53 @@ fun CategoryHeaderECB(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
-            IconButton(
-                onClick = {
-                    viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                    viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
-                },
-                modifier = Modifier.padding(end = 16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Article")
+            AddArticleButton(viewModel ,category, onNewArticleAdded)
+        }
+    }
+}
+
+@Composable
+private fun rememberCameraLauncher(
+    viewModel: HeadOfViewModels,
+    category: CategoriesTabelleECB,
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+) = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.TakePicture()
+) { success ->
+    if (success) {
+        viewModel.tempImageUri?.let { uri ->
+            viewModel.viewModelScope.launch {
+                try {
+                    val newArticle = viewModel.addNewParentArticle(uri, category)
+                    onNewArticleAdded(newArticle)
+                } catch (e: Exception) {
+                    Log.e("CategoryHeaderECB", "Failed to add new article", e)
+                    // Show an error message to the user
+                    // For example, you could use a SnackBar or a Toast
+                }
             }
         }
+    }
+}
+
+
+@Composable
+private fun AddArticleButton(
+    viewModel: HeadOfViewModels,
+    category: CategoriesTabelleECB,
+    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+) {
+    val context = LocalContext.current
+    val cameraLauncher = rememberCameraLauncher(viewModel, category, onNewArticleAdded)
+
+    IconButton(
+        onClick = {
+            viewModel.tempImageUri = viewModel.createTempImageUri(context)
+            viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+        },
+        modifier = Modifier.padding(end = 16.dp)
+    ) {
+        Icon(Icons.Default.Add, contentDescription = "Add Article")
     }
 }
 

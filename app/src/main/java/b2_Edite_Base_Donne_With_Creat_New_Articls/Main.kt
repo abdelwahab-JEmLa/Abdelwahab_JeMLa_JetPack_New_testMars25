@@ -2,6 +2,7 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.HeadOfViewModels
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,9 +49,14 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
 
-    // Effect to update dialogeDisplayeDetailleChanger when currentEditedArticle changes
-    LaunchedEffect(currentEditedArticle) {
-        dialogeDisplayeDetailleChanger = currentEditedArticle
+    // Remove this LaunchedEffect as it's overwriting our manual settings
+     LaunchedEffect(currentEditedArticle) {
+         dialogeDisplayeDetailleChanger = currentEditedArticle
+     }
+
+    // Logging for debugging
+    LaunchedEffect(dialogeDisplayeDetailleChanger) {
+        Log.d("MainFragment", "dialogeDisplayeDetailleChanger updated: $dialogeDisplayeDetailleChanger")
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -71,16 +77,25 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                     }
                     if (articlesInCategory.isNotEmpty() || category.nomCategorieInCategoriesTabele == "New Articles") {
                         item(span = { GridItemSpan(gridColumns) }) {
-                            CategoryHeaderECB(category = category, viewModel = viewModel)
+                            CategoryHeaderECB(
+                                category = category,
+                                viewModel = viewModel,
+                                onNewArticleAdded = { newArticle ->
+                                    dialogeDisplayeDetailleChanger = newArticle
+                                    Log.d("MainFragment", "New article added: $newArticle")
+                                }
+                            )
                         }
                         items(articlesInCategory) { article ->
                             ArticleItemECB(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
+                                    Log.d("MainFragment", "Article clicked: $clickedArticle")
                                     dialogeDisplayeDetailleChanger = clickedArticle
-                                } ,
-                                viewModel,
-                                reloadTrigger
+                                    viewModel.updateCurrentEditedArticle(clickedArticle)
+                                },
+                                viewModel = viewModel,
+                                reloadTrigger = reloadTrigger
                             )
                         }
                     }
@@ -106,14 +121,16 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
-                onChangeGridColumns = { gridColumns = it } ,
+                onChangeGridColumns = { gridColumns = it },
             )
         }
 
         dialogeDisplayeDetailleChanger?.let { article ->
+            Log.d("MainFragment", "Displaying ArticleDetailWindow for: $article")
             ArticleDetailWindow(
                 article = article,
                 onDismiss = {
+                    Log.d("MainFragment", "ArticleDetailWindow dismissed")
                     dialogeDisplayeDetailleChanger = null
                     viewModel.updateCurrentEditedArticle(null)
 
@@ -132,6 +149,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                             }
                             // Increment reloadTrigger to force recomposition
                             reloadTrigger += 1
+                            Log.d("MainFragment", "Image reload triggered, reloadTrigger: $reloadTrigger")
                         }
                     }
                 },
@@ -143,7 +161,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
         }
     }
 }
-
 @Composable
 fun ArticleItemECB(
     article: BaseDonneECBTabelle,

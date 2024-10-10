@@ -194,7 +194,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .padding(16.dp)
                     .zIndex(1f)
             ) {
-                GlobaleControlsFloatingsButtonsSA(
+                GlobaleControlsFloatingButtonsSA(
                     showFloatingButtons = showFloatingButtons,
                     onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
                     onChangeGridColumns = { gridColumns = it },
@@ -211,7 +211,8 @@ fun Fragment_SupplierArticlesRecivedManager(
                             )
                         }
                         speechRecognizerLauncher.launch(intent)
-                    }
+                    }  ,
+                    onLaunchAddArticleWindow = {}
                 )
             }
         }
@@ -843,6 +844,7 @@ private fun SupplierButton(
                     Text(
                         text = "T: $${String.format("%.2f", totalValue)}",
                         style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
                         color = MaterialTheme.colorScheme.primary
                     )
                     if (showNoms) {
