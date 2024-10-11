@@ -449,7 +449,12 @@ fun WindowArticleDetail(
                             .fillMaxWidth()
                             .padding(8.dp)
                             .clickable { onDismissWithUpdatePlaceArticle() },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (article.itsInFindedAskSupplierSA)
+                                Color.Yellow.copy(alpha = 0.3f)
+                            else
+                                Color.Red.copy(alpha = 0.3f)
+                        )
                     ) {
                         AutoResizedText(
                             text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
@@ -485,7 +490,6 @@ fun WindowArticleDetail(
         }
     }
 }
-
 @Composable
 fun AutoResizedText(
     text: String,
