@@ -7,6 +7,7 @@ import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -31,8 +33,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -45,11 +47,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -59,7 +64,17 @@ import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
+private fun articleFilter(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    placeItem: MapArticleInSupplierStore
+) = uiState.tabelleSupplierArticlesRecived.filter { article ->
+    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                place.idPlace == placeItem.idPlace
+    }
+}
 //Title:WindowsMapArticleInSupplierStore
+
 @Composable
 fun WindowsMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -70,6 +85,7 @@ fun WindowsMapArticleInSupplierStore(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
+    var fabOffset by remember { mutableStateOf(Offset.Zero) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -80,47 +96,48 @@ fun WindowsMapArticleInSupplierStore(
             shape = MaterialTheme.shapes.large
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), // Add space between columns
+                    verticalArrangement = Arrangement.spacedBy(8.dp), // Add space between rows
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(8.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val Places = uiState.mapArticleInSupplierStore .filter {
-                            it.idSupplierOfStore ==   idSupplierOfFloatingButtonClicked
-                        }
+                    val places = uiState.mapArticleInSupplierStore.filter {
+                        it.idSupplierOfStore == idSupplierOfFloatingButtonClicked
+                    }
 
-                        items(Places) { placeItem ->
-                            CardDisplayerOfPlace(
-                                uiState = uiState,
-                                placeItem=placeItem,
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(2.dp)
-                                ,
-                                viewModel = viewModel,
-                                onDismiss = { showNonPlacedArticles = null }   ,
-                                onClickToDisplayNonPlaced = {showNonPlacedArticles=it}
-                            )
-                        }
+                    items(places) { placeItem ->
+                        CardDisplayerOfPlace(
+                            uiState = uiState,
+                            placeItem = placeItem,
+                            modifier = Modifier.fillMaxWidth(),
+                            viewModel = viewModel,
+                            onDismiss = { showNonPlacedArticles = null },
+                            onClickToDisplayNonPlaced = { showNonPlacedArticles = it }
+                        )
                     }
                 }
 
                 FloatingActionButton(
                     onClick = { showAddDialog = true },
                     modifier = Modifier
+                        .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                fabOffset += dragAmount
+                            }
+                        }
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Add Place")
                 }
             }
         }
     }
+
     showNonPlacedArticles?.let { place ->
         WindowsOfNonPlacedArticles(
             uiState = uiState,
@@ -131,6 +148,7 @@ fun WindowsMapArticleInSupplierStore(
             viewModel = viewModel
         )
     }
+
     if (showAddDialog) {
         AddPlaceDialog(
             onDismiss = { showAddDialog = false },
@@ -141,15 +159,7 @@ fun WindowsMapArticleInSupplierStore(
         )
     }
 }
-private fun articleFilter(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    placeItem: MapArticleInSupplierStore
-) = uiState.tabelleSupplierArticlesRecived.filter { article ->
-    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                place.idPlace == placeItem.idPlace
-    }
-}
+
 @Composable
 fun CardDisplayerOfPlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -163,33 +173,27 @@ fun CardDisplayerOfPlace(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClickToDisplayNonPlaced(placeItem) },
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
-        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 6.dp
-                ),
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFCCCE),  // Light red background
+                    containerColor = MaterialTheme.colorScheme.primary,
                 )
             ) {
                 Text(
                     text = placeItem.namePlace,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,  // White text
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -212,7 +216,7 @@ fun CardDisplayerOfPlace(
                         viewModel = viewModel,
                         onDismiss = onDismiss
                     )
-                    HorizontalDivider(
+                    Divider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = 1.dp,
                         color = MaterialTheme.colorScheme.outlineVariant
@@ -222,6 +226,7 @@ fun CardDisplayerOfPlace(
         }
     }
 }
+
 
 @Composable
 fun ArticleItemOfPlace(
@@ -234,7 +239,7 @@ fun ArticleItemOfPlace(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
+            .height(60.dp)
             .clickable { showArticleDetails = true },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(8.dp)
@@ -265,7 +270,7 @@ fun ArticleItemOfPlace(
             ) {
                 Text(
                     text = article.a_d_nomarticlefinale_c,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -304,7 +309,7 @@ fun DisplayeImageById(
     idArticle: Long,
     index: Int = 0,
     reloadKey: Any = Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier
 ) {
     val context = LocalContext.current
     val baseImagePath =
@@ -485,7 +490,7 @@ fun AddPlaceDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onAddPlace(newPlaceName) }) {
+            Button(onClick = { onAddPlace(newPlaceName) }) {//TODO fait que le premier letter MAj
                 Text("Add")
             }
         },
