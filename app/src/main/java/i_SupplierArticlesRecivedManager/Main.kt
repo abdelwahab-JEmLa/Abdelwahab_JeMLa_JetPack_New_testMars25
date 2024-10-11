@@ -418,10 +418,10 @@ fun WindowArticleDetail(
 
     val infiniteTransition = rememberInfiniteTransition(label = "yellowPulse")
     val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
+        initialValue = 0.1f,
+        targetValue = 0.8f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
+            animation = tween(500, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "yellowPulseAlpha"
@@ -463,7 +463,7 @@ fun WindowArticleDetail(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .clickable { onDismissWithUpdatePlaceArticle() },
+                            .clickable { onDismissWithUpdateOfnonDispo(article) },
                         colors = CardDefaults.cardColors(
                             containerColor = when {
                                 article.itsInFindedAskSupplierSA -> Color.Yellow.copy(alpha = alpha)
