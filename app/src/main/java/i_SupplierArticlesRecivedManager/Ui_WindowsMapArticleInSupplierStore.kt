@@ -33,8 +33,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -214,9 +214,9 @@ fun CardDisplayerOfPlace(
                     ArticleItemOfPlace(
                         article = article,
                         viewModel = viewModel,
-                        onDismiss = onDismiss
+                        onDismissWithUpdate = { onDismiss() }
                     )
-                    Divider(
+                    HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = 1.dp,
                         color = MaterialTheme.colorScheme.outlineVariant
@@ -227,31 +227,54 @@ fun CardDisplayerOfPlace(
     }
 }
 
-
 @Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
     viewModel: HeadOfViewModels,
-    onDismiss: () -> Unit
+    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit
 ) {
-    var showArticleDetails by remember { mutableStateOf(false) }
+    var showArticleDetails by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
+    CardArticlePlace(
+        article = article,
+        onClickToShowWindowsInfoArt = { showArticleDetails = it }
+    )
+
+    showArticleDetails?.let { articleDisplate ->
+        WindowArticleDetail(
+            article = articleDisplate,
+            onDismissWithUpdate = {
+                showArticleDetails = null
+                onDismissWithUpdate(article)
+            },
+            viewModel = viewModel,
+            modifier = Modifier.padding(horizontal = 3.dp),
+        )
+    }
+}
+
+@Composable
+private fun CardArticlePlace(
+    article: TabelleSupplierArticlesRecived,
+    onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .clickable { showArticleDetails = true },
+            .height(70.dp)
+            .clickable(onClick = { onClickToShowWindowsInfoArt(article) }),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             // Background image
             DisplayeImageById(
                 idArticle = article.a_c_idarticle_c,
-                modifier = Modifier.fillMaxWidth().height(120.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
             )
 
             // Semi-transparent overlay
@@ -272,7 +295,7 @@ fun ArticleItemOfPlace(
                     text = article.a_d_nomarticlefinale_c,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
@@ -290,20 +313,7 @@ fun ArticleItemOfPlace(
             }
         }
     }
-
-    if (showArticleDetails) {
-        WindowArticleDetail(
-            article = article,
-            onDismissWithUpdate = {
-                showArticleDetails = false
-                onDismiss()
-            },
-            viewModel = viewModel,
-            modifier = Modifier.padding(horizontal = 3.dp),
-        )
-    }
 }
-
 @Composable
 fun DisplayeImageById(
     idArticle: Long,
@@ -398,7 +408,7 @@ fun WindowsOfNonPlacedArticles(
                             }
 
                             items(articlesSupplier) { article ->
-                                ArticleItem(
+                                ArticleItemOfPlace(
                                     article = article,
                                     onDismissWithUpdate = { clickedArticle ->
                                         val idCombinedIdArticleIdSupplier = "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
@@ -435,42 +445,6 @@ fun WindowsOfNonPlacedArticles(
 }
 
 @Composable
-fun ArticleItem(
-    article: TabelleSupplierArticlesRecived,
-    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
-    viewModel: HeadOfViewModels,
-) {
-    var showNonPlacedAricles by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null)  }
-
-    Card(
-        modifier = Modifier
-            .padding(4.dp)
-            .clickable { showNonPlacedAricles = article },
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = article.a_d_nomarticlefinale_c, style = MaterialTheme.typography.bodyLarge)
-            Text(text = "ID: ${article.a_c_idarticle_c}", style = MaterialTheme.typography.bodySmall)
-        }
-    }
-    showNonPlacedAricles?.let { articleDisplaye ->
-        WindowArticleDetail(
-            article = articleDisplaye,
-            onDismissWithUpdate = {
-                onDismissWithUpdate(articleDisplaye)
-                showNonPlacedAricles=null
-            },
-            viewModel = viewModel,
-            modifier = Modifier.padding(horizontal = 3.dp),
-        )
-    }
-}
-
-
-@Composable
 fun AddPlaceDialog(
     onDismiss: () -> Unit,
     onAddPlace: (String) -> Unit
@@ -484,13 +458,15 @@ fun AddPlaceDialog(
             Column {
                 OutlinedTextField(
                     value = newPlaceName,
-                    onValueChange = { newPlaceName = it },
+                    onValueChange = { input ->
+                        newPlaceName = input.replaceFirstChar { it.uppercase() }
+                    },
                     label = { Text("Place Name") }
                 )
             }
         },
         confirmButton = {
-            Button(onClick = { onAddPlace(newPlaceName) }) {//TODO fait que le premier letter MAj
+            Button(onClick = { onAddPlace(newPlaceName) }) {
                 Text("Add")
             }
         },
