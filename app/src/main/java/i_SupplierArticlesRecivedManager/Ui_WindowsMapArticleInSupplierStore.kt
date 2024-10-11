@@ -6,14 +6,13 @@ import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -88,7 +87,7 @@ fun WindowsMapArticleInSupplierStore(
                                 uiState = uiState,
                                 placeItem=placeItem,
                                 modifier = Modifier.fillMaxWidth()
-                                    .padding(4.dp)
+                                    .padding(2.dp)
                                 ,
                                 viewModel = viewModel,
                                 onDismiss = { showNonPlacedArticles = null }   ,
@@ -155,30 +154,32 @@ fun CardDisplayerOfPlace(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = RoundedCornerShape(4.dp)
+                    ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                ),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
             ) {
                 Text(
                     text = placeItem.namePlace,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (placeItem.inRightOfPlace) "Right" else "Left",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = RoundedCornerShape(4.dp)
-                        )
+                        .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
 
-            Spacer(modifier = Modifier)
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
                 modifier = Modifier
@@ -194,7 +195,7 @@ fun CardDisplayerOfPlace(
                         onDismiss = onDismiss
                     )
                     HorizontalDivider(
-                        modifier = Modifier,
+                        modifier = Modifier.fillMaxWidth(),
                         thickness = 1.dp,
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
@@ -203,7 +204,6 @@ fun CardDisplayerOfPlace(
         }
     }
 }
-
 private fun articleFilter(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     placeItem: MapArticleInSupplierStore
