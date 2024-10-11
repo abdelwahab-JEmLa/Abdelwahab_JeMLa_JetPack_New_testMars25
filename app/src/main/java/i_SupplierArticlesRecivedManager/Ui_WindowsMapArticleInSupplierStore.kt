@@ -191,7 +191,7 @@ fun CardDisplayerOfPlace(
                 )
             ) {
                 Text(
-                    text = placeItem.namePlace,
+                    text = "${ placeItem.namePlace } ${ if (placeItem.inRightOfPlace)"R" else "L" }",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
@@ -199,6 +199,7 @@ fun CardDisplayerOfPlace(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     textAlign = TextAlign.Center
                 )
+
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -214,7 +215,8 @@ fun CardDisplayerOfPlace(
                     ArticleItemOfPlace(
                         article = article,
                         viewModel = viewModel,
-                        onDismissWithUpdate = { onDismiss() }
+                        onDismissWithUpdate = { onDismiss() } ,
+                        onDismiss
                     )
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
@@ -231,7 +233,8 @@ fun CardDisplayerOfPlace(
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
     viewModel: HeadOfViewModels,
-    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit
+    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit ,
+    onDismiss: () -> Unit
 ) {
     var showArticleDetails by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
     val reloadKey = remember(article) { System.currentTimeMillis() }
@@ -245,9 +248,13 @@ fun ArticleItemOfPlace(
     showArticleDetails?.let { articleDisplate ->
         WindowArticleDetail(
             article = articleDisplate,
-            onDismissWithUpdate = {
+            onDismissWithUpdatePlaceArticle = {
                 showArticleDetails = null
                 onDismissWithUpdate(article)
+            },
+            onDismiss =onDismiss, onDismissWithUpdateOfnonDispo ={
+                showArticleDetails = null
+                viewModel.changeAskSupplier(it)
             },
             viewModel = viewModel,
             modifier = Modifier.padding(horizontal = 3.dp),
@@ -428,7 +435,8 @@ fun WindowsOfNonPlacedArticles(
                                         )
                                         onDismiss()
                                     },
-                                    viewModel = viewModel
+                                    viewModel = viewModel ,
+                                    onDismiss=onDismiss
                                 )
                             }
                         }

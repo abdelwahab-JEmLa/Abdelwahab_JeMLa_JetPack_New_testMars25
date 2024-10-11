@@ -52,7 +52,6 @@ import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -70,6 +69,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -85,12 +85,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import b2_Edite_Base_Donne_With_Creat_New_Articls.AutoResizedTextECB
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
@@ -277,9 +277,16 @@ fun Fragment_SupplierArticlesRecivedManager(
     displayedArticle?.let { article ->
         WindowArticleDetail(
             article = article,
-            onDismissWithUpdate = {
+            onDismissWithUpdatePlaceArticle = {
                 dialogeDisplayeDetailleChanger = null
             },
+            onDismissWithUpdateOfnonDispo ={
+                dialogeDisplayeDetailleChanger = null
+                viewModel.changeAskSupplier(it)
+            },
+            onDismiss ={
+                dialogeDisplayeDetailleChanger = null
+            } ,
             viewModel = viewModel,
             modifier = Modifier.padding(horizontal = 3.dp),
         )
@@ -392,17 +399,21 @@ fun SquareLayout(
 }
 
 //WindowArticleDetail
+
+
 @Composable
 fun WindowArticleDetail(
     article: TabelleSupplierArticlesRecived,
-    onDismissWithUpdate: () -> Unit,
+    onDismissWithUpdatePlaceArticle: () -> Unit,
+    onDismissWithUpdateOfnonDispo: (TabelleSupplierArticlesRecived) -> Unit,
+    onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
     val reloadKey = remember(article) { System.currentTimeMillis() }
 
     Dialog(
-        onDismissRequest = onDismissWithUpdate,
+        onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -410,7 +421,12 @@ fun WindowArticleDetail(
             shape = MaterialTheme.shapes.large
         ) {
             Card(
-                modifier = modifier.fillMaxWidth(),
+                modifier = modifier
+                    .fillMaxWidth()
+                    .background(if (article.itsInFindedAskSupplierSA) Color.Yellow.copy(alpha = 0.3f)
+                        else Color.Red.copy(alpha = 0.3f)
+                    ) // Light yellow background
+                    .clickable { onDismissWithUpdateOfnonDispo(article) },
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
@@ -418,40 +434,88 @@ fun WindowArticleDetail(
                         article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0
                     Box(
                         modifier = modifier
-                            .clickable { onDismissWithUpdate() }
+                            .clickable { onDismissWithUpdatePlaceArticle() }
                             .height(if (ifStat) 250.dp else 500.dp)
-                        ){
-
+                    ) {
                         if (ifStat) {
-                            SingleColorImageSA(article, viewModel,reloadKey)
+                            SingleColorImageSA(article, viewModel, reloadKey)
                         } else {
-                            MultiColorGridSA(article, viewModel,reloadKey)
+                            MultiColorGridSA(article, viewModel, reloadKey)
                         }
                     }
+
                     // Article name
-                    AutoResizedTextECB(
-                        text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
-                        fontSize = 25.sp,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = modifier.fillMaxWidth()
-                    )
-                    AutoResizedTextECB(
-                        text = article.nomclient.capitalize(Locale.current),
-                        fontSize = 25.sp,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = {
-                            onDismissWithUpdate()
-                        },
-                        modifier = Modifier
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                            .clickable { onDismissWithUpdatePlaceArticle() },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Close And Update Place")
+                        AutoResizedText(
+                            text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
+                            fontSize = 25.sp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        )
+                    }
+
+                    // Client names
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                    ) {
+                        items(article.nomclient.split(")")) { clientName ->
+                            val cleanedName = clientName.trim().replace("(", "").replace(")", "")
+                            if (cleanedName.isNotBlank()) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                ) {
+                                    AutoResizedText(
+                                        text = cleanedName.capitalize(Locale.current),
+                                        fontSize = 20.sp,
+                                        color = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AutoResizedText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    maxLines: Int = Int.MAX_VALUE,
+    fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize
+) {
+    var currentFontSize by remember { mutableStateOf(fontSize) }
+    var readyToDraw by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text.capitalize(Locale.current),
+            color = color,
+            fontSize = currentFontSize,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.drawWithContent { if (readyToDraw) drawContent() },
+            onTextLayout = { textLayoutResult ->
+                if (textLayoutResult.didOverflowHeight) {
+                    currentFontSize *= 0.9f
+                } else {
+                    readyToDraw = true
+                }
+            }
+        )
     }
 }
 
