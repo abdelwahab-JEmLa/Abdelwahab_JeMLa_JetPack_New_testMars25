@@ -227,7 +227,7 @@ fun CardDisplayerOfPlace(
                     )
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
-                        thickness = 1.dp,
+                        thickness = 3.dp,
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
