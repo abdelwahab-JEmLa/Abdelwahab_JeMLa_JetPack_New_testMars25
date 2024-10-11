@@ -1,4 +1,5 @@
 package i_SupplierArticlesRecivedManager
+
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
@@ -20,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -98,14 +98,6 @@ fun WindowsMapArticleInSupplierStore(
                         .padding(16.dp)
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Add Place")
-                }
-                FloatingActionButton(
-                    onClick = { showNonPlacedArticles = null },
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp)
-                ) {
-                    Icon(Icons.Filled.List, contentDescription = "Show Non-Placed Articles")
                 }
             }
         }
