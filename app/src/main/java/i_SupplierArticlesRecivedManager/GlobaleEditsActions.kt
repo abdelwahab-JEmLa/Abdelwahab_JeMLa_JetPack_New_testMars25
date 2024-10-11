@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
@@ -64,9 +63,7 @@ fun GlobaleControlsFloatingButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
-                    Triple(Icons.Default.Add, "Add Article") {
-                        onLaunchAddArticleWindow()
-                    },
+
                     Triple(Icons.Default.Mic, "Voice Recognition") {
                         onLaunchVoiceRecognition()
                     },
