@@ -417,16 +417,15 @@ fun WindowArticleDetail(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            modifier = modifier.fillMaxSize(),
-            shape = MaterialTheme.shapes.large
+            modifier = modifier
+                .fillMaxSize()
+                .clickable { onDismissWithUpdateOfnonDispo(article) },
+            shape = MaterialTheme.shapes.large,
+            color = if (article.itsInFindedAskSupplierSA) Color.Yellow.copy(alpha = 0.3f)
+            else Color.Red.copy(alpha = 0.3f)
         ) {
             Card(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .background(if (article.itsInFindedAskSupplierSA) Color.Yellow.copy(alpha = 0.3f)
-                        else Color.Red.copy(alpha = 0.3f)
-                    ) // Light yellow background
-                    .clickable { onDismissWithUpdateOfnonDispo(article) },
+                modifier = modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
@@ -446,7 +445,9 @@ fun WindowArticleDetail(
 
                     // Article name
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
                             .clickable { onDismissWithUpdatePlaceArticle() },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
