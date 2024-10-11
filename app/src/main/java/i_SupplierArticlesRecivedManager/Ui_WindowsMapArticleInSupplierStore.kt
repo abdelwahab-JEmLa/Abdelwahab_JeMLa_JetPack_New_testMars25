@@ -35,6 +35,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -71,15 +73,7 @@ import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 
-private fun articleFilter(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    placeItem: MapArticleInSupplierStore
-) = uiState.tabelleSupplierArticlesRecived.filter { article ->
-    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                place.idPlace == placeItem.idPlace
-    }
-}
+
 
 //Title:WindowsMapArticleInSupplierStore
 @Composable
@@ -93,7 +87,8 @@ fun WindowsMapArticleInSupplierStore(
     var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
-    var showFab by remember { mutableStateOf(true) }
+    var showFab by remember { mutableStateOf(false) }
+    var itsFilterInFindedAskSupplierSA by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -121,26 +116,44 @@ fun WindowsMapArticleInSupplierStore(
                             modifier = Modifier.fillMaxWidth(),
                             viewModel = viewModel,
                             onDismiss = { showNonPlacedArticles = null },
-                            onClickToDisplayNonPlaced = { showNonPlacedArticles = it }
+                            onClickToDisplayNonPlaced = { showNonPlacedArticles = it },
+                            itsFilterInFindedAskSupplierSA=itsFilterInFindedAskSupplierSA
                         )
                     }
                 }
 
                 if (showFab) {
-                    FloatingActionButton(
-                        onClick = { showAddDialog = true },
+                    Row(
                         modifier = Modifier
-                            .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
                             .align(Alignment.TopEnd)
                             .padding(16.dp)
-                            .pointerInput(Unit) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consume()
-                                    fabOffset += dragAmount
-                                }
-                            }
                     ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add Place")
+                        // FloatingActionButton for filtering
+                        FloatingActionButton(
+                            onClick = { itsFilterInFindedAskSupplierSA = !itsFilterInFindedAskSupplierSA },
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                        ) {
+                            Icon(
+                                if (itsFilterInFindedAskSupplierSA) Icons.Filled.FilterList else Icons.Filled.FilterListOff,
+                                contentDescription = "Toggle Filter"
+                            )
+                        }
+
+                        // FloatingActionButton for adding
+                        FloatingActionButton(
+                            onClick = { showAddDialog = true },
+                            modifier = Modifier
+                                .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        fabOffset += dragAmount
+                                    }
+                                }
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "Add Place")
+                        }
                     }
                 }
             }
@@ -176,7 +189,8 @@ fun CardDisplayerOfPlace(
     viewModel: HeadOfViewModels,
     onDismiss: () -> Unit,
     placeItem: MapArticleInSupplierStore,
-    onClickToDisplayNonPlaced: (MapArticleInSupplierStore) -> Unit
+    onClickToDisplayNonPlaced: (MapArticleInSupplierStore) -> Unit,
+    itsFilterInFindedAskSupplierSA: Boolean
 ) {
     Card(
         modifier = modifier
@@ -218,20 +232,32 @@ fun CardDisplayerOfPlace(
                     .fillMaxWidth()
                     .heightIn(max = 300.dp)
             ) {
-                val articlesForThisPlace = articleFilter(uiState, placeItem)
+                val filteredArticles = if (itsFilterInFindedAskSupplierSA) {
+                    uiState.tabelleSupplierArticlesRecived.filter { it.itsInFindedAskSupplierSA }
+                } else {
+                    uiState.tabelleSupplierArticlesRecived
+                }
+
+                val articlesForThisPlace = filteredArticles.filter { article ->
+                    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+                        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                                place.idPlace == placeItem.idPlace
+                    }
+                }
 
                 items(articlesForThisPlace) { article ->
                     ArticleItemOfPlace(
                         article = article,
                         viewModel = viewModel,
-                        onDismissWithUpdate = { onDismiss() } ,
-                        onDismiss
+                        onDismissWithUpdate = { onDismiss() },
+                        onDismiss = onDismiss
                     )
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = 3.dp,
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
+
                 }
             }
         }
@@ -283,10 +309,10 @@ private fun CardArticlePlace(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,  // Start from a more visible state
+        initialValue = 0.1f,  // Start from a more visible state
         targetValue = 0.7f,   // Go to a more opaque state
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
+            animation = tween(600, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = ""
@@ -366,43 +392,6 @@ private fun CardArticlePlace(
         }
     }
 }
-@Composable
-fun DisplayeImageById(
-    idArticle: Long,
-    index: Int = 0,
-    reloadKey: Any = Unit,
-    modifier: Modifier
-) {
-    val context = LocalContext.current
-    val baseImagePath =
-        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
-
-    val imageExist = remember(reloadKey) {
-        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-            listOf(baseImagePath).firstOrNull { path ->
-                File("$path.$extension").exists()
-            }?.let { "$it.$extension" }
-        }
-    }
-
-    val imageSource = imageExist ?: R.drawable.blanc
-
-    val painter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
-            .data(imageSource)
-            .size(Size.ORIGINAL)
-            .crossfade(true)
-            .build()
-    )
-
-    Image(
-        painter = painter,
-        contentDescription = null,
-        modifier = modifier,
-        contentScale = ContentScale.Crop,
-        alignment = Alignment.Center
-    )
-}
 
 @Composable
 fun WindowsOfNonPlacedArticles(
@@ -452,6 +441,10 @@ fun WindowsOfNonPlacedArticles(
                                             !uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
                                                 placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
                                             }
+                                }.sortedBy { article ->
+                                    if (uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
+                                            placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
+                                        }) 1 else 0
                                 }
                             } else {
                                 uiState.tabelleSupplierArticlesRecived.filter { article ->
@@ -471,13 +464,13 @@ fun WindowsOfNonPlacedArticles(
                                             idSupp = place.idSupplierOfStore
                                         )
                                         viewModel.moveArticleNonFindToSupplier(
-                                            listOf(clickedArticle),  // Wrap the single article in a list
+                                            listOf(clickedArticle),
                                             place.idSupplierOfStore
                                         )
                                         onDismiss()
                                     },
-                                    viewModel = viewModel ,
-                                    onDismiss=onDismiss
+                                    viewModel = viewModel,
+                                    onDismiss = onDismiss
                                 )
                             }
                         }
@@ -495,6 +488,43 @@ fun WindowsOfNonPlacedArticles(
             }
         }
     }
+}
+@Composable
+fun DisplayeImageById(
+    idArticle: Long,
+    index: Int = 0,
+    reloadKey: Any = Unit,
+    modifier: Modifier
+) {
+    val context = LocalContext.current
+    val baseImagePath =
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
+
+    val imageExist = remember(reloadKey) {
+        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+            listOf(baseImagePath).firstOrNull { path ->
+                File("$path.$extension").exists()
+            }?.let { "$it.$extension" }
+        }
+    }
+
+    val imageSource = imageExist ?: R.drawable.blanc
+
+    val painter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(imageSource)
+            .size(Size.ORIGINAL)
+            .crossfade(true)
+            .build()
+    )
+
+    Image(
+        painter = painter,
+        contentDescription = null,
+        modifier = modifier,
+        contentScale = ContentScale.Crop,
+        alignment = Alignment.Center
+    )
 }
 
 @Composable

@@ -12,7 +12,13 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -398,7 +404,6 @@ fun SquareLayout(
     }
 }
 
-//WindowArticleDetail
 @Composable
 fun WindowArticleDetail(
     article: TabelleSupplierArticlesRecived,
@@ -410,6 +415,17 @@ fun WindowArticleDetail(
 ) {
     val reloadKey = remember(article) { System.currentTimeMillis() }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "yellowPulse")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "yellowPulseAlpha"
+    )
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -419,7 +435,7 @@ fun WindowArticleDetail(
                 .fillMaxSize()
                 .clickable { onDismissWithUpdateOfnonDispo(article) },
             shape = MaterialTheme.shapes.large,
-            color = if (article.itsInFindedAskSupplierSA) Color.Yellow.copy(alpha = 0.3f)
+            color = if (article.itsInFindedAskSupplierSA) Color.Blue.copy(alpha = 0.3f)
             else Color.Red.copy(alpha = 0.3f)
         ) {
             Card(
@@ -448,10 +464,10 @@ fun WindowArticleDetail(
                             .padding(8.dp)
                             .clickable { onDismissWithUpdatePlaceArticle() },
                         colors = CardDefaults.cardColors(
-                            containerColor = if (article.itsInFindedAskSupplierSA)
-                                Color.Yellow.copy(alpha = 0.3f)
-                            else
-                                Color.Red.copy(alpha = 0.3f)
+                            containerColor = when {
+                                article.itsInFindedAskSupplierSA -> Color.Yellow.copy(alpha = alpha)
+                                else -> Color.Red.copy(alpha = 0.3f)
+                            }
                         )
                     ) {
                         AutoResizedText(
