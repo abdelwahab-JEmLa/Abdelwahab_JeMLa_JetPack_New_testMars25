@@ -276,14 +276,14 @@ private fun CardArticlePlace(
     onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
     reloadKey: Long
 ) {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
-        )
+        ), label = ""
     )
 
     Card(
