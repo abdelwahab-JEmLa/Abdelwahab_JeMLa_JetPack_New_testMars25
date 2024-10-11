@@ -4,11 +4,14 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,9 +45,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.size.Size
+import com.example.abdelwahabjemlajetpack.R
+import java.io.File
 
 //Title:WindowsMapArticleInSupplierStore
 @Composable
@@ -225,28 +237,107 @@ fun ArticleItemOfPlace(
 
     Card(
         modifier = Modifier
-            .padding(4.dp)
+            .fillMaxWidth()
             .clickable { showArticleDetails = true },
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .height(120.dp)
+                .fillMaxWidth()
         ) {
-            Text(text = article.a_d_nomarticlefinale_c, style = MaterialTheme.typography.bodyLarge)
-            Text(text = "ID: ${article.a_c_idarticle_c}", style = MaterialTheme.typography.bodySmall)
+            // Background image
+            DisplayeImageById(
+                idArticle = article.a_c_idarticle_c.toLong(),
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Semi-transparent overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+            )
+
+            // Article details
+            Column(
+                modifier = Modifier
+                    .fillMaxSize() ,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = article.a_d_nomarticlefinale_c,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+
+                    Text(
+                        text = "Qty: ${article.totalquantity}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 
     if (showArticleDetails) {
         WindowArticleDetail(
             article = article,
-            onDismissWithUpdate = {showArticleDetails=false
-                onDismiss()},
+            onDismissWithUpdate = {
+                showArticleDetails = false
+                onDismiss()
+            },
             viewModel = viewModel,
             modifier = Modifier.padding(horizontal = 3.dp),
         )
     }
+}
+
+@Composable
+fun DisplayeImageById(
+    idArticle: Long,
+    index: Int = 0,
+    reloadKey: Any = Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val baseImagePath =
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
+
+    val imageExist = remember(reloadKey) {
+        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+            listOf(baseImagePath).firstOrNull { path ->
+                File("$path.$extension").exists()
+            }?.let { "$it.$extension" }
+        }
+    }
+
+    val imageSource = imageExist ?: R.drawable.blanc
+
+    val painter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(imageSource)
+            .size(Size.ORIGINAL)
+            .crossfade(true)
+            .build()
+    )
+
+    Image(
+        painter = painter,
+        contentDescription = null,
+        modifier = modifier,
+        contentScale = ContentScale.Crop
+    )
 }
 
 @Composable
