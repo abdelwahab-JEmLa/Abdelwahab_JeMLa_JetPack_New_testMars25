@@ -278,12 +278,13 @@ private fun CardArticlePlace(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     val alpha by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
+        initialValue = 0.3f,  // Start from a more visible state
+        targetValue = 0.7f,   // Go to a more opaque state
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
-        ), label = ""
+        ),
+        label = ""
     )
 
     Card(
@@ -313,13 +314,13 @@ private fun CardArticlePlace(
                     .background(Color.Black.copy(alpha = 0.4f))
             )
 
-            // Blinking yellow overlay for itsInFindedAskSupplierSA
+            // Darker blinking yellow overlay for itsInFindedAskSupplierSA
             if (article.itsInFindedAskSupplierSA) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .alpha(alpha)
-                        .background(Color.Yellow.copy(alpha = 0.3f))
+                        .background(Color(0xFFFFD700).copy(alpha = 0.7f))  // Darker yellow
                 )
             }
 
@@ -352,7 +353,7 @@ private fun CardArticlePlace(
                         Text(
                             text = "Ask",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Yellow
+                            color = Color(0xFFFFD700)  // Matching yellow color
                         )
                     }
                 }
