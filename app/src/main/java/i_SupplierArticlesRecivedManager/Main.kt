@@ -109,7 +109,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
-    var showFloatingButtons by remember { mutableStateOf(true) }
+    var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
 
     val gridState = rememberLazyGridState()
@@ -667,7 +667,7 @@ fun SuppliersFloatingButtonsSA(
     onUpdateVocalArabName: (Long, String) -> Unit
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(true) }
     var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
     var showDescriptionFlotBS by remember { mutableStateOf(true) }
     var showNoms by remember { mutableStateOf(false) }

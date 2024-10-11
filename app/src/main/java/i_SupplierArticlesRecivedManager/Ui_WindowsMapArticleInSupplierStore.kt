@@ -4,11 +4,14 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -19,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -26,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -79,10 +84,12 @@ fun WindowsMapArticleInSupplierStore(
                         }
 
                         items(Places) { placeItem ->
-                            PlacesItem(
+                            CardDisplayerOfPlace(
                                 uiState = uiState,
                                 placeItem=placeItem,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(4.dp)
+                                ,
                                 viewModel = viewModel,
                                 onDismiss = { showNonPlacedArticles = null }   ,
                                 onClickToDisplayNonPlaced = {showNonPlacedArticles=it}
@@ -124,7 +131,7 @@ fun WindowsMapArticleInSupplierStore(
 }
 
 @Composable
-fun PlacesItem(
+fun CardDisplayerOfPlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     modifier: Modifier = Modifier,
     viewModel: HeadOfViewModels,
@@ -135,37 +142,63 @@ fun PlacesItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
             .clickable { onClickToDisplayNonPlaced(placeItem) },
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        ),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
     ) {
-        Card {
-            Row {
-                Text(
-                    text = placeItem.namePlace,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = if (placeItem.inRightOfPlace) "R" else "L",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 300.dp)
         ) {
-            val articlesForThisPlace = articleFilter(uiState, placeItem)
-
-            items(articlesForThisPlace) { article ->
-                ArticleItemOfPlace(
-                    article = article,
-                    viewModel = viewModel,
-                    onDismiss = onDismiss
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = placeItem.namePlace,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                Text(
+                    text = if (placeItem.inRightOfPlace) "Right" else "Left",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier)
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+            ) {
+                val articlesForThisPlace = articleFilter(uiState, placeItem)
+
+                items(articlesForThisPlace) { article ->
+                    ArticleItemOfPlace(
+                        article = article,
+                        viewModel = viewModel,
+                        onDismiss = onDismiss
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier,
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
             }
         }
     }
