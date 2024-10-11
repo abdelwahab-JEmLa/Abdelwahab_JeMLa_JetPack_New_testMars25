@@ -290,14 +290,32 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     }
 
     private fun reorderSuppliers(suppliers: List<TabelleSuppliersSA>, fromSupplierId: Long, toSupplierId: Long): List<TabelleSuppliersSA> {
-        val fromIndex = suppliers.indexOfFirst { it.idSupplierSu == fromSupplierId }
-        val toIndex = suppliers.indexOfFirst { it.idSupplierSu == toSupplierId }
-
-        if (fromIndex == -1 || toIndex == -1) return suppliers
-
         val mutableList = suppliers.toMutableList()
-        val movedSupplier = mutableList.removeAt(fromIndex)
-        mutableList.add(toIndex, movedSupplier)
+
+        // Always move supplier with ID 10 to the beginning
+        val supplier10 = mutableList.find { it.idSupplierSu == 10L }
+        if (supplier10 != null) {
+            mutableList.remove(supplier10)
+            mutableList.add(0, supplier10)
+        }
+
+        // Move supplier with ID 9 to the second position
+        val supplier9 = mutableList.find { it.idSupplierSu == 9L }
+        if (supplier9 != null) {
+            mutableList.remove(supplier9)
+            mutableList.add(1.coerceAtMost(mutableList.size), supplier9)
+        }
+
+        // Perform the requested reordering for other suppliers
+        if (fromSupplierId != 10L && fromSupplierId != 9L && toSupplierId != 10L && toSupplierId != 9L) {
+            val fromIndex = mutableList.indexOfFirst { it.idSupplierSu == fromSupplierId }
+            val toIndex = mutableList.indexOfFirst { it.idSupplierSu == toSupplierId }
+
+            if (fromIndex != -1 && toIndex != -1) {
+                val movedSupplier = mutableList.removeAt(fromIndex)
+                mutableList.add(toIndex, movedSupplier)
+            }
+        }
 
         return mutableList
     }
@@ -306,10 +324,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         suppliers.forEach { supplier ->
             refTabelleSuppliersSA.child(supplier.idSupplierSu.toString()).setValue(supplier)
         }
-
-        // Si vous avez un stockage local, mettez-le à jour ici aussi
-        // Par exemple:
-        // localDatabase.updateSuppliers(suppliers)
     }
 
 /*2->Section Suppliers Commendes Manager -------------------*/
@@ -363,13 +377,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-        .sortedWith(compareBy<TabelleSuppliersSA> {
-            when (it.idSupplierSu) {
-                10L -> 0
-                9L -> 1
-                else -> 2
-            }
-        }.thenBy { it.classmentSupplier })
+        .sortedBy{ it.classmentSupplier }
 
     private suspend fun fetchCategories() = refCategorieTabelee.get().await().children
         .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
