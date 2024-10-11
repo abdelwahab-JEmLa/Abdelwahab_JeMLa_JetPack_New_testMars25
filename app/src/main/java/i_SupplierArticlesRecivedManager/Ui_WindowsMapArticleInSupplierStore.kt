@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -140,7 +141,15 @@ fun WindowsMapArticleInSupplierStore(
         )
     }
 }
-
+private fun articleFilter(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    placeItem: MapArticleInSupplierStore
+) = uiState.tabelleSupplierArticlesRecived.filter { article ->
+    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                place.idPlace == placeItem.idPlace
+    }
+}
 @Composable
 fun CardDisplayerOfPlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -168,26 +177,23 @@ fun CardDisplayerOfPlace(
         ) {
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(4.dp)
-                    ),
+                    .fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(
                     defaultElevation = 6.dp
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = Color(0xFFFFCCCE),  // Light red background
                 )
             ) {
                 Text(
                     text = placeItem.namePlace,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,  // White text
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -216,16 +222,6 @@ fun CardDisplayerOfPlace(
         }
     }
 }
-private fun articleFilter(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    placeItem: MapArticleInSupplierStore
-) = uiState.tabelleSupplierArticlesRecived.filter { article ->
-    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                place.idPlace == placeItem.idPlace
-    }
-}
-
 
 @Composable
 fun ArticleItemOfPlace(
@@ -238,19 +234,19 @@ fun ArticleItemOfPlace(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .height(80.dp)
             .clickable { showArticleDetails = true },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(
             modifier = Modifier
-                .height(120.dp)
-                .fillMaxWidth()
+                .fillMaxSize()
         ) {
             // Background image
             DisplayeImageById(
-                idArticle = article.a_c_idarticle_c.toLong(),
-                modifier = Modifier.fillMaxSize()
+                idArticle = article.a_c_idarticle_c,
+                modifier = Modifier.fillMaxWidth().height(120.dp)
             )
 
             // Semi-transparent overlay
@@ -263,7 +259,8 @@ fun ArticleItemOfPlace(
             // Article details
             Column(
                 modifier = Modifier
-                    .fillMaxSize() ,
+                    .fillMaxSize()
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
@@ -279,7 +276,6 @@ fun ArticleItemOfPlace(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-
                     Text(
                         text = "Qty: ${article.totalquantity}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -336,7 +332,8 @@ fun DisplayeImageById(
         painter = painter,
         contentDescription = null,
         modifier = modifier,
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Crop,
+        alignment = Alignment.Center
     )
 }
 
