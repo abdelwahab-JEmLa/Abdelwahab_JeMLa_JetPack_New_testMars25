@@ -234,10 +234,12 @@ fun ArticleItemOfPlace(
     onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit
 ) {
     var showArticleDetails by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
+    val reloadKey = remember(article) { System.currentTimeMillis() }
 
     CardArticlePlace(
         article = article,
-        onClickToShowWindowsInfoArt = { showArticleDetails = it }
+        onClickToShowWindowsInfoArt = { showArticleDetails = it } ,
+        reloadKey=reloadKey
     )
 
     showArticleDetails?.let { articleDisplate ->
@@ -256,7 +258,8 @@ fun ArticleItemOfPlace(
 @Composable
 private fun CardArticlePlace(
     article: TabelleSupplierArticlesRecived,
-    onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit
+    onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
+    reloadKey: Long
 ) {
     Card(
         modifier = Modifier
@@ -274,7 +277,8 @@ private fun CardArticlePlace(
                 idArticle = article.a_c_idarticle_c,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(120.dp),
+                reloadKey=reloadKey
             )
 
             // Semi-transparent overlay
