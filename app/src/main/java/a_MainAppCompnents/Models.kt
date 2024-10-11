@@ -152,4 +152,5 @@ data class MapArticleInSupplierStore(
     val namePlace: String = "",
     val idSupplierOfStore: Long = 0,
     val inRightOfPlace: Boolean = false,
-)
+    val itClassement: Int = 0,
+    )

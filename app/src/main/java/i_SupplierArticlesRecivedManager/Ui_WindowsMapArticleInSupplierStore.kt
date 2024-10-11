@@ -98,7 +98,6 @@ fun WindowsMapArticleInSupplierStore(
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFab by remember { mutableStateOf(false) }
     var itsFilterInFindedAskSupplierSA by remember { mutableStateOf(false) }
-    var isRedFabClicked by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -120,6 +119,8 @@ fun WindowsMapArticleInSupplierStore(
                 ) {
 
                     val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
+                    //TODO lence au debut la cretion
+                    //a
                     items(places) { placeItem ->
                         CardDisplayerOfPlace(
                             uiState = uiState,
@@ -143,8 +144,7 @@ fun WindowsMapArticleInSupplierStore(
                             uiState = uiState,
                             viewModel = viewModel,
                             idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-                            isRedFabClicked = isRedFabClicked,
-                            onRedFabClicked = { isRedFabClicked = it },
+
                             onIdSupplierChanged = onIdSupplierChanged
                         )
 
@@ -186,166 +186,7 @@ fun WindowsMapArticleInSupplierStore(
         )
     }
 }
-@Composable
-private fun MoveArticlesFAB(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    viewModel: HeadOfViewModels,
-    idSupplierOfFloatingButtonClicked: Long?,
-    isRedFabClicked: Boolean,
-    onRedFabClicked: (Boolean) -> Unit,
-    onIdSupplierChanged: (Long) -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    var progress by remember { mutableStateOf(0f) }
-    var isActionCompleted by remember { mutableStateOf(false) }
-    var isPressed by remember { mutableStateOf(false) }
 
-    val buttonColor by animateColorAsState(
-        targetValue = when {
-            isActionCompleted -> Color.Yellow
-            isPressed -> MaterialTheme.colorScheme.error
-            else -> MaterialTheme.colorScheme.secondary
-        },
-        label = "buttonColor"
-    )
-
-    Box(
-        modifier = Modifier
-            .padding(end = 16.dp)
-            .size(56.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        isPressed = true
-                        isActionCompleted = false
-                        progress = 0f
-                        val pressStartTime = System.currentTimeMillis()
-
-                        scope.launch {
-                            try {
-                                tryAwaitRelease()
-                            } finally {
-                                isPressed = false
-                                val pressDuration = System.currentTimeMillis() - pressStartTime
-                                if (pressDuration >= 1000) {
-                                    performAction(
-                                        uiState,
-                                        viewModel,
-                                        idSupplierOfFloatingButtonClicked,
-                                        onIdSupplierChanged
-                                    )
-                                    isActionCompleted = true
-                                } else {
-                                    progress = 0f
-                                }
-                            }
-                        }
-
-                        // Progress animation
-                        scope.launch {
-                            repeat(100) {
-                                delay(10)
-                                if (isPressed) {
-                                    progress = (it + 1) / 100f
-                                } else {
-                                    return@launch
-                                }
-                            }
-                        }
-                    }
-                )
-            }
-    ) {
-        // Button background
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            shape = CircleShape,
-            color = buttonColor
-        ) {}
-
-        // Progress indicator
-        CircularProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxSize(),
-            color = Color.White,
-            strokeWidth = 4.dp,
-            trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
-        )
-
-        // Button text
-        Text(
-            "Move",
-            color = Color.White,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
-
-private  fun performAction(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    viewModel: HeadOfViewModels,
-    idSupplierOfFloatingButtonClicked: Long?,
-    onIdSupplierChanged: (Long) -> Unit
-) {
-    val filterBytabelleSupplierArticlesRecived =
-        uiState.tabelleSupplierArticlesRecived.filter {
-            it.itsInFindedAskSupplierSA
-        }
-
-    val currentSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-    val currentClassment = currentSupplier?.classmentSupplier
-
-    if (currentClassment != null) {
-        val nextClassment = currentClassment + 1.0
-        val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
-
-        if (nextSupplier != null) {
-            viewModel.moveArticleNonFindToSupplier(
-                articlesToMove = filterBytabelleSupplierArticlesRecived,
-                toSupp = nextSupplier.idSupplierSu
-            )
-            onIdSupplierChanged(nextSupplier.idSupplierSu)
-        }
-    }
-}
-
-@Composable
-private fun FilterFAB(
-    itsFilterInFindedAskSupplierSA: Boolean,
-    onFilterChanged: (Boolean) -> Unit
-) {
-    FloatingActionButton(
-        onClick = { onFilterChanged(!itsFilterInFindedAskSupplierSA) },
-        modifier = Modifier.padding(end = 16.dp)
-    ) {
-        Icon(
-            if (itsFilterInFindedAskSupplierSA) Icons.Filled.FilterList else Icons.Filled.FilterListOff,
-            contentDescription = "Toggle Filter"
-        )
-    }
-}
-
-@Composable
-private fun AddPlaceFAB(
-    fabOffset: Offset,
-    onFabOffsetChanged: (Offset) -> Unit,
-    onAddDialogRequested: () -> Unit
-) {
-    FloatingActionButton(
-        onClick = onAddDialogRequested,
-        modifier = Modifier
-            .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    onFabOffsetChanged(fabOffset + dragAmount)
-                }
-            }
-    ) {
-        Icon(Icons.Filled.Add, contentDescription = "Add Place")
-    }
-}
 @Composable
 fun CardDisplayerOfPlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -588,51 +429,104 @@ fun WindowsOfNonPlacedArticles(
                             .padding(16.dp)
                     )
 
+                    val articlesSupplier = if (searchText.isEmpty()) {
+                        uiState.tabelleSupplierArticlesRecived.filter { article ->
+                            article.idSupplierTSA.toLong() == place.idSupplierOfStore
+                        }
+                    } else {
+                        uiState.tabelleSupplierArticlesRecived.filter { article ->
+                            article.a_d_nomarticlefinale_c.contains(searchText, ignoreCase = true)
+                        }
+                    }
+
+                    val (nonPlacedArticles, placedArticles) = articlesSupplier.partition { article ->
+                        !uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
+                            placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
+                        }
+                    }
+
                     Card(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .weight(1f)
                             .padding(16.dp),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(gridColumns),
-                            state = gridState,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            val articlesSupplier = if (searchText.isEmpty()) {
-                                uiState.tabelleSupplierArticlesRecived.filter { article ->
-                                    article.idSupplierTSA.toLong() == place.idSupplierOfStore
-                                }.sortedBy { article ->
-                                    if (uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
-                                            placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
-                                        }) 1 else 0
-                                }
-                            } else {
-                                uiState.tabelleSupplierArticlesRecived.filter { article ->
-                                    article.a_d_nomarticlefinale_c.contains(searchText, ignoreCase = true)
+                        Column {
+                            Text(
+                                "Articles With Non Defined Place",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(gridColumns),
+                                state = gridState,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(nonPlacedArticles) { article ->
+                                    ArticleItemOfPlace(
+                                        article = article,
+                                        onDismissWithUpdate = { clickedArticle ->
+                                            val idCombinedIdArticleIdSupplier = "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
+                                            viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
+                                                idCombinedIdArticleIdSupplier = idCombinedIdArticleIdSupplier,
+                                                placeId = place.idPlace,
+                                                idArticle = clickedArticle.a_c_idarticle_c,
+                                                idSupp = place.idSupplierOfStore
+                                            )
+                                            viewModel.moveArticleNonFindToSupplier(
+                                                listOf(clickedArticle),
+                                                place.idSupplierOfStore
+                                            )
+                                            onDismiss()
+                                        },
+                                        viewModel = viewModel,
+                                        onDismiss = onDismiss
+                                    )
                                 }
                             }
+                        }
+                    }
 
-                            items(articlesSupplier) { article ->
-                                ArticleItemOfPlace(
-                                    article = article,
-                                    onDismissWithUpdate = { clickedArticle ->
-                                        val idCombinedIdArticleIdSupplier = "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
-                                        viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
-                                            idCombinedIdArticleIdSupplier = idCombinedIdArticleIdSupplier,
-                                            placeId = place.idPlace,
-                                            idArticle = clickedArticle.a_c_idarticle_c,
-                                            idSupp = place.idSupplierOfStore
-                                        )
-                                        viewModel.moveArticleNonFindToSupplier(
-                                            listOf(clickedArticle),
-                                            place.idSupplierOfStore
-                                        )
-                                        onDismiss()
-                                    },
-                                    viewModel = viewModel,
-                                    onDismiss = onDismiss
-                                )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(16.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column {
+                            Text(
+                                "Placed Articles",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(gridColumns),
+                                state = gridState,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(placedArticles) { article ->
+                                    ArticleItemOfPlace(
+                                        article = article,
+                                        onDismissWithUpdate = { clickedArticle ->
+                                            val idCombinedIdArticleIdSupplier = "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
+                                            viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
+                                                idCombinedIdArticleIdSupplier = idCombinedIdArticleIdSupplier,
+                                                placeId = place.idPlace,
+                                                idArticle = clickedArticle.a_c_idarticle_c,
+                                                idSupp = place.idSupplierOfStore
+                                            )
+                                            viewModel.moveArticleNonFindToSupplier(
+                                                listOf(clickedArticle),
+                                                place.idSupplierOfStore
+                                            )
+                                            onDismiss()
+                                        },
+                                        viewModel = viewModel,
+                                        onDismiss = onDismiss
+                                    )
+                                }
                             }
                         }
                     }
@@ -648,6 +542,164 @@ fun WindowsOfNonPlacedArticles(
                 }
             }
         }
+    }
+}
+@Composable
+private fun MoveArticlesFAB(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    viewModel: HeadOfViewModels,
+    idSupplierOfFloatingButtonClicked: Long?,
+    onIdSupplierChanged: (Long) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var progress by remember { mutableStateOf(0f) }
+    var isActionCompleted by remember { mutableStateOf(false) }
+    var isPressed by remember { mutableStateOf(false) }
+
+    val buttonColor by animateColorAsState(
+        targetValue = when {
+            isActionCompleted -> Color.Yellow
+            isPressed -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.secondary
+        },
+        label = "buttonColor"
+    )
+
+    Box(
+        modifier = Modifier
+            .padding(end = 16.dp)
+            .size(56.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        isActionCompleted = false
+                        progress = 0f
+                        val pressStartTime = System.currentTimeMillis()
+
+                        scope.launch {
+                            try {
+                                tryAwaitRelease()
+                            } finally {
+                                isPressed = false
+                                val pressDuration = System.currentTimeMillis() - pressStartTime
+                                if (pressDuration >= 1000) {
+                                    performAction(
+                                        uiState,
+                                        viewModel,
+                                        idSupplierOfFloatingButtonClicked,
+                                        onIdSupplierChanged
+                                    )
+                                    isActionCompleted = true
+                                } else {
+                                    progress = 0f
+                                }
+                            }
+                        }
+
+                        // Progress animation
+                        scope.launch {
+                            repeat(100) {
+                                delay(10)
+                                if (isPressed) {
+                                    progress = (it + 1) / 100f
+                                } else {
+                                    return@launch
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+    ) {
+        // Button background
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = CircleShape,
+            color = buttonColor
+        ) {}
+
+        // Progress indicator
+        CircularProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxSize(),
+            color = Color.White,
+            strokeWidth = 4.dp,
+            trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
+        )
+
+        // Button text
+        Text(
+            "Move",
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+private  fun performAction(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    viewModel: HeadOfViewModels,
+    idSupplierOfFloatingButtonClicked: Long?,
+    onIdSupplierChanged: (Long) -> Unit
+) {
+    val filterBytabelleSupplierArticlesRecived =
+        uiState.tabelleSupplierArticlesRecived.filter {
+            it.itsInFindedAskSupplierSA
+        }
+
+    val currentSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+    val currentClassment = currentSupplier?.classmentSupplier
+
+    if (currentClassment != null) {
+        val nextClassment = currentClassment - 1.0
+        val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
+
+        if (nextSupplier != null) {
+            viewModel.moveArticleNonFindToSupplier(
+                articlesToMove = filterBytabelleSupplierArticlesRecived,
+                toSupp = nextSupplier.idSupplierSu
+            )
+            onIdSupplierChanged(nextSupplier.idSupplierSu)
+        }
+    }
+}
+
+@Composable
+private fun FilterFAB(
+    itsFilterInFindedAskSupplierSA: Boolean,
+    onFilterChanged: (Boolean) -> Unit
+) {
+    FloatingActionButton(
+        onClick = { onFilterChanged(!itsFilterInFindedAskSupplierSA) },
+        modifier = Modifier.padding(end = 16.dp)
+    ) {
+        Icon(
+            if (itsFilterInFindedAskSupplierSA) Icons.Filled.FilterList else Icons.Filled.FilterListOff,
+            contentDescription = "Toggle Filter"
+        )
+    }
+}
+
+@Composable
+private fun AddPlaceFAB(
+    fabOffset: Offset,
+    onFabOffsetChanged: (Offset) -> Unit,
+    onAddDialogRequested: () -> Unit
+) {
+    FloatingActionButton(
+        onClick = onAddDialogRequested,
+        modifier = Modifier
+            .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    onFabOffsetChanged(fabOffset + dragAmount)
+                }
+            }
+    ) {
+        Icon(Icons.Filled.Add, contentDescription = "Add Place")
     }
 }
 @Composable

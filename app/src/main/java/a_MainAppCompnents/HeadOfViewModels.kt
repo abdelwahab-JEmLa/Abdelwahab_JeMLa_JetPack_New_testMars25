@@ -167,14 +167,16 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                     idPlace = currentMaxId + 1,
                     namePlace = name,
                     idSupplierOfStore = supplierId,
-                    inRightOfPlace = false
+                    inRightOfPlace = false ,
+                    itClassement = (currentMaxId + 1) .toInt()
                 )
 
                 val newPlaceRight = MapArticleInSupplierStore(
                     idPlace = currentMaxId + 2,
                     namePlace = name,
                     idSupplierOfStore = supplierId,
-                    inRightOfPlace = true
+                    inRightOfPlace = true,
+                    itClassement = (currentMaxId + 1) .toInt()
                 )
 
                 // Ajouter à Firebase
@@ -385,6 +387,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private suspend fun fetchMapArticleInSupplierStore() = refMapArticleInSupplierStore.get().await().children
         .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
+        .sortedBy { it.itClassement }
+
 
     private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
         .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
