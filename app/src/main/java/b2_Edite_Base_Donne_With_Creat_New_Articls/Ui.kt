@@ -451,9 +451,8 @@ fun DisplayField(
         )
     }
 }
+
  //CategoryHeaderECB
-
-
 @Composable
 fun CategoryHeaderECB(
     category: CategoriesTabelleECB,

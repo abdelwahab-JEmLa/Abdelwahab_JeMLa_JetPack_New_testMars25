@@ -202,17 +202,17 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 // Update the local state
                 _uiState.update { currentState ->
                     val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
-                        if (it.a_c_idarticle_c == article.a_c_idarticle_c) it.copy(itsInFindedAskSupplierSA = newStatus) else it
+                        if (it.aa_vid == article.aa_vid) it.copy(itsInFindedAskSupplierSA = newStatus) else it
                     }
                     currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
                 }
 
                 // Update the currentSupplierArticle if it matches the updated article
                 _currentSupplierArticle.update {
-                    it?.takeIf { it.a_c_idarticle_c == article.a_c_idarticle_c }?.copy(itsInFindedAskSupplierSA = newStatus)
+                    it?.takeIf { it.aa_vid == article.aa_vid }?.copy(itsInFindedAskSupplierSA = newStatus)
                 }
                 // Update the article in the database
-                refTabelleSupplierArticlesRecived.child(article.a_c_idarticle_c.toString()).child("itsInFindedAskSupplierSA").setValue(newStatus)
+                refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).child("itsInFindedAskSupplierSA").setValue(newStatus)
 
             } catch (e: Exception) {
                 // Handle the error silently or log it if necessary
@@ -232,7 +232,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                     // Update the article in the local state
                     _uiState.update { currentState ->
                         val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
-                            if (it.a_c_idarticle_c == article.a_c_idarticle_c) {
+                            if (it.aa_vid == article.aa_vid) {
                                 it.copy(idSupplierTSA = toSupp.toInt(), itsInFindedAskSupplierSA = false)
                             } else it
                         }
@@ -240,7 +240,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                     }
 
                     // Update the article in the TabelleSupplierArticlesRecived database
-                    refTabelleSupplierArticlesRecived.child(article.a_c_idarticle_c.toString()).apply {
+                    refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).apply {
                         child("idSupplierTSA").setValue(toSupp.toInt())
                         child("itsInFindedAskSupplierSA").setValue(false)
                     }
