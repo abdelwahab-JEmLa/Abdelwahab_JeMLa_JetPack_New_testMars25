@@ -4,6 +4,12 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -262,12 +269,23 @@ fun ArticleItemOfPlace(
     }
 }
 
+
 @Composable
 private fun CardArticlePlace(
     article: TabelleSupplierArticlesRecived,
     onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
     reloadKey: Long
 ) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -285,7 +303,7 @@ private fun CardArticlePlace(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp),
-                reloadKey=reloadKey
+                reloadKey = reloadKey
             )
 
             // Semi-transparent overlay
@@ -294,6 +312,16 @@ private fun CardArticlePlace(
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.4f))
             )
+
+            // Blinking yellow overlay for itsInFindedAskSupplierSA
+            if (article.itsInFindedAskSupplierSA) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(alpha)
+                        .background(Color.Yellow.copy(alpha = 0.3f))
+                )
+            }
 
             // Article details
             Column(
@@ -320,6 +348,13 @@ private fun CardArticlePlace(
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
+                    if (article.itsInFindedAskSupplierSA) {
+                        Text(
+                            text = "Ask",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Yellow
+                        )
+                    }
                 }
             }
         }
