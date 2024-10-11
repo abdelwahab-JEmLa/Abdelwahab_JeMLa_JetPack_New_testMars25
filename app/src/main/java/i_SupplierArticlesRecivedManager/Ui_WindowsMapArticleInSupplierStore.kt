@@ -608,7 +608,7 @@ private fun MoveArticlesFAB(
 
         // Button text
         Text(
-            "Move to ${nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???"}",
+            nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???",
             color = Color.White,
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.align(Alignment.Center)
