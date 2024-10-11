@@ -108,6 +108,21 @@ fun WindowsMapArticleInSupplierStore(
             shape = MaterialTheme.shapes.large
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
+                val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu.toLong() == idSupplierOfFloatingButtonClicked }
+                supplier?.let {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Text(
+                            text = "Supplier: ${it.nomSupplierSu}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(8.dp),
@@ -119,8 +134,7 @@ fun WindowsMapArticleInSupplierStore(
                 ) {
 
                     val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
-                    //TODO lence au debut la cretion
-                    //a
+
                     items(places) { placeItem ->
                         CardDisplayerOfPlace(
                             uiState = uiState,
@@ -409,6 +423,7 @@ fun WindowsOfNonPlacedArticles(
 ) {
     val gridState = rememberLazyGridState()
     var searchText by remember { mutableStateOf("") }
+    var showNonPlacedArticles by remember { mutableStateOf(true) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -449,12 +464,13 @@ fun WindowsOfNonPlacedArticles(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
-                            .padding(16.dp),
+                            .padding(16.dp)
+                            .clickable { showNonPlacedArticles = !showNonPlacedArticles },
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Column {
                             Text(
-                                "Articles With Non Defined Place",
+                                if (showNonPlacedArticles) "Articles With Non Defined Place" else "Placed Articles",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(16.dp)
                             )
@@ -463,50 +479,7 @@ fun WindowsOfNonPlacedArticles(
                                 state = gridState,
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                items(nonPlacedArticles) { article ->
-                                    ArticleItemOfPlace(
-                                        article = article,
-                                        onDismissWithUpdate = { clickedArticle ->
-                                            val idCombinedIdArticleIdSupplier = "${clickedArticle.a_c_idarticle_c}_${place.idSupplierOfStore}"
-                                            viewModel.addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
-                                                idCombinedIdArticleIdSupplier = idCombinedIdArticleIdSupplier,
-                                                placeId = place.idPlace,
-                                                idArticle = clickedArticle.a_c_idarticle_c,
-                                                idSupp = place.idSupplierOfStore
-                                            )
-                                            viewModel.moveArticleNonFindToSupplier(
-                                                listOf(clickedArticle),
-                                                place.idSupplierOfStore
-                                            )
-                                            onDismiss()
-                                        },
-                                        viewModel = viewModel,
-                                        onDismiss = onDismiss
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(16.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column {
-                            Text(
-                                "Placed Articles",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(gridColumns),
-                                state = gridState,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                items(placedArticles) { article ->
+                                items(if (showNonPlacedArticles) nonPlacedArticles else placedArticles) { article ->
                                     ArticleItemOfPlace(
                                         article = article,
                                         onDismissWithUpdate = { clickedArticle ->
@@ -544,6 +517,7 @@ fun WindowsOfNonPlacedArticles(
         }
     }
 }
+
 @Composable
 private fun MoveArticlesFAB(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -565,6 +539,10 @@ private fun MoveArticlesFAB(
         label = "buttonColor"
     )
 
+    val currentSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+    val currentClassment = currentSupplier?.classmentSupplier
+    val nextClassment = currentClassment?.minus(1.0)
+    val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
     Box(
         modifier = Modifier
             .padding(end = 16.dp)
@@ -630,7 +608,7 @@ private fun MoveArticlesFAB(
 
         // Button text
         Text(
-            "Move",
+            "Move to ${nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???"}",
             color = Color.White,
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.align(Alignment.Center)
