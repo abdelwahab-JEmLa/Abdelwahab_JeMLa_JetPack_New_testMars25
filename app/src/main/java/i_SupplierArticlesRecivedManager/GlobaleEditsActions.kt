@@ -45,7 +45,6 @@ fun GlobaleControlsFloatingButtonsSA(
     filterSuppHandledNow: Boolean,
     onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
     onLaunchVoiceRecognition: () -> Unit,
-    onLaunchAddArticleWindow: () -> Unit,
     viewModel: HeadOfViewModels  ,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
@@ -120,8 +119,6 @@ fun GlobaleControlsFloatingButtonsSA(
                 }
             }
         }
-
-
 
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(

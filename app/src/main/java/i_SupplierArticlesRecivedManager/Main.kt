@@ -104,13 +104,12 @@ fun Fragment_SupplierArticlesRecivedManager(
     onToggleNavBar: () -> Unit,
     modifier: Modifier = Modifier,
     onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
-
 ) {
     val allModels by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
-    var showFloatingButtons by remember { mutableStateOf(false) }
+    var showFloatingButtons by remember { mutableStateOf(true) }
     var gridColumns by remember { mutableStateOf(2) }
 
     val gridState = rememberLazyGridState()
@@ -215,7 +214,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                         }
                         speechRecognizerLauncher.launch(intent)
                     }  ,
-                    onLaunchAddArticleWindow = {}  ,
                     viewModel=viewModel  ,
                     uiState=allModels ,
                     onNewArticleAdded=onNewArticleAdded
