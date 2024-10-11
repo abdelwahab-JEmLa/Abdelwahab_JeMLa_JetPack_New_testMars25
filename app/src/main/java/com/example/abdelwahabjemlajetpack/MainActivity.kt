@@ -312,9 +312,7 @@ fun AppNavHost(
                     viewModel = viewModels.headOfViewModels,
                     onToggleNavBar = onToggleNavBar ,
                     onNewArticleAdded={dialogeDisplayeDetailleChanger=it} ,
-                    dialogeDisplayeDetailleChanger=dialogeDisplayeDetailleChanger  ,
-                    onDesmissDialogeDisplayeDetailleChanger={dialogeDisplayeDetailleChanger=null} ,
-                            reloadTrigger=reloadTrigger
+                    reloadTrigger=reloadTrigger
                 )
                 if (uploadProgress > 0f && uploadProgress < 100f) {
                     CircularProgressIndicator(

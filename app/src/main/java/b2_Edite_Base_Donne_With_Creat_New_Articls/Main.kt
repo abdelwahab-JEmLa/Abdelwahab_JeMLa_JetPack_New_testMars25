@@ -34,8 +34,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
     onNewArticleAdded: (BaseDonneECBTabelle) -> Unit,
-    dialogeDisplayeDetailleChanger: BaseDonneECBTabelle?,
-    onDesmissDialogeDisplayeDetailleChanger: () -> Unit,
     reloadTrigger: Int,
 ) {
     val uiState by viewModel.uiState.collectAsState()
