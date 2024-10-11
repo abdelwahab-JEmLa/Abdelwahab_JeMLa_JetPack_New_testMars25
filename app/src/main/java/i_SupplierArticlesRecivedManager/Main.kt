@@ -399,8 +399,6 @@ fun SquareLayout(
 }
 
 //WindowArticleDetail
-
-
 @Composable
 fun WindowArticleDetail(
     article: TabelleSupplierArticlesRecived,
