@@ -306,7 +306,8 @@ fun Fragment_SupplierArticlesRecivedManager(
         },
         viewModel = viewModel,
         modifier = Modifier.padding(horizontal = 3.dp),
-        idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked,
+        idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked ,
+        onIdSupplierChanged = {idSupplierOfFloatingButtonClicked=it}
         )
 }
 

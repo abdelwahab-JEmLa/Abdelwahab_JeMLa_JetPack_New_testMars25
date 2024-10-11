@@ -4,6 +4,7 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -14,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,12 +28,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -41,17 +45,20 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,8 +78,9 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
-
 
 
 //Title:WindowsMapArticleInSupplierStore
@@ -83,12 +91,14 @@ fun WindowsMapArticleInSupplierStore(
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
+    onIdSupplierChanged: (Long) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFab by remember { mutableStateOf(false) }
     var itsFilterInFindedAskSupplierSA by remember { mutableStateOf(false) }
+    var isRedFabClicked by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -108,6 +118,7 @@ fun WindowsMapArticleInSupplierStore(
                         .fillMaxSize()
                         .clickable { showFab = !showFab }
                 ) {
+
                     val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
                     items(places) { placeItem ->
                         CardDisplayerOfPlace(
@@ -128,32 +139,26 @@ fun WindowsMapArticleInSupplierStore(
                             .align(Alignment.TopEnd)
                             .padding(16.dp)
                     ) {
-                        // FloatingActionButton for filtering
-                        FloatingActionButton(
-                            onClick = { itsFilterInFindedAskSupplierSA = !itsFilterInFindedAskSupplierSA },
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                        ) {
-                            Icon(
-                                if (itsFilterInFindedAskSupplierSA) Icons.Filled.FilterList else Icons.Filled.FilterListOff,
-                                contentDescription = "Toggle Filter"
-                            )
-                        }
+                        MoveArticlesFAB(
+                            uiState = uiState,
+                            viewModel = viewModel,
+                            idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
+                            isRedFabClicked = isRedFabClicked,
+                            onRedFabClicked = { isRedFabClicked = it },
+                            onIdSupplierChanged = onIdSupplierChanged
+                        )
 
-                        // FloatingActionButton for adding
-                        FloatingActionButton(
-                            onClick = { showAddDialog = true },
-                            modifier = Modifier
-                                .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
-                                .pointerInput(Unit) {
-                                    detectDragGestures { change, dragAmount ->
-                                        change.consume()
-                                        fabOffset += dragAmount
-                                    }
-                                }
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = "Add Place")
-                        }
+                        FilterFAB(
+                            itsFilterInFindedAskSupplierSA = itsFilterInFindedAskSupplierSA,
+                            onFilterChanged = { itsFilterInFindedAskSupplierSA = it }
+                        )
+
+                        AddPlaceFAB(
+                            fabOffset = fabOffset,
+                            onFabOffsetChanged = { fabOffset = it },
+                            onAddDialogRequested = { showAddDialog = true }
+                        )
+
                     }
                 }
             }
@@ -181,7 +186,166 @@ fun WindowsMapArticleInSupplierStore(
         )
     }
 }
+@Composable
+private fun MoveArticlesFAB(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    viewModel: HeadOfViewModels,
+    idSupplierOfFloatingButtonClicked: Long?,
+    isRedFabClicked: Boolean,
+    onRedFabClicked: (Boolean) -> Unit,
+    onIdSupplierChanged: (Long) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var progress by remember { mutableStateOf(0f) }
+    var isActionCompleted by remember { mutableStateOf(false) }
+    var isPressed by remember { mutableStateOf(false) }
 
+    val buttonColor by animateColorAsState(
+        targetValue = when {
+            isActionCompleted -> Color.Yellow
+            isPressed -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.secondary
+        },
+        label = "buttonColor"
+    )
+
+    Box(
+        modifier = Modifier
+            .padding(end = 16.dp)
+            .size(56.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        isActionCompleted = false
+                        progress = 0f
+                        val pressStartTime = System.currentTimeMillis()
+
+                        scope.launch {
+                            try {
+                                tryAwaitRelease()
+                            } finally {
+                                isPressed = false
+                                val pressDuration = System.currentTimeMillis() - pressStartTime
+                                if (pressDuration >= 1000) {
+                                    performAction(
+                                        uiState,
+                                        viewModel,
+                                        idSupplierOfFloatingButtonClicked,
+                                        onIdSupplierChanged
+                                    )
+                                    isActionCompleted = true
+                                } else {
+                                    progress = 0f
+                                }
+                            }
+                        }
+
+                        // Progress animation
+                        scope.launch {
+                            repeat(100) {
+                                delay(10)
+                                if (isPressed) {
+                                    progress = (it + 1) / 100f
+                                } else {
+                                    return@launch
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+    ) {
+        // Button background
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = CircleShape,
+            color = buttonColor
+        ) {}
+
+        // Progress indicator
+        CircularProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxSize(),
+            color = Color.White,
+            strokeWidth = 4.dp,
+            trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
+        )
+
+        // Button text
+        Text(
+            "Move",
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+private  fun performAction(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    viewModel: HeadOfViewModels,
+    idSupplierOfFloatingButtonClicked: Long?,
+    onIdSupplierChanged: (Long) -> Unit
+) {
+    val filterBytabelleSupplierArticlesRecived =
+        uiState.tabelleSupplierArticlesRecived.filter {
+            it.itsInFindedAskSupplierSA
+        }
+
+    val currentSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+    val currentClassment = currentSupplier?.classmentSupplier
+
+    if (currentClassment != null) {
+        val nextClassment = currentClassment + 1.0
+        val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
+
+        if (nextSupplier != null) {
+            viewModel.moveArticleNonFindToSupplier(
+                articlesToMove = filterBytabelleSupplierArticlesRecived,
+                toSupp = nextSupplier.idSupplierSu
+            )
+            onIdSupplierChanged(nextSupplier.idSupplierSu)
+        }
+    }
+}
+
+@Composable
+private fun FilterFAB(
+    itsFilterInFindedAskSupplierSA: Boolean,
+    onFilterChanged: (Boolean) -> Unit
+) {
+    FloatingActionButton(
+        onClick = { onFilterChanged(!itsFilterInFindedAskSupplierSA) },
+        modifier = Modifier.padding(end = 16.dp)
+    ) {
+        Icon(
+            if (itsFilterInFindedAskSupplierSA) Icons.Filled.FilterList else Icons.Filled.FilterListOff,
+            contentDescription = "Toggle Filter"
+        )
+    }
+}
+
+@Composable
+private fun AddPlaceFAB(
+    fabOffset: Offset,
+    onFabOffsetChanged: (Offset) -> Unit,
+    onAddDialogRequested: () -> Unit
+) {
+    FloatingActionButton(
+        onClick = onAddDialogRequested,
+        modifier = Modifier
+            .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    onFabOffsetChanged(fabOffset + dragAmount)
+                }
+            }
+    ) {
+        Icon(Icons.Filled.Add, contentDescription = "Add Place")
+    }
+}
 @Composable
 fun CardDisplayerOfPlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -437,10 +601,7 @@ fun WindowsOfNonPlacedArticles(
                         ) {
                             val articlesSupplier = if (searchText.isEmpty()) {
                                 uiState.tabelleSupplierArticlesRecived.filter { article ->
-                                    article.idSupplierTSA.toLong() == place.idSupplierOfStore &&
-                                            !uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
-                                                placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
-                                            }
+                                    article.idSupplierTSA.toLong() == place.idSupplierOfStore
                                 }.sortedBy { article ->
                                     if (uiState.placesOfArticelsInEacheSupplierSrore.any { placedArticle ->
                                             placedArticle.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
