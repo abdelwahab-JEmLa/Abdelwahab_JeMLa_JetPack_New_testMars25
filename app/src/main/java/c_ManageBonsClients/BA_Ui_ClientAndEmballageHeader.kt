@@ -148,9 +148,9 @@ fun ClientAndEmballageHeader(
             .background(clientColor)
             .padding(4.dp)
     ) {
-         val namePlace = placesOfArticelsInCamionette.find { it.idPlace==typeEmballage }?.namePlace
+        val namePlace = placesOfArticelsInCamionette.find { it.idPlace == typeEmballage }?.namePlace ?: "غير محدد"
         Text(
-            text = "$nomClient - $namePlace",  //TODO fait que si null ="غير محدد"
+            text = "$nomClient - $namePlace",
             style = MaterialTheme.typography.titleMedium,
             color = Color.Black,
             modifier = Modifier.padding(bottom = 4.dp)
