@@ -100,6 +100,37 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 /** Places Dialoge[PlacesOfArticelsInCamionette]
  * "PS:To Claude Dont Delet This Comment"*/
 
+suspend fun updatePlaceInCamionette(editedPlace: PlacesOfArticelsInCamionette) {
+    // Update the place in Firebase
+    refPlacesOfArticelsInCamionette.child(editedPlace.idPlace.toString()).setValue(editedPlace)
+        .addOnSuccessListener {
+            // Update local state
+            _uiState.update { currentState ->
+                val updatedPlaces = currentState.placesOfArticelsInCamionette.map { place ->
+                    if (place.idPlace == editedPlace.idPlace) editedPlace else place
+                }
+                currentState.copy(placesOfArticelsInCamionette = updatedPlaces)
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e(TAG, "Failed to update place in camionette", e)
+        }
+}
+
+    suspend fun deletePlaceInCamionette(placeToDelete: PlacesOfArticelsInCamionette) {
+        // Delete the place from Firebase
+        refPlacesOfArticelsInCamionette.child(placeToDelete.idPlace.toString()).removeValue()
+            .addOnSuccessListener {
+                // Update local state
+                _uiState.update { currentState ->
+                    val updatedPlaces = currentState.placesOfArticelsInCamionette.filter { it.idPlace != placeToDelete.idPlace }
+                    currentState.copy(placesOfArticelsInCamionette = updatedPlaces)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to delete place from camionette", e)
+            }
+    }
 fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     viewModelScope.launch {
         try {

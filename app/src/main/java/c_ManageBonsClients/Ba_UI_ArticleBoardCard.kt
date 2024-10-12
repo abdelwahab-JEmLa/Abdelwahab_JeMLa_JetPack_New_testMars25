@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AllInbox
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -460,7 +462,10 @@ private fun ColorItemCard(article: ArticlesAcheteModele, index: Int, quantity: I
 }
 
 /** Places Dialoge [ShowPackagingDialog]
- * "PS:To Claude Dont Delet This Comment"*/
+ *
+ * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
+ * ------------------------------------------------*/
+
 
 @Composable
 fun ShowPackagingDialog(
@@ -471,6 +476,7 @@ fun ShowPackagingDialog(
     val uiState by headOfViewModels.uiState.collectAsState()
     val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette.toMutableStateList()
     var showAddPlaceDialog by remember { mutableStateOf(false) }
+    var showEditPlaceDialog by remember { mutableStateOf<PlacesOfArticelsInCamionette?>(null) }
     var isReorderMode by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -491,14 +497,21 @@ fun ShowPackagingDialog(
                         }
                     }
                 ) { place ->
-                    PackagingToggleButton(
-                        text = place.namePlace,
+                    PackagingItem(
+                        place = place,
                         isSelected = place.idPlace == article.idArticlePlaceInCamionette,
-                        onClick = {
+                        isReorderMode = isReorderMode,
+                        onSelect = {
                             if (!isReorderMode) {
                                 coroutineScope.launch {
                                     headOfViewModels.updateArticlePackaging(article, place.idPlace)
                                 }
+                            }
+                        },
+                        onEdit = { showEditPlaceDialog = place },
+                        onDelete = {
+                            coroutineScope.launch {
+                                headOfViewModels.deletePlaceInCamionette(place)
                             }
                         }
                     )
@@ -541,6 +554,88 @@ fun ShowPackagingDialog(
             }
         )
     }
+
+    showEditPlaceDialog?.let { place ->
+        EditPlaceDialog(
+            place = place,
+            onDismiss = { showEditPlaceDialog = null },
+            onEditPlace = { editedPlace ->
+                coroutineScope.launch {
+                    headOfViewModels.updatePlaceInCamionette(editedPlace)
+                }
+                showEditPlaceDialog = null
+            }
+        )
+    }
+}
+
+@Composable
+fun PackagingItem(
+    place: PlacesOfArticelsInCamionette,
+    isSelected: Boolean,
+    isReorderMode: Boolean,
+    onSelect: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PackagingToggleButton(
+            text = place.namePlace,
+            isSelected = isSelected,
+            onClick = onSelect,
+            modifier = Modifier.weight(1f)
+        )
+        if (!isReorderMode) {
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit")
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            }
+        }
+    }
+}
+
+@Composable
+fun EditPlaceDialog(
+    place: PlacesOfArticelsInCamionette,
+    onDismiss: () -> Unit,
+    onEditPlace: (PlacesOfArticelsInCamionette) -> Unit
+) {
+    var namePlace by remember { mutableStateOf(place.namePlace) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Place") },
+        text = {
+            OutlinedTextField(
+                value = namePlace,
+                onValueChange = { namePlace = it },
+                label = { Text("Place Name") }
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (namePlace.isNotBlank()) {
+                        onEditPlace(place.copy(namePlace = namePlace))
+                    }
+                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -582,7 +677,12 @@ fun ReorderableLazyColumn(
 
 
 @Composable
-fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
+fun PackagingToggleButton(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier
+) {
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
