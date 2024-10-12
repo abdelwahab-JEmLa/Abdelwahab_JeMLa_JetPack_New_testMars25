@@ -109,6 +109,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
                 onChangeGridColumns = { gridColumns = it },
+                uiState=uiState
             )
         }
 

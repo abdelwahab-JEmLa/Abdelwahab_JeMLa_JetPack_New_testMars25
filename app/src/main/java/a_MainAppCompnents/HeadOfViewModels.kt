@@ -43,6 +43,18 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+data class CreatAndEditeInBaseDonnRepositeryModels(
+    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
+    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
+    val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
+    val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
+    val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
+    val showOnlyWithFilter: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
 /* Start*/
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
@@ -67,7 +79,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
-    private val fireBaseStorageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
     var tempImageUri: Uri? = null
     private val currentDate: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -79,6 +90,62 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
+    fun updateArticleCategory(articleId: Int, categoryId: Long, categoryName: String) {
+        viewModelScope.launch {
+            val articleRef = refDBJetPackExport.child(articleId.toString())
+            articleRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                    val article = mutableData.getValue(BaseDonneECBTabelle::class.java)
+                    article?.let {
+                        it.idCategorieNewMetode = categoryId
+                        it.nomCategorie = categoryName
+                        mutableData.value = it
+                    }
+                    return Transaction.success(mutableData)
+                }
+
+                override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                    if (error != null) {
+                        // Handle error
+                        println("Failed to update article category: ${error.message}")
+                    } else {
+                        // Update UI state
+                        _uiState.update { currentState ->
+                            val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
+                                if (article.idArticleECB == articleId) {
+                                    article.copy(
+                                        idCategorieNewMetode = categoryId,
+                                        nomCategorie = categoryName
+                                    )
+                                } else {
+                                    article
+                                }
+                            }
+                            currentState.copy(articlesBaseDonneECB = updatedArticles)
+                        }
+                    }
+                }
+            })
+        }
+    }
+    fun addNewCategory(newCategory: CategoriesTabelleECB) {
+        viewModelScope.launch {
+            // Update local state
+            _uiState.update { currentState ->
+                currentState.copy(categoriesECB = currentState.categoriesECB + newCategory)
+            }
+
+            // Update Firebase
+            refCategorieTabelee.child(newCategory.idCategorieInCategoriesTabele.toString()).setValue(newCategory)
+                .addOnSuccessListener {
+                    // Handle success if needed
+                }
+                .addOnFailureListener { e ->
+                    // Handle failure if needed
+                    Log.e(TAG, "Failed to add new category", e)
+                }
+        }
+    }
 
     fun updateSupplierVocalArabName(supplierId: Long, newName: String) {
         viewModelScope.launch {
@@ -1335,17 +1402,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     }
 }
 
-data class CreatAndEditeInBaseDonnRepositeryModels(
-    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
-    val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
-    val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
-    val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
-    val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
-    val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
-    val showOnlyWithFilter: Boolean = false,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
 
 class HeadOfViewModelFactory(
     private val context: Context,

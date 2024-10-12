@@ -219,6 +219,8 @@ fun AppNavHost(
     onToggleNavBar: () -> Unit,
     modifier: Modifier = Modifier, headOfViewModels: HeadOfViewModels
 ) {
+    val uiState by headOfViewModels.uiState.collectAsState()
+
     var localProgress by remember { mutableStateOf(0f) }
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -328,6 +330,7 @@ fun AppNavHost(
         Log.d("MainFragment", "Displaying ArticleDetailWindow for: $article")
         ArticleDetailWindow(
             article = article,
+            uiState=uiState,
             onDismiss = {
                 Log.d("MainFragment", "ArticleDetailWindow dismissed")
                 dialogeDisplayeDetailleChanger=null

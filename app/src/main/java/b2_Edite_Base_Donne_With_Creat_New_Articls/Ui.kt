@@ -3,6 +3,7 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.CategoriesTabelleECB
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import android.net.Uri
 import android.util.Log
@@ -40,6 +41,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -99,11 +102,14 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
         Triple("monPrixVent", "M.P.V", false)
     )) ,
     NomArticle(listOf(Triple("nomArticleFinale", "", true))),
+    Categorie(listOf(Triple("nomCategorie", "", true))),
+
 }
 
 
 @Composable
 fun ArticleDetailWindow(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
     article: BaseDonneECBTabelle,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
@@ -176,6 +182,7 @@ fun ArticleDetailWindow(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
                                 DisplayField(
+                                    uiState=uiState,
                                     columnToChange = column,
                                     abbreviation = abbr,
                                     currentChangingField = currentChangingField,
@@ -184,16 +191,34 @@ fun ArticleDetailWindow(
                                     displayeInOutlines = displayInOutlines,
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(67.dp)
-                                ) { currentChangingField = column }
+                                        .height(67.dp) ,
+                                    onValueChanged =  { currentChangingField = column },
+                                )
                             }
                         }
 
                         // Remaining FieldsDisplayer groups
                         FieldsDisplayer.entries.drop(1).forEach { fieldsGroup ->
                             Row(modifier = Modifier.fillMaxWidth()) {
-                                fieldsGroup.fields.forEach { (column, abbr) ->
+                                fieldsGroup.fields.forEach { (column, abbr, _) ->
                                     when (fieldsGroup) {
+                                        FieldsDisplayer.Categorie -> {      //TODO fait que ca soit apre nom Article outline
+                                            CategorySelector(
+                                                currentCategory = article.nomCategorie,
+                                                categories = uiState.categoriesECB,
+                                                onCategorySelected = { selectedCategory ->
+                                                    viewModel.updateArticleCategory(
+                                                        article.idArticleECB,
+                                                        selectedCategory.idCategorieInCategoriesTabele,
+                                                        selectedCategory.nomCategorieInCategoriesTabele
+                                                    )
+                                                    onReloadTrigger()
+                                                },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(67.dp)
+                                            )
+                                        }
                                         FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
                                             if (!isNewArticle) {
                                                 InfoBoxWhithVoiceInpute(
@@ -217,14 +242,15 @@ fun ArticleDetailWindow(
                                                 displayeInOutlines = displayInOutlines,
                                                 modifier = Modifier
                                                     .weight(1f)
-                                                    .height(67.dp)
-                                            ) { currentChangingField = column }
+                                                    .height(67.dp),
+                                                { currentChangingField = column },
+                                                uiState
+                                            )
                                         }
                                     }
                                 }
                             }
                         }
-
                         ArticleToggleButton(article, viewModel, Modifier.fillMaxWidth())
                     }
                 }
@@ -324,39 +350,51 @@ fun ArticleToggleButton(
         )
     }
 }
-
 @Composable
-fun InfoBoxWhithVoiceInpute(
-    columnToChange: String,
-    abbreviation: String,
-    article: BaseDonneECBTabelle,
-    displayeInOutlines: Boolean,
+fun CategorySelector(
+    currentCategory: String,
+    categories: List<CategoriesTabelleECB>,
+    onCategorySelected: (CategoriesTabelleECB) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val columnValue = article.getColumnValue(columnToChange)
-    val displayValue = when (columnValue) {
-        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
-        is Int -> columnValue.toString()
-        else -> columnValue?.toString() ?: ""
+    var expanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredCategories = remember(searchQuery, categories) {
+        if (searchQuery.length >= 3) {
+            categories.filter { it.nomCategorieInCategoriesTabele.contains(searchQuery, ignoreCase = true) }
+        } else {
+            emptyList()
+        }
     }
-    Box(
-        modifier = modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.extraSmall
-            )
-            .padding(
-                top = if (displayeInOutlines) 10.dp else 15.dp,
-                start = 4.dp,
-                end = 4.dp
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        AutoResizedTextECB(
-            text = "$abbreviation -> $displayValue",
-            color = MaterialTheme.colorScheme.error
+
+    Column(modifier = modifier) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                expanded = it.length >= 3
+            },
+            label = { Text("Category: $currentCategory") },
+            modifier = Modifier.fillMaxWidth()
         )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            filteredCategories.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(category.nomCategorieInCategoriesTabele) },
+                    onClick = {
+                        onCategorySelected(category)
+                        expanded = false
+                        searchQuery = ""
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -368,8 +406,10 @@ fun OutlineTextECB(
     article: BaseDonneECBTabelle,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
+   val categories = uiState.categoriesECB
     var textFieldValue by remember { mutableStateOf(
         article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
     ) }
@@ -429,7 +469,8 @@ fun DisplayField(
     viewModel: HeadOfViewModels,
     displayeInOutlines: Boolean,
     modifier: Modifier = Modifier,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
     if (displayeInOutlines) {
         OutlineTextECB(
@@ -439,7 +480,8 @@ fun DisplayField(
             article,
             viewModel,
             modifier,
-            onValueChanged
+            onValueChanged,
+            uiState=uiState
         )
     } else {
         InfoBoxWhithVoiceInpute(
@@ -448,6 +490,39 @@ fun DisplayField(
             article = article,
             displayeInOutlines = displayeInOutlines,
             modifier = modifier
+        )
+    }
+}
+@Composable
+fun InfoBoxWhithVoiceInpute(
+    columnToChange: String,
+    abbreviation: String,
+    article: BaseDonneECBTabelle,
+    displayeInOutlines: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val displayValue = when (val columnValue = article.getColumnValue(columnToChange)) {
+        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
+        is Int -> columnValue.toString()
+        else -> columnValue?.toString() ?: ""
+    }
+    Box(
+        modifier = modifier
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outline,
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(
+                top = if (displayeInOutlines) 10.dp else 15.dp,
+                start = 4.dp,
+                end = 4.dp
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        AutoResizedTextECB(
+            text = "$abbreviation -> $displayValue",
+            color = MaterialTheme.colorScheme.error
         )
     }
 }

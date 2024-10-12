@@ -112,7 +112,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     modifier: Modifier = Modifier,
     onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
 ) {
-    val allModels by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
@@ -161,7 +161,7 @@ fun Fragment_SupplierArticlesRecivedManager(
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
             voiceInputText = spokenText
-            processVoiceInput(spokenText, viewModel, allModels)
+            processVoiceInput(spokenText, viewModel, uiState)
         }
     }
 
@@ -182,9 +182,9 @@ fun Fragment_SupplierArticlesRecivedManager(
                         val parts = newText.split("+")
                         if (parts.size == 2) {
                             val supplierName = parts[1].trim()
-                            val supplier = allModels.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
+                            val supplier = uiState.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
                             if (supplier != null && supplierName.isNotEmpty()) {  // Fixed: Check if supplierName is not empty
-                                processVoiceInput(newText, viewModel, allModels)
+                                processVoiceInput(newText, viewModel, uiState)
                             }
                         }
                     },
@@ -200,13 +200,13 @@ fun Fragment_SupplierArticlesRecivedManager(
                     modifier = Modifier.fillMaxSize()
                 ) {
                 val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
-                    allModels.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
                 } else {
-                    allModels.tabelleSuppliersSA
+                    uiState.tabelleSuppliersSA
                 }
 
                 filterSupp.forEach { supplier ->
-                    val articlesSupplier = allModels.tabelleSupplierArticlesRecived.filter {
+                    val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
                         it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
                                 (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                     }
@@ -278,15 +278,15 @@ fun Fragment_SupplierArticlesRecivedManager(
                             speechRecognizerLauncher.launch(intent)
                         },
                         viewModel = viewModel,
-                        uiState = allModels,
+                        uiState = uiState,
                         onNewArticleAdded = onNewArticleAdded
                     )
                 }
             }
 
         SuppliersFloatingButtonsSA(
-            allArticles = allModels.tabelleSupplierArticlesRecived,
-            suppliers = allModels.tabelleSuppliersSA,
+            allArticles = uiState.tabelleSupplierArticlesRecived,
+            suppliers = uiState.tabelleSuppliersSA,
             supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
             onClickFlotButt = { clickedSupplierId ->
                 if (itsReorderMode) {
@@ -302,7 +302,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 } else {
                     if (toggleCtrlToFilterToMove) {
                         val filterBytabelleSupplierArticlesRecived =
-                            allModels.tabelleSupplierArticlesRecived.filter {
+                            uiState.tabelleSupplierArticlesRecived.filter {
                                 it.itsInFindedAskSupplierSA
                             }
                         viewModel.moveArticleNonFindToSupplier(
@@ -357,7 +357,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 
     if (windosMapArticleInSupplierStore)
         WindowsMapArticleInSupplierStore(
-            uiState=  allModels,
+            uiState=  uiState,
         onDismiss = {
             windosMapArticleInSupplierStore = false
         },

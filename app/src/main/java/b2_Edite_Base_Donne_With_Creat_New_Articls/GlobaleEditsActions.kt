@@ -1,5 +1,7 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import a_MainAppCompnents.CategoriesTabelleECB
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,9 +21,11 @@ import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PermMedia
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,7 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material.Button
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun FloatingActionButtons(
@@ -44,7 +50,8 @@ fun FloatingActionButtons(
     showOnlyWithFilter: Boolean,
     viewModel: HeadOfViewModels,
     coroutineScope: CoroutineScope,
-    onChangeGridColumns: (Int) -> Unit
+    onChangeGridColumns: (Int) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
     var showCategorySelection by remember { mutableStateOf(false) }
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
@@ -57,10 +64,7 @@ fun FloatingActionButtons(
                 onToggleFilter = onToggleFilter,
                 showOnlyWithFilter = showOnlyWithFilter,
                 onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
-                showDialogeDataBaseEditer = showDialogeDataBaseEditer,
                 onChangeGridColumns = onChangeGridColumns,
-                viewModel = viewModel,
-                coroutineScope = coroutineScope
             )
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
@@ -70,8 +74,24 @@ fun FloatingActionButtons(
             )
         }
     }
-}
 
+    AddCategoryDialog(
+        showDialog = showCategorySelection,
+        onDismiss = { showCategorySelection = false },
+        onAddCategory = { newCategoryName ->
+            coroutineScope.launch {
+                val maxId = uiState.categoriesECB.maxByOrNull { it.idCategorieInCategoriesTabele }?.idCategorieInCategoriesTabele ?: 0
+                val maxClassement = uiState.categoriesECB.maxByOrNull { it.idClassementCategorieInCategoriesTabele }?.idClassementCategorieInCategoriesTabele ?: 0.0
+                val newCategory = CategoriesTabelleECB(
+                    idCategorieInCategoriesTabele = maxId + 1,
+                    idClassementCategorieInCategoriesTabele = maxClassement + 1.0,
+                    nomCategorieInCategoriesTabele = newCategoryName
+                )
+                viewModel.addNewCategory(newCategory)
+            }
+        },
+    )
+}
 
 
 @Composable
@@ -81,10 +101,7 @@ fun FloatingActionButtonGroup(
     onToggleFilter: () -> Unit,
     showOnlyWithFilter: Boolean,
     onDialogDataBaseEditerClick: () -> Unit,
-    showDialogeDataBaseEditer: Boolean,
     onChangeGridColumns: (Int) -> Unit,
-    viewModel: HeadOfViewModels,
-    coroutineScope: CoroutineScope
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 4
@@ -145,3 +162,42 @@ fun FloatingActionButtonGroup(
 }
 
 
+@Composable
+fun AddCategoryDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onAddCategory: (String) -> Unit,
+) {
+    var categoryName by remember { mutableStateOf("") }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Add New Category") },
+            text = {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text("Category Name") }
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (categoryName.isNotBlank()) {
+                            onAddCategory(categoryName)
+                            onDismiss()
+                        }
+                    }
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
