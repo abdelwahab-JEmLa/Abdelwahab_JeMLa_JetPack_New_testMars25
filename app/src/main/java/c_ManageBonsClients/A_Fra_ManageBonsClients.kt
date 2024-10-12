@@ -228,6 +228,7 @@ fun DisplayManageBonsClients(
                         allArticles = articles,
                         clientTotal = clientTotals[nomClient] ?: 0.0,
                         boardStatistiquesStatViewModel,
+                        headOfViewModels=headOfViewModels
                     )
                 }
 

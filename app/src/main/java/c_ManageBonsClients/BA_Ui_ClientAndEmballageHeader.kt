@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import a_MainAppCompnents.HeadOfViewModels
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -75,7 +77,10 @@ fun ClientAndEmballageHeader(
     allArticles: List<ArticlesAcheteModele>,
     clientTotal: Double,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    headOfViewModels: HeadOfViewModels,
     ) {
+    val uiState by headOfViewModels.uiState.collectAsState()
+    val placesOfArticelsInCamionette  =uiState.placesOfArticelsInCamionette
     val context = LocalContext.current
 
     var showPrintDialog by remember { mutableStateOf(false) }
@@ -143,9 +148,9 @@ fun ClientAndEmballageHeader(
             .background(clientColor)
             .padding(4.dp)
     ) {
-
+         val namePlace = placesOfArticelsInCamionette.find { it.idPlace==typeEmballage }?.namePlace
         Text(
-            text = "$nomClient - $typeEmballage",
+            text = "$nomClient - $namePlace",
             style = MaterialTheme.typography.titleMedium,
             color = Color.Black,
             modifier = Modifier.padding(bottom = 4.dp)
