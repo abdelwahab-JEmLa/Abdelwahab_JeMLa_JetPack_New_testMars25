@@ -83,7 +83,7 @@ fun MainFactoryClassementsArticles(
                 onUpdateStart = onUpdateStart,
                 onUpdateProgress = onUpdateProgress,
                 onUpdateComplete = onUpdateComplete,
-                onChangeGridColumns = { gridColumns = it }  //TODO fait que la taille ext ce diminu aussi
+                onChangeGridColumns = { gridColumns = it }
             )
         }
     ) { padding ->
