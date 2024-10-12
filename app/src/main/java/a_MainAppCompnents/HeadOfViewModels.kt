@@ -47,6 +47,7 @@ import kotlin.math.roundToInt
 data class CreatAndEditeInBaseDonnRepositeryModels(
     val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val articlesAcheteModele: List<ArticlesAcheteModele> = emptyList(),
     val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
     val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
     val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
@@ -57,7 +58,8 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val error: String? = null
 )
 
-/* Start*/
+/** Start [HeadOfViewModels]
+ * "PS:To Claude Dont Delet This Comment"*/
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
@@ -76,6 +78,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
+    private val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
     private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
     private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
@@ -94,24 +97,26 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-/** Places Dialoge*/
-
-    fun updateArticlePackaging(articleId: Long, packagingId: Long) {
+/** Places Dialoge[PlacesOfArticelsInCamionette]
+ * "PS:To Claude Dont Delet This Comment"*/
+    fun updateArticlePackaging(articleToUpdate: ArticlesAcheteModele, packagingId: Long) {
         viewModelScope.launch {
             // Update local state
             _uiState.update { currentState ->
-                val updatedArticles = currentState.articlesAchete.map { article ->
-                    if (article.id == articleId) {
-                        article.copy(selectedPackagingId = packagingId)
+                val updatedArticles = currentState.articlesAcheteModele.map { article ->
+                    if (article.vid == articleToUpdate.vid) {
+                        article.copy(idArticlePlaceInCamionette = packagingId)
                     } else {
                         article
                     }
                 }
-                currentState.copy(articlesAchete = updatedArticles)
+                currentState.copy(articlesAcheteModele = updatedArticles)
             }
-
-            // Update Firebase
-            refDBJetPackExport.child(articleId.toString()).child("selectedPackagingId").setValue(packagingId)
+            refArticlesAcheteModele.child(articleToUpdate.vid.toString()).child("idArticlePlaceInCamionette").setValue(packagingId)
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to update article packaging", e)
+                }            // Update Firebase
+            refDBJetPackExport.child(articleToUpdate.idArticle.toString()).child("idArticlePlaceInCamionette").setValue(packagingId)
                 .addOnFailureListener { e ->
                     Log.e(TAG, "Failed to update article packaging", e)
                 }
@@ -505,10 +510,14 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
             val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
             updateProgressWithDelay(95f)
+
             val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
             updateProgressWithDelay(95f)
 
-            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore,placesOfArticelsInEacheSupplierSrore,placesOfArticelsInCamionette)
+            val articlesAcheteModele = fetchArticlesAcheteModele()
+            updateProgressWithDelay(95f)
+
+            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore,placesOfArticelsInEacheSupplierSrore,placesOfArticelsInCamionette,articlesAcheteModele)
             updateProgressWithDelay(100f)
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
@@ -542,8 +551,12 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = refPlacesOfArticelsInEacheSupplierSrore.get().await().children
         .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
+
     private suspend fun fetchPlacesOfArticelsInCamionette() = refPlacesOfArticelsInCamionette.get().await().children
         .mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
+
+    private suspend fun fetchArticlesAcheteModele() = refArticlesAcheteModele.get().await().children
+        .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
 
     private fun updateUiState(
         articles: List<BaseDonneECBTabelle>,
@@ -553,7 +566,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
         placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore>,
         placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette>,
-
+        articlesAcheteModele: List<ArticlesAcheteModele>,
         ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
@@ -563,6 +576,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             mapArticleInSupplierStore = mapArticleInSupplierStore,
             placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
             placesOfArticelsInCamionette=placesOfArticelsInCamionette,
+            articlesAcheteModele =articlesAcheteModele,
             isLoading = false
         ) }
     }

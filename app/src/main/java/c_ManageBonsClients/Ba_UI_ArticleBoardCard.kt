@@ -479,7 +479,7 @@ fun ShowPackagingDialog(
                             isSelected = place.idPlace == article.idArticlePlaceInCamionette,
                             onClick = {
                                 coroutineScope.launch {
-                                    headOfViewModels.updateArticlePackaging(article.idArticle, place.idPlace)
+                                    headOfViewModels.updateArticlePackaging(article, place.idPlace)
                                 }
                             }
                         )

@@ -76,6 +76,7 @@ data class BaseDonneECBTabelle(
     var diponibilityState: String = "",
     var neaon2: String = "",
     var idCategorie: Double = 0.0,
+    var idArticlePlaceInCamionette: Long = 0,
     var funChangeImagsDimention: Boolean = false,
     var idCategorieNewMetode: Long = 0,
     var nomCategorie: String = "",
