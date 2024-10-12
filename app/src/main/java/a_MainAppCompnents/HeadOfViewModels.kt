@@ -99,6 +99,58 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
 /** Places Dialoge[PlacesOfArticelsInCamionette]
  * "PS:To Claude Dont Delet This Comment"*/
+
+fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
+    viewModelScope.launch {
+        try {
+            // Update local state
+            _uiState.update { currentState ->
+                currentState.copy(placesOfArticelsInCamionette = newOrder)
+            }
+
+            // Prepare updates for Firebase
+            val updates = mutableMapOf<String, Any>()
+            newOrder.forEachIndexed { index, place ->
+                val updatedPlace = place.copy(classement = index + 1)
+                updates[updatedPlace.idPlace.toString()] = updatedPlace
+            }
+
+            // Update Firebase
+            refPlacesOfArticelsInCamionette.updateChildren(updates)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Successfully updated places order in Firebase")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to update places order in Firebase", e)
+                    // Revert local state if Firebase update fails
+                    revertLocalPlacesOrder()
+                }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating places order", e)
+            // Revert local state if an exception occurs
+            revertLocalPlacesOrder()
+        }
+    }
+}
+
+    private fun revertLocalPlacesOrder() {
+        viewModelScope.launch {
+            // Fetch the current order from Firebase and update local state
+            refPlacesOfArticelsInCamionette.get()
+                .addOnSuccessListener { snapshot ->
+                    val currentOrder = snapshot.children.mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
+                        .sortedBy { it.classement }
+                    _uiState.update { currentState ->
+                        currentState.copy(placesOfArticelsInCamionette = currentOrder)
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to revert local places order", e)
+                }
+        }
+    }
+
     fun updateArticlePackaging(articleToUpdate: ArticlesAcheteModele, packagingId: Long) {
         viewModelScope.launch {
             // Update local state

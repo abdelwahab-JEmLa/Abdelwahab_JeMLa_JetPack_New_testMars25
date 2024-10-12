@@ -4,6 +4,7 @@ import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.PlacesOfArticelsInCamionette
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,14 +41,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
@@ -61,7 +65,6 @@ import com.google.firebase.database.database
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
-
 
 @Composable
 fun ArticleName(
@@ -455,8 +458,10 @@ private fun ColorItemCard(article: ArticlesAcheteModele, index: Int, quantity: I
         }
     }
 }
+
 /** Places Dialoge [ShowPackagingDialog]
  * "PS:To Claude Dont Delet This Comment"*/
+
 @Composable
 fun ShowPackagingDialog(
     headOfViewModels: HeadOfViewModels,
@@ -464,8 +469,9 @@ fun ShowPackagingDialog(
     onDismiss: () -> Unit
 ) {
     val uiState by headOfViewModels.uiState.collectAsState()
-    val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette
+    val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette.toMutableStateList()
     var showAddPlaceDialog by remember { mutableStateOf(false) }
+    var isReorderMode by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     AlertDialog(
@@ -473,25 +479,47 @@ fun ShowPackagingDialog(
         title = { Text("Select Packaging Type") },
         text = {
             Column {
-                LazyColumn {
-                    items(placesOfArticelsInCamionette) { place ->
-                        PackagingToggleButton(
-                            text = place.namePlace,
-                            isSelected = place.idPlace == article.idArticlePlaceInCamionette,
-                            onClick = {
+                ReorderableLazyColumn(
+                    items = placesOfArticelsInCamionette,
+                    isReorderMode = isReorderMode,
+                    onReorder = { fromIndex, toIndex ->
+                        placesOfArticelsInCamionette.apply {
+                            add(toIndex, removeAt(fromIndex))
+                        }
+                        coroutineScope.launch {
+                            headOfViewModels.updatePlacesOrder(placesOfArticelsInCamionette)
+                        }
+                    }
+                ) { place ->
+                    PackagingToggleButton(
+                        text = place.namePlace,
+                        isSelected = place.idPlace == article.idArticlePlaceInCamionette,
+                        onClick = {
+                            if (!isReorderMode) {
                                 coroutineScope.launch {
                                     headOfViewModels.updateArticlePackaging(article, place.idPlace)
                                 }
                             }
-                        )
-                    }
+                        }
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                FloatingActionButton(
-                    onClick = { showAddPlaceDialog = true },
-                    modifier = Modifier.align(Alignment.End)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("+")
+                    FloatingActionButton(
+                        onClick = { isReorderMode = !isReorderMode },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Text(if (isReorderMode) "Done" else "Reorder")
+                    }
+                    FloatingActionButton(
+                        onClick = { showAddPlaceDialog = true },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Text("+")
+                    }
                 }
             }
         },
@@ -514,6 +542,44 @@ fun ShowPackagingDialog(
         )
     }
 }
+
+@Composable
+fun ReorderableLazyColumn(
+    items: List<PlacesOfArticelsInCamionette>,
+    isReorderMode: Boolean,
+    onReorder: (Int, Int) -> Unit,
+    itemContent: @Composable (PlacesOfArticelsInCamionette) -> Unit
+) {
+    LazyColumn {
+        itemsIndexed(items) { index, item ->
+            key(item.idPlace) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .then(
+                            if (isReorderMode) {
+                                Modifier.pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        val draggedTo = index + if (dragAmount.y > 0) 1 else -1
+                                        if (draggedTo in items.indices) {
+                                            onReorder(index, draggedTo)
+                                        }
+                                    }
+                                }
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
+                    itemContent(item)
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
@@ -571,8 +637,4 @@ fun AddPlaceDialog(
         }
     )
 }
-fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
-    val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
-    val articleUpdate = articleFromFireBase.child("typeEmballage")
-    articleUpdate.setValue(newType)
-}
+
