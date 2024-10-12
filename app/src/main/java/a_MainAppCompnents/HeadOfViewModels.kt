@@ -26,6 +26,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
+import h_FactoryClassemntsArticles.ClassementsArticlesTabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,6 +78,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
     private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
+    private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
@@ -1186,11 +1188,33 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 val newArticle = createNewArticle(newId, category, newClassementCate)
                 ensureNewArticlesCategoryExists()
                 updateDataBaseWithNewArticle(newArticle)
+                updateClassementsArticlesTabel(newArticle, category)
                 newArticle
             } catch (e: Exception) {
                 handleError("Failed to process image", e)
                 throw IllegalStateException("Failed to create new article", e)
             }
+        }
+    }
+
+    private suspend fun updateClassementsArticlesTabel(article: BaseDonneECBTabelle, category: CategoriesTabelleECB) {
+        try {
+            val classementsArticle = ClassementsArticlesTabel(
+                idArticle = article.idArticleECB.toLong(),
+                nomArticleFinale = article.nomArticleFinale,
+                idCategorie = category.idCategorieInCategoriesTabele.toDouble(),
+                classementInCategoriesCT = 0.0, // You may want to calculate this value
+                nomCategorie = article.nomCategorie,
+                classementArticleAuCategorieCT = 0.0, // You may want to calculate this value
+                itsNewArticleInCateWithID = true,
+                classementCate = article.classementCate,
+                diponibilityState = article.diponibilityState
+            )
+
+            refClassmentsArtData.child(article.idArticleECB.toString()).setValue(classementsArticle).await()
+            Log.d(TAG, "ClassementsArticlesTabel updated successfully for article: ${article.idArticleECB}")
+        } catch (e: Exception) {
+            handleError("Failed to update ClassementsArticlesTabel", e)
         }
     }
     fun getCategoryByName(categoryName: String): CategoriesTabelleECB {
