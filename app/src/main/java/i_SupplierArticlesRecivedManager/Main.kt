@@ -1,6 +1,6 @@
 package i_SupplierArticlesRecivedManager
 
-// Assuming these are your custom classes/components
+// Assuming  arethese your custom classes/components
 import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
@@ -131,6 +131,11 @@ fun Fragment_SupplierArticlesRecivedManager(
     var voiceInputText by remember { mutableStateOf("") }
 
     fun processVoiceInput(spokenText: String, viewModel: HeadOfViewModels, uiState: CreatAndEditeInBaseDonnRepositeryModels) {
+        if (spokenText.contains("محو")) {
+            voiceInputText = ""
+            return
+        }
+
         val parts = spokenText.split("+")
         if (parts.size == 2) {
             val articleId = parts[0].trim().toLongOrNull()
@@ -174,7 +179,14 @@ fun Fragment_SupplierArticlesRecivedManager(
                     value = voiceInputText,
                     onValueChange = { newText ->
                         voiceInputText = newText
-                        processVoiceInput(newText, viewModel, allModels)
+                        val parts = newText.split("+")
+                        if (parts.size == 2) {
+                            val supplierName = parts[1].trim()
+                            val supplier = allModels.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
+                            if (supplier != null && supplierName.isNotEmpty()) {  // Fixed: Check if supplierName is not empty
+                                processVoiceInput(newText, viewModel, allModels)
+                            }
+                        }
                     },
                     label = { Text("Voice Input") },
                     modifier = Modifier
@@ -229,43 +241,48 @@ fun Fragment_SupplierArticlesRecivedManager(
             }
         }
 
-        // Floating Action Buttons
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .zIndex(1f)
-        ) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
                     .zIndex(1f)
             ) {
-                GlobaleControlsFloatingButtonsSA(
-                    showFloatingButtons = showFloatingButtons,
-                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                    onChangeGridColumns = { gridColumns = it },
-                    onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
-                    filterSuppHandledNow = toggleCtrlToFilterToMove,
-                    onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore },
-                    onLaunchVoiceRecognition = {
-                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                            putExtra(
-                                RecognizerIntent.EXTRA_PROMPT,
-                                "Parlez maintenant pour mettre à jour cet article..."
-                            )
+                var offset by remember { mutableStateOf(Offset.Zero) }
+
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                offset += dragAmount
+                            }
                         }
-                        speechRecognizerLauncher.launch(intent)
-                    }  ,
-                    viewModel=viewModel  ,
-                    uiState=allModels ,
-                    onNewArticleAdded=onNewArticleAdded
-                )
+                ) {
+                    GlobaleControlsFloatingButtonsSA(
+                        showFloatingButtons = showFloatingButtons,
+                        onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                        onChangeGridColumns = { gridColumns = it },
+                        onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
+                        filterSuppHandledNow = toggleCtrlToFilterToMove,
+                        onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore },
+                        onLaunchVoiceRecognition = {
+                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                putExtra(
+                                    RecognizerIntent.EXTRA_PROMPT,
+                                    "Parlez maintenant pour mettre à jour cet article..."
+                                )
+                            }
+                            speechRecognizerLauncher.launch(intent)
+                        },
+                        viewModel = viewModel,
+                        uiState = allModels,
+                        onNewArticleAdded = onNewArticleAdded
+                    )
+                }
             }
-        }
 
         SuppliersFloatingButtonsSA(
             allArticles = allModels.tabelleSupplierArticlesRecived,
