@@ -179,15 +179,16 @@ fun DisplayManageBonsClients(
     listState: LazyListState,
     paddingValues: PaddingValues, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     onFocuseChange: () -> Unit,
-    lastFocusedColumn: String, headOfViewModels: HeadOfViewModels,
+    lastFocusedColumn: String,
+    headOfViewModels: HeadOfViewModels,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
     val focusRequester = remember { FocusRequester() }
     var isDetailDisplayed by remember { mutableStateOf(false) }
 
-    val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.typeEmballage }))
-    val groupedArticles = sortedArticles.groupBy { it.typeEmballage to it.nomClient }
+    val sortedArticles = articles.sortedWith(compareBy({ it.nomClient }, { it.idArticlePlaceInCamionette }))
+    val groupedArticles = sortedArticles.groupBy { it.idArticlePlaceInCamionette to it.nomClient }
     val clientTotals = articles.groupBy { it.nomClient }.mapValues { (_, clientArticles) ->
         clientArticles.filter {
             it.verifieState

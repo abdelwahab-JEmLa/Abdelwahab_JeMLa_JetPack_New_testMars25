@@ -455,7 +455,8 @@ private fun ColorItemCard(article: ArticlesAcheteModele, index: Int, quantity: I
         }
     }
 }
-/**Places Dialoge*/
+/** Places Dialoge [ShowPackagingDialog]
+ * "PS:To Claude Dont Delet This Comment"*/
 @Composable
 fun ShowPackagingDialog(
     headOfViewModels: HeadOfViewModels,

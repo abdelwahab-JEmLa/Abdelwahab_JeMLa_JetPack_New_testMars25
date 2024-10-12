@@ -53,8 +53,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
-import g_BoardStatistiques.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
 import g_BoardStatistiques.BoardStatistiquesStatViewModel
+import g_BoardStatistiques.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -69,7 +69,7 @@ const val TAG = "ClientManagement"
 @Composable
 fun ClientAndEmballageHeader(
     nomClient: String,
-    typeEmballage: String,
+    typeEmballage: Long,
     onToggleActive: () -> Unit,
     isActive: Boolean,
     allArticles: List<ArticlesAcheteModele>,
@@ -143,6 +143,7 @@ fun ClientAndEmballageHeader(
             .background(clientColor)
             .padding(4.dp)
     ) {
+
         Text(
             text = "$nomClient - $typeEmballage",
             style = MaterialTheme.typography.titleMedium,
