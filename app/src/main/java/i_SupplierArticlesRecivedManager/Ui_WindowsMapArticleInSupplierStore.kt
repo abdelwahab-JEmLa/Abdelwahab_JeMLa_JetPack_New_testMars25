@@ -108,18 +108,19 @@ fun WindowsMapArticleInSupplierStore(
             shape = MaterialTheme.shapes.large
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu.toLong() == idSupplierOfFloatingButtonClicked }
+                Column {
+                val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
                 supplier?.let {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(4.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Text(
                             text = "Supplier: ${it.nomSupplierSu}",
                             style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(2.dp)
                         )
                     }
                 }
@@ -147,7 +148,7 @@ fun WindowsMapArticleInSupplierStore(
                         )
                     }
                 }
-
+                }
                 if (showFab) {
                     Row(
                         modifier = Modifier
