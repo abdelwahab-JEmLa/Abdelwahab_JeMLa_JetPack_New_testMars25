@@ -63,6 +63,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -127,26 +128,65 @@ fun Fragment_SupplierArticlesRecivedManager(
     var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
+    var voiceInputText by remember { mutableStateOf("") }
+
+    fun processVoiceInput(spokenText: String, viewModel: HeadOfViewModels, uiState: CreatAndEditeInBaseDonnRepositeryModels) {
+        val parts = spokenText.split("+")
+        if (parts.size == 2) {
+            val articleId = parts[0].trim().toLongOrNull()
+            val supplierName = parts[1].trim()
+
+            if (articleId != null) {
+                val article = uiState.tabelleSupplierArticlesRecived.find { it.aa_vid == articleId}
+                val supplier = uiState.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
+
+                if (article != null && supplier != null) {
+                    viewModel.moveArticleNonFindToSupplier(
+                        articlesToMove = listOf(article),
+                        toSupp = supplier.idSupplierSu
+                    )
+                }
+            }
+        }
+    }
+
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            voiceInputText = spokenText
             processVoiceInput(spokenText, viewModel, allModels)
         }
     }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) { padding ->
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(gridColumns),
-                state = gridState,
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
             ) {
+                // Voice input field
+                OutlinedTextField(
+                    value = voiceInputText,
+                    onValueChange = { newText ->
+                        voiceInputText = newText
+                        processVoiceInput(newText, viewModel, allModels)
+                    },
+                    label = { Text("Voice Input") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(gridColumns),
+                    state = gridState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
                 val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
                     allModels.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
                 } else {
@@ -309,27 +349,10 @@ fun Fragment_SupplierArticlesRecivedManager(
         idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked ,
         onIdSupplierChanged = {idSupplierOfFloatingButtonClicked=it}
         )
-}
-
-private fun processVoiceInput(spokenText: String, viewModel: HeadOfViewModels, uiState: CreatAndEditeInBaseDonnRepositeryModels) {
-    val parts = spokenText.split("+")
-    if (parts.size == 2) {
-        val articleId = parts[0].trim().toLongOrNull()
-        val supplierName = parts[1].trim()
-
-        if (articleId != null) {
-            val article = uiState.tabelleSupplierArticlesRecived.find { it.aa_vid == articleId}
-            val supplier = uiState.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
-
-            if (article != null && supplier != null) {
-                viewModel.moveArticleNonFindToSupplier(
-                    articlesToMove = listOf(article),
-                    toSupp = supplier.idSupplierSu
-                )
-            }
-        }
     }
 }
+
+
 
 @Composable
 fun ArticleItemSA(

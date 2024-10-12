@@ -82,7 +82,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-
 //Title:WindowsMapArticleInSupplierStore
 @Composable
 fun WindowsMapArticleInSupplierStore(
@@ -119,7 +118,7 @@ fun WindowsMapArticleInSupplierStore(
                     ) {
                         Text(
                             text = "Supplier: ${it.nomSupplierSu}",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.padding(2.dp)
                         )
                     }
