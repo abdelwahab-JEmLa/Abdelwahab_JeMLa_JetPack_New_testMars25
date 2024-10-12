@@ -125,10 +125,36 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                             }
                             currentState.copy(articlesBaseDonneECB = updatedArticles)
                         }
+
+                        // Update refClassmentsArtData
+                        updateClassmentsArtData(articleId, categoryId, categoryName)
                     }
                 }
             })
         }
+    }
+
+    private fun updateClassmentsArtData(articleId: Int, categoryId: Long, categoryName: String) {
+        val classementsRef = refClassmentsArtData.child(articleId.toString())
+        classementsRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                val classementsArticle = mutableData.getValue(ClassementsArticlesTabel::class.java)
+                classementsArticle?.let {
+                    it.idCategorie = categoryId.toDouble()
+                    it.nomCategorie = categoryName
+                    mutableData.value = it
+                }
+                return Transaction.success(mutableData)
+            }
+
+            override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                if (error != null) {
+                    println("Failed to update ClassementsArticlesTabel: ${error.message}")
+                } else {
+                    println("Successfully updated ClassementsArticlesTabel for article $articleId")
+                }
+            }
+        })
     }
     fun addNewCategory(newCategory: CategoriesTabelleECB) {
         viewModelScope.launch {

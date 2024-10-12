@@ -471,9 +471,9 @@ class ClassementsArticlesViewModel : ViewModel() {
 data class ClassementsArticlesTabel(
     val idArticle: Long = 0,
     val nomArticleFinale: String = "",
-    val idCategorie: Double = 0.0,
+    var idCategorie: Double = 0.0,
     var classementInCategoriesCT: Double = 0.0,
-    val nomCategorie: String = "",
+    var nomCategorie: String = "",
     var classementArticleAuCategorieCT: Double = 0.0,
     var itsNewArticleInCateWithID: Boolean = false,
     var classementCate: Double = 0.0,
