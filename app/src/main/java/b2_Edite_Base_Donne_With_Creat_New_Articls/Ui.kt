@@ -202,9 +202,9 @@ fun ArticleDetailWindow(
                             Row(modifier = Modifier.fillMaxWidth()) {
                                 fieldsGroup.fields.forEach { (column, abbr, _) ->
                                     when (fieldsGroup) {
-                                        FieldsDisplayer.Categorie -> {      //TODO fait que ca soit apre nom Article outline
+                                        FieldsDisplayer.Categorie -> {
                                             CategorySelector(
-                                                currentCategory = article.nomCategorie,
+                                                startCategory = article.nomCategorie,
                                                 categories = uiState.categoriesECB,
                                                 onCategorySelected = { selectedCategory ->
                                                     viewModel.updateArticleCategory(
@@ -213,13 +213,14 @@ fun ArticleDetailWindow(
                                                         selectedCategory.nomCategorieInCategoriesTabele
                                                     )
                                                     onReloadTrigger()
+                                                    currentChangingField = "nomCategorie"
                                                 },
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .height(67.dp)
                                             )
                                         }
-                                        FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
+                                        FieldsDisplayer.BenficesEntre -> {
                                             if (!isNewArticle) {
                                                 InfoBoxWhithVoiceInpute(
                                                     columnToChange = column,
@@ -352,13 +353,14 @@ fun ArticleToggleButton(
 }
 @Composable
 fun CategorySelector(
-    currentCategory: String,
+    startCategory: String,
     categories: List<CategoriesTabelleECB>,
     onCategorySelected: (CategoriesTabelleECB) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var currentCategory by remember { mutableStateOf(startCategory) }
 
     val filteredCategories = remember(searchQuery, categories) {
         if (searchQuery.length >= 3) {
@@ -374,8 +376,9 @@ fun CategorySelector(
             onValueChange = {
                 searchQuery = it
                 expanded = it.length >= 3
+                currentCategory = searchQuery
             },
-            label = { Text("Category: $currentCategory") },
+            label = { Text(currentCategory) },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -391,6 +394,7 @@ fun CategorySelector(
                         onCategorySelected(category)
                         expanded = false
                         searchQuery = ""
+                        currentCategory= category.nomCategorieInCategoriesTabele
                     }
                 )
             }
