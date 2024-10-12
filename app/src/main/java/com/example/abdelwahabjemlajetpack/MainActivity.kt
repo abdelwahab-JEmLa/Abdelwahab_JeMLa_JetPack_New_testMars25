@@ -257,7 +257,7 @@ fun AppNavHost(
             A_Edite_Base_Screen(viewModels.editeBaseDonneViewModel, database.articleDao())
         }
         composable("C_ManageBonsClients") {
-            FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel)
+            FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel, headOfViewModels)
         }
         composable("Fragment_SupplierArticlesRecivedManager") {
             Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,

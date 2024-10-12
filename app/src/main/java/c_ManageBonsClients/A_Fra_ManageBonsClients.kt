@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
+import a_MainAppCompnents.HeadOfViewModels
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +59,7 @@ import kotlin.random.Random
 
 @Composable
 fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+                              headOfViewModels: HeadOfViewModels,
 ) {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
     var clientsData by remember { mutableStateOf<List<ClientsTabelle>>(emptyList()) }
@@ -64,7 +67,7 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showClientDialog by remember { mutableStateOf(false) }
     var selectedClientFilter by remember { mutableStateOf<String?>(null) }
-    var totalProfit by remember { mutableStateOf(0.0) }
+    var totalProfit by remember { mutableDoubleStateOf(0.0) }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -83,6 +86,7 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
                 // Handle possible errors.
             }
         })
+
         articlesAcheteModeleRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val newArticles = dataSnapshot.children.mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
@@ -137,6 +141,7 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
                 listState = listState,
                 paddingValues = PaddingValues(0.dp),
                 boardStatistiquesStatViewModel = boardStatistiquesStatViewModel, onFocuseChange = {lastFocusedColumn=""},lastFocusedColumn,
+                headOfViewModels = headOfViewModels,
             )
         }
     }
@@ -174,7 +179,7 @@ fun DisplayManageBonsClients(
     listState: LazyListState,
     paddingValues: PaddingValues, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     onFocuseChange: () -> Unit,
-    lastFocusedColumn: String,
+    lastFocusedColumn: String, headOfViewModels: HeadOfViewModels,
 ) {
     var currentChangingField by remember { mutableStateOf("") }
     var activeClients by remember { mutableStateOf(emptySet<String>()) }
@@ -287,6 +292,7 @@ fun DisplayManageBonsClients(
                                         currentChangingField = ""
                                     },
                                     isVerificationMode = activeClients.contains(article.nomClient),
+                                    headOfViewModels = headOfViewModels,
                                 )
                             }
                         }
@@ -348,9 +354,6 @@ data class ClientsTabelle(
     constructor() : this(0)
 }
 
-
-
-
 @Entity
 data class ArticlesAcheteModele(
     @PrimaryKey(autoGenerate = true) val vid: Long = 0,
@@ -378,6 +381,8 @@ data class ArticlesAcheteModele(
 
     //Stats
     var typeEmballage: String = "",
+    var idArticlePlaceInCamionette: Long = 0,
+
     var choisirePrixDepuitFireStoreOuBaseBM: String = "",
     val warningRecentlyChanged: Boolean = false,
 

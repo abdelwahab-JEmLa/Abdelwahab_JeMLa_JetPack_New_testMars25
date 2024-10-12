@@ -1,11 +1,14 @@
 package c_ManageBonsClients
 
+import a_MainAppCompnents.HeadOfViewModels
+import a_MainAppCompnents.PlacesOfArticelsInCamionette
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,8 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,15 +30,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +58,7 @@ import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteMode
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.LoadImageFromPathBC
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -82,7 +92,7 @@ fun ArticleBoardCard(
     onArticleSelect: (ArticlesAcheteModele) -> Unit,
     isVerificationMode: Boolean,
     onClickVerificated: (ArticlesAcheteModele) -> Unit,
-    modifier: Modifier = Modifier, // Add this line
+    modifier: Modifier = Modifier, headOfViewModels: HeadOfViewModels, // Add this line
 ) {
     val cardColor = when {
         article.nonTrouveState -> Color.Red
@@ -178,6 +188,7 @@ fun ArticleBoardCard(
 
     if (showPackagingDialog) {
         ShowPackagingDialog(
+            headOfViewModels,
             article = article,
             onDismiss = { showPackagingDialog = false }
         )
@@ -444,33 +455,63 @@ private fun ColorItemCard(article: ArticlesAcheteModele, index: Int, quantity: I
         }
     }
 }
-// The ShowPackagingDialog and updateTypeEmballage functions remain the same
+/**Places Dialoge*/
 @Composable
 fun ShowPackagingDialog(
+    headOfViewModels: HeadOfViewModels,
     article: ArticlesAcheteModele,
     onDismiss: () -> Unit
 ) {
+    val uiState by headOfViewModels.uiState.collectAsState()
+    val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette
+    var showAddPlaceDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Packaging Type") },
         text = {
             Column {
-                PackagingToggleButton("Carton", article.typeEmballage == "Carton") {
-                    updateTypeEmballage(article, "Carton")
-                    onDismiss()
+                LazyColumn {
+                    items(placesOfArticelsInCamionette) { place ->
+                        PackagingToggleButton(
+                            text = place.namePlace,
+                            isSelected = place.idPlace == article.idArticlePlaceInCamionette,
+                            onClick = {
+                                coroutineScope.launch {
+                                    headOfViewModels.updateArticlePackaging(article.idArticle, place.idPlace)
+                                }
+                            }
+                        )
+                    }
                 }
-                PackagingToggleButton("Boit", article.typeEmballage == "Boit") {
-                    updateTypeEmballage(article, "Boit")
-                    onDismiss()
+                Spacer(modifier = Modifier.height(16.dp))
+                FloatingActionButton(
+                    onClick = { showAddPlaceDialog = true },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("+")
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Done")
             }
         }
     )
+
+    if (showAddPlaceDialog) {
+        AddPlaceDialog(
+            onDismiss = { showAddPlaceDialog = false },
+            onAddPlace = { newPlace ->
+                coroutineScope.launch {
+                    headOfViewModels.addNewPlaceInCamionette(newPlace)
+                }
+                showAddPlaceDialog = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -478,7 +519,7 @@ fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Color.Red else Color.Green
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -488,6 +529,47 @@ fun PackagingToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit
     }
 }
 
+@Composable
+fun AddPlaceDialog(
+    onDismiss: () -> Unit,
+    onAddPlace: (PlacesOfArticelsInCamionette) -> Unit
+) {
+    var namePlace by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New Place") },
+        text = {
+            OutlinedTextField(
+                value = namePlace,
+                onValueChange = { namePlace = it },
+                label = { Text("Place Name") }
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (namePlace.isNotBlank()) {
+                        onAddPlace(
+                            PlacesOfArticelsInCamionette(
+                            idPlace = 0, // This will be set by the database
+                            namePlace = namePlace,
+                            classement = 0 // This will be set by the ViewModel
+                        )
+                        )
+                    }
+                }
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
 fun updateTypeEmballage(article: ArticlesAcheteModele, newType: String) {
     val articleFromFireBase = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
     val articleUpdate = articleFromFireBase.child("typeEmballage")

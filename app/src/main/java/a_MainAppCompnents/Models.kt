@@ -1,6 +1,11 @@
 package a_MainAppCompnents
 
 
+data class PlacesOfArticelsInCamionette(
+    val idPlace: Long = 0,
+    val namePlace: String = "",
+    var classement: Int = 0
+)
 
 data class TabelleSupplierArticlesRecived(
     val aa_vid: Long = 0,
