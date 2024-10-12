@@ -81,10 +81,9 @@ fun FloatingActionButtons(
         onAddCategory = { newCategoryName ->
             coroutineScope.launch {
                 val maxId = uiState.categoriesECB.maxByOrNull { it.idCategorieInCategoriesTabele }?.idCategorieInCategoriesTabele ?: 0
-                val maxClassement = uiState.categoriesECB.maxByOrNull { it.idClassementCategorieInCategoriesTabele }?.idClassementCategorieInCategoriesTabele ?: 0.0
                 val newCategory = CategoriesTabelleECB(
                     idCategorieInCategoriesTabele = maxId + 1,
-                    idClassementCategorieInCategoriesTabele = maxClassement + 1.0,
+                    idClassementCategorieInCategoriesTabele = 1.0,
                     nomCategorieInCategoriesTabele = newCategoryName
                 )
                 viewModel.addNewCategory(newCategory)
