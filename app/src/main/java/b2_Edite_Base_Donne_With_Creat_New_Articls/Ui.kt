@@ -806,41 +806,46 @@ private fun ColorCard(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // Background Image
+            DisplayeImageECB(
+                article = article,
+                viewModel = viewModel,
+                index = index,
+                reloadKey = relodeTigger,
                 modifier = Modifier.fillMaxSize()
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                ) {
-                    DisplayeImageECB(
-                        article = article,
-                        viewModel = viewModel,
-                        index = index,
-                        reloadKey = relodeTigger
-                    )
+            )
 
+            // Overlay content
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top row with buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Change photo button
                     IconButton(
-                        onClick = { showDeleteDialog = true },
-                        modifier = Modifier.align(Alignment.TopEnd)
+                        onClick = {
+                            viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                            launcher.launch(viewModel.tempImageUri!!)
+                        }
+                    ) {
+                        Icon(Icons.Default.AddAPhoto, contentDescription = "Change photo")
+                    }
+
+                    // Delete color button
+                    IconButton(
+                        onClick = { showDeleteDialog = true }
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete color")
                     }
                 }
 
-                IconButton(
-                    onClick = {
-                        viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                        launcher.launch(viewModel.tempImageUri!!)
-                    },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
-                }
-
+                // AutoCompleteTextField at the bottom
                 AutoCompleteTextField(
                     value = colorName,
                     onValueChange = { newValue ->
@@ -855,7 +860,7 @@ private fun ColorCard(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                        .padding(8.dp)
                 )
             }
         }
@@ -889,7 +894,8 @@ fun DisplayeImageECB(
     article: BaseDonneECBTabelle,
     viewModel: HeadOfViewModels,
     index: Int = 0,
-    reloadKey: Any = Unit
+    reloadKey: Any = Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
@@ -907,7 +913,6 @@ fun DisplayeImageECB(
 
     val imageSource = imageExist ?: R.drawable.blanc
 
-    // Use a unique key for the ImageRequest
     val requestKey = "${article.idArticleECB}_${if (index == -1) "Unite" else index}_$reloadKey"
 
     val painter = rememberAsyncImagePainter(
@@ -922,8 +927,8 @@ fun DisplayeImageECB(
     Image(
         painter = painter,
         contentDescription = null,
-        modifier = Modifier.fillMaxSize(),
-        contentScale = ContentScale.Fit
+        modifier = modifier,
+        contentScale = ContentScale.Crop
     )
 }
 
