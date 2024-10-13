@@ -67,6 +67,7 @@ data class BaseDonneECBTabelle(
     var couleur2: String? = null,
     var couleur3: String? = null,
     var couleur4: String? = null,
+    var articleHaveUniteImages: Boolean=false,
     var nomCategorie2: String? = null,
     var nmbrUnite: Int = 0,
     var nmbrCaron: Int = 0,

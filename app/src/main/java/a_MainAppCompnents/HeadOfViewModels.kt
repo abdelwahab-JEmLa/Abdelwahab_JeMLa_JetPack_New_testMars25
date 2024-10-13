@@ -1761,6 +1761,46 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
+    private fun deleteColorImage(articleId: Int, colorIndex: Int) {
+        val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
+        val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
+
+        // Delete the image from Firebase Storage for both jpg and webp
+        listOf("jpg", "webp").forEach { extension ->
+            val imageRef = storageImgsRef.child("${articleId}_${colorIndex}.$extension")
+            imageRef.delete().addOnSuccessListener {
+                // Image deleted successfully from Firebase Storage
+            }.addOnFailureListener { exception ->
+                // Handle any errors
+                Log.e("Firebase", "Error deleting image from Firebase Storage", exception)
+            }
+        }
+
+        // Delete local files
+        listOf("jpg", "webp").forEach { extension ->
+            listOf(baseImagePath).forEach { path ->
+                val file = File("$path.$extension")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        }
+    }
+
+    fun addUniteImageToArticle(uri: Uri, article: BaseDonneECBTabelle) {
+        viewModelScope.launch {
+            try {
+                val fileName = "${article.idArticleECB}_Unite.jpg"
+                copyImage(uri, fileName)
+
+                val updatedArticle = article.copy(articleHaveUniteImages = true)
+                updateLocalAndFireBaseArticle(updatedArticle)
+            } catch (e: Exception) {
+                handleError("Failed to add unite image to article", e)
+            }
+        }
+    }
+
     private suspend fun deleteArticle(article: BaseDonneECBTabelle) {
         try {
             refDBJetPackExport.child(article.idArticleECB.toString()).removeValue().await()
@@ -1777,29 +1817,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private fun deleteColorImage(articleId: Int, colorIndex: Int) {
-        val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
-        val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
-
-        // Delete the image from Firebase Storage
-        val imageRef = storageImgsRef.child("${articleId}_${colorIndex}"/*TODO fait que ca delete au format ("jpg"ou  "webp")*/)
-        imageRef.delete().addOnSuccessListener {
-            // Image deleted successfully from Firebase Storage
-        }.addOnFailureListener { exception ->
-            // Handle any errors
-            Log.e("Firebase", "Error deleting image from Firebase Storage", exception)
-        }
-
-        // Delete local files
-        listOf("jpg", "webp").forEach { extension ->
-            listOf(baseImagePath).forEach { path ->
-                val file = File("$path.$extension")
-                if (file.exists()) {
-                    file.delete()
-                }
-            }
-        }
-    }
 
     fun processNewImage(uri: Uri, article: BaseDonneECBTabelle, colorIndex: Int) {
         viewModelScope.launch {

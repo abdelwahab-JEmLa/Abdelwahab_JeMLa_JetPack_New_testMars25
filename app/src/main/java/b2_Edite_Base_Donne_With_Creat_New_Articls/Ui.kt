@@ -624,13 +624,6 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
                        onReloadTrigger: () -> Unit,
                        relodeTigger: Int
 ) {
-    val couleursList = listOf(
-        article.couleur1,
-        article.couleur2,
-        article.couleur3,
-        article.couleur4
-    ).filterNot { it.isNullOrEmpty() }
-
     val context = LocalContext.current
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -638,6 +631,18 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
         if (success) {
             viewModel.tempImageUri?.let { uri ->
                 viewModel.addColorToArticle(uri, article)
+                onReloadTrigger()
+            }
+        }
+    }
+
+    val uniteImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            viewModel.tempImageUri?.let { uri ->
+                viewModel.addUniteImageToArticle(uri, article)
+                onReloadTrigger()
             }
         }
     }
@@ -646,28 +651,116 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth()
     ) {
+        if (article.articleHaveUniteImages) {
+            item {
+                ColorCard(
+                    article = article,
+                    index = -1,
+                    couleur = "Unite",
+                    viewModel = viewModel,
+                    onDismiss = onDismiss,
+                    onReloadTrigger = onReloadTrigger,
+                    relodeTigger = relodeTigger
+                )
+            }
+        }
+
+        val couleursList = listOf(
+            article.couleur1,
+            article.couleur2,
+            article.couleur3,
+            article.couleur4
+        ).filterNot { it.isNullOrEmpty() }
+
         itemsIndexed(couleursList) { index, couleur ->
             if (couleur != null) {
                 ColorCard(
-                    article,
-                    index,
-                    couleur,
-                    viewModel,
-                    onDismiss,
-                    onReloadTrigger,
-                    relodeTigger,
+                    article = article,
+                    index = index,
+                    couleur = couleur,
+                    viewModel = viewModel,
+                    onDismiss = onDismiss,
+                    onReloadTrigger = onReloadTrigger,
+                    relodeTigger = relodeTigger
                 )
             }
         }
 
         item {
-            AddColorCard {
-                viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+            AddColorCard(
+                onClickCreatUniteImages = {
+                    viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                    viewModel.tempImageUri?.let { uniteImageLauncher.launch(it) }
+                },
+                onClick = {
+                    viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                    viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddColorCard(
+    onClickCreatUniteImages: () -> Unit,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .height(200.dp)
+            .aspectRatio(1f)
+            .padding(4.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            IconButton(onClick = onClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add new color",
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            IconButton(onClick = onClickCreatUniteImages) {
+                Icon(
+                    imageVector = Icons.Default.AddAPhoto,
+                    contentDescription = "Add unite image",
+                    modifier = Modifier.size(48.dp)
+                )
             }
         }
     }
 }
+
+@Composable
+fun UniteImageCard(
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    onReloadTrigger: () -> Unit,
+    relodeTigger: Int
+) {
+    Card(
+        modifier = Modifier
+            .size(200.dp)
+            .padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            DisplayeImageECB(
+                article = article,
+                viewModel = viewModel,
+                index = -1, // Use a special index for unite image
+                reloadKey = relodeTigger
+            )
+        }
+    }
+}
+
 
 @Composable
 private fun ColorCard(
@@ -684,7 +777,7 @@ private fun ColorCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var colorName by remember { mutableStateOf("") }
+    var colorName by remember { mutableStateOf(couleur) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -707,7 +800,7 @@ private fun ColorCard(
 
     Card(
         modifier = Modifier
-            .height(200.dp)
+            .size(200.dp)
             .padding(4.dp)
     ) {
         Box(
@@ -736,26 +829,18 @@ private fun ColorCard(
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete color")
                     }
-
-                    IconButton(
-                        onClick = {
-                            viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                            launcher.launch(viewModel.tempImageUri!!)
-                        },
-                        modifier = Modifier.align(Alignment.BottomEnd)
-                    ) {
-                        Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
-                    }
                 }
-            }
 
-            // Positioned AutoCompleteTextField
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
+                IconButton(
+                    onClick = {
+                        viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                        launcher.launch(viewModel.tempImageUri!!)
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
+                }
+
                 AutoCompleteTextField(
                     value = colorName,
                     onValueChange = { newValue ->
@@ -797,6 +882,49 @@ private fun ColorCard(
             }
         )
     }
+}
+
+@Composable
+fun DisplayeImageECB(
+    article: BaseDonneECBTabelle,
+    viewModel: HeadOfViewModels,
+    index: Int = 0,
+    reloadKey: Any = Unit
+) {
+    val context = LocalContext.current
+    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
+    val downloadsImagePath = "${viewModel.dossiesStandartOFImages}/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
+
+    val imageExist by remember(article.idArticleECB, reloadKey) {
+        mutableStateOf(
+            listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
+                listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
+                    File("$path.$extension").exists()
+                }?.let { "$it.$extension" }
+            }
+        )
+    }
+
+    val imageSource = imageExist ?: R.drawable.blanc
+
+    // Use a unique key for the ImageRequest
+    val requestKey = "${article.idArticleECB}_${if (index == -1) "Unite" else index}_$reloadKey"
+
+    val painter = rememberAsyncImagePainter(
+        ImageRequest.Builder(context)
+            .data(imageSource)
+            .size(Size(1000, 1000))
+            .crossfade(true)
+            .setParameter("key", requestKey, memoryCacheKey = requestKey)
+            .build()
+    )
+
+    Image(
+        painter = painter,
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Fit
+    )
 }
 
 @Composable
@@ -850,70 +978,7 @@ fun AutoCompleteTextField(
         }
     }
 }
-@Composable
-fun DisplayeImageECB(
-    article: BaseDonneECBTabelle,
-    viewModel: HeadOfViewModels,
-    index: Int = 0,
-    reloadKey: Any = Unit
-) {
-    val context = LocalContext.current
-    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${index + 1}"
-    val downloadsImagePath = "${viewModel.dossiesStandartOFImages}/${article.idArticleECB}_${index + 1}"
 
-    val imageExist by remember(article.idArticleECB, reloadKey) {
-        mutableStateOf(
-            listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-                listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
-                    File("$path.$extension").exists()
-                }?.let { "$it.$extension" }
-            }
-        )
-    }
 
-    val imageSource = imageExist ?: R.drawable.blanc
-
-    // Use a unique key for the ImageRequest
-    val requestKey = "${article.idArticleECB}_${index}_$reloadKey"
-
-    val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(context)
-            .data(imageSource)
-            .size(Size(1000, 1000))
-            .crossfade(true)
-            .setParameter("key", requestKey, memoryCacheKey = requestKey)
-            .build()
-    )
-
-    Image(
-        painter = painter,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize(),
-        contentScale = ContentScale.Fit
-    )
-}
-
-@Composable
-private fun AddColorCard(onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .height(200.dp)
-            .aspectRatio(1f)
-            .padding(4.dp)
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            IconButton(onClick = onClick) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add new color",
-                    modifier = Modifier.size(48.dp)
-                )
-            }
-        }
-    }
-}
 
 
