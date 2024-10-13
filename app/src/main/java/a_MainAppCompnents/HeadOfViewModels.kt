@@ -123,44 +123,44 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
     fun startTimer() {
-        if (_isTimerActive.value) return
-
-        _isTimerActive.value = true
-        currentStep = 0
-        timerJob = viewModelScope.launch {
-            val totalDuration = 2000L // 2 seconds
-            val updateInterval = 20L // Update every 20ms for smooth animation
-
-            for (elapsed in 0L..totalDuration step updateInterval) {
-                if (!isActive) break
-
-                val progress = 100f * elapsed.toFloat() / totalDuration
-                val remainingTime = (totalDuration - elapsed) / 1000f
-                currentStep = (progress * totalSteps / 100f).roundToInt()
-                updateUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Time remaining: ${"%.2f".format(remainingTime)} seconds",
-                    addPLusTOCurrentStep = currentStep,
-                    stepProgress = progress % (100f / totalSteps) * 100f,
-                    delayUi = updateInterval
-                )
-            }
-
-            if (isActive) {
-                // Timer completed
-                showToast("Timer completed!")
-            }
-            _isTimerActive.value = false
-        }
+//        if (_isTimerActive.value) return
+//
+//        _isTimerActive.value = true
+//        currentStep = 0
+//        timerJob = viewModelScope.launch {
+//            val totalDuration = 2000L // 2 seconds
+//            val updateInterval = 20L // Update every 20ms for smooth animation
+//
+//            for (elapsed in 0L..totalDuration step updateInterval) {
+//                if (!isActive) break
+//
+//                val progress = 100f * elapsed.toFloat() / totalDuration
+//                val remainingTime = (totalDuration - elapsed) / 1000f
+//                currentStep = (progress * totalSteps / 100f).roundToInt()
+//                updateUploadProgressBarCounterAndItText(
+//                    nameFunInProgressBar = "Time remaining: ${"%.2f".format(remainingTime)} seconds",
+//                    addPLusTOCurrentStep = currentStep,
+//                    stepProgress = progress % (100f / totalSteps) * 100f,
+//                    delayUi = updateInterval
+//                )
+//            }
+//
+//            if (isActive) {
+//                // Timer completed
+//                showToast("Timer completed!")
+//            }
+//            _isTimerActive.value = false
+//        }
     }
 
     fun stopTimer() {
-        timerJob?.cancel()
-        _isTimerActive.value = false
-        updateUploadProgressBarCounterAndItText(
-            nameFunInProgressBar = "Timer stopped",
-            addPLusTOCurrentStep = totalSteps,
-            stepProgress = 0f
-        )
+//        timerJob?.cancel()
+//        _isTimerActive.value = false
+//        updateUploadProgressBarCounterAndItText(
+//            nameFunInProgressBar = "Timer stopped",
+//            addPLusTOCurrentStep = totalSteps,
+//            stepProgress = 0f
+//        )
     }
 
     private fun showToast(message: String) {
@@ -219,16 +219,43 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private fun createUpdatedColors(colors: Set<String>): List<ColorsArticles> {
         return colors.mapIndexed { index, colorName ->
+            val (cleanColorName, emojis) = extractEmojisAndCleanName(colorName)
             ColorsArticles(
                 idColore = index.toLong() + 1,
-                nameColore = colorName,
-                iconColore = if (colorName.isNotEmpty()) {
-                    val firstGrapheme = colorName.firstGrapheme()
-                    if (firstGrapheme.any { it.isEmoji() }) firstGrapheme else ""
-                } else "",
+                nameColore = cleanColorName.trim(),
+                iconColore = emojis.firstOrNull() ?: "",
                 classementColore = index + 1
             )
         }
+    }
+
+    private fun extractEmojisAndCleanName(colorName: String): Pair<String, List<String>> {
+        val emojis = mutableListOf<String>()
+        val cleanNameBuilder = StringBuilder()
+
+        var iterator = BreakIterator.getCharacterInstance()
+        iterator.setText(colorName)
+
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            val grapheme = colorName.substring(start, end)
+            if (grapheme.any { it.isEmoji() }) {
+                emojis.add(grapheme)
+            } else {
+                cleanNameBuilder.append(grapheme)
+            }
+            start = end
+            end = iterator.next()
+        }
+
+        return Pair(cleanNameBuilder.toString(), emojis)
+    }
+
+    private fun Char.isEmoji(): Boolean {
+        val type = Character.getType(this).toByte()
+        return type == Character.SURROGATE.toByte() || type == Character.OTHER_SYMBOL.toByte()
     }
 
     private fun updateUiState(updatedColors: List<ColorsArticles>) {
@@ -255,18 +282,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         updateUploadProgressBarCounterAndItText("Update Complete", totalSteps, 100f)
     }
 
-    // Extension functions
-    private fun String.firstGrapheme(): String {
-        val iterator = BreakIterator.getCharacterInstance()
-        iterator.setText(this)
-        val end = iterator.next()
-        return if (end != BreakIterator.DONE) this.substring(0, end) else ""
-    }
 
-    private fun Char.isEmoji(): Boolean {
-        val type = Character.getType(this).toByte()
-        return type == Character.SURROGATE.toByte() || type == Character.OTHER_SYMBOL.toByte()
-    }
 
     /**  [updateColorName]
      *
