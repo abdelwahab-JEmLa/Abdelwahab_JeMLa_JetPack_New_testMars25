@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -254,6 +255,7 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
 @Composable
 fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
     val coroutineScope = rememberCoroutineScope()
+    var isTimerActive by remember { mutableStateOf(false) }
 
     FloatingActionButton(
         onClick = {
@@ -266,7 +268,27 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
     ) {
         Icon(
             imageVector = Icons.Default.ThumbUp,
-            contentDescription = null,
+            contentDescription = "Update Colors",
+            tint = Color.White
+        )
+    }
+
+    FloatingActionButton(
+        onClick = {
+            if (!isTimerActive) {
+                isTimerActive = true
+                coroutineScope.launch {
+                    headOfViewModels.buttonEnfonceActivateTimeDisplayedInProgresseBar(2)
+                    isTimerActive = false
+                }
+            }
+        },
+        containerColor = if (isTimerActive) Color.Gray else Color.Blue,
+        modifier = Modifier.size(56.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Timer,
+            contentDescription = "Activate Timer",
             tint = Color.White
         )
     }

@@ -103,17 +103,37 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-    fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", addPLusTOCurrentStep: Int, stepProgress: Float=100f) {
+    fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", addPLusTOCurrentStep: Int, stepProgress: Float = 100f, delayUi: Long = 0) {
         viewModelScope.launch {
-            currentStep=0
             val stepSize = 100f / totalSteps
             val baseProgress = stepSize * (addPLusTOCurrentStep - 1)
             val additionalProgress = stepSize * (stepProgress / 100f)
             _uploadProgress.value = 100f - (baseProgress + additionalProgress).roundToInt().toFloat()
             _textProgress.value = nameFunInProgressBar
+
+            delay(delayUi)
         }
     }
-    /**  [HeadOfViewModels]
+
+    fun buttonEnfonceActivateTimeDisplayedInProgresseBar(timeInSec: Int = 2) {
+        viewModelScope.launch {
+            val totalSteps = 100
+            val delayPerStep = timeInSec * 1000L / totalSteps
+
+            for (step in totalSteps downTo 0) {
+                updateUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Time remaining: ${step * timeInSec / totalSteps} seconds",
+                    addPLusTOCurrentStep = 1,
+                    stepProgress = step.toFloat(),
+                    delayUi = delayPerStep
+                )
+                delay(delayPerStep)
+            }
+        }
+    }
+
+
+        /**  [HeadOfViewModels]
      *
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
@@ -135,11 +155,13 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                     article.nomCouleur3,
                     article.nomCouleur4
                 ).forEach { color ->
-                    colors.add(color)
+                    if (color.isNotEmpty()) {
+                        colors.add(color)
+                    }
                 }
                 val progress = (index + 1).toFloat() / articles.size * 100f
-                updateUploadProgressBarCounterAndItText("Collecting Colors", currentStep, progress)
-                delay(10) // Small delay to avoid blocking the UI
+                updateUploadProgressBarCounterAndItText("Collecting Colors", currentStep, progress,10)
+                 // Small delay to avoid blocking the UI
             }
 
             // Step 2: Updating UI
@@ -148,7 +170,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 ColorsArticles(
                     idColore = index.toLong() + 1,
                     nameColore = colorName,
-                    iconColore = if (colorName.first().isEmoji()) colorName.first().toString() else "",
+                    iconColore = if (colorName.isNotEmpty() && colorName.first().isEmoji()) colorName.first().toString() else "",
                     classementColore = index + 1
                 )
             }
@@ -171,15 +193,14 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             updateUploadProgressBarCounterAndItText("Finalizing Update", ++currentStep, 0f)
             repeat(20) {
                 val progress = (it + 1).toFloat() / 20 * 100f
-                updateUploadProgressBarCounterAndItText("Finalizing Update", currentStep, progress)
-                delay(50) // Larger delay for the final steps
+                updateUploadProgressBarCounterAndItText("Finalizing Update", currentStep, progress,50)
+                 // Larger delay for the final steps
             }
 
             // Ensure we end at 0 (which is 100 in our countdown system)
             updateUploadProgressBarCounterAndItText("Update Complete", totalSteps, 100f)
         }
     }
-
     private fun Char.isEmoji(): Boolean {
         val type = Character.getType(this).toByte()
         return type == Character.SURROGATE.toByte() || type == Character.OTHER_SYMBOL.toByte()
