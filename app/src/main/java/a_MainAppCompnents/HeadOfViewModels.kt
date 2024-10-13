@@ -47,6 +47,7 @@ import kotlin.math.roundToInt
 data class CreatAndEditeInBaseDonnRepositeryModels(
     val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
+    val colorsArticles: List<ColorsArticles> = emptyList(),
     val articlesAcheteModele: List<ArticlesAcheteModele> = emptyList(),
     val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
     val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
@@ -58,8 +59,11 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val error: String? = null
 )
 
-/** Start [HeadOfViewModels]
- * "PS:To Claude Dont Delet This Comment"*/
+/**  [HeadOfViewModels]
+ *
+ * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
+ * ------------------------------------------------*/
+
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
@@ -78,6 +82,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
+    private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
     private val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
     private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
@@ -95,6 +100,62 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val MAX_HEIGHT = 1024
         private const val PROGRESS_UPDATE_DELAY = 100L
         private const val TAG = "HeadOfViewModels"
+    }
+
+
+
+    fun startProgress() {
+        viewModelScope.launch {
+            for (i in 100 downTo 0) {
+                _uploadProgress.value = i.toFloat()
+                delay(20) // 2 seconds total duration (100 * 20ms = 2000ms)
+            }
+        }
+    }
+
+
+    /**  [updateColorName]
+     *
+     * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
+     * ------------------------------------------------*/
+
+    fun updateColorName(article: BaseDonneECBTabelle, index: Int, newColorName: String) {
+        val updatedArticle = when (index) {
+            0 -> article.copy(couleur1 = newColorName)
+            1 -> article.copy(couleur2 = newColorName)
+            2 -> article.copy(couleur3 = newColorName)
+            3 -> article.copy(couleur4 = newColorName)
+            else -> article
+        }
+
+        // Update the article in the database
+        refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle)
+
+        // Update or add the color to ColorsArticles
+        val existingColor = _uiState.value.colorsArticles.find { it.nameColore == newColorName }
+        if (existingColor == null) {
+            val newColor = ColorsArticles(
+                idColore = _uiState.value.colorsArticles.maxOfOrNull { it.idColore }?.plus(1) ?: 1,
+                nameColore = newColorName,
+                classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }?.plus(1) ?: 1
+            )
+            refColorsArticles.child(newColor.idColore.toString()).setValue(newColor)
+        }
+
+        // Update the UI state
+        _uiState.update { currentState ->
+            currentState.copy(
+                colorsArticles = currentState.colorsArticles.toMutableList().apply {
+                    if (existingColor == null) {
+                        add(ColorsArticles(
+                            idColore = maxOfOrNull { it.idColore }?.plus(1) ?: 1,
+                            nameColore = newColorName,
+                            classementColore = maxOfOrNull { it.classementColore }?.plus(1) ?: 1
+                        ))
+                    }
+                }
+            )
+        }
     }
 
 /** Places Dialoge[PlacesOfArticelsInCamionette]
@@ -582,6 +643,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val categories = fetchCategories()
             updateProgressWithDelay(40f)
 
+            val colorsArticles = fetchColorsArticles()
+            updateProgressWithDelay(45f)
+
             val supplierArticlesRecived = fetchSupplierArticles()
             updateProgressWithDelay(60f)
 
@@ -600,7 +664,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val articlesAcheteModele = fetchArticlesAcheteModele()
             updateProgressWithDelay(95f)
 
-            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore,placesOfArticelsInEacheSupplierSrore,placesOfArticelsInCamionette,articlesAcheteModele)
+            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore,placesOfArticelsInEacheSupplierSrore,placesOfArticelsInCamionette,articlesAcheteModele,colorsArticles)
             updateProgressWithDelay(100f)
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
@@ -615,6 +679,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             idArticleECB = snapshot.key?.toIntOrNull() ?: 0
         }
     }
+    private suspend fun fetchColorsArticles() = refColorsArticles.get().await().children
+        .mapNotNull { it.getValue(ColorsArticles::class.java) }
 
     private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
@@ -650,6 +716,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore>,
         placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette>,
         articlesAcheteModele: List<ArticlesAcheteModele>,
+        colorsArticles: List<ColorsArticles>,
         ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
@@ -660,6 +727,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
             placesOfArticelsInCamionette=placesOfArticelsInCamionette,
             articlesAcheteModele =articlesAcheteModele,
+            colorsArticles =colorsArticles,
             isLoading = false
         ) }
     }

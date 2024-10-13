@@ -36,6 +36,8 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,6 +55,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -653,7 +656,8 @@ fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels
                     viewModel,
                     onDismiss,
                     onReloadTrigger,
-                    relodeTigger,)
+                    relodeTigger,
+                )
             }
         }
 
@@ -675,11 +679,13 @@ private fun ColorCard(
     onDismiss: () -> Unit,
     onReloadTrigger: () -> Unit,
     relodeTigger: Int,
-
-    ) {
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val colorsList = uiState.colorsArticles
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var colorName by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -695,7 +701,6 @@ private fun ColorCard(
 
     LaunchedEffect(imageUri) {
         if (imageUri != null) {
-            // Clear the temporary image and refresh the display
             viewModel.clearTempImage(context)
             imageUri = null
         }
@@ -716,7 +721,6 @@ private fun ColorCard(
                     .weight(1f)
                     .aspectRatio(1f)
             ) {
-
                 DisplayeImageECB(article=article,
                     viewModel=viewModel,
                     index=index,
@@ -741,7 +745,20 @@ private fun ColorCard(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            AutoResizedTextECB(text = couleur)
+
+            AutoCompleteTextField(
+                value = colorName,
+                onValueChange = { newValue ->
+                    colorName = newValue
+                    viewModel.updateColorName(article, index, newValue)
+                },
+                options = colorsList.map { it.nameColore },
+                label = { Text(couleur) },
+                onOptionSelected = { selectedColor ->
+                    colorName = selectedColor
+                    viewModel.updateColorName(article, index, selectedColor)
+                }
+            )
         }
     }
 
@@ -754,7 +771,7 @@ private fun ColorCard(
                 Button(onClick = {
                     showDeleteDialog = false
                     viewModel.deleteColor(article, index + 1)
-                   if (index==0) onDismiss()
+                    if (index == 0) onDismiss()
                 }) {
                     Text("Confirm")
                 }
@@ -768,6 +785,58 @@ private fun ColorCard(
     }
 }
 
+@Composable
+fun AutoCompleteTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    options: List<String>,
+    label: @Composable () -> Unit,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var filteredOptions by remember { mutableStateOf(emptyList<String>()) }
+
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = { newValue ->
+                onValueChange(newValue)
+                if (newValue.length >= 2) {
+                    filteredOptions = options.filter { option ->
+                        option.contains(newValue, ignoreCase = true)
+                    }
+                    expanded = filteredOptions.isNotEmpty()
+                } else {
+                    expanded = false
+                    filteredOptions = emptyList()
+                }
+            },
+            label = label,
+            trailingIcon = {
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        "Toggle dropdown"
+                    )
+                }
+            }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            filteredOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(text = option) },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
 @Composable
 fun DisplayeImageECB(
     article: BaseDonneECBTabelle,

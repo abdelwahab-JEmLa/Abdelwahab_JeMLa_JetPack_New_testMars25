@@ -1,6 +1,10 @@
 package a_MainAppCompnents
 
-
+data class ColorsArticles(
+    val idColore: Long = 0,
+    val nameColore: String = "",
+    var classementColore: Int = 0
+)
 data class PlacesOfArticelsInCamionette(
     val idPlace: Long = 0,
     val namePlace: String = "",

@@ -10,40 +10,36 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditRoad
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -64,10 +60,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -91,13 +90,12 @@ import g_BoardStatistiques.f_2_CreditsClients.FragmentCreditsClients
 import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
 import i_SupplierArticlesRecivedManager.Fragment_SupplierArticlesRecivedManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private lateinit var permissionHandler: PermissionHandler
-
     private val database by lazy { AppDatabase.getInstance(this) }
     private val editeBaseDonneViewModel: EditeBaseDonneViewModel by viewModels {
         MainAppViewModelFactory(database.articleDao())
@@ -126,17 +124,13 @@ class MainActivity : ComponentActivity() {
                 val currentRoute = navBackStackEntry?.destination?.route
 
                 val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
+                var buttonName by remember { mutableStateOf("") }
 
                 Scaffold(
                     bottomBar = {
                         if (isNavBarVisible) {
                             Column {
-                                if (uploadProgress > 0f && uploadProgress < 100f) {
-                                    LinearProgressIndicator(
-                                        progress = { uploadProgress / 100f },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                }
+                                ProgressBarWithAnimation(uploadProgress, buttonName)
                                 CustomNavigationBar(
                                     items = items,
                                     currentRoute = currentRoute,
@@ -145,6 +139,7 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(navController.graph.startDestinationId)
                                             launchSingleTop = true
                                         }
+                                        buttonName = items.find { it.route == route }?.title ?: ""
                                     }
                                 )
                             }
@@ -152,7 +147,16 @@ class MainActivity : ComponentActivity() {
                     },
                     floatingActionButton = {
                         if (currentRoute == Screen.MainScreen.route) {
-                            ToggleNavBarButton(isNavBarVisible) { isNavBarVisible = !isNavBarVisible }
+                            Column {
+                                ToggleNavBarButton(isNavBarVisible) { isNavBarVisible = !isNavBarVisible }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                UpdateProgressButton(
+                                    headOfViewModels = headOfViewModels,
+                                    onButtonClick = { clickedButtonName ->
+                                        buttonName = clickedButtonName
+                                    }
+                                )
+                            }
                         }
                     },
                     floatingActionButtonPosition = FabPosition.End
@@ -174,12 +178,103 @@ class MainActivity : ComponentActivity() {
                                 classementsArticlesViewModel
                             ),
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                            headOfViewModels = headOfViewModels
+                            headOfViewModels = headOfViewModels,
+                            onButtonClick = { clickedButtonName ->
+                                buttonName = clickedButtonName
+                            }
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
+    var isBlinking by remember { mutableStateOf(false) }
+    var showProgressBar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(progress) {
+        if (progress > 0f) {
+            showProgressBar = true
+            isBlinking = false
+        } else if (progress == 0f && showProgressBar) {
+            isBlinking = true
+            delay(3000) // Blink for 3 seconds
+            isBlinking = false
+            showProgressBar = false
+        }
+    }
+
+    if (showProgressBar) {
+        val transition = rememberInfiniteTransition(label = "")
+        val alpha by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(500),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = ""
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp) // Increased height
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .alpha(if (isBlinking) alpha else 1f)
+        ) {
+            // Red part (30% of the width)
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.3f)
+                    .background(Color.Red)
+            )
+
+            // Progress part
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress / 100f)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+
+            // Text
+            Text(
+                text = buttonName,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier
+                    .align(Alignment.Center)
+            )
+        }
+    }
+}
+
+@Composable
+fun UpdateProgressButton(headOfViewModels: HeadOfViewModels, onButtonClick: (String) -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
+
+    FloatingActionButton(
+        onClick = {
+            coroutineScope.launch {
+                headOfViewModels.startProgress()
+                onButtonClick("Update")
+            }
+        },
+        containerColor = Color.Red,
+        modifier = Modifier.size(56.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Refresh,
+            contentDescription = "Update Progress",
+            tint = Color.White
+        )
     }
 }
 
@@ -210,6 +305,48 @@ fun CustomNavigationBar(
         }
     }
 }
+@Composable
+fun MainScreen(
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    articleDao: ArticleDao,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    headOfViewModels: HeadOfViewModels,
+    onButtonClick: (String) -> Unit // Ajout de ce paramètre
+) {
+    val coroutineScope = rememberCoroutineScope()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                coroutineScope = coroutineScope,
+                editeBaseDonneViewModel = editeBaseDonneViewModel,
+                articleDao = articleDao,
+                headOfViewModels = headOfViewModels
+            )
+        },
+        floatingActionButton = {
+            UpdateProgressButton(
+                headOfViewModels = headOfViewModels,
+                onButtonClick = onButtonClick // Passage du paramètre ici
+            )
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CardBoardStatistiques(boardStatistiquesStatViewModel)
+            }
+        }
+    }
+}
 
 @Composable
 fun AppNavHost(
@@ -217,7 +354,9 @@ fun AppNavHost(
     database: AppDatabase,
     viewModels: AppViewModels,
     onToggleNavBar: () -> Unit,
-    modifier: Modifier = Modifier, headOfViewModels: HeadOfViewModels
+    headOfViewModels: HeadOfViewModels,
+    modifier: Modifier = Modifier,
+    onButtonClick: (String) -> Unit // Ajout de ce paramètre
 ) {
     val uiState by headOfViewModels.uiState.collectAsState()
 
@@ -241,16 +380,15 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = "main_screen",
-        modifier = modifier.fillMaxSize()
+        startDestination = Screen.MainScreen.route
     ) {
-        composable("main_screen") {
+        composable(Screen.MainScreen.route) {
             MainScreen(
-                navController = navController,
                 editeBaseDonneViewModel = viewModels.editeBaseDonneViewModel,
                 articleDao = database.articleDao(),
                 boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
                 headOfViewModels = headOfViewModels,
+                onButtonClick = onButtonClick // Passage du paramètre ici
             )
         }
         composable("A_Edite_Base_Screen") {
@@ -411,104 +549,5 @@ sealed class Screen(val route: String, val icon: ImageVector, val title: String,
     data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
 }
 
-@Composable
-fun MainScreen(
-    navController: NavHostController,
-    editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    articleDao: ArticleDao,
-    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-    headOfViewModels: HeadOfViewModels
-) {
-    val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                coroutineScope = coroutineScope,
-                editeBaseDonneViewModel = editeBaseDonneViewModel,
-                articleDao = articleDao, headOfViewModels = headOfViewModels
-            )
-        }
-    ) { paddingValues ->
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                CardBoardStatistiques(boardStatistiquesStatViewModel)
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    item {
-                        MenuCard("Edit Base Screen", "A_Edite_Base_Screen", navController, Icons.Default.Edit)
-                    }
-                    item {
-                        MenuCard("Manage Bons Clients", "C_ManageBonsClients", navController, Icons.Default.List)
-                    }
-                    item {
-                        MenuCard("Entre Bons Gro", "FragmentEntreBonsGro", navController, Icons.Default.Add)
-                    }
-                    item {
-                        MenuCard("Credits", "FragmentCredits", navController, Icons.Default.MonetizationOn)
-                    }
-                    item {
-                        MenuCard("CreditsClients", "FragmentCreditsClients", navController, Icons.Default.People)
-                    }
-                    item {
-                        MenuCard("FactoryClassemntsArticles", "Main_FactoryClassemntsArticles", navController, Icons.Default.List)
-                    }
-                    item {
-                        MenuCard("Picker Example", "PickerExample", navController, Icons.Default.DateRange)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MenuCard(title: String, route: String, navController: NavHostController, icon: ImageVector) {
-    Card(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable { navController.navigate(route) },
-        elevation = CardDefaults.cardElevation(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .size(48.dp)
-                    .padding(bottom = 8.dp)
-            )
-            Text(
-            text = title.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
-            style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-}
 
 
