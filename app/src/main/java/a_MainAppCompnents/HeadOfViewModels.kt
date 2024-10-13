@@ -105,18 +105,76 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-
-
-    fun updateUploadProgressCounterAndText(textInProgressBar: String) {
+    private fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String ="", progressCalculatedFromFunQuiSeDiminueDe100Au0: Float) {
         viewModelScope.launch {
-            for (i in 100 downTo 0) {
-                _uploadProgress.value = i.toFloat()
-                delay(20) // 2 seconds total duration (100 * 20ms = 2000ms)
-            }
-            _textProgress.value= textInProgressBar
+            _uploadProgress.value = progressCalculatedFromFunQuiSeDiminueDe100Au0
+            _textProgress.value = nameFunInProgressBar
         }
     }
 
+    fun updateColorsFromArticles() {
+        viewModelScope.launch {
+            val articles = _uiState.value.articlesAcheteModele
+            val colors = mutableSetOf<String>()
+
+            val totalSteps = articles.size + 100 // 100 additional steps for processing and updating
+            var currentStep = 0
+
+            articles.forEach { article ->
+                listOfNotNull(
+                    article.nomCouleur1,
+                    article.nomCouleur2,
+                    article.nomCouleur3,
+                    article.nomCouleur4
+                )
+                    .forEach { color ->
+                        colors.add(color)
+                    }
+                currentStep++
+                val progress = 100f - (currentStep.toFloat() / totalSteps * 100f)
+                updateUploadProgressBarCounterAndItText("Collecting Colors", progress)
+                delay(10) // Small delay to avoid blocking the UI
+            }
+
+            val updatedColors = colors.mapIndexed { index, colorName ->
+                ColorsArticles(
+                    idColore = index.toLong() + 1,
+                    nameColore = colorName,
+                    iconColore = if (colorName.first().isEmoji()) colorName.first().toString() else "",
+                    classementColore = index + 1
+                )
+            }
+
+            _uiState.update { currentState ->
+                currentState.copy(colorsArticles = updatedColors)
+            }
+
+            // Update Firebase
+            updatedColors.forEachIndexed { _, color ->
+                refColorsArticles.child(color.idColore.toString()).setValue(color)
+                currentStep++
+                val progress = 100f - (currentStep.toFloat() / totalSteps * 100f)
+                updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", progress)
+                delay(10) // Small delay to avoid blocking the UI
+            }
+
+            // Final steps
+            repeat(20) {
+                currentStep++
+                val progress = 100f - (currentStep.toFloat() / totalSteps * 100f)
+                updateUploadProgressBarCounterAndItText("Finalizing Update", progress)
+                delay(50) // Larger delay for the final steps
+            }
+
+            // Ensure we end at 0
+            updateUploadProgressBarCounterAndItText("Update Complete", 0f)
+        }
+    }
+
+    private fun Char.isEmoji(): Boolean {
+        val type = Character.getType(this).toByte()
+        return type == Character.SURROGATE.toByte() || type == Character.OTHER_SYMBOL.toByte()
+    }
 
     /**  [updateColorName]
      *

@@ -258,8 +258,7 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
     FloatingActionButton(
         onClick = {
             coroutineScope.launch {
-                headOfViewModels.updateUploadProgressCounterAndText(textInProgressBar="UpdateNameCouleursFromListOfDataBase" uploadProgress=)
-
+                headOfViewModels.updateColorsFromArticles()
             }
         },
         containerColor = Color.Red,
