@@ -79,6 +79,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
 
+    private val _textProgress = MutableStateFlow("")
+    val textProgress: StateFlow<String> = _textProgress.asStateFlow()
+
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
@@ -104,12 +107,13 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
 
 
-    fun startProgress() {
+    fun updateUploadProgressCounterAndText(textInProgressBar: String) {
         viewModelScope.launch {
             for (i in 100 downTo 0) {
                 _uploadProgress.value = i.toFloat()
                 delay(20) // 2 seconds total duration (100 * 20ms = 2000ms)
             }
+            _textProgress.value= textInProgressBar
         }
     }
 

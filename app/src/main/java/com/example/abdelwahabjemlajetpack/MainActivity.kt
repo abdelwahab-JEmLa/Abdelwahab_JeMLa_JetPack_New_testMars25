@@ -125,13 +125,13 @@ class MainActivity : ComponentActivity() {
                 val currentRoute = navBackStackEntry?.destination?.route
 
                 val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
-                var buttonName by remember { mutableStateOf("") }
+                val textProgress by headOfViewModels.textProgress.collectAsState()
 
                 Scaffold(
                     bottomBar = {
                         if (isNavBarVisible) {
                             Column {
-                                ProgressBarWithAnimation(uploadProgress, buttonName)
+                                ProgressBarWithAnimation(uploadProgress, textProgress)
                                 CustomNavigationBar(
                                     items = items,
                                     currentRoute = currentRoute,
@@ -140,7 +140,6 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(navController.graph.startDestinationId)
                                             launchSingleTop = true
                                         }
-                                        buttonName = items.find { it.route == route }?.title ?: ""
                                     }
                                 )
                             }
@@ -151,11 +150,8 @@ class MainActivity : ComponentActivity() {
                             Column {
                                 ToggleNavBarButton(isNavBarVisible) { isNavBarVisible = !isNavBarVisible }
                                 Spacer(modifier = Modifier.height(16.dp))
-                                UpdateNameCouleursFromListOfDataBase(
+                                MainActionsFab(
                                     headOfViewModels = headOfViewModels,
-                                    onButtonClick = { clickedButtonName ->
-                                        buttonName = clickedButtonName
-                                    }
                                 )
                             }
                         }
@@ -180,9 +176,7 @@ class MainActivity : ComponentActivity() {
                             ),
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                             headOfViewModels = headOfViewModels,
-                            onButtonClick = { clickedButtonName ->
-                                buttonName = clickedButtonName
-                            }
+
                         )
                     }
                 }
@@ -258,14 +252,14 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
 }
 
 @Composable
-fun UpdateNameCouleursFromListOfDataBase(headOfViewModels: HeadOfViewModels, onButtonClick: (String) -> Unit) {
+fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
     val coroutineScope = rememberCoroutineScope()
 
     FloatingActionButton(
         onClick = {
             coroutineScope.launch {
-                headOfViewModels.startProgress()
-                onButtonClick("Update")
+                headOfViewModels.updateUploadProgressCounterAndText(textInProgressBar="UpdateNameCouleursFromListOfDataBase" uploadProgress=)
+
             }
         },
         containerColor = Color.Red,
@@ -312,7 +306,6 @@ fun MainScreen(
     articleDao: ArticleDao,
     boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     headOfViewModels: HeadOfViewModels,
-    onButtonClick: (String) -> Unit // Ajout de ce paramètre
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -326,9 +319,8 @@ fun MainScreen(
             )
         },
         floatingActionButton = {
-            UpdateNameCouleursFromListOfDataBase(
+            MainActionsFab(
                 headOfViewModels = headOfViewModels,
-                onButtonClick = onButtonClick // Passage du paramètre ici
             )
         },
         floatingActionButtonPosition = FabPosition.End
@@ -357,7 +349,6 @@ fun AppNavHost(
     onToggleNavBar: () -> Unit,
     headOfViewModels: HeadOfViewModels,
     modifier: Modifier = Modifier,
-    onButtonClick: (String) -> Unit // Ajout de ce paramètre
 ) {
     val uiState by headOfViewModels.uiState.collectAsState()
 
@@ -389,7 +380,6 @@ fun AppNavHost(
                 articleDao = database.articleDao(),
                 boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
                 headOfViewModels = headOfViewModels,
-                onButtonClick = onButtonClick // Passage du paramètre ici
             )
         }
         composable("A_Edite_Base_Screen") {
