@@ -16,6 +16,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -255,7 +257,7 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
 @Composable
 fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
     val coroutineScope = rememberCoroutineScope()
-    var isTimerActive by remember { mutableStateOf(false) }
+    val isTimerActive by headOfViewModels.isTimerActive.collectAsState()
 
     FloatingActionButton(
         onClick = {
@@ -273,18 +275,35 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
         )
     }
 
+    PressHoldButton(
+        onPress = { headOfViewModels.startTimer() },
+        onRelease = { headOfViewModels.stopTimer() },
+        isActive = isTimerActive
+    )
+}
+
+@Composable
+fun PressHoldButton(
+    onPress: () -> Unit,
+    onRelease: () -> Unit,
+    isActive: Boolean
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            onPress()
+        } else {
+            onRelease()
+        }
+    }
+
     FloatingActionButton(
-        onClick = {
-            if (!isTimerActive) {
-                isTimerActive = true
-                coroutineScope.launch {
-                    headOfViewModels.buttonEnfonceActivateTimeDisplayedInProgresseBar(2)
-                    isTimerActive = false
-                }
-            }
-        },
-        containerColor = if (isTimerActive) Color.Gray else Color.Blue,
-        modifier = Modifier.size(56.dp)
+        onClick = { /* Do nothing on click */ },
+        modifier = Modifier.size(56.dp),
+        containerColor = if (isActive) Color.Gray else Color.Blue,
+        interactionSource = interactionSource
     ) {
         Icon(
             imageVector = Icons.Default.Timer,
@@ -293,6 +312,7 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
         )
     }
 }
+
 
 @Composable
 fun CustomNavigationBar(

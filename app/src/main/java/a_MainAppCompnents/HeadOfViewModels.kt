@@ -28,11 +28,13 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import h_FactoryClassemntsArticles.ClassementsArticlesTabel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -72,13 +74,18 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
 
 
-    private val _uploadProgress = MutableStateFlow(0f)
+    private val _uploadProgress = MutableStateFlow(100f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
 
     private val _textProgress = MutableStateFlow("")
     val textProgress: StateFlow<String> = _textProgress.asStateFlow()
 
-    var totalSteps = 10 // Total number of steps in initDataFromFirebase
+    private val _isTimerActive = MutableStateFlow(false)
+    val isTimerActive: StateFlow<Boolean> = _isTimerActive.asStateFlow()
+
+    private var timerJob: Job? = null
+
+    var totalSteps = 100 // Total number of steps for the timer
     var currentStep = 0 // Current step in the process
 
     private val firebaseDatabase = FirebaseDatabase.getInstance()
@@ -114,26 +121,53 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+    fun startTimer() {
+        if (_isTimerActive.value) return
 
-    fun buttonEnfonceActivateTimeDisplayedInProgresseBar(timeInSec: Int = 2) {
-        viewModelScope.launch {
-            val totalSteps = 100
-            val delayPerStep = timeInSec * 1000L / totalSteps
+        _isTimerActive.value = true
+        currentStep = 0
+        timerJob = viewModelScope.launch {
+            val totalDuration = 2000L // 2 seconds
+            val updateInterval = 20L // Update every 20ms for smooth animation
 
-            for (step in totalSteps downTo 0) {
+            for (elapsed in 0L..totalDuration step updateInterval) {
+                if (!isActive) break
+
+                val progress = 100f * elapsed.toFloat() / totalDuration
+                val remainingTime = (totalDuration - elapsed) / 1000f
+                currentStep = (progress * totalSteps / 100f).roundToInt()
                 updateUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Time remaining: ${step * timeInSec / totalSteps} seconds",
-                    addPLusTOCurrentStep = 1,
-                    stepProgress = step.toFloat(),
-                    delayUi = delayPerStep
+                    nameFunInProgressBar = "Time remaining: ${"%.2f".format(remainingTime)} seconds",
+                    addPLusTOCurrentStep = currentStep,
+                    stepProgress = progress % (100f / totalSteps) * 100f,
+                    delayUi = updateInterval
                 )
-                delay(delayPerStep)
             }
+
+            if (isActive) {
+                // Timer completed
+                showToast("Timer completed!")
+            }
+            _isTimerActive.value = false
         }
     }
 
+    fun stopTimer() {
+        timerJob?.cancel()
+        _isTimerActive.value = false
+        updateUploadProgressBarCounterAndItText(
+            nameFunInProgressBar = "Timer stopped",
+            addPLusTOCurrentStep = totalSteps,
+            stepProgress = 0f
+        )
+    }
 
-        /**  [HeadOfViewModels]
+    private fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+
+    /**  [HeadOfViewModels]
      *
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
