@@ -777,7 +777,7 @@ private fun ColorCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var colorName by remember { mutableStateOf(couleur) }
+    var colorName by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
