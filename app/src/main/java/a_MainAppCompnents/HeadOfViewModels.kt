@@ -287,7 +287,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
 
-    fun updateColorName(article: BaseDonneECBTabelle, index: Int, newColorName: String,ecraseLeDernie:Boolean=false) {
+    fun updateColorName(article: BaseDonneECBTabelle, index: Int, newColorName: String, ecraseLeDernie: Boolean = false) {
         val updatedArticle = when (index) {
             0 -> article.copy(couleur1 = newColorName)
             1 -> article.copy(couleur2 = newColorName)
@@ -308,6 +308,21 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
             )
             refColorsArticles.child(newColor.idColore.toString()).setValue(newColor)
+        }
+
+        // Update the _currentEditedArticle
+        _currentEditedArticle.update { currentArticle ->
+            if (currentArticle?.idArticleECB == article.idArticleECB) {
+                when (index) {
+                    0 -> currentArticle.copy(couleur1 = newColorName)
+                    1 -> currentArticle.copy(couleur2 = newColorName)
+                    2 -> currentArticle.copy(couleur3 = newColorName)
+                    3 -> currentArticle.copy(couleur4 = newColorName)
+                    else -> currentArticle
+                }
+            } else {
+                currentArticle
+            }
         }
 
         // Update the UI state

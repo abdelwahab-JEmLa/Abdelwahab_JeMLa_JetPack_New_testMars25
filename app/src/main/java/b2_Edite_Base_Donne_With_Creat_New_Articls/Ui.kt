@@ -212,7 +212,6 @@ fun ArticleDetailWindow(
                                                         selectedCategory.idCategorieInCategoriesTabele,
                                                         selectedCategory.nomCategorieInCategoriesTabele
                                                     )
-                                                    onReloadTrigger()
                                                     currentChangingField = "nomCategorie"
                                                 },
                                                 modifier = Modifier
