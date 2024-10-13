@@ -41,6 +41,7 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.text.BreakIterator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -174,7 +175,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     fun updateColorsFromArticles() {
         viewModelScope.launch {
-            val articles = _uiState.value.articlesAcheteModele
+            val articles = _uiState.value.articlesBaseDonneECB
             val colors = mutableSetOf<String>()
 
             totalSteps = 4 // 1. Collecting colors, 2. Updating UI, 3. Updating Firebase, 4. Finalizing
@@ -183,58 +184,85 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             // Step 1: Collecting colors
             updateUploadProgressBarCounterAndItText("Collecting Colors", ++currentStep, 0f)
             articles.forEachIndexed { index, article ->
-                listOfNotNull(
-                    article.nomCouleur1,
-                    article.nomCouleur2,
-                    article.nomCouleur3,
-                    article.nomCouleur4
-                ).forEach { color ->
-                    if (color.isNotEmpty()) {
-                        colors.add(color)
-                    }
-                }
+                collectColors(article, colors)
                 val progress = (index + 1).toFloat() / articles.size * 100f
-                updateUploadProgressBarCounterAndItText("Collecting Colors", currentStep, progress,10)
-                 // Small delay to avoid blocking the UI
+                updateUploadProgressBarCounterAndItText("Collecting Colors", currentStep, progress, 10)
             }
 
             // Step 2: Updating UI
             updateUploadProgressBarCounterAndItText("Updating UI", ++currentStep, 0f)
-            val updatedColors = colors.mapIndexed { index, colorName ->
-                ColorsArticles(
-                    idColore = index.toLong() + 1,
-                    nameColore = colorName,
-                    iconColore = if (colorName.isNotEmpty() && colorName.first().isEmoji()) colorName.first().toString() else "",
-                    classementColore = index + 1
-                )
-            }
-
-            _uiState.update { currentState ->
-                currentState.copy(colorsArticles = updatedColors)
-            }
+            val updatedColors = createUpdatedColors(colors)
+            updateUiState(updatedColors)
             updateUploadProgressBarCounterAndItText("Updating UI", currentStep, 100f)
 
             // Step 3: Updating Firebase
             updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", ++currentStep, 0f)
-            updatedColors.forEachIndexed { index, color ->
-                refColorsArticles.child(color.idColore.toString()).setValue(color)
-                val progress = (index + 1).toFloat() / updatedColors.size * 100f
-                updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", currentStep, progress)
-                delay(10) // Small delay to avoid blocking the UI
-            }
+            updateFirebase(updatedColors)
 
             // Step 4: Finalizing
-            updateUploadProgressBarCounterAndItText("Finalizing Update", ++currentStep, 0f)
-            repeat(20) {
-                val progress = (it + 1).toFloat() / 20 * 100f
-                updateUploadProgressBarCounterAndItText("Finalizing Update", currentStep, progress,50)
-                 // Larger delay for the final steps
-            }
-
-            // Ensure we end at 0 (which is 100 in our countdown system)
-            updateUploadProgressBarCounterAndItText("Update Complete", totalSteps, 100f)
+            finalize()
         }
     }
+
+    private fun collectColors(article: BaseDonneECBTabelle, colors: MutableSet<String>) {
+        listOfNotNull(
+            article.couleur1,
+            article.couleur2,
+            article.couleur3,
+            article.couleur4
+        ).forEach { color ->
+            if (color.isNotEmpty()) {
+                colors.add(color)
+            }
+        }
+    }
+
+    private fun createUpdatedColors(colors: Set<String>): List<ColorsArticles> {
+        return colors.mapIndexed { index, colorName ->
+            ColorsArticles(
+                idColore = index.toLong() + 1,
+                nameColore = colorName,
+                iconColore = if (colorName.isNotEmpty()) {
+                    val firstGrapheme = colorName.firstGrapheme()
+                    if (firstGrapheme.any { it.isEmoji() }) firstGrapheme else ""
+                } else "",
+                classementColore = index + 1
+            )
+        }
+    }
+
+    private fun updateUiState(updatedColors: List<ColorsArticles>) {
+        _uiState.update { currentState ->
+            currentState.copy(colorsArticles = updatedColors)
+        }
+    }
+
+    private suspend fun updateFirebase(updatedColors: List<ColorsArticles>) {
+        updatedColors.forEachIndexed { index, color ->
+            refColorsArticles.child(color.idColore.toString()).setValue(color)
+            val progress = (index + 1).toFloat() / updatedColors.size * 100f
+            updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", currentStep, progress)
+            delay(10) // Small delay to avoid blocking the UI
+        }
+    }
+
+    private suspend fun finalize() {
+        updateUploadProgressBarCounterAndItText("Finalizing Update", ++currentStep, 0f)
+        repeat(20) {
+            val progress = (it + 1).toFloat() / 20 * 100f
+            updateUploadProgressBarCounterAndItText("Finalizing Update", currentStep, progress, 50)
+        }
+        updateUploadProgressBarCounterAndItText("Update Complete", totalSteps, 100f)
+    }
+
+    // Extension functions
+    private fun String.firstGrapheme(): String {
+        val iterator = BreakIterator.getCharacterInstance()
+        iterator.setText(this)
+        val end = iterator.next()
+        return if (end != BreakIterator.DONE) this.substring(0, end) else ""
+    }
+
     private fun Char.isEmoji(): Boolean {
         val type = Character.getType(this).toByte()
         return type == Character.SURROGATE.toByte() || type == Character.OTHER_SYMBOL.toByte()
