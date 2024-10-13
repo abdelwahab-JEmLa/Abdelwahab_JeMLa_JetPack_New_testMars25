@@ -48,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -136,7 +137,6 @@ fun ArticleDetailWindow(
             viewModel.tempImageUri?.let { uri ->
                 coroutineScope.launch {
                     try {
-                        // Use the current article's category when creating a new article
                         val category = viewModel.getCategoryByName(article.nomCategorie)
                         val newArticle = viewModel.addNewParentArticle(uri, category)
                         viewModel.updateCurrentEditedArticle(newArticle)
@@ -161,7 +161,6 @@ fun ArticleDetailWindow(
             shape = MaterialTheme.shapes.large
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Main scrollable content
                 Card(
                     modifier = Modifier.fillMaxSize(),
                     elevation = CardDefaults.cardElevation(4.dp)
@@ -181,9 +180,9 @@ fun ArticleDetailWindow(
 
                         // TOP_ROW fields
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr) ->
+                            FieldsDisplayer.TOP_ROW.fields.forEach { (column, abbr, _) ->
                                 DisplayField(
-                                    uiState=uiState,
+                                    uiState = uiState,
                                     columnToChange = column,
                                     abbreviation = abbr,
                                     currentChangingField = currentChangingField,
@@ -192,8 +191,8 @@ fun ArticleDetailWindow(
                                     displayeInOutlines = displayInOutlines,
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(67.dp) ,
-                                    onValueChanged =  { currentChangingField = column },
+                                        .height(67.dp),
+                                    onValueChanged = { currentChangingField = column },
                                 )
                             }
                         }
@@ -221,16 +220,20 @@ fun ArticleDetailWindow(
                                                     .height(67.dp)
                                             )
                                         }
-                                        FieldsDisplayer.BenficesEntre -> {
+                                        FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
                                             if (!isNewArticle) {
-                                                InfoBoxWhithVoiceInpute(
+                                                DisplayField(
                                                     columnToChange = column,
                                                     abbreviation = abbr,
+                                                    currentChangingField = currentChangingField,
                                                     article = article,
+                                                    viewModel = viewModel,
                                                     displayeInOutlines = displayInOutlines,
                                                     modifier = Modifier
                                                         .weight(1f)
-                                                        .height(67.dp)
+                                                        .height(67.dp),
+                                                    onValueChanged = { currentChangingField = column },
+                                                    uiState = uiState
                                                 )
                                             }
                                         }
@@ -245,8 +248,8 @@ fun ArticleDetailWindow(
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .height(67.dp),
-                                                { currentChangingField = column },
-                                                uiState
+                                                onValueChanged = { currentChangingField = column },
+                                                uiState = uiState
                                             )
                                         }
                                     }
@@ -328,7 +331,6 @@ fun ArticleDetailWindow(
                 }
             }
         }
-
     }
 }
 @Composable
@@ -709,54 +711,69 @@ private fun ColorCard(
             .height(200.dp)
             .padding(4.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(1f)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxSize()
             ) {
-                DisplayeImageECB(article=article,
-                    viewModel=viewModel,
-                    index=index,
-                    reloadKey =relodeTigger
-                )
-
-                IconButton(
-                    onClick = { showDeleteDialog = true },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete color")
-                }
+                    DisplayeImageECB(
+                        article = article,
+                        viewModel = viewModel,
+                        index = index,
+                        reloadKey = relodeTigger
+                    )
 
-                IconButton(
-                    onClick = {
-                        viewModel.tempImageUri = viewModel.createTempImageUri(context)
-                        launcher.launch(viewModel.tempImageUri!!)
-                    },
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                ) {
-                    Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete color")
+                    }
+
+                    IconButton(
+                        onClick = {
+                            viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                            launcher.launch(viewModel.tempImageUri!!)
+                        },
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                    ) {
+                        Icon(Icons.Default.AddAPhoto, contentDescription = "Add photo")
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
 
-            AutoCompleteTextField(      //TODO fait que ca soit au dessu de l image on backgroun blanche
-                value = colorName,
-                onValueChange = { newValue ->
-                    colorName = newValue
-                    viewModel.updateColorName(article, index, newValue)
-                },
-                options = colorsList.map { it.nameColore },
-                label = { Text(couleur) },
-                onOptionSelected = { selectedColor ->
-                    colorName = selectedColor
-                    viewModel.updateColorName(article, index, selectedColor,ecraseLeDernie = true)
-                }
-            )
+            // Positioned AutoCompleteTextField
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            ) {
+                AutoCompleteTextField(
+                    value = colorName,
+                    onValueChange = { newValue ->
+                        colorName = newValue
+                        viewModel.updateColorName(article, index, newValue)
+                    },
+                    options = colorsList.map { it.nameColore },
+                    label = couleur,
+                    onOptionSelected = { selectedColor ->
+                        colorName = selectedColor
+                        viewModel.updateColorName(article, index, selectedColor, ecraseLeDernie = true)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                )
+            }
         }
     }
 
@@ -788,13 +805,14 @@ fun AutoCompleteTextField(
     value: String,
     onValueChange: (String) -> Unit,
     options: List<String>,
-    label: @Composable () -> Unit,
-    onOptionSelected: (String) -> Unit
+    label: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     var filteredOptions by remember { mutableStateOf(emptyList<String>()) }
 
-    Column {
+    Box(modifier = modifier) {
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
@@ -809,11 +827,17 @@ fun AutoCompleteTextField(
                     filteredOptions = emptyList()
                 }
             },
-            label = label,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = Color.White.copy(alpha = 0.8f),
+                focusedContainerColor = Color.White.copy(alpha = 0.8f)
+            )
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth()
         ) {
             filteredOptions.forEach { option ->
                 DropdownMenuItem(
