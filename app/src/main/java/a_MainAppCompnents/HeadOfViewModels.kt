@@ -1752,6 +1752,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun deleteColor(article: BaseDonneECBTabelle, colorIndex: Int) {
         viewModelScope.launch {
             when (colorIndex) {
+                0 -> updateLocalAndFireBaseArticle(article.copy(articleHaveUniteImages = false))
                 1 -> deleteArticle(article)
                 2 -> updateLocalAndFireBaseArticle(article.copy(couleur2 = ""))
                 3 -> updateLocalAndFireBaseArticle(article.copy(couleur3 = ""))
@@ -1763,25 +1764,41 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun deleteColorImage(articleId: Int, colorIndex: Int) {
         val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
+        val uniteImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_Unite"
+
         val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
         // Delete the image from Firebase Storage for both jpg and webp
         listOf("jpg", "webp").forEach { extension ->
             val imageRef = storageImgsRef.child("${articleId}_${colorIndex}.$extension")
+            val uniteRef = storageImgsRef.child("${articleId}_Unite.$extension")
+
+            // Delete unite image only if colorIndex is 0
+            if (colorIndex == 0) {
+                uniteRef.delete().addOnFailureListener { exception ->
+                    Log.e("Firebase", "Error deleting unite image from Firebase Storage", exception)
+                }
+            }
+
             imageRef.delete().addOnSuccessListener {
                 // Image deleted successfully from Firebase Storage
             }.addOnFailureListener { exception ->
-                // Handle any errors
                 Log.e("Firebase", "Error deleting image from Firebase Storage", exception)
             }
         }
 
         // Delete local files
         listOf("jpg", "webp").forEach { extension ->
-            listOf(baseImagePath).forEach { path ->
-                val file = File("$path.$extension")
-                if (file.exists()) {
-                    file.delete()
+            val file = File("$baseImagePath.$extension")
+            if (file.exists()) {
+                file.delete()
+            }
+
+            // Delete unite image file only if colorIndex is 0
+            if (colorIndex == 0) {
+                val uniteFile = File("$uniteImagePath.$extension")
+                if (uniteFile.exists()) {
+                    uniteFile.delete()
                 }
             }
         }
@@ -1809,7 +1826,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     articlesBaseDonneECB = currentState.articlesBaseDonneECB.filter { it.idArticleECB != article.idArticleECB }
                 )
             }
-            for (i in 1..4) {
+            for (i in 0..4) {  // Changed to include 0 for unite image
                 deleteColorImage(article.idArticleECB, i)
             }
         } catch (e: Exception) {
@@ -1817,14 +1834,14 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-
     fun processNewImage(uri: Uri, article: BaseDonneECBTabelle, colorIndex: Int) {
         viewModelScope.launch {
             try {
-                val fileName = "${article.idArticleECB}_${colorIndex}.jpg"
+                val fileName = "${article.idArticleECB}_${if (colorIndex == 0) "Unite" else colorIndex}.jpg"
                 copyImage(uri, fileName)
 
                 val updatedArticle = when (colorIndex) {
+                    0 -> article.copy(articleHaveUniteImages = true)
                     1 -> article.copy(couleur1 = "Couleur_1")
                     2 -> article.copy(couleur2 = "Couleur_2")
                     3 -> article.copy(couleur3 = "Couleur_3")

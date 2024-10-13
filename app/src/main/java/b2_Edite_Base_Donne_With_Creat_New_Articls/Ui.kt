@@ -844,24 +844,30 @@ private fun ColorCard(
                         Icon(Icons.Default.Delete, contentDescription = "Delete color")
                     }
                 }
-
-                // AutoCompleteTextField at the bottom
-                AutoCompleteTextField(
-                    value = colorName,
-                    onValueChange = { newValue ->
-                        colorName = newValue
-                        viewModel.updateColorName(article, index, newValue)
-                    },
-                    options = colorsList.map { it.nameColore },
-                    label = couleur,
-                    onOptionSelected = { selectedColor ->
-                        colorName = selectedColor
-                        viewModel.updateColorName(article, index, selectedColor, ecraseLeDernie = true)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
+                if (index!=-1) {
+                    // AutoCompleteTextField at the bottom
+                    AutoCompleteTextField(
+                        value = colorName,
+                        onValueChange = { newValue ->
+                            colorName = newValue
+                            viewModel.updateColorName(article, index, newValue)
+                        },
+                        options = colorsList.map { it.nameColore },
+                        label = couleur,
+                        onOptionSelected = { selectedColor ->
+                            colorName = selectedColor
+                            viewModel.updateColorName(
+                                article,
+                                index,
+                                selectedColor,
+                                ecraseLeDernie = true
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    )
+                }
             }
         }
     }
