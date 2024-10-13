@@ -59,10 +59,6 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val error: String? = null
 )
 
-/**  [HeadOfViewModels]
- *
- * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
- * ------------------------------------------------*/
 
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
@@ -81,6 +77,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
     private val _textProgress = MutableStateFlow("")
     val textProgress: StateFlow<String> = _textProgress.asStateFlow()
+
+    private var totalSteps = 10 // Total number of steps in initDataFromFirebase
+    private var currentStep = 0 // Current step in the process
 
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
@@ -101,41 +100,49 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     companion object {
         private const val MAX_WIDTH = 1024
         private const val MAX_HEIGHT = 1024
-        private const val PROGRESS_UPDATE_DELAY = 100L
         private const val TAG = "HeadOfViewModels"
     }
 
-    private fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String ="", progressCalculatedFromFunQuiSeDiminueDe100Au0: Float) {
+    private fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", currentStep: Int, stepProgress: Float) {
         viewModelScope.launch {
-            _uploadProgress.value = progressCalculatedFromFunQuiSeDiminueDe100Au0
+            val stepSize = 100f / totalSteps
+            val baseProgress = stepSize * (currentStep - 1)
+            val additionalProgress = stepSize * (stepProgress / 100f)
+            _uploadProgress.value = 100f - (baseProgress + additionalProgress).roundToInt().toFloat()
             _textProgress.value = nameFunInProgressBar
         }
     }
+    /**  [HeadOfViewModels]
+     *
+     * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
+     * ------------------------------------------------*/
 
     fun updateColorsFromArticles() {
         viewModelScope.launch {
             val articles = _uiState.value.articlesAcheteModele
             val colors = mutableSetOf<String>()
 
-            val totalSteps = articles.size + 100 // 100 additional steps for processing and updating
-            var currentStep = 0
+            totalSteps = 4 // 1. Collecting colors, 2. Updating UI, 3. Updating Firebase, 4. Finalizing
+            currentStep = 0
 
-            articles.forEach { article ->
+            // Step 1: Collecting colors
+            updateUploadProgressBarCounterAndItText("Collecting Colors", ++currentStep, 0f)
+            articles.forEachIndexed { index, article ->
                 listOfNotNull(
                     article.nomCouleur1,
                     article.nomCouleur2,
                     article.nomCouleur3,
                     article.nomCouleur4
-                )
-                    .forEach { color ->
-                        colors.add(color)
-                    }
-                currentStep++
-                val progress = 100f - (currentStep.toFloat() / totalSteps * 100f)
-                updateUploadProgressBarCounterAndItText("Collecting Colors", progress)
+                ).forEach { color ->
+                    colors.add(color)
+                }
+                val progress = (index + 1).toFloat() / articles.size * 100f
+                updateUploadProgressBarCounterAndItText("Collecting Colors", currentStep, progress)
                 delay(10) // Small delay to avoid blocking the UI
             }
 
+            // Step 2: Updating UI
+            updateUploadProgressBarCounterAndItText("Updating UI", ++currentStep, 0f)
             val updatedColors = colors.mapIndexed { index, colorName ->
                 ColorsArticles(
                     idColore = index.toLong() + 1,
@@ -148,26 +155,27 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             _uiState.update { currentState ->
                 currentState.copy(colorsArticles = updatedColors)
             }
+            updateUploadProgressBarCounterAndItText("Updating UI", currentStep, 100f)
 
-            // Update Firebase
-            updatedColors.forEachIndexed { _, color ->
+            // Step 3: Updating Firebase
+            updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", ++currentStep, 0f)
+            updatedColors.forEachIndexed { index, color ->
                 refColorsArticles.child(color.idColore.toString()).setValue(color)
-                currentStep++
-                val progress = 100f - (currentStep.toFloat() / totalSteps * 100f)
-                updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", progress)
+                val progress = (index + 1).toFloat() / updatedColors.size * 100f
+                updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", currentStep, progress)
                 delay(10) // Small delay to avoid blocking the UI
             }
 
-            // Final steps
+            // Step 4: Finalizing
+            updateUploadProgressBarCounterAndItText("Finalizing Update", ++currentStep, 0f)
             repeat(20) {
-                currentStep++
-                val progress = 100f - (currentStep.toFloat() / totalSteps * 100f)
-                updateUploadProgressBarCounterAndItText("Finalizing Update", progress)
+                val progress = (it + 1).toFloat() / 20 * 100f
+                updateUploadProgressBarCounterAndItText("Finalizing Update", currentStep, progress)
                 delay(50) // Larger delay for the final steps
             }
 
-            // Ensure we end at 0
-            updateUploadProgressBarCounterAndItText("Update Complete", 0f)
+            // Ensure we end at 0 (which is 100 in our countdown system)
+            updateUploadProgressBarCounterAndItText("Update Complete", totalSteps, 100f)
         }
     }
 
@@ -697,41 +705,47 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     private suspend fun initDataFromFirebase() {
         try {
             _uiState.update { it.copy(isLoading = true) }
-            updateProgressWithDelay(0f)
+            currentStep = 0
+            totalSteps = 10 // Update this if you change the number of steps
+
+            updateUploadProgressBarCounterAndItText("Starting data fetch", ++currentStep, 0f)
 
             val articles = fetchArticles()
-            updateProgressWithDelay(20f)
+            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
             val categories = fetchCategories()
-            updateProgressWithDelay(40f)
+            updateUploadProgressBarCounterAndItText("Fetched categories", ++currentStep, 100f)
 
             val colorsArticles = fetchColorsArticles()
-            updateProgressWithDelay(45f)
+            updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
 
             val supplierArticlesRecived = fetchSupplierArticles()
-            updateProgressWithDelay(60f)
+            updateUploadProgressBarCounterAndItText("Fetched supplier articles", ++currentStep, 100f)
 
             val suppliersSA = fetchSuppliers()
-            updateProgressWithDelay(80f)
+            updateUploadProgressBarCounterAndItText("Fetched suppliers", ++currentStep, 100f)
 
             val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
-            updateProgressWithDelay(90f)
+            updateUploadProgressBarCounterAndItText("Fetched article map", ++currentStep, 100f)
 
             val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
-            updateProgressWithDelay(95f)
+            updateUploadProgressBarCounterAndItText("Fetched supplier store places", ++currentStep, 100f)
 
             val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
-            updateProgressWithDelay(95f)
+            updateUploadProgressBarCounterAndItText("Fetched camionette places", ++currentStep, 100f)
 
             val articlesAcheteModele = fetchArticlesAcheteModele()
-            updateProgressWithDelay(95f)
+            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
-            updateUiState(articles, categories, supplierArticlesRecived, suppliersSA,mapArticleInSupplierStore,placesOfArticelsInEacheSupplierSrore,placesOfArticelsInCamionette,articlesAcheteModele,colorsArticles)
-            updateProgressWithDelay(100f)
+            updateUiState(
+                articles, categories, supplierArticlesRecived, suppliersSA,
+                mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles
+            )
+            updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
         } catch (e: Exception) {
             handleError("Failed to load data from Firebase", e)
         } finally {
-            _uploadProgress.value = 0f
             _uiState.update { it.copy(isLoading = false) }
         }
     }
@@ -794,21 +808,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         ) }
     }
 
-    suspend fun updateProgressWithDelay(progress: Float, delay: Long = PROGRESS_UPDATE_DELAY) {
-        _uploadProgress.value = progress.coerceIn(0f, 100f)
-        delay(delay)
-    }
 
-    private fun updateTotalProgress(currentStep: Int, totalSteps: Int) {
-        _uploadProgress.value = (currentStep.toFloat() / totalSteps.toFloat() * 100f).roundToInt().toFloat()
-    }
 
-    private fun updateStepProgress(currentStep: Int, totalSteps: Int, stepProgress: Float) {
-        val stepSize = 100f / totalSteps
-        val baseProgress = stepSize * (currentStep - 1)
-        val additionalProgress = stepSize * (stepProgress / 100f)
-        _uploadProgress.value = (baseProgress + additionalProgress).roundToInt().toFloat()
-    }
 
 
     /*3->Section Imports FireBase And Stor-------------------*/
@@ -821,29 +822,27 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true) }
-                _uploadProgress.value = 0f
-
-                val totalSteps = 3
-                var currentStep = 0
+                totalSteps = 3
+                currentStep = 0
 
                 // Step 1: Import from Firebase to DataBaseDonne
-                updateTotalProgress(currentStep++, totalSteps)
+                updateUploadProgressBarCounterAndItText("Importing from Firebase to DataBaseDonne", ++currentStep, 0f)
                 importFromFirebaseToDataBaseDonne("e_DBJetPackExport", editeBaseDonneViewModel)
-                updateStepProgress(currentStep, totalSteps, 100f)
+                updateUploadProgressBarCounterAndItText("Completed Firebase to DataBaseDonne import", currentStep, 100f)
 
                 // Step 2: Transfer Firebase Data ArticlesAcheteModele
-                updateTotalProgress(currentStep++, totalSteps)
+                updateUploadProgressBarCounterAndItText("Transferring ArticlesAcheteModele data", ++currentStep, 0f)
                 transferFirebaseDataArticlesAcheteModele(context, articleDao) { progress ->
-                    updateStepProgress(currentStep, totalSteps, progress)
+                    updateUploadProgressBarCounterAndItText("Transferring ArticlesAcheteModele data", currentStep, progress)
                 }
 
                 // Step 3: Transfer from Telegram to SupplierArticlesRecived
-                updateTotalProgress(currentStep++, totalSteps)
+                updateUploadProgressBarCounterAndItText("Transferring from Telegram to SupplierArticlesRecived", ++currentStep, 0f)
                 transfertFromeTelegramToSupplierArticlesRecived(context) { progress ->
-                    updateStepProgress(currentStep, totalSteps, progress)
+                    updateUploadProgressBarCounterAndItText("Transferring from Telegram to SupplierArticlesRecived", currentStep, progress)
                 }
 
-                _uploadProgress.value = 100f
+                updateUploadProgressBarCounterAndItText("Data transfer completed", totalSteps, 100f)
             } catch (e: Exception) {
                 handleError("Import process failed", e)
             } finally {
@@ -1340,7 +1339,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
             //TODO fait que les operations soit enregstre don une list a chaque foit termine il se coche check termine et aller au prochen pour le converti et update le stoage
             try {
-                updateProgressWithDelay(0f)
+                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
+
 
                 // Convert image to WebP format
                 val webpImage = withContext(Dispatchers.IO) {
@@ -1354,7 +1354,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 // Upload the WebP image
                 val uploadTask = storageRef.putBytes(webpImage)
 
-                updateProgressWithDelay(50f)
+                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
 
 //                uploadTask.addOnProgressListener { taskSnapshot ->
 //                    val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount)
@@ -1365,11 +1365,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 //HeadOfViewModels         D  Image uploaded successfully: 1066_1.jpg, URL: https://firebasestorage.googleapis.com/v0/b/abdelwahab-jemla-com.appspot.com/o/Images%20Articles%20Data%20Base%2F1066_1.jpg?alt=media&token=611f4ed5-d094-496d-ba9e-23bdd42f7388
                 Log.d(TAG, "Image uploaded successfully: $fileName, URL: $downloadUrl")
 
-                updateProgressWithDelay(100f)
+                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
 
             } catch (e: Exception) {
                 handleError("Failed to upload image", e)
-                updateProgressWithDelay(100f)
+                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
             }
         }
     }
