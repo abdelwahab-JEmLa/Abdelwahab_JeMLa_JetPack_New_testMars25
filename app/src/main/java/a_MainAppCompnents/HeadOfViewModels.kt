@@ -78,8 +78,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val _textProgress = MutableStateFlow("")
     val textProgress: StateFlow<String> = _textProgress.asStateFlow()
 
-    private var totalSteps = 10 // Total number of steps in initDataFromFirebase
-    private var currentStep = 0 // Current step in the process
+    var totalSteps = 10 // Total number of steps in initDataFromFirebase
+    var currentStep = 0 // Current step in the process
 
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
@@ -103,7 +103,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-    private fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", currentStep: Int, stepProgress: Float) {
+    fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", currentStep: Int, stepProgress: Float) {
         viewModelScope.launch {
             val stepSize = 100f / totalSteps
             val baseProgress = stepSize * (currentStep - 1)

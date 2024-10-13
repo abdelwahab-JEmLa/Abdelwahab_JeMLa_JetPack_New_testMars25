@@ -358,7 +358,6 @@ fun AppNavHost(
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
     val currentEditedArticle by headOfViewModels.currentEditedArticle.collectAsState()
     var reloadTrigger by remember { mutableIntStateOf(0) }
-
     // Remove this LaunchedEffect as it's overwriting our manual settings
     LaunchedEffect(currentEditedArticle) {
         dialogeDisplayeDetailleChanger = currentEditedArticle
@@ -413,21 +412,33 @@ fun AppNavHost(
                     viewModels.classementsArticlesViewModel,
                     onToggleNavBar = onToggleNavBar,
                     onUpdateStart = {
+                        headOfViewModels.totalSteps=3
+                        headOfViewModels.currentStep=0
+
                         coroutineScope.launch {
-                            viewModels.headOfViewModels.updateProgressWithDelay(0f)
-                            localProgress = 0f
+                            viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
+                                "Starting Classements Articles Update",
+                                headOfViewModels.currentStep++,
+                                0f
+                            )
                         }
                     },
                     onUpdateProgress = { progress ->
                         coroutineScope.launch {
-                            localProgress = progress
-                            viewModels.headOfViewModels.updateProgressWithDelay(progress)
+                            viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
+                                "Updating Classements Articles",
+                                headOfViewModels.currentStep++,
+                                progress
+                            )
                         }
                     },
                     onUpdateComplete = {
                         coroutineScope.launch {
-                            viewModels.headOfViewModels.updateProgressWithDelay(100f)
-                            localProgress = 0f
+                            viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
+                                "Classements Articles Update Complete",
+                                headOfViewModels.currentStep++,
+                                100f
+                            )
                         }
                     }
                 )
