@@ -103,10 +103,11 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
-    fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", currentStep: Int, stepProgress: Float) {
+    fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", addPLusTOCurrentStep: Int, stepProgress: Float=100f) {
         viewModelScope.launch {
+            currentStep=0
             val stepSize = 100f / totalSteps
-            val baseProgress = stepSize * (currentStep - 1)
+            val baseProgress = stepSize * (addPLusTOCurrentStep - 1)
             val additionalProgress = stepSize * (stepProgress / 100f)
             _uploadProgress.value = 100f - (baseProgress + additionalProgress).roundToInt().toFloat()
             _textProgress.value = nameFunInProgressBar
