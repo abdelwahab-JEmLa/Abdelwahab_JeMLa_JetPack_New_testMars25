@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -289,7 +288,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
 
-    fun updateColorName(article: BaseDonneECBTabelle, index: Int, newColorName: String) {
+    fun updateColorName(article: BaseDonneECBTabelle, index: Int, newColorName: String,ecraseLeDernie:Boolean=false) {
         val updatedArticle = when (index) {
             0 -> article.copy(couleur1 = newColorName)
             1 -> article.copy(couleur2 = newColorName)
@@ -305,9 +304,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         val existingColor = _uiState.value.colorsArticles.find { it.nameColore == newColorName }
         if (existingColor == null) {
             val newColor = ColorsArticles(
-                idColore = _uiState.value.colorsArticles.maxOfOrNull { it.idColore }?.plus(1) ?: 1,
+                idColore = _uiState.value.colorsArticles.maxOfOrNull { it.idColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1,
                 nameColore = newColorName,
-                classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }?.plus(1) ?: 1
+                classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
             )
             refColorsArticles.child(newColor.idColore.toString()).setValue(newColor)
         }
@@ -318,9 +317,9 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 colorsArticles = currentState.colorsArticles.toMutableList().apply {
                     if (existingColor == null) {
                         add(ColorsArticles(
-                            idColore = maxOfOrNull { it.idColore }?.plus(1) ?: 1,
+                            idColore = maxOfOrNull { it.idColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1,
                             nameColore = newColorName,
-                            classementColore = maxOfOrNull { it.classementColore }?.plus(1) ?: 1
+                            classementColore = maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
                         ))
                     }
                 }

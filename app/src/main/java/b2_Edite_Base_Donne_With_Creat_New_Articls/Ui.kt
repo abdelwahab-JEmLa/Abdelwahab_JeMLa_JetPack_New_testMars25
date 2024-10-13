@@ -36,8 +36,6 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -746,7 +744,7 @@ private fun ColorCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            AutoCompleteTextField(
+            AutoCompleteTextField(      //TODO fait que ca soit au dessu de l image on backgroun blanche
                 value = colorName,
                 onValueChange = { newValue ->
                     colorName = newValue
@@ -756,7 +754,7 @@ private fun ColorCard(
                 label = { Text(couleur) },
                 onOptionSelected = { selectedColor ->
                     colorName = selectedColor
-                    viewModel.updateColorName(article, index, selectedColor)
+                    viewModel.updateColorName(article, index, selectedColor,ecraseLeDernie = true)
                 }
             )
         }
@@ -812,14 +810,6 @@ fun AutoCompleteTextField(
                 }
             },
             label = label,
-            trailingIcon = {
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                        "Toggle dropdown"
-                    )
-                }
-            }
         )
         DropdownMenu(
             expanded = expanded,
