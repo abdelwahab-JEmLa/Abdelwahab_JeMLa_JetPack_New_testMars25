@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -150,7 +151,7 @@ class MainActivity : ComponentActivity() {
                             Column {
                                 ToggleNavBarButton(isNavBarVisible) { isNavBarVisible = !isNavBarVisible }
                                 Spacer(modifier = Modifier.height(16.dp))
-                                UpdateProgressButton(
+                                UpdateNameCouleursFromListOfDataBase(
                                     headOfViewModels = headOfViewModels,
                                     onButtonClick = { clickedButtonName ->
                                         buttonName = clickedButtonName
@@ -257,7 +258,7 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
 }
 
 @Composable
-fun UpdateProgressButton(headOfViewModels: HeadOfViewModels, onButtonClick: (String) -> Unit) {
+fun UpdateNameCouleursFromListOfDataBase(headOfViewModels: HeadOfViewModels, onButtonClick: (String) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
 
     FloatingActionButton(
@@ -271,8 +272,8 @@ fun UpdateProgressButton(headOfViewModels: HeadOfViewModels, onButtonClick: (Str
         modifier = Modifier.size(56.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Refresh,
-            contentDescription = "Update Progress",
+            imageVector = Icons.Default.ThumbUp,
+            contentDescription = null,
             tint = Color.White
         )
     }
@@ -325,7 +326,7 @@ fun MainScreen(
             )
         },
         floatingActionButton = {
-            UpdateProgressButton(
+            UpdateNameCouleursFromListOfDataBase(
                 headOfViewModels = headOfViewModels,
                 onButtonClick = onButtonClick // Passage du paramètre ici
             )
