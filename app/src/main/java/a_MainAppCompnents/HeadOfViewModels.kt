@@ -110,6 +110,71 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
+    private fun updateSmothUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "",
+                                                             progressDimunuentDe100A0: Int=100,
+                                                             end:Boolean=false,
+                                                             delayUi: Long = 0) {
+        viewModelScope.launch {
+            _uploadProgress.value = if (end) 0f else progressDimunuentDe100A0 .toFloat()
+            _textProgress.value = nameFunInProgressBar
+
+            delay(delayUi)
+        }
+    }
+    fun importFromFirebase(refFireBase: String ) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+                updateSmothUploadProgressBarCounterAndItText("Importing data from $refFireBase", 90)
+
+                val snapshot = firebaseDatabase.getReference(refFireBase).get().await()
+                val importedArticles = snapshot.children.mapNotNull { it.getValue(BaseDonneECBTabelle::class.java) }
+
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        articlesBaseDonneECB = importedArticles,
+                        isLoading = false
+                    )
+                }
+
+                updateSmothUploadProgressBarCounterAndItText("Import completed", 0, true)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = "Import failed: ${e.message}") }
+                updateSmothUploadProgressBarCounterAndItText("Import failed", 0, true)
+            }
+        }
+    }
+    /** Start [HeadOfViewModels]
+     *
+     * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
+     * ------------------------------------------------*/
+
+    fun exportUiStateArticlesToFirebase(refFireBase: String ) {
+        viewModelScope.launch {
+            try {
+                val articlesToExport = _uiState.value.articlesBaseDonneECB
+                val ref = firebaseDatabase.getReference(refFireBase)
+
+                updateSmothUploadProgressBarCounterAndItText()
+
+                articlesToExport.forEachIndexed { index, article ->
+                    ref.child(article.idArticleECB.toString()).setValue(article)
+
+                    val progress = ((index + 1) / articlesToExport.size) * 100
+                    updateSmothUploadProgressBarCounterAndItText("Exporting articles to $refFireBase",progress)
+
+                }
+
+
+                updateSmothUploadProgressBarCounterAndItText("Exporting articles to $refFireBase",end=true)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error exporting articles to Firebase: ${e.message}")
+                _uiState.update { it.copy(error = "Failed to export articles: ${e.message}") }
+            }
+        }
+    }
+
+
     fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", addPLusTOCurrentStep: Int, stepProgress: Float = 100f, delayUi: Long = 0) {
         viewModelScope.launch {
             val stepSize = 100f / totalSteps
@@ -167,10 +232,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     }
 
 
-    /**  [HeadOfViewModels]
-     *
-     * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
-     * ------------------------------------------------*/
 
     fun updateColorsFromArticles() {
         viewModelScope.launch {

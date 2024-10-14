@@ -85,6 +85,7 @@ data class BaseDonneECBTabelle(
     var idArticlePlaceInCamionette: Long = 0,
     var funChangeImagsDimention: Boolean = false,
     var idCategorieNewMetode: Long = 0,
+    var articleItIdClassementInItCategorieInHVM: Long = 0,
     var nomCategorie: String = "",
     var neaon1: Double = 0.0,
     var lastUpdateState: String = "",

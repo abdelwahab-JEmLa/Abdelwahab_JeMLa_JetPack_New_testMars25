@@ -170,7 +170,8 @@ fun TopAppBar(
         windosDaoToBakup,
         coroutineScope,
         articleDao,
-        onDismiss = { windosDaoToBakup = false }
+        onDismiss = { windosDaoToBakup = false } ,
+        headOfViewModels
     )
 
     WindosBakupToDao(
@@ -181,7 +182,9 @@ fun TopAppBar(
         onStartImport = { showProgressBar = true },
         onProgressUpdate = { newProgress -> progress = newProgress },
         onFinishImport = { showProgressBar = false } ,
-        editeBaseDonneViewModel
+        editeBaseDonneViewModel ,
+        headOfViewModels
+
     )
 
     Dialog(
@@ -204,6 +207,7 @@ private fun WindosDaoToBakup(
     coroutineScope: CoroutineScope,
     articleDao: ArticleDao,
     onDismiss: () -> Unit,
+    headOfViewModels: HeadOfViewModels,
 ) {
 
     if (dialogOpen) {
@@ -224,11 +228,12 @@ private fun WindosDaoToBakup(
                 ) {
 
                     DialogButton(
-                        text = "Dao>Bakup1",
+                        text = "Dao & HeadOfViewModel DataBase>Bakup1",
                         icon = Icons.Default.Expand,
                         onClick = {
                             coroutineScope.launch {
-                                exportToFireBase(articleDao,refFireBase="BaseDonne_Bakup1")
+                                exportToFireBase(articleDao, refFireBase = "BaseDonne_Bakup1")
+                                headOfViewModels.exportUiStateArticlesToFirebase("P_HeadVM_BaseDonne_Bakup1")
                             }
                             onDismiss()
                         },
@@ -285,7 +290,8 @@ private fun WindosBakupToDao(
     onStartImport: () -> Unit,
     onProgressUpdate: (Float) -> Unit,
     onFinishImport: () -> Unit,
-    editeBaseDonneViewModel: EditeBaseDonneViewModel
+    editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    headOfViewModels: HeadOfViewModels
 ) {
 
 
@@ -320,6 +326,17 @@ private fun WindosBakupToDao(
                                 editeBaseDonneViewModel.initDataBaseDonneForNewByStatInCompos()
 
                                 onFinishImport()
+                            }
+                            onDismiss()
+                        },
+                        tint2 = Color.Blue
+                    )
+                    DialogButton(
+                        text = "P_HeadVM_BaseDonne_Bakup1 >Au> uiStat.BaseDonne",
+                        icon = Icons.Default.Try,
+                        onClick = {
+                            coroutineScope.launch {
+                                headOfViewModels.importFromFirebase( refFireBase = "P_HeadVM_BaseDonne_Bakup1")
                             }
                             onDismiss()
                         },

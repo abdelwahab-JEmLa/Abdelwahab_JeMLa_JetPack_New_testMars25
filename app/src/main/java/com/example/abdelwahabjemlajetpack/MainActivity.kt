@@ -79,7 +79,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.ArticleDetailWindow
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
-import b_Edite_Base_Donne.A_Edite_Base_Screen
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
@@ -422,9 +421,7 @@ fun AppNavHost(
                 headOfViewModels = headOfViewModels,
             )
         }
-        composable("A_Edite_Base_Screen") {
-            A_Edite_Base_Screen(viewModels.editeBaseDonneViewModel, database.articleDao())
-        }
+
         composable("C_ManageBonsClients") {
             FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel, headOfViewModels)
         }

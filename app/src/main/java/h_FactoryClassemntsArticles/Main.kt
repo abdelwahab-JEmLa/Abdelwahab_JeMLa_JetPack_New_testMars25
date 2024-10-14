@@ -307,8 +307,8 @@ class ClassementsArticlesViewModel : ViewModel() {
                     .mapIndexed { index, article ->
                         article.copy(
                             classementArticleAuCategorieCT = (index + 1).toDouble(),
-                            classementCate = (index + 1).toDouble()
-                        )
+                            classementCate = (index + 1).toDouble()     ,
+                            )
                     }
             }
     }
@@ -336,7 +336,9 @@ class ClassementsArticlesViewModel : ViewModel() {
                     mapOf(
                         "idCategorie" to (category?.idClassementCategorieInCategoriesTabele ?: 0.0),
                         "classementCate" to article.classementArticleAuCategorieCT,
-                        "diponibilityState" to article.diponibilityState
+                        "diponibilityState" to article.diponibilityState,
+                        "idCategorieNewMetode" to (category?.idClassementCategorieInCategoriesTabele?.toLong()),
+                        "articleItIdClassementInItCategorieInHVM" to article.classementArticleAuCategorieCT.toLong(),
                     )
                 ).await()
 
