@@ -16,7 +16,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,12 +44,24 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
-
-
+    var outlineFilter by remember { mutableStateOf(false) }
+    var filterText by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                if (outlineFilter) {
+                    OutlinedTextField(
+                        value = filterText,
+                        onValueChange = { filterText = it },
+                        label = { Text("Filtrer les articles") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    )
+                }
+            }
         ) { padding ->
             LazyVerticalGrid(
                 columns = GridCells.Fixed(gridColumns),
@@ -57,9 +71,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                     .padding(padding)
             ) {
                 uiState.categoriesECB.forEach { category ->
-                    val articlesInCategory = uiState.articlesBaseDonneECB.filter {
-                        it.nomCategorie == category.nomCategorieInCategoriesTabele &&
-                                (!filterNonDispo || it.diponibilityState == "")
+                    val articlesInCategory = uiState.articlesBaseDonneECB.filter { article ->
+                        article.nomCategorie == category.nomCategorieInCategoriesTabele &&
+                                (!filterNonDispo || article.diponibilityState == "") &&
+                                (filterText.isEmpty() || article.nomArticleFinale.contains(filterText, ignoreCase = true))
                     }
                     if (articlesInCategory.isNotEmpty() || category.nomCategorieInCategoriesTabele == "New Articles") {
                         item(span = { GridItemSpan(gridColumns) }) {
@@ -78,7 +93,6 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 onClickOnImg = { clickedArticle ->
                                     Log.d("MainFragment", "Article clicked: $clickedArticle")
                                     onNewArticleAdded(clickedArticle)
-
                                     viewModel.updateCurrentEditedArticle(clickedArticle)
                                 },
                                 viewModel = viewModel,
@@ -109,10 +123,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 viewModel = viewModel,
                 coroutineScope = coroutineScope,
                 onChangeGridColumns = { gridColumns = it },
-                uiState=uiState
+                uiState = uiState,
+                onToggleOutlineFilter = { outlineFilter = !outlineFilter }
             )
         }
-
     }
 }
 @Composable

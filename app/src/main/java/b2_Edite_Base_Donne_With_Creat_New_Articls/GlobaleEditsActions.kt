@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
@@ -47,6 +48,7 @@ fun FloatingActionButtons(
     onToggleNavBar: () -> Unit,
     onToggleFloatingButtons: () -> Unit,
     onToggleFilter: () -> Unit,
+    onToggleOutlineFilter: () -> Unit,
     showOnlyWithFilter: Boolean,
     viewModel: HeadOfViewModels,
     coroutineScope: CoroutineScope,
@@ -65,6 +67,7 @@ fun FloatingActionButtons(
                 showOnlyWithFilter = showOnlyWithFilter,
                 onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
                 onChangeGridColumns = onChangeGridColumns,
+                onToggleOutlineFilter=onToggleOutlineFilter
             )
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
@@ -99,6 +102,7 @@ fun FloatingActionButtonGroup(
     onToggleNavBar: () -> Unit,
     onToggleFilter: () -> Unit,
     showOnlyWithFilter: Boolean,
+    onToggleOutlineFilter: () -> Unit,
     onDialogDataBaseEditerClick: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
 ) {
@@ -107,6 +111,7 @@ fun FloatingActionButtonGroup(
     var showContentDescription by remember { mutableStateOf(false) }
 
     val buttons = listOf(
+        Triple(Icons.Default.EditCalendar, "outline Filter", onToggleOutlineFilter),
 
         Triple(Icons.Default.Category, "Category", onCategorySelectionClick),
         Triple(Icons.Default.Home, "Home", onToggleNavBar),
