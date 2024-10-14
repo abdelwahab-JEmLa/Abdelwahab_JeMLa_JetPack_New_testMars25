@@ -523,7 +523,7 @@ fun AppNavHost(
                     coroutineScope.launch {
                         for (i in 1..4) {
                             val fileName = "${article.idArticleECB}_$i.jpg"
-                            val sourceFile = File(headOfViewModels.dossiesStandartOFImages, fileName)
+                            val sourceFile = File(headOfViewModels.viewModelImagesPath, fileName)
                             if (sourceFile.exists()) {
                                 headOfViewModels.setImagesInStorageFireBase(article.idArticleECB, i)
                             }

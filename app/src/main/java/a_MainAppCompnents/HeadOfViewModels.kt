@@ -99,7 +99,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
-    val dossiesStandartOFImages = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
+    val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
     var tempImageUri: Uri? = null
     private val currentDate: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -1509,7 +1509,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun setImagesInStorageFireBase(articleId: Int, colorIndex: Int) {
         viewModelScope.launch {
             val fileName = "${articleId}_$colorIndex.jpg"
-            val localFile = File(dossiesStandartOFImages, fileName)
+            val localFile = File(viewModelImagesPath, fileName)
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
             //TODO fait que les operations soit enregstre don une list a chaque foit termine il se coche check termine et aller au prochen pour le converti et update le stoage
             try {
@@ -1631,11 +1631,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     private suspend fun copyImage(sourceUri: Uri, fileName: String) {
         withContext(Dispatchers.IO) {
             try {
-                if (!dossiesStandartOFImages.exists()) {
-                    dossiesStandartOFImages.mkdirs()
+                if (!viewModelImagesPath.exists()) {
+                    viewModelImagesPath.mkdirs()
                 }
 
-                val destFile = File(dossiesStandartOFImages, fileName)
+                val destFile = File(viewModelImagesPath, fileName)
 
                 context.contentResolver.openInputStream(sourceUri)?.use { input ->
                     destFile.outputStream().use { output ->

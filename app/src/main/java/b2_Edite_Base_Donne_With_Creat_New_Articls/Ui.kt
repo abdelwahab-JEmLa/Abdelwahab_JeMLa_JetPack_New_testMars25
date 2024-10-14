@@ -905,12 +905,12 @@ fun DisplayeImageECB(
 ) {
     val context = LocalContext.current
     val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
-    val downloadsImagePath = "${viewModel.dossiesStandartOFImages}/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
+    val viewModelImagePath = "${viewModel.viewModelImagesPath}/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
 
     val imageExist by remember(article.idArticleECB, reloadKey) {
         mutableStateOf(
             listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-                listOf(downloadsImagePath, baseImagePath).firstOrNull { path ->
+                listOf(viewModelImagePath, baseImagePath).firstOrNull { path ->
                     File("$path.$extension").exists()
                 }?.let { "$it.$extension" }
             }
