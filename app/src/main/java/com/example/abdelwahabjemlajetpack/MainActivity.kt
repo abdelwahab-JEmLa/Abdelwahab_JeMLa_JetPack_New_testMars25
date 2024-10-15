@@ -517,15 +517,15 @@ fun AppNavHost(
 
                 // Check if the article is new or if key changes occurred
                 if (article.nomCategorie.contains("New", ignoreCase = true) ||
-                    article.idArticleECB != dialogeDisplayeDetailleChanger?.idArticleECB
+                    article.idArticle != dialogeDisplayeDetailleChanger?.idArticle
                 ) {
                     // Trigger image reload
                     coroutineScope.launch {
                         for (i in 1..4) {
-                            val fileName = "${article.idArticleECB}_$i.jpg"
+                            val fileName = "${article.idArticle}_$i.jpg"
                             val sourceFile = File(headOfViewModels.viewModelImagesPath, fileName)
                             if (sourceFile.exists()) {
-                                headOfViewModels.setImagesInStorageFireBase(article.idArticleECB, i)
+                                headOfViewModels.setImagesInStorageFireBase(article.idArticle, i)
                             }
                         }
                         // Increment reloadTrigger to force recomposition

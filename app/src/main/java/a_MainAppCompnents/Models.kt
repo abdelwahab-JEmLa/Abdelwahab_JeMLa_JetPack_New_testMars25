@@ -57,7 +57,7 @@ data class TabelleSuppliersSA(
 }
 
 data class BaseDonneECBTabelle(
-    var idArticleECB: Int = 0,
+    var idArticle: Int = 0,
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
     var nomArab: String = "",

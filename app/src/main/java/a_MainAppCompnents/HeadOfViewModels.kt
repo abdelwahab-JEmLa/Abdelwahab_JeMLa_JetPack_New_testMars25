@@ -158,7 +158,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 updateSmothUploadProgressBarCounterAndItText()
 
                 articlesToExport.forEachIndexed { index, article ->
-                    ref.child(article.idArticleECB.toString()).setValue(article)
+                    ref.child(article.idArticle.toString()).setValue(article)
 
                     val progress = ((index + 1) / articlesToExport.size) * 100
                     updateSmothUploadProgressBarCounterAndItText("Exporting articles to $refFireBase",progress)
@@ -358,7 +358,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
 
         // Update the article in the database
-        refDBJetPackExport.child(updatedArticle.idArticleECB.toString()).setValue(updatedArticle)
+        refDBJetPackExport.child(updatedArticle.idArticle.toString()).setValue(updatedArticle)
 
         // Update or add the color to ColorsArticles
         val existingColor = _uiState.value.colorsArticles.find { it.nameColore == newColorName }
@@ -373,7 +373,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
         // Update the _currentEditedArticle
         _currentEditedArticle.update { currentArticle ->
-            if (currentArticle?.idArticleECB == article.idArticleECB) {
+            if (currentArticle?.idArticle == article.idArticle) {
                 when (index) {
                     0 -> currentArticle.copy(couleur1 = newColorName)
                     1 -> currentArticle.copy(couleur2 = newColorName)
@@ -557,7 +557,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         // Update UI state
                         _uiState.update { currentState ->
                             val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
-                                if (article.idArticleECB == articleId) {
+                                if (article.idArticle == articleId) {
                                     article.copy(
                                         idCategorieNewMetode = categoryId,
                                         nomCategorie = categoryName
@@ -794,7 +794,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
                     // Update the currentEditedArticle if it matches the updated article
                     _currentEditedArticle.update { currentArticle ->
-                        if (currentArticle?.idArticleECB?.toLong() == article.a_c_idarticle_c) {
+                        if (currentArticle?.idArticle?.toLong() == article.a_c_idarticle_c) {
                             currentArticle.copy(
                                 lastIdSupplierChoseToBuy = toSupp,
                                 dateLastIdSupplierChoseToBuy = currentDate
@@ -926,7 +926,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private suspend fun fetchArticles() = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
         snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
-            idArticleECB = snapshot.key?.toIntOrNull() ?: 0
+            idArticle = snapshot.key?.toIntOrNull() ?: 0
         }
     }
     private suspend fun fetchColorsArticles() = refColorsArticles.get().await().children
@@ -1006,7 +1006,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
                 // Step 2: Transfer Firebase Data ArticlesAcheteModele
                 updateUploadProgressBarCounterAndItText("Transferring ArticlesAcheteModele data", ++currentStep, 0f)
-                transferFirebaseDataArticlesAcheteModele(context, articleDao) { progress ->
+                transferFirebaseDataArticlesAcheteModele(context) { progress ->
                     updateUploadProgressBarCounterAndItText("Transferring ArticlesAcheteModele data", currentStep, progress)
                 }
 
@@ -1065,7 +1065,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     Log.d("TransferData", "Valid total quantity: $totalQuantity")
 
                     // Find the corresponding article in articlesBaseDonneECB
-                    val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticleECB.toLong() == idArticle }
+                    val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticle.toLong() == idArticle }
                     val article = fromMap(value, correspondingArticle, itsNewArticleFromeBacKE)
                     Log.d("TransferData", "Created article with aa_vid: ${article.aa_vid}")
                     refDestination.child(article.aa_vid.toString()).setValue(article).await()
@@ -1161,7 +1161,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private suspend fun transferFirebaseDataArticlesAcheteModele(
         context: android.content.Context,
-        articleDao: ArticleDao,
         onProgressUpdate: (Float) -> Unit
     ) {
         var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
@@ -1210,9 +1209,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 val nomClient = value["nomclient_c"] as? String ?: ""
                 Log.d("TransferDebug", "idArticle: $idArticle, nomClient: $nomClient")
 
-                val baseDonne = articleDao.getArticleById(idArticle)
+                // Instead of querying DAO, find the matching article in articlesBaseDonneECB
+                val baseDonne =_uiState.value.articlesBaseDonneECB.find { it.idArticle.toLong() == idArticle }
                 if (baseDonne == null) {
-                    Log.w("TransferDebug", "Article not found in local database for idArticle: $idArticle")
+                    Log.w("TransferDebug", "Article not found in articlesBaseDonneECB for idArticle: $idArticle")
                 }
 
                 val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient }
@@ -1428,7 +1428,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
-                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+                if (it.idArticle == updatedArticle.idArticle) updatedArticle else it
             }
             state.copy(articlesBaseDonneECB = updatedArticles)
         }
@@ -1437,7 +1437,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
         viewModelScope.launch {
             try {
-                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticle.toString())
                 articleRef.runTransaction(object : Transaction.Handler {
                     override fun doTransaction(mutableData: MutableData): Transaction.Result {
                         mutableData.value = updatedArticle
@@ -1463,7 +1463,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
-                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+                if (it.idArticle == updatedArticle.idArticle) updatedArticle else it
             }
             state.copy(articlesBaseDonneECB = updatedArticles)
         }
@@ -1471,7 +1471,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
         viewModelScope.launch {
             try {
-                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticle.toString())
                 articleRef.child("affichageUniteState").setValue(updatedArticle.affichageUniteState)
                     .addOnSuccessListener {
                         Log.d(TAG, "Article affichageUniteState updated successfully in Firebase")
@@ -1487,7 +1487,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     private fun updateLocalAndFireBaseArticle(updatedArticle: BaseDonneECBTabelle) {
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
-                if (it.idArticleECB == updatedArticle.idArticleECB) updatedArticle else it
+                if (it.idArticle == updatedArticle.idArticle) updatedArticle else it
             }
             state.copy(articlesBaseDonneECB = updatedArticles)
         }
@@ -1496,7 +1496,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
         viewModelScope.launch {
             try {
-                val articleRef = refDBJetPackExport.child(updatedArticle.idArticleECB.toString())
+                val articleRef = refDBJetPackExport.child(updatedArticle.idArticle.toString())
                 articleRef.runTransaction(object : Transaction.Handler {
                     override fun doTransaction(mutableData: MutableData): Transaction.Result {
                         mutableData.value = updatedArticle
@@ -1518,30 +1518,30 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
     fun isFirstArticle(id: Int): Boolean {
-        return _uiState.value.articlesBaseDonneECB.firstOrNull()?.idArticleECB == id
+        return _uiState.value.articlesBaseDonneECB.firstOrNull()?.idArticle == id
     }
 
     fun isLastArticle(id: Int): Boolean {
-        return _uiState.value.articlesBaseDonneECB.lastOrNull()?.idArticleECB == id
+        return _uiState.value.articlesBaseDonneECB.lastOrNull()?.idArticle == id
     }
     fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
         _currentEditedArticle.value = article
     }
 
     fun getArticleById(id: Int): BaseDonneECBTabelle? {
-        return _uiState.value.articlesBaseDonneECB.find { it.idArticleECB == id }
+        return _uiState.value.articlesBaseDonneECB.find { it.idArticle == id }
     }
 
     fun getPreviousArticleId(currentId: Int): Int {
         val articles = _uiState.value.articlesBaseDonneECB
-        val currentIndex = articles.indexOfFirst { it.idArticleECB == currentId }
-        return if (currentIndex > 0) articles[currentIndex - 1].idArticleECB else articles.last().idArticleECB
+        val currentIndex = articles.indexOfFirst { it.idArticle == currentId }
+        return if (currentIndex > 0) articles[currentIndex - 1].idArticle else articles.last().idArticle
     }
 
     fun getNextArticleId(currentId: Int): Int {
         val articles = _uiState.value.articlesBaseDonneECB
-        val currentIndex = articles.indexOfFirst { it.idArticleECB == currentId }
-        return if (currentIndex < articles.size - 1) articles[currentIndex + 1].idArticleECB else articles.first().idArticleECB
+        val currentIndex = articles.indexOfFirst { it.idArticle == currentId }
+        return if (currentIndex < articles.size - 1) articles[currentIndex + 1].idArticle else articles.first().idArticle
     }
 
 
@@ -1731,7 +1731,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     private suspend fun updateClassementsArticlesTabel(article: BaseDonneECBTabelle, category: CategoriesTabelleECB) {
         try {
             val classementsArticle = ClassementsArticlesTabel(
-                idArticle = article.idArticleECB.toLong(),
+                idArticle = article.idArticle.toLong(),
                 nomArticleFinale = article.nomArticleFinale,
                 idCategorie = category.idCategorieInCategoriesTabele.toDouble(),
                 classementInCategoriesCT = 0.0, // You may want to calculate this value
@@ -1742,8 +1742,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 diponibilityState = article.diponibilityState
             )
 
-            refClassmentsArtData.child(article.idArticleECB.toString()).setValue(classementsArticle).await()
-            Log.d(TAG, "ClassementsArticlesTabel updated successfully for article: ${article.idArticleECB}")
+            refClassmentsArtData.child(article.idArticle.toString()).setValue(classementsArticle).await()
+            Log.d(TAG, "ClassementsArticlesTabel updated successfully for article: ${article.idArticle}")
         } catch (e: Exception) {
             handleError("Failed to update ClassementsArticlesTabel", e)
         }
@@ -1762,7 +1762,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun createNewArticle(newId: Int, category: CategoriesTabelleECB, newClassementCate: Double): BaseDonneECBTabelle {
         return BaseDonneECBTabelle(
-            idArticleECB = newId,
+            idArticle = newId,
             nomArticleFinale = "New Article $newId",
             nomCategorie = category.nomCategorieInCategoriesTabele,
             diponibilityState = "",
@@ -1774,7 +1774,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private suspend fun updateDataBaseWithNewArticle(article: BaseDonneECBTabelle) {
         try {
-            refDBJetPackExport.child(article.idArticleECB.toString()).setValue(article).await()
+            refDBJetPackExport.child(article.idArticle.toString()).setValue(article).await()
 
             _uiState.update { currentState ->
                 currentState.copy(
@@ -1782,7 +1782,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 )
             }
 
-            Log.d(TAG, "New article added successfully: ${article.idArticleECB}")
+            Log.d(TAG, "New article added successfully: ${article.idArticle}")
         } catch (e: Exception) {
             handleError("Failed to add new article", e)
         }
@@ -1792,7 +1792,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         viewModelScope.launch {
             try {
                 val nextColorField = getNextAvailableColorField(article)
-                val fileName = "${article.idArticleECB}_${nextColorField.removePrefix("couleur")}.jpg"
+                val fileName = "${article.idArticle}_${nextColorField.removePrefix("couleur")}.jpg"
                 copyImage(uri, fileName)
 
                 val updatedArticle = updateArticleWithNewColor(article, nextColorField)
@@ -1868,7 +1868,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 3 -> updateLocalAndFireBaseArticle(article.copy(couleur3 = ""))
                 4 -> updateLocalAndFireBaseArticle(article.copy(couleur4 = ""))
             }
-            deleteColorImage(article.idArticleECB, colorIndex)
+            deleteColorImage(article.idArticle, colorIndex)
         }
     }
 
@@ -1917,7 +1917,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun addUniteImageToArticle(uri: Uri, article: BaseDonneECBTabelle) {
         viewModelScope.launch {
             try {
-                val fileName = "${article.idArticleECB}_Unite.jpg"
+                val fileName = "${article.idArticle}_Unite.jpg"
                 copyImage(uri, fileName)
 
                 val updatedArticle = article.copy(articleHaveUniteImages = true)
@@ -1930,14 +1930,14 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private suspend fun deleteArticle(article: BaseDonneECBTabelle) {
         try {
-            refDBJetPackExport.child(article.idArticleECB.toString()).removeValue().await()
+            refDBJetPackExport.child(article.idArticle.toString()).removeValue().await()
             _uiState.update { currentState ->
                 currentState.copy(
-                    articlesBaseDonneECB = currentState.articlesBaseDonneECB.filter { it.idArticleECB != article.idArticleECB }
+                    articlesBaseDonneECB = currentState.articlesBaseDonneECB.filter { it.idArticle != article.idArticle }
                 )
             }
             for (i in 0..4) {  // Changed to include 0 for unite image
-                deleteColorImage(article.idArticleECB, i)
+                deleteColorImage(article.idArticle, i)
             }
         } catch (e: Exception) {
             handleError("Failed to delete article", e)
@@ -1947,7 +1947,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun processNewImage(uri: Uri, article: BaseDonneECBTabelle, colorIndex: Int) {
         viewModelScope.launch {
             try {
-                val fileName = "${article.idArticleECB}_${if (colorIndex == 0) "Unite" else colorIndex}.jpg"
+                val fileName = "${article.idArticle}_${if (colorIndex == 0) "Unite" else colorIndex}.jpg"
                 copyImage(uri, fileName)
 
                 val updatedArticle = when (colorIndex) {

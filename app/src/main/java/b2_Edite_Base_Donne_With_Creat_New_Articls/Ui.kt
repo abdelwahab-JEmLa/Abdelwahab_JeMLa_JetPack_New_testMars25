@@ -124,8 +124,8 @@ fun ArticleDetailWindow(
     val isNewArticle by remember(article) { derivedStateOf { article.monPrixAchat == 0.0 } }
     var localReloadTrigger by remember { mutableStateOf(0) }
 
-    val isFirstArticle = viewModel.isFirstArticle(article.idArticleECB)
-    val isLastArticle = viewModel.isLastArticle(article.idArticleECB)
+    val isFirstArticle = viewModel.isFirstArticle(article.idArticle)
+    val isLastArticle = viewModel.isLastArticle(article.idArticle)
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -208,7 +208,7 @@ fun ArticleDetailWindow(
                                                 categories = uiState.categoriesECB,
                                                 onCategorySelected = { selectedCategory ->
                                                     viewModel.updateArticleCategory(
-                                                        article.idArticleECB,
+                                                        article.idArticle,
                                                         selectedCategory.idCategorieInCategoriesTabele,
                                                         selectedCategory.nomCategorieInCategoriesTabele
                                                     )
@@ -283,7 +283,7 @@ fun ArticleDetailWindow(
                     FloatingActionButton(
                         onClick = {
                             if (!isFirstArticle) {
-                                val previousId = viewModel.getPreviousArticleId(article.idArticleECB)
+                                val previousId = viewModel.getPreviousArticleId(article.idArticle)
                                 viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
                                 localReloadTrigger++
                                 currentChangingField = ""
@@ -309,7 +309,7 @@ fun ArticleDetailWindow(
                     FloatingActionButton(
                         onClick = {
                             if (!isLastArticle) {
-                                val nextId = viewModel.getNextArticleId(article.idArticleECB)
+                                val nextId = viewModel.getNextArticleId(article.idArticle)
                                 viewModel.updateCurrentEditedArticle(viewModel.getArticleById(nextId))
                                 localReloadTrigger++
                                 currentChangingField = ""
@@ -904,10 +904,10 @@ fun DisplayeImageECB(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
-    val viewModelImagePath = "${viewModel.viewModelImagesPath}/${article.idArticleECB}_${if (index == -1) "Unite" else (index + 1)}"
+    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${if (index == -1) "Unite" else (index + 1)}"
+    val viewModelImagePath = "${viewModel.viewModelImagesPath}/${article.idArticle}_${if (index == -1) "Unite" else (index + 1)}"
 
-    val imageExist by remember(article.idArticleECB, reloadKey) {
+    val imageExist by remember(article.idArticle, reloadKey) {
         mutableStateOf(
             listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
                 listOf(viewModelImagePath, baseImagePath).firstOrNull { path ->
@@ -919,7 +919,7 @@ fun DisplayeImageECB(
 
     val imageSource = imageExist ?: R.drawable.blanc
 
-    val requestKey = "${article.idArticleECB}_${if (index == -1) "Unite" else index}_$reloadKey"
+    val requestKey = "${article.idArticle}_${if (index == -1) "Unite" else index}_$reloadKey"
 
     val painter = rememberAsyncImagePainter(
         ImageRequest.Builder(context)
