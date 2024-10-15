@@ -150,6 +150,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                         articlesToMove = listOf(article),
                         toSupp = supplier.idSupplierSu
                     )
+                    voiceInputText = ""
                 }
             }
         }

@@ -1165,6 +1165,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         onProgressUpdate: (Float) -> Unit
     ) {
         var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
+        var totalItems = 0
+        var processedItems = 0
+        var skippedItems = 0
 
         try {
             val firestore = Firebase.firestore
@@ -1172,20 +1175,23 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             fireStorHistoriqueDesFactures = querySnapshot.documents.mapNotNull { document ->
                 document.toObject(ArticlesAcheteModele::class.java)
             }
+            Log.d("TransferDebug", "Fetched ${fireStorHistoriqueDesFactures.size} items from HistoriqueDesFactures")
         } catch (e: Exception) {
-            Log.e("Firestore", "Error getting documents: ", e)
+            Log.e("TransferDebug", "Error getting documents from Firestore: ", e)
         }
 
         val refSource = Firebase.database.getReference("ArticlesAcheteModele")
         val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
         try {
             refDestination.removeValue().await()
+            Log.d("TransferDebug", "Cleared destination reference")
 
             val dataSnapshot = refSource.get().await()
             val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
 
-            val totalItems = dataMap.size
-            var processedItems = 0
+            totalItems = dataMap.size
+            Log.d("TransferDebug", "Total items to process: $totalItems")
+
             var maxIdArticle = 0
 
             // Find the maximum idArticle
@@ -1195,35 +1201,58 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     maxIdArticle = idArticle.toInt()
                 }
             }
+            Log.d("TransferDebug", "Max idArticle found: $maxIdArticle")
 
-            dataMap.forEach { (_, value) ->
+            dataMap.forEach { (key, value) ->
+                Log.d("TransferDebug", "Processing item with key: $key")
+
                 val idArticle = (value["idarticle_c"] as? Long) ?: 0
                 val nomClient = value["nomclient_c"] as? String ?: ""
+                Log.d("TransferDebug", "idArticle: $idArticle, nomClient: $nomClient")
 
                 val baseDonne = articleDao.getArticleById(idArticle)
+                if (baseDonne == null) {
+                    Log.w("TransferDebug", "Article not found in local database for idArticle: $idArticle")
+                }
 
-                val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient  }
+                val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient }
                 val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
+                Log.d("TransferDebug", "Matching historique found: ${matchingHistorique != null}, monPrixVentFireStoreBM: $monPrixVentFireStoreBM")
 
                 val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
                         value["nomarticlefinale_c_2"] as? String == "" &&
                         value["nomarticlefinale_c_3"] as? String == "" &&
                         value["nomarticlefinale_c_4"] as? String == ""
-                val generatedID=  if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
+                val generatedID = if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
+                Log.d("TransferDebug", "itsNewArticleFromeBacKE: $itsNewArticleFromeBacKE, generatedID: $generatedID")
 
                 // Filter entries where totalquantity is empty or null
                 val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
                 if (totalQuantity != null && totalQuantity > 0) {
+                    Log.d("TransferDebug", "Valid totalQuantity: $totalQuantity")
+
                     val article = baseDonne?.let {
-                        ArticlesAcheteModele(
-                            vid = (value["id"] as? Long) ?: 0,
+                        val vid = (value["id"] as? Long) ?: 0
+                        val nomArticleFinale = if (itsNewArticleFromeBacKE) (value["nomarticlefinale_c"] as? String)?.uppercase() ?: "" else value["nomarticlefinale_c"] as? String ?: ""
+                        val prixAchat = if (itsNewArticleFromeBacKE) 0.0 else it.monPrixAchat
+                        val nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0)
+                        val clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0)
+                        val dateDachate = value["datedachate"] as? String ?: ""
+
+                        Log.d("TransferDebug", "ArticlesAcheteModele creation values:")
+                        Log.d("TransferDebug", "vid: $vid, nomArticleFinale: $nomArticleFinale")
+                        Log.d("TransferDebug", "prixAchat: $prixAchat, nmbrunitBC: $nmbrunitBC, clientPrixVentUnite: $clientPrixVentUnite")
+                        Log.d("TransferDebug", "dateDachate: $dateDachate")
+
+                        val article = ArticlesAcheteModele(
+                            vid = vid,
                             idArticle = generatedID.toLong(),
-                            nomArticleFinale = if (itsNewArticleFromeBacKE) (value["nomarticlefinale_c"] as? String)?.uppercase() ?: "" else value["nomarticlefinale_c"] as? String ?: "",
-                            prixAchat = if (itsNewArticleFromeBacKE) 0.0 else it.monPrixAchat,
-                            nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0),
-                            clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0),
+                            nomArticleFinale = nomArticleFinale,
+                            prixAchat = prixAchat,
+                            nmbrunitBC = nmbrunitBC,
+                            clientPrixVentUnite = clientPrixVentUnite,
                             nomClient = nomClient,
-                            dateDachate = value["datedachate"] as? String ?: "",
+                            dateDachate = dateDachate,
                             nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
                             quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
                             nomCouleur2 = value["nomarticlefinale_c_2"] as? String ?: "",
@@ -1235,48 +1264,71 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                             totalQuantity = totalQuantity,
                             nonTrouveState = false,
                             verifieState = false,
-                            typeEmballage = if (baseDonne.cartonState == "itsCarton"|| baseDonne.cartonState == "Carton") "Carton" else "Boit",
+                            typeEmballage = if (it.cartonState == "itsCarton" || it.cartonState == "Carton") "Carton" else "Boit",
                             choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
                             monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
-                            monPrixVentFireStoreBM = monPrixVentFireStoreBM ,
+                            monPrixVentFireStoreBM = monPrixVentFireStoreBM,
+                        )
 
-                            ).apply {
-                            monPrixVentUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
-
-                            monBenificeFireStoreBM =   roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
-                            monBenificeUniterFireStoreBM =  roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
-                            totalProfitFireStoreBM =  roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
-
+                        article.apply {
+                            monPrixVentUniterFireStoreBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
+                            monBenificeFireStoreBM = roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
+                            monBenificeUniterFireStoreBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
+                            totalProfitFireStoreBM = roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
                             monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
                             monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
-                            totalProfitBM = roundToOneDecimal(totalQuantity*monBenificeBM)
-
+                            totalProfitBM = roundToOneDecimal(totalQuantity * monBenificeBM)
                             monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
                             monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
                             benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
                             clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
+
+                            Log.d("TransferDebug", "Calculated values:")
+                            Log.d("TransferDebug", "monPrixVentUniterFireStoreBM: $monPrixVentUniterFireStoreBM")
+                            Log.d("TransferDebug", "monBenificeFireStoreBM: $monBenificeFireStoreBM")
+                            Log.d("TransferDebug", "monBenificeUniterFireStoreBM: $monBenificeUniterFireStoreBM")
+                            Log.d("TransferDebug", "totalProfitFireStoreBM: $totalProfitFireStoreBM")
+                            Log.d("TransferDebug", "monBenificeBM: $monBenificeBM")
+                            Log.d("TransferDebug", "monBenificeUniterBM: $monBenificeUniterBM")
+                            Log.d("TransferDebug", "totalProfitBM: $totalProfitBM")
+                            Log.d("TransferDebug", "monPrixAchatUniterBC: $monPrixAchatUniterBC")
+                            Log.d("TransferDebug", "monPrixVentUniterBM: $monPrixVentUniterBM")
+                            Log.d("TransferDebug", "benificeDivise: $benificeDivise")
+                            Log.d("TransferDebug", "clientBenificeBM: $clientBenificeBM")
                         }
+
+                        Log.d("TransferDebug", "Created ArticlesAcheteModele object")
+                        article
                     }
 
                     if (article != null) {
                         refDestination.child(article.vid.toString()).setValue(article).await()
+                        Log.d("TransferDebug", "Article transferred successfully: ${article.vid}")
+                        processedItems++
+                    } else {
+                        Log.w("TransferDebug", "Article object is null, skipping transfer for idArticle: $idArticle")
+                        skippedItems++
                     }
+                } else {
+                    Log.w("TransferDebug", "Skipping item due to invalid totalQuantity: $totalQuantity")
+                    skippedItems++
                 }
 
-                processedItems++
                 onProgressUpdate(processedItems.toFloat() / totalItems)
             }
+
+            Log.d("TransferDebug", "Transfer completed. Processed: $processedItems, Skipped: $skippedItems, Total: $totalItems")
 
             // Display success message when data transfer is completed
             withContext(Dispatchers.Main) {
                 if (processedItems == totalItems) {
                     Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Data transfer failed", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Data transfer completed with some issues. Check logs.", Toast.LENGTH_LONG).show()
                 }
             }
         } catch (e: Exception) {
-            Log.e("transferFirebaseData", "Failed to transfer data", e)
+            Log.e("TransferDebug", "Failed to transfer data", e)
 
             // Display failure message with error details
             withContext(Dispatchers.Main) {
@@ -1284,9 +1336,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
-
-
-
 
     /*1->Section Creat + Handel IMGs Articles -------------------*/
 
