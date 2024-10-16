@@ -211,7 +211,9 @@ fun CombinedCard(
             }
 
             // Content column
-            Column(modifier = Modifier.weight(1f).padding(3.dp)) {
+            Column(modifier = Modifier
+                .weight(1f)
+                .padding(3.dp)) {
                 // Calculate total profit
                 val totalProfit = if (isFireStor) {
                     article.monBenificeFireStoreBM * article.totalQuantity
@@ -484,11 +486,18 @@ fun updateNonTrouveState(article: ArticlesAcheteModele) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
 
     articleRef.child("nonTrouveState").setValue(!article.nonTrouveState)
+    if (article.nonTrouveState) {
+        articleRef.child("verifieState").setValue(false)
+    }
+
 }
 
 fun updateVerifieState(article: ArticlesAcheteModele) {
     val articleRef = Firebase.database.getReference("ArticlesAcheteModeleAdapted").child(article.vid.toString())
     articleRef.child("verifieState").setValue(!article.verifieState)
+    if (article.verifieState) {
+            articleRef.child("nonTrouveState").setValue(false)
+        }
 }
 
 
@@ -600,11 +609,18 @@ fun OutlineTextEditeRegle(
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastLaunchTime > 1000) {
                                 lastLaunchTime = currentTime
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
-                                }
+                                val intent =
+                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                        )
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_PROMPT,
+                                            "Parlez maintenant pour mettre à jour cet article..."
+                                        )
+                                    }
                                 speechRecognizerLauncher.launch(intent)
                             }
                         } else {

@@ -233,9 +233,7 @@ fun DisplayManageBonsClients(
                 }
 
                 val filteredArticles = if (activeClients.contains(nomClient)) {
-                    clientArticles.filter { !it.nonTrouveState &&
-                            (it.monPrixVentFireStoreBM * it.totalQuantity != 0.0 || it.monPrixVentBM * it.totalQuantity != 0.0)
-                    }
+                    clientArticles.filter { !it.nonTrouveState                     }
                 } else {
                     clientArticles
                 }
