@@ -29,7 +29,7 @@ fun createEmptyArticle(nomClient: String) {
                 nomClient = nomClient,
                 totalQuantity = 1,
                 dateDachate = clientDate,
-                typeEmballage = "Boit", // Default value
+                typeEmballage = "New Articles",
                 choisirePrixDepuitFireStoreOuBaseBM = "CardFireBase" // Default value
             )
             articleRef.child(maxVidPlus.toString()).setValue(emptyArticle)
