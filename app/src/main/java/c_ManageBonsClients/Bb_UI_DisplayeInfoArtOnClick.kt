@@ -601,7 +601,7 @@ fun OutlineTextEditeRegle(
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .onFocusChanged { focusState ->
                     if (focusState.isFocused) {
-                        if (lastFocusedColumn != columnToChange) {
+                        if (lastFocusedColumn != columnToChange && columnToChange!="nomArticleFinale") {
                             // This is either the first focus or a focus on a different column
 
                             onFocuseChange()

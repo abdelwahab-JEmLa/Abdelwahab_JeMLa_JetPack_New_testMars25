@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -177,7 +178,8 @@ fun DisplayManageBonsClients(
     onArticleSelect: (Long?) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
-    paddingValues: PaddingValues, boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    paddingValues: PaddingValues,
+    boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     onFocuseChange: () -> Unit,
     lastFocusedColumn: String,
     headOfViewModels: HeadOfViewModels,
@@ -213,7 +215,6 @@ fun DisplayManageBonsClients(
             groupedArticles.forEach { (groupKey, clientArticles) ->
                 val (typeEmballage, nomClient) = groupKey
                 stickyHeader(key = "${nomClient}_${typeEmballage}") {
-
                     ClientAndEmballageHeader(
                         nomClient = nomClient,
                         typeEmballage = typeEmballage,
@@ -227,13 +228,13 @@ fun DisplayManageBonsClients(
                         isActive = activeClients.contains(nomClient),
                         allArticles = articles,
                         clientTotal = clientTotals[nomClient] ?: 0.0,
-                        boardStatistiquesStatViewModel,
-                        headOfViewModels=headOfViewModels
+                        boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
+                        headOfViewModels = headOfViewModels
                     )
                 }
 
                 val filteredArticles = if (activeClients.contains(nomClient)) {
-                    clientArticles.filter { !it.nonTrouveState                     }
+                    clientArticles.filter { !it.nonTrouveState }
                 } else {
                     clientArticles
                 }
@@ -249,7 +250,8 @@ fun DisplayManageBonsClients(
                                         currentChangingField = it
                                     },
                                     focusRequester = focusRequester,
-                                    onFocuseChange = onFocuseChange, lastFocusedColumn,
+                                    onFocuseChange = onFocuseChange,
+                                    lastFocusedColumn = lastFocusedColumn,
                                 )
                                 LaunchedEffect(selectedArticleId) {
                                     focusRequester.requestFocus()
@@ -300,10 +302,23 @@ fun DisplayManageBonsClients(
                 }
             }
         }
+
+        // Add this effect to close the detail view when scrolling past it
+        LaunchedEffect(listState) {
+            snapshotFlow { listState.firstVisibleItemIndex }
+                .collect { firstVisibleItem ->
+                    if (isDetailDisplayed && firstVisibleItem > 0) {
+                        val visibleItems = listState.layoutInfo.visibleItemsInfo
+                        val selectedItemVisible = visibleItems.any { it.key == selectedArticleId }
+                        if (!selectedItemVisible) {
+                            isDetailDisplayed = false
+                            onArticleSelect(null)
+                        }
+                    }
+                }
+        }
     }
 }
-
-
 
 fun addNewClient(name: String, onComplete: (Long) -> Unit) {
     val clientsTableRef = Firebase.database.getReference("G_Clients")
