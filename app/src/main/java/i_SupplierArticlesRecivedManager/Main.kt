@@ -361,7 +361,7 @@ fun VoiceInputField(
         label = { Text("Voice Input") },
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp),                     
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
