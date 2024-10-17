@@ -51,6 +51,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +74,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
@@ -81,13 +83,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-//Title:WindowsMapArticleInSupplierStore
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun WindowsMapArticleInSupplierStore(
+fun FragmentMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
+    navController: NavController,
     modifier: Modifier = Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
     onIdSupplierChanged: (Long) -> Unit
@@ -98,91 +99,84 @@ fun WindowsMapArticleInSupplierStore(
     var showFab by remember { mutableStateOf(false) }
     var itsFilterInFindedAskSupplierSA by remember { mutableStateOf(false) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = modifier.fillMaxSize(),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column {
-                    val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-                    supplier?.let {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Text(
-                                text = "Supplier: ${it.nomSupplierSu}",
-                                style = MaterialTheme.typography.titleSmall,
-                                modifier = Modifier.padding(2.dp)
+    Scaffold(
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column {
+                val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+                supplier?.let {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Text(
+                            text = "Supplier: ${it.nomSupplierSu}",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(2.dp)
+                        )
+                    }
+                }
+                LazyColumn(
+                    contentPadding = PaddingValues(8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { showFab = !showFab }
+                ) {
+                    val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
+
+                    places.forEach { placeItem ->
+                        stickyHeader {
+                            PlaceHeader(placeItem)
+                        }
+
+                        val articlesForThisPlace = uiState.tabelleSupplierArticlesRecived.filter { article ->
+                            uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+                                place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                                        place.idPlace == placeItem.idPlace
+                            }
+                        }
+
+                        items(articlesForThisPlace) { article ->
+                            ArticleItemOfPlace(
+                                article = article,
+                                viewModel = viewModel,
+                                onDismissWithUpdate = { /* Handle update */ },
+                                onDismiss = { /* Handle dismiss */ }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.fillMaxWidth(),
+                                thickness = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant
                             )
                         }
                     }
-                    LazyColumn(
-                        contentPadding = PaddingValues(8.dp),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { showFab = !showFab }
-                    ) {
-                        val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
-
-                        places.forEach { placeItem ->
-                            stickyHeader {
-                                PlaceHeader(placeItem)
-                            }
-
-                            val articlesForThisPlace = uiState.tabelleSupplierArticlesRecived.filter { article ->
-                                uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-                                    place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                                            place.idPlace == placeItem.idPlace
-                                }
-                            }
-
-                            items(articlesForThisPlace) { article ->
-                                ArticleItemOfPlace(
-                                    article = article,
-                                    viewModel = viewModel,
-                                    onDismissWithUpdate = { onDismiss() },
-                                    onDismiss = onDismiss
-                                )
-                                HorizontalDivider(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    thickness = 1.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant
-                                )
-                            }
-                        }
-                    }
                 }
-                if (showFab) {
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(16.dp)
-                    ) {
-                        MoveArticlesFAB(
-                            uiState = uiState,
-                            viewModel = viewModel,
-                            idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-                            onIdSupplierChanged = onIdSupplierChanged
-                        )
+            }
+            if (showFab) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                ) {
+                    MoveArticlesFAB(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
+                        onIdSupplierChanged = onIdSupplierChanged
+                    )
 
-                        FilterFAB(
-                            itsFilterInFindedAskSupplierSA = itsFilterInFindedAskSupplierSA,
-                            onFilterChanged = { itsFilterInFindedAskSupplierSA = it }
-                        )
+                    FilterFAB(
+                        itsFilterInFindedAskSupplierSA = itsFilterInFindedAskSupplierSA,
+                        onFilterChanged = { itsFilterInFindedAskSupplierSA = it }
+                    )
 
-                        AddPlaceFAB(
-                            fabOffset = fabOffset,
-                            onFabOffsetChanged = { fabOffset = it },
-                            onAddDialogRequested = { showAddDialog = true }
-                        )
-                    }
+                    AddPlaceFAB(
+                        fabOffset = fabOffset,
+                        onFabOffsetChanged = { fabOffset = it },
+                        onAddDialogRequested = { showAddDialog = true }
+                    )
                 }
             }
         }
@@ -209,7 +203,6 @@ fun WindowsMapArticleInSupplierStore(
         )
     }
 }
-
 @Composable
 fun PlaceHeader(placeItem: MapArticleInSupplierStore) {
     Card(

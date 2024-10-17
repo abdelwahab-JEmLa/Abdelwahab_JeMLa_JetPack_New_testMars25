@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Moving
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,7 +42,6 @@ fun GlobaleControlsFloatingButtonsSA(
     onToggleToFilterToMove: () -> Unit,
     onChangeGridColumns: (Int) -> Unit,
     filterSuppHandledNow: Boolean,
-    onDisplyeWindosMapArticleInSupplierStore: () -> Unit,
     onLaunchVoiceRecognition: () -> Unit,
     viewModel: HeadOfViewModels  ,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -65,10 +63,6 @@ fun GlobaleControlsFloatingButtonsSA(
 
                     Triple(Icons.Default.Mic, "Voice Recognition") {
                         onLaunchVoiceRecognition()
-                    },
-                    Triple(Icons.Default.Place, "onDisplyeWindosMapArticleInSupplierStore") {
-                        onDisplyeWindosMapArticleInSupplierStore()
-                        onDisplyeWindosMapArticleInSupplierStoreClickFolower = !onDisplyeWindosMapArticleInSupplierStoreClickFolower
                     },
                     Triple(if (filterSuppHandledNow) Icons.Default.FileUpload else Icons.Default.Moving, "Filter To Move") {
                         onToggleToFilterToMove()

@@ -125,7 +125,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
     var itsReorderMode by remember { mutableStateOf(false) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
-    var windosMapArticleInSupplierStore by remember { mutableStateOf(false) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
     var voiceInputText by remember { mutableStateOf("") }
@@ -266,7 +265,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                         onChangeGridColumns = { gridColumns = it },
                         onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
                         filterSuppHandledNow = toggleCtrlToFilterToMove,
-                        onDisplyeWindosMapArticleInSupplierStore = { windosMapArticleInSupplierStore = !windosMapArticleInSupplierStore },
                         onLaunchVoiceRecognition = {
                             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -355,18 +353,6 @@ fun Fragment_SupplierArticlesRecivedManager(
             modifier = Modifier.padding(horizontal = 3.dp),
         )
     }
-
-    if (windosMapArticleInSupplierStore)
-        WindowsMapArticleInSupplierStore(
-            uiState=  uiState,
-        onDismiss = {
-            windosMapArticleInSupplierStore = false
-        },
-        viewModel = viewModel,
-        modifier = Modifier.padding(horizontal = 3.dp),
-        idSupplierOfFloatingButtonClicked=idSupplierOfFloatingButtonClicked ,
-        onIdSupplierChanged = {idSupplierOfFloatingButtonClicked=it}
-        )
     }
 }
 

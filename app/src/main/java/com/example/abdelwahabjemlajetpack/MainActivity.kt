@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ThumbUp
@@ -60,6 +61,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,11 +93,20 @@ import g_BoardStatistiques.f_2_CreditsClients.CreditsClientsViewModel
 import g_BoardStatistiques.f_2_CreditsClients.FragmentCreditsClients
 import h_FactoryClassemntsArticles.ClassementsArticlesViewModel
 import h_FactoryClassemntsArticles.MainFactoryClassementsArticles
+import i_SupplierArticlesRecivedManager.FragmentMapArticleInSupplierStore
 import i_SupplierArticlesRecivedManager.Fragment_SupplierArticlesRecivedManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
+data class AppViewModels(
+    val headOfViewModels: HeadOfViewModels,
+    val editeBaseDonneViewModel: EditeBaseDonneViewModel,
+    val creditsViewModel: CreditsViewModel,
+    val creditsClientsViewModel: CreditsClientsViewModel,
+    val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
+    val classementsArticlesViewModel: ClassementsArticlesViewModel
+)
 class MainActivity : ComponentActivity() {
     private lateinit var permissionHandler: PermissionHandler
     private val database by lazy { AppDatabase.getInstance(this) }
@@ -186,159 +197,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
-    var isBlinking by remember { mutableStateOf(false) }
-    var showProgressBar by remember { mutableStateOf(false) }
-
-    LaunchedEffect(progress) {
-        if (progress > 0f) {
-            showProgressBar = true
-            isBlinking = false
-        } else if (progress == 0f && showProgressBar) {
-            isBlinking = true
-            delay(3000) // Blink for 3 seconds
-            isBlinking = false
-            showProgressBar = false
-        }
-    }
-
-    if (showProgressBar) {
-        val transition = rememberInfiniteTransition(label = "")
-        val alpha by transition.animateFloat(
-            initialValue = 1f,
-            targetValue = 0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(500),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = ""
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(24.dp) // Increased height
-                .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .alpha(if (isBlinking) alpha else 1f)
-        ) {
-            // Red part (30% of the width)
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.3f)
-                    .background(Color.Red)
-            )
-
-            // Progress part
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(progress / 100f)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
-
-            // Text
-            Text(
-                text = buttonName,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                modifier = Modifier
-                    .align(Alignment.Center)
-            )
-        }
-    }
-}
-
-@Composable
-fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
-    val coroutineScope = rememberCoroutineScope()
-    val isTimerActive by headOfViewModels.isTimerActive.collectAsState()
-
-    FloatingActionButton(
-        onClick = {
-            coroutineScope.launch {
-                headOfViewModels.updateColorsFromArticles()
-            }
-        },
-        containerColor = Color.Red,
-        modifier = Modifier.size(56.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.ThumbUp,
-            contentDescription = "Update Colors",
-            tint = Color.White
-        )
-    }
-
-    PressHoldButton(
-        onPress = { headOfViewModels.startTimer() },
-        onRelease = { headOfViewModels.stopTimer() },
-        isActive = isTimerActive
-    )
-}
-
-@Composable
-fun PressHoldButton(
-    onPress: () -> Unit,
-    onRelease: () -> Unit,
-    isActive: Boolean
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-
-    LaunchedEffect(pressed) {
-        if (pressed) {
-            onPress()
-        } else {
-            onRelease()
-        }
-    }
-
-    FloatingActionButton(
-        onClick = { /* Do nothing on click */ },
-        modifier = Modifier.size(56.dp),
-        containerColor = if (isActive) Color.Gray else Color.Blue,
-        interactionSource = interactionSource
-    ) {
-        Icon(
-            imageVector = Icons.Default.Timer,
-            contentDescription = "Activate Timer",
-            tint = Color.White
-        )
-    }
-}
 
 
-@Composable
-fun CustomNavigationBar(
-    items: List<Screen>,
-    currentRoute: String?,
-    onNavigate: (String) -> Unit
-) {
-
-    NavigationBar {
-        items.forEach { screen ->
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.title,
-                        tint = screen.color
-                    )
-                },
-                selected = currentRoute == screen.route,
-                onClick = { onNavigate(screen.route) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = screen.color,
-                    unselectedIconColor = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
-                )
-            )
-        }
-    }
-}
 @Composable
 fun MainScreen(
     editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -391,11 +251,13 @@ fun AppNavHost(
 ) {
     val uiState by headOfViewModels.uiState.collectAsState()
 
-    var localProgress by remember { mutableStateOf(0f) }
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+
+    var currentSupplier by rememberSaveable() { mutableStateOf(11L) }
+
     val currentEditedArticle by headOfViewModels.currentEditedArticle.collectAsState()
     var reloadTrigger by remember { mutableIntStateOf(0) }
     // Remove this LaunchedEffect as it's overwriting our manual settings
@@ -429,6 +291,15 @@ fun AppNavHost(
                 onToggleNavBar = onToggleNavBar,
                 modifier=modifier ,
                 onNewArticleAdded={dialogeDisplayeDetailleChanger=it}
+            )
+        }
+        composable("FragmentMapArticleInSupplierStore") { backStackEntry ->
+            FragmentMapArticleInSupplierStore(
+                uiState = uiState,
+                viewModel = headOfViewModels,
+                navController = navController,
+                idSupplierOfFloatingButtonClicked = currentSupplier,
+                onIdSupplierChanged = { currentSupplier = it }
             )
         }
         composable("FragmentEntreBonsGro") {
@@ -556,6 +427,7 @@ object NavigationItems {
         Screen.MainScreen,
         Screen.ManageBonsClients,
         Screen.Fragment_SupplierArticlesRecivedManager,
+        Screen.FragmentMapArticleInSupplierStoreFragment,
         Screen.EntreBonsGro,
         Screen.Credits,
         Screen.CreditsClients,
@@ -563,21 +435,17 @@ object NavigationItems {
         Screen.EditDatabaseWithCreateNewArticles ,
     )
 }
-
-data class AppViewModels(
-    val headOfViewModels: HeadOfViewModels,
-    val editeBaseDonneViewModel: EditeBaseDonneViewModel,
-    val creditsViewModel: CreditsViewModel,
-    val creditsClientsViewModel: CreditsClientsViewModel,
-    val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-    val classementsArticlesViewModel: ClassementsArticlesViewModel
-)
-
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
     data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
     data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
     data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
     data  object Fragment_SupplierArticlesRecivedManager : Screen("Fragment_SupplierArticlesRecivedManager", Icons.Default.LiveTv, "Fragment_SupplierArticlesRecivedManager", Color(0xFFF44336))
+    data object FragmentMapArticleInSupplierStoreFragment : Screen(
+        "FragmentMapArticleInSupplierStore",
+        Icons.Default.Map,
+        "Map Articles",
+        Color(0xFF00BCD4)
+    )         //TODO fait que au maintant du buttobn ca pop up une bpetite affiche contien 2 buton 10 et 9 au release ca change   currentSupplier avec le num du button et navige au fragement
     data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
     data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
     data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.EditRoad, "Create New Articles", Color(
@@ -586,6 +454,163 @@ sealed class Screen(val route: String, val icon: ImageVector, val title: String,
     )
     data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
 }
+@Composable
+fun CustomNavigationBar(
+    items: List<Screen>,
+    currentRoute: String?,
+    onNavigate: (String) -> Unit
+) {
+
+    NavigationBar {
+        items.forEach { screen ->
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        imageVector = screen.icon,
+                        contentDescription = screen.title,
+                        tint = screen.color
+                    )
+                },
+                selected = currentRoute == screen.route,
+                onClick = { onNavigate(screen.route) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = screen.color,
+                    unselectedIconColor = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+                )
+            )
+        }
+    }
+}
 
 
+
+
+/** [MainActionsFab]
+ * "PS:To Claude Dont Delet This Comment"*/
+
+@Composable
+fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
+    var isBlinking by remember { mutableStateOf(false) }
+    var showProgressBar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(progress) {
+        if (progress > 0f) {
+            showProgressBar = true
+            isBlinking = false
+        } else if (progress == 0f && showProgressBar) {
+            isBlinking = true
+            delay(3000) // Blink for 3 seconds
+            isBlinking = false
+            showProgressBar = false
+        }
+    }
+
+    if (showProgressBar) {
+        val transition = rememberInfiniteTransition(label = "")
+        val alpha by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(500),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = ""
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp) // Increased height
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .alpha(if (isBlinking) alpha else 1f)
+        ) {
+            // Red part (30% of the width)
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.3f)
+                    .background(Color.Red)
+            )
+
+            // Progress part
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress / 100f)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+
+            // Text
+            Text(
+                text = buttonName,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier
+                    .align(Alignment.Center)
+            )
+        }
+    }
+}
+
+
+@Composable
+fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
+    val coroutineScope = rememberCoroutineScope()
+    val isTimerActive by headOfViewModels.isTimerActive.collectAsState()
+
+    FloatingActionButton(
+        onClick = {
+            coroutineScope.launch {
+                headOfViewModels.updateColorsFromArticles()
+            }
+        },
+        containerColor = Color.Red,
+        modifier = Modifier.size(56.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.ThumbUp,
+            contentDescription = "Update Colors",
+            tint = Color.White
+        )
+    }
+
+    PressHoldButton(
+        onPress = { headOfViewModels.startTimer() },
+        onRelease = { headOfViewModels.stopTimer() },
+        isActive = isTimerActive
+    )
+}
+
+@Composable
+fun PressHoldButton(
+    onPress: () -> Unit,
+    onRelease: () -> Unit,
+    isActive: Boolean
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            onPress()
+        } else {
+            onRelease()
+        }
+    }
+
+    FloatingActionButton(
+        onClick = { /* Do nothing on click */ },
+        modifier = Modifier.size(56.dp),
+        containerColor = if (isActive) Color.Gray else Color.Blue,
+        interactionSource = interactionSource
+    ) {
+        Icon(
+            imageVector = Icons.Default.Timer,
+            contentDescription = "Activate Timer",
+            tint = Color.White
+        )
+    }
+}
 
