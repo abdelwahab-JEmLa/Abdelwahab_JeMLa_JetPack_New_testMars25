@@ -1,7 +1,7 @@
 package i_SupplierArticlesRecivedManager
 
-import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import a_MainAppCompnents.TabelleSuppliersSA
@@ -22,6 +22,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,10 +43,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
@@ -105,6 +103,7 @@ import com.example.abdelwahabjemlajetpack.R
 import java.io.File
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
@@ -115,53 +114,30 @@ fun Fragment_SupplierArticlesRecivedManager(
     val uiState by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
-
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableIntStateOf(2) }
+    var voiceInputText by remember { mutableStateOf("") }
 
-    val gridState = rememberLazyGridState()
-
+    // State declarations
     var toggleCtrlToFilterToMove by remember { mutableStateOf(false) }
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
     var itsReorderMode by remember { mutableStateOf(false) }
     var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
-    var voiceInputText by remember { mutableStateOf("") }
-
-    fun processVoiceInput(spokenText: String, viewModel: HeadOfViewModels, uiState: CreatAndEditeInBaseDonnRepositeryModels) {
-        if (spokenText.contains("محو")) {
-            voiceInputText = ""
-            return
-        }
-
-        val parts = spokenText.split("+")
-        if (parts.size == 2) {
-            val articleId = parts[0].trim().toLongOrNull()
-            val supplierName = parts[1].trim()
-
-            if (articleId != null) {
-                val article = uiState.tabelleSupplierArticlesRecived.find { it.aa_vid == articleId}
-                val supplier = uiState.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
-
-                if (article != null && supplier != null) {
-                    viewModel.moveArticleNonFindToSupplier(
-                        articlesToMove = listOf(article),
-                        toSupp = supplier.idSupplierSu
-                    )
-                    voiceInputText = ""
-                }
-            }
-        }
-    }
-
+    // Speech recognizer launcher
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
             voiceInputText = spokenText
-            processVoiceInput(spokenText, viewModel, uiState)
+            handleVoiceInput(
+                spokenText = spokenText,
+                viewModel = viewModel,
+                uiState = uiState,
+                onProcessingComplete = { voiceInputText = "" }
+            )
         }
     }
 
@@ -174,115 +150,115 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Voice input field
-                OutlinedTextField(
+                VoiceInputField(
                     value = voiceInputText,
-                    onValueChange = { newText ->
-                        voiceInputText = newText
-                        val parts = newText.split("+")
-                        if (parts.size == 2) {
-                            val supplierName = parts[1].trim()
-                            val supplier = uiState.tabelleSuppliersSA.find { it.nomVocaleArabeDuSupplier == supplierName }
-                            if (supplier != null && supplierName.isNotEmpty()) {  // Fixed: Check if supplierName is not empty
-                                processVoiceInput(newText, viewModel, uiState)
-                            }
-                        }
+                    onValueChange = { voiceInputText = it },
+                    onProcess = { text ->
+                        handleVoiceInput(
+                            spokenText = text,
+                            viewModel = viewModel,
+                            uiState = uiState,
+                            onProcessingComplete = { voiceInputText = "" }
+                        )
                     },
-                    label = { Text("Voice Input") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                    uiState = uiState // Pass uiState to VoiceInputField
                 )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(gridColumns),
-                    state = gridState,
+                LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
-                    uiState.tabelleSuppliersSA.filter { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-                } else {
-                    uiState.tabelleSuppliersSA
-                }
-
-                filterSupp.forEach { supplier ->
-                    val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
-                        it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
-                                (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
+                    val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
+                        uiState.tabelleSuppliersSA.filter {
+                            it.idSupplierSu == idSupplierOfFloatingButtonClicked
+                        }
+                    } else {
+                        uiState.tabelleSuppliersSA
                     }
 
-                    if (articlesSupplier.isNotEmpty() && supplier.nomSupplierSu != "Find" && supplier.nomSupplierSu != "Non Define") {
-                        item(span = { GridItemSpan(gridColumns) }) {
-                            SupplierHeaderSA(
-                                supplier = supplier,
-                                viewModel = viewModel,
-                            )
+                    filterSupp.forEach { supplier ->
+                        val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
+                            it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
+                                    (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                         }
-                        items(articlesSupplier) { article ->
-                            ArticleItemSA(
-                                article = article,
-                                viewModel = viewModel,
-                                onArticleClick = { clickedArticle ->
-                                    val vidClicked = clickedArticle.aa_vid.toLong()
 
-                                    if (lastAskArticleChanged != vidClicked) {
-                                        viewModel.changeAskSupplier(clickedArticle)
-                                        lastAskArticleChanged = vidClicked
-                                    } else {
-                                        dialogeDisplayeDetailleChanger = clickedArticle
-                                        lastAskArticleChanged = null
-                                    }
-                                },
-                                modifier=modifier,
-                            )
+                        if (articlesSupplier.isNotEmpty() &&
+                            supplier.nomSupplierSu != "Find" &&
+                            supplier.nomSupplierSu != "Non Define"
+                        ) {
+                            stickyHeader(key = supplier.idSupplierSu) {
+                                SupplierHeaderSA(
+                                    supplier = supplier,
+                                    viewModel = viewModel,
+                                )
+                            }
+
+                            items(
+                                items = articlesSupplier,
+                                key = { it.aa_vid }
+                            ) { article ->
+                                ArticleItemSA(
+                                    article = article,
+                                    viewModel = viewModel,
+                                    onArticleClick = { clickedArticle ->
+                                        val vidClicked = clickedArticle.aa_vid.toLong()
+                                        if (lastAskArticleChanged != vidClicked) {
+                                            viewModel.changeAskSupplier(clickedArticle)
+                                            lastAskArticleChanged = vidClicked
+                                        } else {
+                                            dialogeDisplayeDetailleChanger = clickedArticle
+                                            lastAskArticleChanged = null
+                                        }
+                                    },
+                                    modifier = modifier,
+                                )
+                            }
                         }
                     }
                 }
             }
         }
 
+        // Floating buttons container
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .zIndex(1f)
+        ) {
+            var offset by remember { mutableStateOf(Offset.Zero) }
+
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .zIndex(1f)
-            ) {
-                var offset by remember { mutableStateOf(Offset.Zero) }
-
-                Box(
-                    modifier = Modifier
-                        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
-                        .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consume()
-                                offset += dragAmount
-                            }
+                    .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            offset += dragAmount
                         }
-                ) {
-                    GlobaleControlsFloatingButtonsSA(
-                        showFloatingButtons = showFloatingButtons,
-                        onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
-                        onChangeGridColumns = { gridColumns = it },
-                        onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
-                        filterSuppHandledNow = toggleCtrlToFilterToMove,
-                        onLaunchVoiceRecognition = {
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
-                                putExtra(
-                                    RecognizerIntent.EXTRA_PROMPT,
-                                    "Parlez maintenant pour mettre à jour cet article..."
-                                )
-                            }
-                            speechRecognizerLauncher.launch(intent)
-                        },
-                        viewModel = viewModel,
-                        uiState = uiState,
-                        onNewArticleAdded = onNewArticleAdded
-                    )
-                }
+                    }
+            ) {
+                GlobaleControlsFloatingButtonsSA(
+                    showFloatingButtons = showFloatingButtons,
+                    onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
+                    onChangeGridColumns = { gridColumns = it },
+                    onToggleToFilterToMove = { toggleCtrlToFilterToMove = !toggleCtrlToFilterToMove },
+                    filterSuppHandledNow = toggleCtrlToFilterToMove,
+                    onLaunchVoiceRecognition = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                        }
+                        speechRecognizerLauncher.launch(intent)
+                    },
+                    viewModel = viewModel,
+                    uiState = uiState,
+                    onNewArticleAdded = onNewArticleAdded
+                )
             }
+        }
 
+        // Show supplier floating buttons
         SuppliersFloatingButtonsSA(
             allArticles = uiState.tabelleSupplierArticlesRecived,
             suppliers = uiState.tabelleSuppliersSA,
@@ -295,7 +271,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                         viewModel.reorderSuppliers(firstClickedSupplierForReorder!!, clickedSupplierId)
                         firstClickedSupplierForReorder = null
                     } else {
-                        // Cliquer deux fois sur le même fournisseur annule la réorganisation
                         firstClickedSupplierForReorder = null
                     }
                 } else {
@@ -310,16 +285,15 @@ fun Fragment_SupplierArticlesRecivedManager(
                         )
                         toggleCtrlToFilterToMove = false
                     } else {
-                        idSupplierOfFloatingButtonClicked =
-                            when (idSupplierOfFloatingButtonClicked) {
-                                clickedSupplierId -> null  // Deselect if the same supplier is clicked again
-                                else -> clickedSupplierId  // Select the new supplier
-                            }
+                        idSupplierOfFloatingButtonClicked = when (idSupplierOfFloatingButtonClicked) {
+                            clickedSupplierId -> null
+                            else -> clickedSupplierId
+                        }
                     }
                 }
             },
             itsReorderMode = itsReorderMode,
-            firstClickedSupplierForReorder = firstClickedSupplierForReorder ,
+            firstClickedSupplierForReorder = firstClickedSupplierForReorder,
             onUpdateVocalArabName = { supplierId, newName ->
                 viewModel.updateSupplierVocalArabName(supplierId, newName)
             },
@@ -328,35 +302,98 @@ fun Fragment_SupplierArticlesRecivedManager(
                 if (!itsReorderMode) {
                     firstClickedSupplierForReorder = null
                 }
-            },
+            }
         )
-    }
 
-    // Use the current edited article if it matches the given article, otherwise use the original article
-    val displayedArticle = currentSupplierArticle?.takeIf { it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c }
-        ?: dialogeDisplayeDetailleChanger
+        // Display article detail dialog
+        val displayedArticle = currentSupplierArticle?.takeIf {
+            it.a_c_idarticle_c.toLong() == dialogeDisplayeDetailleChanger?.a_c_idarticle_c
+        } ?: dialogeDisplayeDetailleChanger
 
-    displayedArticle?.let { article ->
-        WindowArticleDetail(
-            article = article,
-            onDismissWithUpdatePlaceArticle = {
-                dialogeDisplayeDetailleChanger = null
-            },
-            onDismissWithUpdateOfnonDispo ={
-                dialogeDisplayeDetailleChanger = null
-                viewModel.changeAskSupplier(it)
-            },
-            onDismiss ={
-                dialogeDisplayeDetailleChanger = null
-            } ,
-            viewModel = viewModel,
-            modifier = Modifier.padding(horizontal = 3.dp),
-        )
-    }
+        displayedArticle?.let { article ->
+            WindowArticleDetail(
+                article = article,
+                onDismissWithUpdatePlaceArticle = {
+                    dialogeDisplayeDetailleChanger = null
+                },
+                onDismissWithUpdateOfnonDispo = { updatedArticle ->
+                    dialogeDisplayeDetailleChanger = null
+                    viewModel.changeAskSupplier(updatedArticle)
+                },
+                onDismiss = {
+                    dialogeDisplayeDetailleChanger = null
+                },
+                viewModel = viewModel,
+                modifier = Modifier.padding(horizontal = 3.dp)
+            )
+        }
     }
 }
 
+@Composable
+fun VoiceInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onProcess: (String) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { newText ->
+            onValueChange(newText)
+            val parts = newText.split("+")
+            if (parts.size == 2) {
+                val supplierName = parts[1].trim()
+                val supplier = uiState.tabelleSuppliersSA.find {
+                    it.nomVocaleArabeDuSupplier == supplierName
+                }
+                if (supplier != null && supplierName.isNotEmpty()) {
+                    onProcess(newText)
+                }
+            }
+        },
+        label = { Text("Voice Input") },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    )
+}
 
+fun handleVoiceInput(
+    spokenText: String,
+    viewModel: HeadOfViewModels,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    onProcessingComplete: () -> Unit
+) {
+    if (spokenText.contains("محو")) {
+        onProcessingComplete()
+        return
+    }
+
+    val parts = spokenText.split("+")
+    if (parts.size == 2) {
+        val articleId = parts[0].trim().toLongOrNull()
+        val supplierName = parts[1].trim()
+
+        if (articleId != null) {
+            val article = uiState.tabelleSupplierArticlesRecived.find {
+                it.aa_vid == articleId
+            }
+            val supplier = uiState.tabelleSuppliersSA.find {
+                it.nomVocaleArabeDuSupplier == supplierName
+            }
+
+            if (article != null && supplier != null) {
+                viewModel.moveArticleNonFindToSupplier(
+                    articlesToMove = listOf(article),
+                    toSupp = supplier.idSupplierSu
+                )
+                onProcessingComplete()
+            }
+        }
+    }
+}
 
 @Composable
 fun ArticleItemSA(
