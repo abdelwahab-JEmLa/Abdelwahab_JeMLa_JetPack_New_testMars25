@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -121,6 +122,57 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+    fun startTimer() {
+        if (_isTimerActive.value) return
+
+        _isTimerActive.value = true
+        currentStep = 0
+        timerJob = viewModelScope.launch {
+            val totalDuration = 2000L // 2 seconds
+            val updateInterval = 20L // Update every 20ms for smooth animation
+
+            for (elapsedTime in 0L..totalDuration step updateInterval) {
+                if (!isActive) break
+
+                val progress = ((totalDuration - elapsedTime) / totalDuration.toFloat()) * 100
+                val remainingTime = (totalDuration - elapsedTime) / 1000f
+
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Timer: ${String.format("%.1f", remainingTime)}s",
+                    progressDimunuentDe100A0 = progress.toInt(),
+                    delayUi = updateInterval
+                )
+
+                delay(updateInterval)
+            }
+
+            if (isActive) {
+                // Timer completed
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Timer completed!",
+                    progressDimunuentDe100A0 = 0,
+                    end = true
+                )
+                showToast("Timer completed!")
+            }
+            _isTimerActive.value = false
+        }
+    }
+
+    fun stopTimer() {
+        timerJob?.cancel()
+        _isTimerActive.value = false
+        updateSmothUploadProgressBarCounterAndItText(
+            nameFunInProgressBar = "Timer stopped",
+            progressDimunuentDe100A0 = 0,
+            end = true
+        )
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
     fun importFromFirebase(refFireBase: String ) {
         viewModelScope.launch {
             try {
@@ -185,50 +237,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
 
             delay(delayUi)
         }
-    }
-    fun startTimer() {
-//        if (_isTimerActive.value) return
-//
-//        _isTimerActive.value = true
-//        currentStep = 0
-//        timerJob = viewModelScope.launch {
-//            val totalDuration = 2000L // 2 seconds
-//            val updateInterval = 20L // Update every 20ms for smooth animation
-//
-//            for (elapsed in 0L..totalDuration step updateInterval) {
-//                if (!isActive) break
-//
-//                val progress = 100f * elapsed.toFloat() / totalDuration
-//                val remainingTime = (totalDuration - elapsed) / 1000f
-//                currentStep = (progress * totalSteps / 100f).roundToInt()
-//                updateUploadProgressBarCounterAndItText(
-//                    nameFunInProgressBar = "Time remaining: ${"%.2f".format(remainingTime)} seconds",
-//                    addPLusTOCurrentStep = currentStep,
-//                    stepProgress = progress % (100f / totalSteps) * 100f,
-//                    delayUi = updateInterval
-//                )
-//            }
-//
-//            if (isActive) {
-//                // Timer completed
-//                showToast("Timer completed!")
-//            }
-//            _isTimerActive.value = false
-//        }
-    }
-
-    fun stopTimer() {
-//        timerJob?.cancel()
-//        _isTimerActive.value = false
-//        updateUploadProgressBarCounterAndItText(
-//            nameFunInProgressBar = "Timer stopped",
-//            addPLusTOCurrentStep = totalSteps,
-//            stepProgress = 0f
-//        )
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
 
