@@ -265,14 +265,15 @@ fun ArticleItemOfPlace(
         )
     }
 }
-
+/**[CardArticlePlace]
+ * "PS:To Claude Dont Delet This Comment"*/
 
 @Composable
-private fun CardArticlePlace(
+fun CardArticlePlace(
     article: TabelleSupplierArticlesRecived,
     modifier: Modifier = Modifier,
     onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
-    reloadKey: Long
+    reloadKey: Long  =0,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     val alpha by infiniteTransition.animateFloat(
@@ -342,11 +343,13 @@ private fun CardArticlePlace(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
+                    val text = "[${article.aa_vid}] Q: ${article.totalquantity}"
                     Text(
-                        text = "Qty: ${article.totalquantity}",
+                        text = text,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
+                    //TODO ajoute une icone de gps a cote text de
                     if (article.itsInFindedAskSupplierSA) {
                         Text(
                             text = "Ask",

@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,12 +40,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
@@ -52,6 +55,7 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
@@ -74,6 +78,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -100,6 +105,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
+import i2_FragmentMapArticleInSupplierStore.DisplayeImageById
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -199,20 +205,10 @@ fun Fragment_SupplierArticlesRecivedManager(
                                     "article_${supplier.idSupplierSu}_${article.aa_vid}"
                                 }
                             ) { article ->
-                                ArticleItemSA(
+                                CardArticlePlace(
+                                    uiState=   uiState,
                                     article = article,
-                                    viewModel = viewModel,
-                                    onArticleClick = { clickedArticle ->
-                                        val vidClicked = clickedArticle.aa_vid.toLong()
-                                        if (lastAskArticleChanged != vidClicked) {
-                                            viewModel.changeAskSupplier(clickedArticle)
-                                            lastAskArticleChanged = vidClicked
-                                        } else {
-                                            dialogeDisplayeDetailleChanger = clickedArticle
-                                            lastAskArticleChanged = null
-                                        }
-                                    },
-                                    modifier = modifier,
+                                    onClickToShowWindowsInfoArt = { dialogeDisplayeDetailleChanger = it } ,
                                 )
                             }
                         }
@@ -332,7 +328,125 @@ fun Fragment_SupplierArticlesRecivedManager(
         }
     }
 }
+@Composable
+fun CardArticlePlace(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    article: TabelleSupplierArticlesRecived,
+    modifier: Modifier = Modifier,
+    onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
+    reloadKey: Long = 0,
+) {
+    val corependentDataBase = uiState.articlesBaseDonneECB.find { it.idArticle.toLong() == article.aa_vid }
+    val corependentnamePlacePLaceInStore = uiState.mapArticleInSupplierStore.find {
+        it.idPlace.toLong() == (corependentDataBase?.idPlaceStandartInStoreSupplier ?: 0)
+    }?.namePlace
 
+    val infiniteTransition = rememberInfiniteTransition(label = "")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.1f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = ""
+    )
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(70.dp)
+            .clickable(onClick = { onClickToShowWindowsInfoArt(article) }),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Box(
+            modifier = modifier.fillMaxSize()
+        )  {
+            // Background image
+            DisplayeImageById(
+                idArticle = article.a_c_idarticle_c,
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                reloadKey = reloadKey
+            )
+
+            // Semi-transparent overlay
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+            )
+
+            // Darker blinking yellow overlay for itsInFindedAskSupplierSA
+            if (article.itsInFindedAskSupplierSA) {
+                Box(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .alpha(alpha)
+                        .background(Color(0xFFFFD700).copy(alpha = 0.7f))  // Darker yellow
+                )
+            }
+
+            // Article details
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = article.a_d_nomarticlefinale_c,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    val text = "[${article.aa_vid}] Q: ${article.totalquantity}"
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+
+                    // Added Row for location info
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Location",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = corependentnamePlacePLaceInStore ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                    }
+
+                    if (article.itsInFindedAskSupplierSA) {
+                        Text(
+                            text = "Ask",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFFFD700)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 fun VoiceInputField(
     value: String,
