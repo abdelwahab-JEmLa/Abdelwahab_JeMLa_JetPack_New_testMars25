@@ -161,7 +161,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                             onProcessingComplete = { voiceInputText = "" }
                         )
                     },
-                    uiState = uiState // Pass uiState to VoiceInputField
+                    uiState = uiState
                 )
 
                 LazyColumn(
@@ -185,7 +185,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                             supplier.nomSupplierSu != "Find" &&
                             supplier.nomSupplierSu != "Non Define"
                         ) {
-                            stickyHeader(key = supplier.idSupplierSu) {
+                            stickyHeader(key = "header_${supplier.idSupplierSu}") {
                                 SupplierHeaderSA(
                                     supplier = supplier,
                                     viewModel = viewModel,
@@ -194,7 +194,10 @@ fun Fragment_SupplierArticlesRecivedManager(
 
                             items(
                                 items = articlesSupplier,
-                                key = { it.aa_vid }
+                                key = { article ->
+                                    // Create a unique key combining supplier ID and article ID
+                                    "article_${supplier.idSupplierSu}_${article.aa_vid}"
+                                }
                             ) { article ->
                                 ArticleItemSA(
                                     article = article,
