@@ -102,12 +102,12 @@ fun FragmentMapArticleInSupplierStore(
 
     Scaffold(
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column {
                 val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
                 supplier?.let {
                     Card(
-                        modifier = Modifier
+                        modifier = modifier
                             .fillMaxWidth()
                             .padding(4.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -121,7 +121,7 @@ fun FragmentMapArticleInSupplierStore(
                 }
                 LazyColumn(
                     contentPadding = PaddingValues(8.dp),
-                    modifier = Modifier
+                    modifier = modifier
                         .fillMaxSize()
                         .clickable { showFab = !showFab }
                 ) {
@@ -147,7 +147,7 @@ fun FragmentMapArticleInSupplierStore(
                                 onDismiss = { /* Handle dismiss */ }
                             )
                             HorizontalDivider(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = modifier.fillMaxWidth(),
                                 thickness = 1.dp,
                                 color = MaterialTheme.colorScheme.outlineVariant
                             )
@@ -157,7 +157,7 @@ fun FragmentMapArticleInSupplierStore(
             }
             if (showFab) {
                 Row(
-                    modifier = Modifier
+                    modifier = modifier
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
                 ) {
@@ -187,7 +187,7 @@ fun FragmentMapArticleInSupplierStore(
         WindowsOfNonPlacedArticles(
             uiState = uiState,
             onDismiss = { showNonPlacedArticles = null },
-            modifier = Modifier,
+            modifier = modifier,
             gridColumns = 2,
             place = place,
             viewModel = viewModel
@@ -205,9 +205,11 @@ fun FragmentMapArticleInSupplierStore(
     }
 }
 @Composable
-fun PlaceHeader(placeItem: MapArticleInSupplierStore) {
+fun PlaceHeader(
+                    placeItem: MapArticleInSupplierStore,
+                    modifier: Modifier = Modifier,) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
         colors = CardDefaults.cardColors(
@@ -215,10 +217,10 @@ fun PlaceHeader(placeItem: MapArticleInSupplierStore) {
         )
     ) {
         Text(
-            text = "${placeItem.namePlace} ${if (placeItem.inRightOfPlace) "R" else "L"}",
+            text = "${placeItem.namePlace} ",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             textAlign = TextAlign.Center
@@ -230,7 +232,8 @@ fun PlaceHeader(placeItem: MapArticleInSupplierStore) {
 @Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
-    viewModel: HeadOfViewModels,
+    viewModel: HeadOfViewModels,     modifier: Modifier = Modifier,
+
     onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit ,
     onDismiss: () -> Unit
 ) {
@@ -258,7 +261,7 @@ fun ArticleItemOfPlace(
                 viewModel.changeAskSupplier(it)
             },
             viewModel = viewModel,
-            modifier = Modifier.padding(horizontal = 3.dp),
+            modifier = modifier.padding(horizontal = 3.dp),
         )
     }
 }
@@ -267,6 +270,7 @@ fun ArticleItemOfPlace(
 @Composable
 private fun CardArticlePlace(
     article: TabelleSupplierArticlesRecived,
+    modifier: Modifier = Modifier,
     onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
     reloadKey: Long
 ) {
@@ -282,7 +286,7 @@ private fun CardArticlePlace(
     )
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(70.dp)
             .clickable(onClick = { onClickToShowWindowsInfoArt(article) }),
@@ -290,12 +294,12 @@ private fun CardArticlePlace(
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize()
         ) {
             // Background image
             DisplayeImageById(
                 idArticle = article.a_c_idarticle_c,
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxWidth()
                     .height(120.dp),
                 reloadKey = reloadKey
@@ -303,7 +307,7 @@ private fun CardArticlePlace(
 
             // Semi-transparent overlay
             Box(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.4f))
             )
@@ -311,7 +315,7 @@ private fun CardArticlePlace(
             // Darker blinking yellow overlay for itsInFindedAskSupplierSA
             if (article.itsInFindedAskSupplierSA) {
                 Box(
-                    modifier = Modifier
+                    modifier = modifier
                         .fillMaxSize()
                         .alpha(alpha)
                         .background(Color(0xFFFFD700).copy(alpha = 0.7f))  // Darker yellow
@@ -320,7 +324,7 @@ private fun CardArticlePlace(
 
             // Article details
             Column(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .padding(8.dp),
                 verticalArrangement = Arrangement.SpaceBetween
@@ -377,13 +381,13 @@ fun WindowsOfNonPlacedArticles(
             modifier = modifier.fillMaxSize(),
             shape = MaterialTheme.shapes.large
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = modifier.fillMaxSize()) {
+                Column(modifier = modifier.fillMaxSize()) {
                     OutlinedTextField(
                         value = searchText,
                         onValueChange = { searchText = it },
                         label = { Text("Search Articles") },
-                        modifier = Modifier
+                        modifier = modifier
                             .fillMaxWidth()
                             .padding(16.dp)
                     )
@@ -405,7 +409,7 @@ fun WindowsOfNonPlacedArticles(
                     }
 
                     Card(
-                        modifier = Modifier
+                        modifier = modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .padding(16.dp)
@@ -416,12 +420,12 @@ fun WindowsOfNonPlacedArticles(
                             Text(
                                 if (showNonPlacedArticles) "Articles With Non Defined Place" else "Placed Articles",
                                 style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(16.dp)
+                                modifier = modifier.padding(16.dp)
                             )
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(gridColumns),
                                 state = gridState,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = modifier.fillMaxSize()
                             ) {
                                 items(if (showNonPlacedArticles) nonPlacedArticles else placedArticles) { article ->
                                     ArticleItemOfPlace(
@@ -451,7 +455,7 @@ fun WindowsOfNonPlacedArticles(
 
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier
+                    modifier = modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                 ) {

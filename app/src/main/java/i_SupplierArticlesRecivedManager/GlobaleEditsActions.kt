@@ -1,6 +1,6 @@
 package i_SupplierArticlesRecivedManager
 
-import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +45,7 @@ fun GlobaleControlsFloatingButtonsSA(
     onLaunchVoiceRecognition: () -> Unit,
     viewModel: HeadOfViewModels  ,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+    onNewArticleAdded: (DataBaseArticles) -> Unit
 ) {
     var currentGridColumns by remember { mutableIntStateOf(2) }
     val maxGridColumns = 6

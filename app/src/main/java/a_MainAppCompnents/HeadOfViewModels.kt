@@ -48,7 +48,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 data class CreatAndEditeInBaseDonnRepositeryModels(
-    val articlesBaseDonneECB: List<BaseDonneECBTabelle> = emptyList(),
+    val articlesBaseDonneECB: List<DataBaseArticles> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
     val colorsArticles: List<ColorsArticles> = emptyList(),
     val articlesAcheteModele: List<ArticlesAcheteModele> = emptyList(),
@@ -68,8 +68,8 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
 
-    private val _currentEditedArticle = MutableStateFlow<BaseDonneECBTabelle?>(null)
-    val currentEditedArticle: StateFlow<BaseDonneECBTabelle?> = _currentEditedArticle.asStateFlow()
+    private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
+    val currentEditedArticle: StateFlow<DataBaseArticles?> = _currentEditedArticle.asStateFlow()
 
     private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
@@ -180,7 +180,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 updateSmothUploadProgressBarCounterAndItText("Importing data from $refFireBase", 90)
 
                 val snapshot = firebaseDatabase.getReference(refFireBase).get().await()
-                val importedArticles = snapshot.children.mapNotNull { it.getValue(BaseDonneECBTabelle::class.java) }
+                val importedArticles = snapshot.children.mapNotNull { it.getValue(DataBaseArticles::class.java) }
 
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -272,7 +272,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
-    private fun collectColors(article: BaseDonneECBTabelle, colors: MutableSet<String>) {
+    private fun collectColors(article: DataBaseArticles, colors: MutableSet<String>) {
         listOfNotNull(
             article.couleur1,
             article.couleur2,
@@ -356,7 +356,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
 
-    fun updateColorName(article: BaseDonneECBTabelle, index: Int, newColorName: String, ecraseLeDernie: Boolean = false) {
+    fun updateColorName(article: DataBaseArticles, index: Int, newColorName: String, ecraseLeDernie: Boolean = false) {
         val updatedArticle = when (index) {
             0 -> article.copy(couleur1 = newColorName)
             1 -> article.copy(couleur2 = newColorName)
@@ -548,7 +548,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val articleRef = refDBJetPackExport.child(articleId.toString())
             articleRef.runTransaction(object : Transaction.Handler {
                 override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val article = mutableData.getValue(BaseDonneECBTabelle::class.java)
+                    val article = mutableData.getValue(DataBaseArticles::class.java)
                     article?.let {
                         it.idCategorieNewMetode = categoryId
                         it.nomCategorie = categoryName
@@ -925,7 +925,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
     private suspend fun fetchArticles() = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-        snapshot.getValue(BaseDonneECBTabelle::class.java)?.apply {
+        snapshot.getValue(DataBaseArticles::class.java)?.apply {
             idArticle = snapshot.key?.toIntOrNull() ?: 0
         }
     }
@@ -958,7 +958,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
 
     private fun updateUiState(
-        articles: List<BaseDonneECBTabelle>,
+        articles: List<DataBaseArticles>,
         categories: List<CategoriesTabelleECB>,
         supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
         suppliersSA: List<TabelleSuppliersSA>,
@@ -1096,7 +1096,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun fromMap(
         map: Map<String, Any?>,
-        correspondingArticle: BaseDonneECBTabelle?,
+        correspondingArticle: DataBaseArticles?,
         itsNewArticleFromeBacKE: Boolean
     ): TabelleSupplierArticlesRecived {
         return TabelleSupplierArticlesRecived(
@@ -1125,7 +1125,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         )
     }
 
-    private fun generate(correspondingArticle: BaseDonneECBTabelle?): Int {
+    private fun generate(correspondingArticle: DataBaseArticles?): Int {
         if (correspondingArticle == null) {
             return 10 // Default value if correspondingArticle is null
         }
@@ -1339,7 +1339,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     /*1->Section Creat + Handel IMGs Articles -------------------*/
 
-    fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: BaseDonneECBTabelle) {
+    fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: DataBaseArticles) {
         val updatedArticle = article.copy().apply {
             // Update the specific field
             when (columnToChange) {
@@ -1458,7 +1458,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
-    fun toggleAffichageUniteState(article: BaseDonneECBTabelle) {
+    fun toggleAffichageUniteState(article: DataBaseArticles) {
         val updatedArticle = article.copy(affichageUniteState = !article.affichageUniteState)
 
         _uiState.update { state ->
@@ -1484,7 +1484,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
-    private fun updateLocalAndFireBaseArticle(updatedArticle: BaseDonneECBTabelle) {
+    private fun updateLocalAndFireBaseArticle(updatedArticle: DataBaseArticles) {
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
                 if (it.idArticle == updatedArticle.idArticle) updatedArticle else it
@@ -1524,11 +1524,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun isLastArticle(id: Int): Boolean {
         return _uiState.value.articlesBaseDonneECB.lastOrNull()?.idArticle == id
     }
-    fun updateCurrentEditedArticle(article: BaseDonneECBTabelle?) {
+    fun updateCurrentEditedArticle(article: DataBaseArticles?) {
         _currentEditedArticle.value = article
     }
 
-    fun getArticleById(id: Int): BaseDonneECBTabelle? {
+    fun getArticleById(id: Int): DataBaseArticles? {
         return _uiState.value.articlesBaseDonneECB.find { it.idArticle == id }
     }
 
@@ -1707,7 +1707,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    suspend fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB): BaseDonneECBTabelle {
+    suspend fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB): DataBaseArticles {
         return withContext(Dispatchers.IO) {
             try {
                 val newId = getNextArticleId()
@@ -1728,7 +1728,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private suspend fun updateClassementsArticlesTabel(article: BaseDonneECBTabelle, category: CategoriesTabelleECB) {
+    private suspend fun updateClassementsArticlesTabel(article: DataBaseArticles, category: CategoriesTabelleECB) {
         try {
             val classementsArticle = ClassementsArticlesTabel(
                 idArticle = article.idArticle.toLong(),
@@ -1760,8 +1760,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             ?: 0.0)
     }
 
-    private fun createNewArticle(newId: Int, category: CategoriesTabelleECB, newClassementCate: Double): BaseDonneECBTabelle {
-        return BaseDonneECBTabelle(
+    private fun createNewArticle(newId: Int, category: CategoriesTabelleECB, newClassementCate: Double): DataBaseArticles {
+        return DataBaseArticles(
             idArticle = newId,
             nomArticleFinale = "New Article $newId",
             nomCategorie = category.nomCategorieInCategoriesTabele,
@@ -1772,7 +1772,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         )
     }
 
-    private suspend fun updateDataBaseWithNewArticle(article: BaseDonneECBTabelle) {
+    private suspend fun updateDataBaseWithNewArticle(article: DataBaseArticles) {
         try {
             refDBJetPackExport.child(article.idArticle.toString()).setValue(article).await()
 
@@ -1788,7 +1788,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    fun addColorToArticle(uri: Uri, article: BaseDonneECBTabelle) {
+    fun addColorToArticle(uri: Uri, article: DataBaseArticles) {
         viewModelScope.launch {
             try {
                 val nextColorField = getNextAvailableColorField(article)
@@ -1803,7 +1803,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private fun getNextAvailableColorField(article: BaseDonneECBTabelle): String {
+    private fun getNextAvailableColorField(article: DataBaseArticles): String {
         return when {
             article.couleur2.isNullOrEmpty() -> "couleur2"
             article.couleur3.isNullOrEmpty() -> "couleur3"
@@ -1812,7 +1812,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private fun updateArticleWithNewColor(article: BaseDonneECBTabelle, colorField: String): BaseDonneECBTabelle {
+    private fun updateArticleWithNewColor(article: DataBaseArticles, colorField: String): DataBaseArticles {
         return article.copy(
             couleur2 = if (colorField == "couleur2") "Couleur_2" else article.couleur2,
             couleur3 = if (colorField == "couleur3") "Couleur_3" else article.couleur3,
@@ -1859,7 +1859,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    fun deleteColor(article: BaseDonneECBTabelle, colorIndex: Int) {
+    fun deleteColor(article: DataBaseArticles, colorIndex: Int) {
         viewModelScope.launch {
             when (colorIndex) {
                 0 -> updateLocalAndFireBaseArticle(article.copy(articleHaveUniteImages = false))
@@ -1914,7 +1914,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    fun addUniteImageToArticle(uri: Uri, article: BaseDonneECBTabelle) {
+    fun addUniteImageToArticle(uri: Uri, article: DataBaseArticles) {
         viewModelScope.launch {
             try {
                 val fileName = "${article.idArticle}_Unite.jpg"
@@ -1928,7 +1928,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private suspend fun deleteArticle(article: BaseDonneECBTabelle) {
+    private suspend fun deleteArticle(article: DataBaseArticles) {
         try {
             refDBJetPackExport.child(article.idArticle.toString()).removeValue().await()
             _uiState.update { currentState ->
@@ -1944,7 +1944,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    fun processNewImage(uri: Uri, article: BaseDonneECBTabelle, colorIndex: Int) {
+    fun processNewImage(uri: Uri, article: DataBaseArticles, colorIndex: Int) {
         viewModelScope.launch {
             try {
                 val fileName = "${article.idArticle}_${if (colorIndex == 0) "Unite" else colorIndex}.jpg"

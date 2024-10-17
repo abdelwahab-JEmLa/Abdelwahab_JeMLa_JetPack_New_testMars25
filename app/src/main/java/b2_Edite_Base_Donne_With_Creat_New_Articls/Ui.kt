@@ -1,7 +1,7 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
-import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
@@ -112,7 +112,7 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
 @Composable
 fun ArticleDetailWindow(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
@@ -334,7 +334,7 @@ fun ArticleDetailWindow(
 }
 @Composable
 fun ArticleToggleButton(
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier
 ) {
@@ -409,7 +409,7 @@ fun OutlineTextECB(
     columnToChange: String,
     abbreviation: String,
     currentChangingField: String,
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
     onValueChanged: (String) -> Unit,
@@ -471,7 +471,7 @@ fun DisplayField(
     columnToChange: String,
     abbreviation: String,
     currentChangingField: String,
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     viewModel: HeadOfViewModels,
     displayeInOutlines: Boolean,
     modifier: Modifier = Modifier,
@@ -503,7 +503,7 @@ fun DisplayField(
 fun InfoBoxWhithVoiceInpute(
     columnToChange: String,
     abbreviation: String,
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     displayeInOutlines: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -538,7 +538,7 @@ fun InfoBoxWhithVoiceInpute(
 fun CategoryHeaderECB(
     category: CategoriesTabelleECB,
     viewModel: HeadOfViewModels,
-    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+    onNewArticleAdded: (DataBaseArticles) -> Unit
 ) {
 
     Box(
@@ -565,7 +565,7 @@ fun CategoryHeaderECB(
 private fun rememberCameraLauncher(
     viewModel: HeadOfViewModels,
     category: CategoriesTabelleECB,
-    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+    onNewArticleAdded: (DataBaseArticles) -> Unit
 ) = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.TakePicture()
 ) { success ->
@@ -590,7 +590,7 @@ private fun rememberCameraLauncher(
 fun AddArticleButton(
     viewModel: HeadOfViewModels,
     category: CategoriesTabelleECB,
-    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit  ,
+    onNewArticleAdded: (DataBaseArticles) -> Unit,
     takeFloatingButton:Boolean =false
 ) {
     val context = LocalContext.current
@@ -619,7 +619,7 @@ fun AddArticleButton(
 }
 
 @Composable
-fun DisplayColorsCards(article: BaseDonneECBTabelle, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
+fun DisplayColorsCards(article: DataBaseArticles, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
                        onDismiss: () -> Unit,
                        onReloadTrigger: () -> Unit,
                        relodeTigger: Int
@@ -738,7 +738,7 @@ private fun AddColorCard(
 
 @Composable
 fun UniteImageCard(
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     viewModel: HeadOfViewModels,
     onReloadTrigger: () -> Unit,
     relodeTigger: Int
@@ -764,7 +764,7 @@ fun UniteImageCard(
 
 @Composable
 private fun ColorCard(
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     index: Int,
     couleur: String,
     viewModel: HeadOfViewModels,
@@ -897,7 +897,7 @@ private fun ColorCard(
 
 @Composable
 fun DisplayeImageECB(
-    article: BaseDonneECBTabelle,
+    article: DataBaseArticles,
     viewModel: HeadOfViewModels,
     index: Int = 0,
     reloadKey: Any = Unit,

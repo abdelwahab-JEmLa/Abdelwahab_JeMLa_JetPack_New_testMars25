@@ -1,6 +1,6 @@
 package i_SupplierArticlesRecivedManager
 
-import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
@@ -110,7 +110,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
     modifier: Modifier = Modifier,
-    onNewArticleAdded: (BaseDonneECBTabelle) -> Unit
+    onNewArticleAdded: (DataBaseArticles) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()

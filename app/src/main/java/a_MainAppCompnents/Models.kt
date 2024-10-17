@@ -56,7 +56,7 @@ data class TabelleSuppliersSA(
     constructor() : this(0)
 }
 
-data class BaseDonneECBTabelle(
+data class DataBaseArticles(
     var idArticle: Int = 0,
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,
@@ -87,6 +87,7 @@ data class BaseDonneECBTabelle(
     var idCategorieNewMetode: Long = 0,
     var articleItIdClassementInItCategorieInHVM: Long = 0,
     var nomCategorie: String = "",
+    var idPlaceStandartInStoreSupplier: Long = 0,
     var neaon1: Double = 0.0,
     var lastUpdateState: String = "",
     var lastSupplierIdBuyedFrom: Long = 0,

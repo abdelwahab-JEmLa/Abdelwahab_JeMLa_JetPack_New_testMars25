@@ -1,7 +1,7 @@
 package com.example.abdelwahabjemlajetpack
 
 import ZA_Learn_WhelPiker.PickerExample
-import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModelFactory
 import a_MainAppCompnents.HeadOfViewModels
@@ -270,7 +270,7 @@ fun AppNavHost(
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<DataBaseArticles?>(null) }
 
     var currentSupplier by rememberSaveable { mutableStateOf(11L) }
     val currentEditedArticle by headOfViewModels.currentEditedArticle.collectAsState()
