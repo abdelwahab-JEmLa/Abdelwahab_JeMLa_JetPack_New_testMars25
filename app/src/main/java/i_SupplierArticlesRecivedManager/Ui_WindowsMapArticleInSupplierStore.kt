@@ -11,6 +11,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,11 +22,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -83,6 +82,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 //Title:WindowsMapArticleInSupplierStore
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WindowsMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -108,45 +108,56 @@ fun WindowsMapArticleInSupplierStore(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column {
-                val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-                supplier?.let {
-                    Card(
+                    val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
+                    supplier?.let {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Text(
+                                text = "Supplier: ${it.nomSupplierSu}",
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.padding(2.dp)
+                            )
+                        }
+                    }
+                    LazyColumn(
+                        contentPadding = PaddingValues(8.dp),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            .fillMaxSize()
+                            .clickable { showFab = !showFab }
                     ) {
-                        Text(
-                            text = "Supplier: ${it.nomSupplierSu}",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.padding(2.dp)
-                        )
-                    }
-                }
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { showFab = !showFab }
-                ) {
+                        val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
 
-                    val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
+                        places.forEach { placeItem ->
+                            stickyHeader {
+                                PlaceHeader(placeItem)
+                            }
 
-                    items(places) { placeItem ->
-                        CardDisplayerOfPlace(
-                            uiState = uiState,
-                            placeItem = placeItem,
-                            modifier = Modifier.fillMaxWidth(),
-                            viewModel = viewModel,
-                            onDismiss = { showNonPlacedArticles = null },
-                            onClickToDisplayNonPlaced = { showNonPlacedArticles = it },
-                            itsFilterInFindedAskSupplierSA=itsFilterInFindedAskSupplierSA
-                        )
+                            val articlesForThisPlace = uiState.tabelleSupplierArticlesRecived.filter { article ->
+                                uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
+                                    place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
+                                            place.idPlace == placeItem.idPlace
+                                }
+                            }
+
+                            items(articlesForThisPlace) { article ->
+                                ArticleItemOfPlace(
+                                    article = article,
+                                    viewModel = viewModel,
+                                    onDismissWithUpdate = { onDismiss() },
+                                    onDismiss = onDismiss
+                                )
+                                HorizontalDivider(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    thickness = 1.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            }
+                        }
                     }
-                }
                 }
                 if (showFab) {
                     Row(
@@ -158,7 +169,6 @@ fun WindowsMapArticleInSupplierStore(
                             uiState = uiState,
                             viewModel = viewModel,
                             idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-
                             onIdSupplierChanged = onIdSupplierChanged
                         )
 
@@ -172,7 +182,6 @@ fun WindowsMapArticleInSupplierStore(
                             onFabOffsetChanged = { fabOffset = it },
                             onAddDialogRequested = { showAddDialog = true }
                         )
-
                     }
                 }
             }
@@ -202,86 +211,27 @@ fun WindowsMapArticleInSupplierStore(
 }
 
 @Composable
-fun CardDisplayerOfPlace(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    modifier: Modifier = Modifier,
-    viewModel: HeadOfViewModels,
-    onDismiss: () -> Unit,
-    placeItem: MapArticleInSupplierStore,
-    onClickToDisplayNonPlaced: (MapArticleInSupplierStore) -> Unit,
-    itsFilterInFindedAskSupplierSA: Boolean
-) {
+fun PlaceHeader(placeItem: MapArticleInSupplierStore) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClickToDisplayNonPlaced(placeItem) },
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = MaterialTheme.colorScheme.primary,
         )
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                )
-            ) {
-                Text(
-                    text = "${ placeItem.namePlace } ${ if (placeItem.inRightOfPlace)"R" else "L" }",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    textAlign = TextAlign.Center
-                )
-
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp)
-            ) {
-                val filteredArticles = if (itsFilterInFindedAskSupplierSA) {
-                    uiState.tabelleSupplierArticlesRecived.filter { it.itsInFindedAskSupplierSA }
-                } else {
-                    uiState.tabelleSupplierArticlesRecived
-                }
-
-                val articlesForThisPlace = filteredArticles.filter { article ->
-                    uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-                        place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                                place.idPlace == placeItem.idPlace
-                    }
-                }
-
-                items(articlesForThisPlace) { article ->
-                    ArticleItemOfPlace(
-                        article = article,
-                        viewModel = viewModel,
-                        onDismissWithUpdate = { onDismiss() },
-                        onDismiss = onDismiss
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = 3.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
-
-                }
-            }
-        }
+        Text(
+            text = "${placeItem.namePlace} ${if (placeItem.inRightOfPlace) "R" else "L"}",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            textAlign = TextAlign.Center
+        )
     }
 }
+
 
 @Composable
 fun ArticleItemOfPlace(

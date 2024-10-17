@@ -701,7 +701,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             idSupplierOfFloatingButtonClicked?.let { supplierId ->
                 val currentMaxId = _uiState.value.mapArticleInSupplierStore.maxOfOrNull { it.idPlace } ?: 0
 
-                val newPlaceLeft = MapArticleInSupplierStore(
+                val newPlace = MapArticleInSupplierStore(
                     idPlace = currentMaxId + 1,
                     namePlace = name,
                     idSupplierOfStore = supplierId,
@@ -709,22 +709,14 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     itClassement = (currentMaxId + 1) .toInt()
                 )
 
-                val newPlaceRight = MapArticleInSupplierStore(
-                    idPlace = currentMaxId + 2,
-                    namePlace = name,
-                    idSupplierOfStore = supplierId,
-                    inRightOfPlace = true,
-                    itClassement = (currentMaxId + 1) .toInt()
-                )
 
                 // Ajouter à Firebase
-                refMapArticleInSupplierStore.child(newPlaceLeft.idPlace.toString()).setValue(newPlaceLeft)
-                refMapArticleInSupplierStore.child(newPlaceRight.idPlace.toString()).setValue(newPlaceRight)
+                refMapArticleInSupplierStore.child(newPlace.idPlace.toString()).setValue(newPlace)
 
                 // Mettre à jour l'état local
                 _uiState.update { currentState ->
                     currentState.copy(
-                        mapArticleInSupplierStore = currentState.mapArticleInSupplierStore + listOf(newPlaceLeft, newPlaceRight)
+                        mapArticleInSupplierStore = currentState.mapArticleInSupplierStore + listOf(newPlace)
                     )
                 }
             }
