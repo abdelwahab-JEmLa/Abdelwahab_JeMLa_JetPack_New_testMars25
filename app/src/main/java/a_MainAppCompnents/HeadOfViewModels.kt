@@ -122,6 +122,40 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+    fun updateArticleStandardPlace(articleId: Int, newPlaceId: Long) {
+        viewModelScope.launch {
+            try {
+                // Update local state
+                _uiState.update { currentState ->
+                    val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
+                        if (article.idArticle == articleId) {
+                            article.copy(idPlaceStandartInStoreSupplier = newPlaceId)
+                        } else {
+                            article
+                        }
+                    }
+                    currentState.copy(articlesBaseDonneECB = updatedArticles)
+                }
+
+                // Update Firebase database
+                refDBJetPackExport
+                    .child(articleId.toString())
+                    .child("idPlaceStandartInStoreSupplier")
+                    .setValue(newPlaceId)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Successfully updated standard place for article $articleId to place $newPlaceId")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to update standard place for article $articleId", e)
+                    }
+
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating article standard place", e)
+            }
+        }
+    }
+
     fun startTimer() {
         if (_isTimerActive.value) return
 
@@ -625,6 +659,33 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 }
         }
     }
+    fun updateSupplierVocalFrencheName(supplierId: Long, newName: String) {
+        viewModelScope.launch {
+            val currentSuppliers = _uiState.value.tabelleSuppliersSA
+            val updatedSuppliers = currentSuppliers.map { supplier ->
+                if (supplier.idSupplierSu == supplierId) {
+                    supplier.copy(nameInFrenche = newName)
+                } else {
+                    supplier
+                }
+            }
+
+            // Update local state
+            _uiState.update { currentState ->
+                currentState.copy(tabelleSuppliersSA = updatedSuppliers)
+            }
+
+            // Update Firebase
+            refTabelleSuppliersSA.child(supplierId.toString()).child("supplierNameInFrenche").setValue(newName)
+                .addOnSuccessListener {
+                    // Handle success if needed
+                }
+                .addOnFailureListener { e ->
+                    // Handle failure if needed
+                    Log.e("HeadOfViewModels", "Failed to update supplier vocal Arab name", e)
+                }
+        }
+    }
 
     fun updateSupplierVocalArabName(supplierId: Long, newName: String) {
         viewModelScope.launch {
@@ -762,7 +823,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    fun moveArticleNonFindToSupplier(
+    fun moveArticlesToSupplier(
         articlesToMove: List<TabelleSupplierArticlesRecived>,
         toSupp: Long
     ) {
@@ -805,7 +866,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error in moveArticleNonFindToSupplier", e)
+                Log.e(TAG, "Error in moveArticlesToSupplier", e)
             }
         }
     }

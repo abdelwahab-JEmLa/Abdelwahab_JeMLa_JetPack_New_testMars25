@@ -304,8 +304,7 @@ fun AppNavHost(
         }
         composable("Fragment_SupplierArticlesRecivedManager") {
             Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,
-                onToggleNavBar = onToggleNavBar,
-                modifier=modifier ,
+                modifier=modifier,
                 onNewArticleAdded={dialogeDisplayeDetailleChanger=it}
             )
         }

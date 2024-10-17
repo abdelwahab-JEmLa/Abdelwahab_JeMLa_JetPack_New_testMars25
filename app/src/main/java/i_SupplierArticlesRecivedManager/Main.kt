@@ -48,6 +48,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
@@ -57,14 +59,17 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -87,13 +92,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -113,7 +117,6 @@ import kotlin.math.roundToInt
 @Composable
 fun Fragment_SupplierArticlesRecivedManager(
     viewModel: HeadOfViewModels,
-    onToggleNavBar: () -> Unit,
     modifier: Modifier = Modifier,
     onNewArticleAdded: (DataBaseArticles) -> Unit
 ) {
@@ -128,7 +131,6 @@ fun Fragment_SupplierArticlesRecivedManager(
     var toggleCtrlToFilterToMove by remember { mutableStateOf(false) }
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
     var itsReorderMode by remember { mutableStateOf(false) }
-    var lastAskArticleChanged by remember { mutableStateOf<Long?>(null) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
 
     // Speech recognizer launcher
@@ -138,40 +140,61 @@ fun Fragment_SupplierArticlesRecivedManager(
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
             voiceInputText = spokenText
-            handleVoiceInput(
-                spokenText = spokenText,
-                viewModel = viewModel,
-                uiState = uiState,
-                onProcessingComplete = { voiceInputText = "" }
-            )
+
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize()
         ) { padding ->
             Column(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .padding(padding)
             ) {
                 VoiceInputField(
                     value = voiceInputText,
-                    onValueChange = { voiceInputText = it },
-                    onProcess = { text ->
-                        handleVoiceInput(
-                            spokenText = text,
-                            viewModel = viewModel,
-                            uiState = uiState,
-                            onProcessingComplete = { voiceInputText = "" }
-                        )
+                    onValueChange = { newText ->
+                        voiceInputText = newText
+                        val parts = newText.split("+").map { it.trim() }
+                        when (parts.size) {
+                            2 -> {
+                                // Handle two-part format: "articleId + supplierName"
+                                val supplierName = parts[1]
+                                val supplier = uiState.tabelleSuppliersSA.find {
+                                    it.nameInFrenche == supplierName
+                                }
+                                if (supplier != null && supplierName.isNotEmpty()) {
+                                    handleTwoPartInput(parts, viewModel, uiState)
+                                }
+                            }
+                            3 -> {
+                                // Handle three-part format: "articleId + supplierName + placeName"
+                                val supplierName = parts[1]
+                                val placeName = parts[2]
+
+                                val supplier = uiState.tabelleSuppliersSA.find {
+                                    it.nameInFrenche == supplierName
+                                }
+
+                                val place = uiState.mapArticleInSupplierStore.find { article ->
+                                    (article.namePlace == placeName)
+                                }
+
+                                if (place != null && supplier != null) {
+                                    handleThreePartInput(parts, viewModel, uiState) {
+                                        voiceInputText = "" // Clear input after processing
+                                    }
+                                }
+                            }
+                        }
                     },
                     uiState = uiState
                 )
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = modifier.fillMaxSize()
                 ) {
                     val filterSupp = if (idSupplierOfFloatingButtonClicked != null) {
                         uiState.tabelleSuppliersSA.filter {
@@ -219,7 +242,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 
         // Floating buttons container
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .zIndex(1f)
@@ -227,7 +250,7 @@ fun Fragment_SupplierArticlesRecivedManager(
             var offset by remember { mutableStateOf(Offset.Zero) }
 
             Box(
-                modifier = Modifier
+                modifier = modifier
                     .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
                     .pointerInput(Unit) {
                         detectDragGestures { change, dragAmount ->
@@ -278,7 +301,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                             uiState.tabelleSupplierArticlesRecived.filter {
                                 it.itsInFindedAskSupplierSA
                             }
-                        viewModel.moveArticleNonFindToSupplier(
+                        viewModel.moveArticlesToSupplier(
                             articlesToMove = filterBytabelleSupplierArticlesRecived,
                             toSupp = clickedSupplierId
                         )
@@ -295,6 +318,9 @@ fun Fragment_SupplierArticlesRecivedManager(
             firstClickedSupplierForReorder = firstClickedSupplierForReorder,
             onUpdateVocalArabName = { supplierId, newName ->
                 viewModel.updateSupplierVocalArabName(supplierId, newName)
+            },
+            onUpdateVocalFrencheName = { supplierId, newName ->
+                viewModel.updateSupplierVocalFrencheName(supplierId, newName)
             },
             onToggleReorderMode = {
                 itsReorderMode = !itsReorderMode
@@ -323,11 +349,12 @@ fun Fragment_SupplierArticlesRecivedManager(
                     dialogeDisplayeDetailleChanger = null
                 },
                 viewModel = viewModel,
-                modifier = Modifier.padding(horizontal = 3.dp)
+                modifier = modifier.padding(horizontal = 3.dp)
             )
         }
     }
 }
+
 @Composable
 fun CardArticlePlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -429,7 +456,7 @@ fun CardArticlePlace(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = corependentnamePlacePLaceInStore ?: "",
+                            text = corependentnamePlacePLaceInStore ?: "Non Defini",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.White
                         )
@@ -451,140 +478,184 @@ fun CardArticlePlace(
 fun VoiceInputField(
     value: String,
     onValueChange: (String) -> Unit,
-    onProcess: (String) -> Unit,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     modifier: Modifier = Modifier
 ) {
+    var isProcessing by remember { mutableStateOf(false) }
+    // Track if we have valid supplier and place for processing
+    var hasValidSupplier by remember { mutableStateOf(false) }
+    var hasValidPlace by remember { mutableStateOf(false) }
+
     OutlinedTextField(
         value = value,
-        onValueChange = { newText ->
-            onValueChange(newText)
-            val parts = newText.split("+")
-            if (parts.size == 2) {
-                val supplierName = parts[1].trim()
-                val supplier = uiState.tabelleSuppliersSA.find {
-                    it.nomVocaleArabeDuSupplier == supplierName
-                }
-                if (supplier != null && supplierName.isNotEmpty()) {
-                    onProcess(newText)
-                }
-            }
-        },
+        onValueChange = onValueChange,
         label = { Text("Voice Input") },
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
-    )
-}
-
-fun handleVoiceInput(
-    spokenText: String,
-    viewModel: HeadOfViewModels,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    onProcessingComplete: () -> Unit
-) {
-    if (spokenText.contains("محو")) {
-        onProcessingComplete()
-        return
-    }
-
-    val parts = spokenText.split("+")
-    if (parts.size == 2) {
-        val articleId = parts[0].trim().toLongOrNull()
-        val supplierName = parts[1].trim()
-
-        if (articleId != null) {
-            val article = uiState.tabelleSupplierArticlesRecived.find {
-                it.aa_vid == articleId
-            }
-            val supplier = uiState.tabelleSuppliersSA.find {
-                it.nomVocaleArabeDuSupplier == supplierName
-            }
-
-            if (article != null && supplier != null) {
-                viewModel.moveArticleNonFindToSupplier(
-                    articlesToMove = listOf(article),
-                    toSupp = supplier.idSupplierSu
+            .padding(8.dp),
+        trailingIcon = {
+            // Only show progress indicator when we have valid data to process
+            if (isProcessing && ((hasValidSupplier && value.split("+").size == 2) ||
+                        (hasValidSupplier && hasValidPlace && value.split("+").size == 3))) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
                 )
-                onProcessingComplete()
             }
+        },
+        enabled = !isProcessing,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                if (value.isNotEmpty()) {
+                    onValueChange(value)
+                }
+            }
+        ),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        ),
+        textStyle = MaterialTheme.typography.bodyLarge,
+        placeholder = {
+            Text(
+                text = "Format: articleId + supplierName [+ placeName]",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    )
+
+    // Error handling and validation
+    LaunchedEffect(value) {
+        if (value.isNotEmpty()) {
+            val parts = value.split("+").map { it.trim() }
+            when {
+                parts.size !in 2..3 -> {
+                    isProcessing = false
+                    hasValidSupplier = false
+                    hasValidPlace = false
+                }
+                parts[0].toLongOrNull() == null -> {
+                    isProcessing = false
+                    hasValidSupplier = false
+                    hasValidPlace = false
+                }
+                parts.any { it.isEmpty() } -> {
+                    isProcessing = false
+                    hasValidSupplier = false
+                    hasValidPlace = false
+                }
+                else -> {
+                    // Validate supplier and place if present
+                    hasValidSupplier = uiState.tabelleSuppliersSA.any {
+                        it.nomVocaleArabeDuSupplier == parts[1]
+                    }
+                    hasValidPlace = if (parts.size == 3) {
+                        uiState.mapArticleInSupplierStore.any {
+                            it.namePlace == parts[2]
+                        }
+                    } else true
+
+                    isProcessing = hasValidSupplier && (parts.size == 2 || hasValidPlace)
+                }
+            }
+        } else {
+            isProcessing = false
+            hasValidSupplier = false
+            hasValidPlace = false
         }
     }
 }
 
-@Composable
-fun ArticleItemSA(
-    article: TabelleSupplierArticlesRecived,
-    viewModel: HeadOfViewModels,
-    onArticleClick: (TabelleSupplierArticlesRecived) -> Unit,
-    modifier: Modifier
-) {
-    val cardColor = if (article.itsInFindedAskSupplierSA) {
-        Color.Yellow.copy(alpha = 0.3f)
-    } else {
-        MaterialTheme.colorScheme.surface
+// Use data class for better type safety and clarity
+data class VoiceInputData(
+    val articleId: Long?,
+    val supplierName: String,
+    val placeName: String?
+)
+
+// Extension function updated to use data class
+fun String.parseVoiceInput(): VoiceInputData {
+    val parts = split("+").map { it.trim() }
+    return when (parts.size) {
+        2 -> VoiceInputData(
+            articleId = parts[0].toLongOrNull(),
+            supplierName = parts[1],
+            placeName = null
+        )
+        3 -> VoiceInputData(
+            articleId = parts[0].toLongOrNull(),
+            supplierName = parts[1],
+            placeName = parts[2]
+        )
+        else -> VoiceInputData(
+            articleId = null,
+            supplierName = "",
+            placeName = null
+        )
     }
+}
+private fun handleTwoPartInput(
+    parts: List<String>,
+    viewModel: HeadOfViewModels,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+) {
+    val input = parts.joinToString("+").parseVoiceInput()
 
-    val reloadKey = remember(article) { System.currentTimeMillis() }
+    if (input.articleId != null) {
+        val article = uiState.tabelleSupplierArticlesRecived.find {
+            it.aa_vid == input.articleId
+        }
+        val supplier = uiState.tabelleSuppliersSA.find {
+            it.nameInFrenche == input.supplierName
+        }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(8.dp)) {
-                SquareLayout(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .clickable { onArticleClick(article) }
-                ) {
-                    if (article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0) {
-                        SingleColorImageSA(article, viewModel, reloadKey)
-                    } else {
-                        MultiColorGridSA(article, viewModel, reloadKey)
-                    }
-                }
-                DisponibilityOverlaySA(article.itsInFindedAskSupplierSA.toString())
-                AutoResizedTextSA(text = article.a_d_nomarticlefinale_c)
-            }
-
-            // aa_vid display at top-end
-            Text(
-                text = "ID: ${article.aa_vid}",
-                color = Color.Blue,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .background(Color.White.copy(alpha = 0.6f))
-                    .padding(4.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 12.sp
+        if (article != null && supplier != null) {
+            viewModel.moveArticlesToSupplier(
+                articlesToMove = listOf(article),
+                toSupp = supplier.idSupplierSu
             )
         }
     }
 }
 
-@Composable
-fun SquareLayout(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+private fun handleThreePartInput(
+    parts: List<String>,
+    viewModel: HeadOfViewModels,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    onProcessingComplete: () -> Unit
 ) {
-    Layout(
-        content = content,
-        modifier = modifier
-    ) { measurables, constraints ->
-        val size = minOf(constraints.maxWidth, constraints.maxHeight)
-        val placeables = measurables.map { measurable ->
-            measurable.measure(Constraints.fixed(size, size))
+    val input = parts.joinToString("+").parseVoiceInput()
+
+    if (input.articleId != null && input.placeName != null) {
+        val article = uiState.tabelleSupplierArticlesRecived.find {
+            it.aa_vid == input.articleId
         }
-        layout(size, size) {
-            placeables.forEach { placeable ->
-                placeable.place(0, 0)
-            }
+        val supplier = uiState.tabelleSuppliersSA.find {
+            it.nameInFrenche == input.supplierName
+        }
+        val place = uiState.mapArticleInSupplierStore.find { articlePlace ->
+            articlePlace.namePlace == input.placeName
+        }
+
+        val articleInDatabase = uiState.articlesBaseDonneECB.find {
+            it.idPlaceStandartInStoreSupplier == place?.idPlace
+        }
+
+        if (article != null && supplier != null && place != null && articleInDatabase != null) {
+            viewModel.updateArticleStandardPlace(
+                articleId = articleInDatabase.idArticle,
+                newPlaceId = place.idPlace
+            )
+            onProcessingComplete()
         }
     }
 }
+
 
 @Composable
 fun WindowArticleDetail(
@@ -929,8 +1000,10 @@ fun SuppliersFloatingButtonsSA(
     itsReorderMode: Boolean,
     firstClickedSupplierForReorder: Long?,
     onToggleReorderMode: () -> Unit,
-    onUpdateVocalArabName: (Long, String) -> Unit
-) {
+    onUpdateVocalArabName: (Long, String) -> Unit  ,
+    onUpdateVocalFrencheName: (Long, String) -> Unit  ,
+
+    ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isExpanded by remember { mutableStateOf(false) }
     var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
@@ -960,7 +1033,16 @@ fun SuppliersFloatingButtonsSA(
             }
         }
     }
-
+    val speechRecognizerLauncherFrenche = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            supplierFlotBisHandled?.let { supplierId ->
+                onUpdateVocalFrencheName(supplierId, spokenText)
+            }
+        }
+    }
     Box(
         modifier = Modifier
             .padding(8.dp)
@@ -986,6 +1068,23 @@ fun SuppliersFloatingButtonsSA(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(bottom = 8.dp)   .widthIn(max=100.dp)
                     ) {
+                        item {
+                            FloatingActionButton(
+                                onClick = {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour le nom vocal arabe du fournisseur...")
+                                    }
+                                    speechRecognizerLauncherFrenche.launch(intent)
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.MicOff,
+                                    contentDescription = "Update vocal Frenche name"
+                                )
+                            }
+                        }
                         item {
                             FloatingActionButton(
                                 onClick = {
@@ -1124,7 +1223,7 @@ private fun SupplierButton(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = supplier.nomVocaleArabeDuSupplier,
+                            text = supplier.nameInFrenche,
                             style = MaterialTheme.typography.bodyLarge,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1144,7 +1243,7 @@ private fun SupplierButton(
             }
         ) {
             Text(
-                text = supplier.nomVocaleArabeDuSupplier.take(3),
+                text = supplier.nameInFrenche.take(3),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )

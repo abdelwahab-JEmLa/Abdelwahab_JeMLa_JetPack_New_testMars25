@@ -349,7 +349,6 @@ fun CardArticlePlace(
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
-                    //TODO ajoute une icone de gps a cote text de
                     if (article.itsInFindedAskSupplierSA) {
                         Text(
                             text = "Ask",
@@ -441,7 +440,7 @@ fun WindowsOfNonPlacedArticles(
                                                 idArticle = clickedArticle.a_c_idarticle_c,
                                                 idSupp = place.idSupplierOfStore
                                             )
-                                            viewModel.moveArticleNonFindToSupplier(
+                                            viewModel.moveArticlesToSupplier(
                                                 listOf(clickedArticle),
                                                 place.idSupplierOfStore
                                             )
@@ -586,7 +585,7 @@ private  fun performAction(
         val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
 
         if (nextSupplier != null) {
-            viewModel.moveArticleNonFindToSupplier(
+            viewModel.moveArticlesToSupplier(
                 articlesToMove = filterBytabelleSupplierArticlesRecived,
                 toSupp = nextSupplier.idSupplierSu
             )

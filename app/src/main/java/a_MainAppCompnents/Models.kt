@@ -46,6 +46,7 @@ data class TabelleSuppliersSA(
     var idSupplierSu: Long = 0,
     var nomSupplierSu: String = "",
     var nomVocaleArabeDuSupplier: String = "",
+    var nameInFrenche: String = "",
     var bonDuSupplierSu: String = "",
     val couleurSu: String = "#FFFFFF", // Default color
     var currentCreditBalance: Double = 0.0, // New field for current credit balance
