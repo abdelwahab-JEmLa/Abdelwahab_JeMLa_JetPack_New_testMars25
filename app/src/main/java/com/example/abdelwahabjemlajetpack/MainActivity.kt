@@ -2,6 +2,7 @@ package com.example.abdelwahabjemlajetpack
 
 import ZA_Learn_WhelPiker.PickerExample
 import a_MainAppCompnents.BaseDonneECBTabelle
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModelFactory
 import a_MainAppCompnents.HeadOfViewModels
 import a_RoomDB.AppDatabase
@@ -16,17 +17,23 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
@@ -41,6 +48,8 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -72,6 +81,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -79,7 +89,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.ArticleDetailWindow
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
@@ -262,6 +271,7 @@ fun AppNavHost(
     val coroutineScope = rememberCoroutineScope()
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
+
     var currentSupplier by rememberSaveable { mutableStateOf(11L) }
     val currentEditedArticle by headOfViewModels.currentEditedArticle.collectAsState()
     var reloadTrigger by remember { mutableIntStateOf(0) }
@@ -425,26 +435,47 @@ fun AppNavHost(
                 currentSupplier = selectedSupplier
                 onShowSupplierPopupChange(false)
                 navController.navigate("FragmentMapArticleInSupplierStore")
-            }
+            }   ,
+            uiState=uiState
         )
     }
 }
 @Composable
 fun SupplierSelectionPopup(
     onDismiss: () -> Unit,
-    onSupplierSelected: (Long) -> Unit
+    onSupplierSelected: (Long) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Supplier") },
         text = {
-            Column {
-                Button(onClick = { onSupplierSelected(10L) }) {
-                    Text("Supplier 10")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { onSupplierSelected(9L) }) {
-                    Text("Supplier 9")
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(uiState.tabelleSuppliersSA.size) { index ->
+                    val supplier = uiState.tabelleSuppliersSA[index]
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1.5f)
+                            .clickable { onSupplierSelected(supplier.idSupplierSu) },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = supplier.nomVocaleArabeDuSupplier,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
                 }
             }
         },
