@@ -48,8 +48,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
@@ -64,7 +62,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -94,7 +91,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -132,6 +128,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     var idSupplierOfFloatingButtonClicked by remember { mutableStateOf<Long?>(null) }
     var itsReorderMode by remember { mutableStateOf(false) }
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
+    var itsMoveFirstNonDefined by remember { mutableStateOf(false) }
 
     // Speech recognizer launcher
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
@@ -156,7 +153,20 @@ fun Fragment_SupplierArticlesRecivedManager(
                 VoiceInputField(
                     value = voiceInputText,
                     onValueChange = { newText ->
-                        voiceInputText = newText
+                        voiceInputText = newText       //TODO Fait que si itsMoveFirstNonDefined de move le premier article au ou    idSupplierTSA == 10 to
+                        //public final data class TabelleSuppliersSA(
+                        //    val idSupplierSu: Long = 0,
+                        //    val nomSupplierSu: String = "",
+                        //    val nomVocaleArabeDuSupplier: String = "",
+                        //    val nameInFrenche: String = "",
+                        //    val bonDuSupplierSu: String = "",
+                        //    val couleurSu: String = "#FFFFFF",
+                        //    val currentCreditBalance: Double = 0.0,
+                        //    val longTermCredit: Boolean = false,
+                        //    val ignoreItProdects: Boolean = false,
+                        //    val classmentSupplier: Double = 0.0
+                        //)
+                        // quand l input attien 2 caracter cherche par  classmentSupplier  idSupplierSu
                         val parts = newText.split("+").map { it.trim() }
                         when (parts.size) {
                             2 -> {
@@ -167,25 +177,6 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 }
                                 if (supplier != null && supplierName.isNotEmpty()) {
                                     handleTwoPartInput(parts, viewModel, uiState)
-                                }
-                            }
-                            3 -> {
-                                // Handle three-part format: "articleId + supplierName + placeName"
-                                val supplierName = parts[1]
-                                val placeName = parts[2]
-
-                                val supplier = uiState.tabelleSuppliersSA.find {
-                                    it.nameInFrenche == supplierName
-                                }
-
-                                val place = uiState.mapArticleInSupplierStore.find { article ->
-                                    (article.namePlace == placeName)
-                                }
-
-                                if (place != null && supplier != null) {
-                                    handleThreePartInput(parts, viewModel, uiState) {
-                                        voiceInputText = "" // Clear input after processing
-                                    }
                                 }
                             }
                         }
@@ -481,10 +472,6 @@ fun VoiceInputField(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     modifier: Modifier = Modifier
 ) {
-    var isProcessing by remember { mutableStateOf(false) }
-    // Track if we have valid supplier and place for processing
-    var hasValidSupplier by remember { mutableStateOf(false) }
-    var hasValidPlace by remember { mutableStateOf(false) }
 
     OutlinedTextField(
         value = value,
@@ -493,28 +480,7 @@ fun VoiceInputField(
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp),
-        trailingIcon = {
-            // Only show progress indicator when we have valid data to process
-            if (isProcessing && ((hasValidSupplier && value.split("+").size == 2) ||
-                        (hasValidSupplier && hasValidPlace && value.split("+").size == 3))) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
-                )
-            }
-        },
-        enabled = !isProcessing,
         singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = {
-                if (value.isNotEmpty()) {
-                    onValueChange(value)
-                }
-            }
-        ),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -528,85 +494,16 @@ fun VoiceInputField(
             )
         }
     )
-
-    // Error handling and validation
-    LaunchedEffect(value) {
-        if (value.isNotEmpty()) {
-            val parts = value.split("+").map { it.trim() }
-            when {
-                parts.size !in 2..3 -> {
-                    isProcessing = false
-                    hasValidSupplier = false
-                    hasValidPlace = false
-                }
-                parts[0].toLongOrNull() == null -> {
-                    isProcessing = false
-                    hasValidSupplier = false
-                    hasValidPlace = false
-                }
-                parts.any { it.isEmpty() } -> {
-                    isProcessing = false
-                    hasValidSupplier = false
-                    hasValidPlace = false
-                }
-                else -> {
-                    // Validate supplier and place if present
-                    hasValidSupplier = uiState.tabelleSuppliersSA.any {
-                        it.nomVocaleArabeDuSupplier == parts[1]
-                    }
-                    hasValidPlace = if (parts.size == 3) {
-                        uiState.mapArticleInSupplierStore.any {
-                            it.namePlace == parts[2]
-                        }
-                    } else true
-
-                    isProcessing = hasValidSupplier && (parts.size == 2 || hasValidPlace)
-                }
-            }
-        } else {
-            isProcessing = false
-            hasValidSupplier = false
-            hasValidPlace = false
-        }
-    }
 }
 
-// Use data class for better type safety and clarity
-data class VoiceInputData(
-    val articleId: Long?,
-    val supplierName: String,
-    val placeName: String?
-)
-
-// Extension function updated to use data class
-fun String.parseVoiceInput(): VoiceInputData {
-    val parts = split("+").map { it.trim() }
-    return when (parts.size) {
-        2 -> VoiceInputData(
-            articleId = parts[0].toLongOrNull(),
-            supplierName = parts[1],
-            placeName = null
-        )
-        3 -> VoiceInputData(
-            articleId = parts[0].toLongOrNull(),
-            supplierName = parts[1],
-            placeName = parts[2]
-        )
-        else -> VoiceInputData(
-            articleId = null,
-            supplierName = "",
-            placeName = null
-        )
-    }
-}
 private fun handleTwoPartInput(
     parts: List<String>,
     viewModel: HeadOfViewModels,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
 ) {
-    val input = parts.joinToString("+").parseVoiceInput()
+    val input = parts.joinToString("+")
 
-    if (input.articleId != null) {
+    if (input.articleId != null) {   //TODO fix Code
         val article = uiState.tabelleSupplierArticlesRecived.find {
             it.aa_vid == input.articleId
         }
@@ -623,38 +520,6 @@ private fun handleTwoPartInput(
     }
 }
 
-private fun handleThreePartInput(
-    parts: List<String>,
-    viewModel: HeadOfViewModels,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    onProcessingComplete: () -> Unit
-) {
-    val input = parts.joinToString("+").parseVoiceInput()
-
-    if (input.articleId != null && input.placeName != null) {
-        val article = uiState.tabelleSupplierArticlesRecived.find {
-            it.aa_vid == input.articleId
-        }
-        val supplier = uiState.tabelleSuppliersSA.find {
-            it.nameInFrenche == input.supplierName
-        }
-        val place = uiState.mapArticleInSupplierStore.find { articlePlace ->
-            articlePlace.namePlace == input.placeName
-        }
-
-        val articleInDatabase = uiState.articlesBaseDonneECB.find {
-            it.idPlaceStandartInStoreSupplier == place?.idPlace
-        }
-
-        if (article != null && supplier != null && place != null && articleInDatabase != null) {
-            viewModel.updateArticleStandardPlace(
-                articleId = articleInDatabase.idArticle,
-                newPlaceId = place.idPlace
-            )
-            onProcessingComplete()
-        }
-    }
-}
 
 
 @Composable
