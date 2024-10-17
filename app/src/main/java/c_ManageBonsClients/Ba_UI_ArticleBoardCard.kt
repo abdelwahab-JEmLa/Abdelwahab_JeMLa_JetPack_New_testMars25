@@ -465,7 +465,6 @@ private fun ColorItemCard(article: ArticlesAcheteModele, index: Int, quantity: I
  *
  * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
  * ------------------------------------------------*/
-
 @Composable
 fun ShowPackagingDialog(
     headOfViewModels: HeadOfViewModels,
