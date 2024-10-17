@@ -148,6 +148,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     .fillMaxSize()
                     .padding(padding)
             ) {
+
                 VoiceInputField(
                     value = voiceInputText,
                     onValueChange = { newText ->
@@ -169,14 +170,24 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 }
                             }
                             itsMoveFirstNonDefined && parts.size == 1 -> {
-                                val articleId = parts[0].toLongOrNull()
-                                if (articleId != null) {
-                                    val article = uiState.tabelleSupplierArticlesRecived.find { it.aa_vid == articleId }
-                                    val nonDefinedSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == 10L }
-                                    if (article != null && nonDefinedSupplier != null) {
+                                val inputText = parts[0]
+                                if (inputText.length >= 2) {
+                                    val clasmentToSupp = inputText.toDoubleOrNull()
+                                    // Find the first article from the "Non Defined" supplier (ID 10)
+                                    val nonDefinedArticles = uiState.tabelleSupplierArticlesRecived.filter {
+                                        it.idSupplierTSA.toLong() == 10L
+                                    }
+                                    val firstNonDefinedArticle = nonDefinedArticles.firstOrNull()
+
+                                    // Find target supplier by classement
+                                    val targetSupplier = uiState.tabelleSuppliersSA.find {
+                                        it.classmentSupplier == clasmentToSupp
+                                    }
+
+                                    if (firstNonDefinedArticle != null && targetSupplier != null) {
                                         viewModel.moveArticlesToSupplier(
-                                            articlesToMove = listOf(article),
-                                            toSupp = nonDefinedSupplier.idSupplierSu
+                                            articlesToMove = listOf(firstNonDefinedArticle),
+                                            toSupp = targetSupplier.idSupplierSu
                                         )
                                     }
                                 }
@@ -269,7 +280,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     viewModel = viewModel,
                     uiState = uiState,
                     onNewArticleAdded = onNewArticleAdded  ,
-                    onToggleMoveFirstNonDefined = { itsMoveFirstNonDefined != itsMoveFirstNonDefined }
+                    onToggleMoveFirstNonDefined = { itsMoveFirstNonDefined = !itsMoveFirstNonDefined }
                 )
             }
         }
