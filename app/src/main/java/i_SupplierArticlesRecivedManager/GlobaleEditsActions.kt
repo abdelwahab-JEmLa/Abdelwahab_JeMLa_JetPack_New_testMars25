@@ -1,7 +1,7 @@
 package i_SupplierArticlesRecivedManager
 
-import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Filter1
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Moving
@@ -44,6 +45,7 @@ fun GlobaleControlsFloatingButtonsSA(
     filterSuppHandledNow: Boolean,
     onLaunchVoiceRecognition: () -> Unit,
     viewModel: HeadOfViewModels  ,
+    onToggleMoveFirstNonDefined: () -> Unit,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onNewArticleAdded: (DataBaseArticles) -> Unit
 ) {
@@ -51,6 +53,7 @@ fun GlobaleControlsFloatingButtonsSA(
     val maxGridColumns = 6
     var showContentDescription by remember { mutableStateOf(false) }
     var onDisplyeWindosMapArticleInSupplierStoreClickFolower by remember { mutableStateOf(false) }
+    var ShowToggleMoveFirstNonDefined by remember { mutableStateOf(false) }
 
     Column {
         if (showFloatingButtons) {
@@ -60,7 +63,9 @@ fun GlobaleControlsFloatingButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
-
+                    Triple(if (ShowToggleMoveFirstNonDefined) Icons.Default.Close else Icons.Default.Filter1, "ToggleMoveFirstNonDefined") {
+                        onToggleMoveFirstNonDefined()
+                    },
                     Triple(Icons.Default.Mic, "Voice Recognition") {
                         onLaunchVoiceRecognition()
                     },

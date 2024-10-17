@@ -268,7 +268,8 @@ fun Fragment_SupplierArticlesRecivedManager(
                     },
                     viewModel = viewModel,
                     uiState = uiState,
-                    onNewArticleAdded = onNewArticleAdded
+                    onNewArticleAdded = onNewArticleAdded  ,
+                    onToggleMoveFirstNonDefined = { itsMoveFirstNonDefined != itsMoveFirstNonDefined }
                 )
             }
         }
@@ -591,26 +592,34 @@ fun WindowArticleDetail(
                             text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
                             fontSize = 25.sp,
                             color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
                         )
                     }
 
                     // Client names
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
                     ) {
                         items(article.nomclient.split(")")) { clientName ->
                             val cleanedName = clientName.trim().replace("(", "").replace(")", "")
                             if (cleanedName.isNotBlank()) {
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
                                 ) {
                                     AutoResizedText(
                                         text = cleanedName.capitalize(Locale.current),
                                         fontSize = 20.sp,
                                         color = MaterialTheme.colorScheme.onSecondary,
-                                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp)
                                     )
                                 }
                             }
@@ -930,7 +939,9 @@ fun SuppliersFloatingButtonsSA(
                 item {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 8.dp)   .widthIn(max=100.dp)
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .widthIn(max = 100.dp)
                     ) {
                         item {
                             FloatingActionButton(
@@ -1057,9 +1068,10 @@ private fun SupplierButton(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,      
-        modifier = Modifier.padding(bottom = 16.dp)
+        modifier = Modifier
+            .padding(bottom = 16.dp)
             .widthIn(min = 50.dp, max = if (showNoms) 300.dp else 170.dp)
-            .heightIn( max = if (showNoms) 100.dp else 40.dp)
+            .heightIn(max = if (showNoms) 100.dp else 40.dp)
     ) {
         if (showDescription) {
             Card(
@@ -1107,7 +1119,7 @@ private fun SupplierButton(
             }
         ) {
             Text(
-                text = supplier.nameInFrenche.take(3),
+                text ="${supplier.classmentSupplier} ${supplier.nameInFrenche.take(3)}",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
