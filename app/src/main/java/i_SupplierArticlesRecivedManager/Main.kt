@@ -1,6 +1,5 @@
 package i_SupplierArticlesRecivedManager
 
-// Assuming  arethese your custom classes/components
 import a_MainAppCompnents.BaseDonneECBTabelle
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
@@ -71,6 +70,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -117,7 +117,7 @@ fun Fragment_SupplierArticlesRecivedManager(
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
 
     var showFloatingButtons by remember { mutableStateOf(false) }
-    var gridColumns by remember { mutableStateOf(2) }
+    var gridColumns by remember { mutableIntStateOf(2) }
 
     val gridState = rememberLazyGridState()
 
@@ -792,7 +792,7 @@ fun SuppliersFloatingButtonsSA(
     onUpdateVocalArabName: (Long, String) -> Unit
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var isExpanded by remember { mutableStateOf(true) }
+    var isExpanded by remember { mutableStateOf(false) }
     var filterButtonsWhereArtNotEmpty by remember { mutableStateOf(false) }
     var showDescriptionFlotBS by remember { mutableStateOf(true) }
     var showNoms by remember { mutableStateOf(false) }
