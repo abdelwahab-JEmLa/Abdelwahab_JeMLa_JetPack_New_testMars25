@@ -130,14 +130,12 @@ fun Fragment_SupplierArticlesRecivedManager(
     var firstClickedSupplierForReorder by remember { mutableStateOf<Long?>(null) }
     var itsMoveFirstNonDefined by remember { mutableStateOf(false) }
 
-    // Speech recognizer launcher
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
             voiceInputText = spokenText
-
         }
     }
 
@@ -153,30 +151,34 @@ fun Fragment_SupplierArticlesRecivedManager(
                 VoiceInputField(
                     value = voiceInputText,
                     onValueChange = { newText ->
-                        voiceInputText = newText       //TODO Fait que si itsMoveFirstNonDefined de move le premier article au ou    idSupplierTSA == 10 to
-                        //public final data class TabelleSuppliersSA(
-                        //    val idSupplierSu: Long = 0,
-                        //    val nomSupplierSu: String = "",
-                        //    val nomVocaleArabeDuSupplier: String = "",
-                        //    val nameInFrenche: String = "",
-                        //    val bonDuSupplierSu: String = "",
-                        //    val couleurSu: String = "#FFFFFF",
-                        //    val currentCreditBalance: Double = 0.0,
-                        //    val longTermCredit: Boolean = false,
-                        //    val ignoreItProdects: Boolean = false,
-                        //    val classmentSupplier: Double = 0.0
-                        //)
-                        // quand l input attien 2 caracter cherche par  classmentSupplier  idSupplierSu
+                        voiceInputText = newText
                         val parts = newText.split("+").map { it.trim() }
-                        when (parts.size) {
-                            2 -> {
-                                // Handle two-part format: "articleId + supplierName"
-                                val supplierName = parts[1]
-                                val supplier = uiState.tabelleSuppliersSA.find {
-                                    it.nameInFrenche == supplierName
+                        when {
+                            parts.size == 2 -> {
+                                handleTwoPartInput(parts[0], parts[1], viewModel, uiState)
+                            }
+                            parts.size == 1 && parts[0].length >= 2 -> {
+                                // Search by classmentSupplier or idSupplierSu when input is 2+ characters
+                                val searchText = parts[0]
+                                val matchingSupplier = uiState.tabelleSuppliersSA.find { supplier ->
+                                    supplier.classmentSupplier.toString().startsWith(searchText) ||
+                                            supplier.idSupplierSu.toString().startsWith(searchText)
                                 }
-                                if (supplier != null && supplierName.isNotEmpty()) {
-                                    handleTwoPartInput(parts, viewModel, uiState)
+                                matchingSupplier?.let { supplier ->
+                                    idSupplierOfFloatingButtonClicked = supplier.idSupplierSu
+                                }
+                            }
+                            itsMoveFirstNonDefined && parts.size == 1 -> {
+                                val articleId = parts[0].toLongOrNull()
+                                if (articleId != null) {
+                                    val article = uiState.tabelleSupplierArticlesRecived.find { it.aa_vid == articleId }
+                                    val nonDefinedSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == 10L }
+                                    if (article != null && nonDefinedSupplier != null) {
+                                        viewModel.moveArticlesToSupplier(
+                                            articlesToMove = listOf(article),
+                                            toSupp = nonDefinedSupplier.idSupplierSu
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -347,6 +349,59 @@ fun Fragment_SupplierArticlesRecivedManager(
 }
 
 @Composable
+fun VoiceInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Voice Input") },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        ),
+        textStyle = MaterialTheme.typography.bodyLarge,
+        placeholder = {
+            Text(
+                text = "Format: articleId + supplierName",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    )
+}
+
+private fun handleTwoPartInput(
+    articleIdStr: String,
+    supplierName: String,
+    viewModel: HeadOfViewModels,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+) {
+    val articleId = articleIdStr.toLongOrNull()
+    if (articleId != null) {
+        val article = uiState.tabelleSupplierArticlesRecived.find {
+            it.aa_vid == articleId
+        }
+        val supplier = uiState.tabelleSuppliersSA.find {
+            it.nameInFrenche.equals(supplierName, ignoreCase = true)
+        }
+
+        if (article != null && supplier != null) {
+            viewModel.moveArticlesToSupplier(
+                articlesToMove = listOf(article),
+                toSupp = supplier.idSupplierSu
+            )
+        }
+    }
+}
+@Composable
 fun CardArticlePlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     article: TabelleSupplierArticlesRecived,
@@ -465,62 +520,6 @@ fun CardArticlePlace(
         }
     }
 }
-@Composable
-fun VoiceInputField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    modifier: Modifier = Modifier
-) {
-
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text("Voice Input") },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-        ),
-        textStyle = MaterialTheme.typography.bodyLarge,
-        placeholder = {
-            Text(
-                text = "Format: articleId + supplierName [+ placeName]",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-    )
-}
-
-private fun handleTwoPartInput(
-    parts: List<String>,
-    viewModel: HeadOfViewModels,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-) {
-    val input = parts.joinToString("+")
-
-    if (input.articleId != null) {   //TODO fix Code
-        val article = uiState.tabelleSupplierArticlesRecived.find {
-            it.aa_vid == input.articleId
-        }
-        val supplier = uiState.tabelleSuppliersSA.find {
-            it.nameInFrenche == input.supplierName
-        }
-
-        if (article != null && supplier != null) {
-            viewModel.moveArticlesToSupplier(
-                articlesToMove = listOf(article),
-                toSupp = supplier.idSupplierSu
-            )
-        }
-    }
-}
-
-
 
 @Composable
 fun WindowArticleDetail(
