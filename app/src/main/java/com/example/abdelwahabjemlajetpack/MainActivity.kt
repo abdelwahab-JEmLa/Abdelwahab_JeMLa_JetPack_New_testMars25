@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -53,6 +54,7 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -77,6 +79,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.ArticleDetailWindow
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
@@ -118,8 +121,7 @@ class MainActivity : ComponentActivity() {
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
     private val headOfViewModels: HeadOfViewModels by viewModels {
-        HeadOfViewModelFactory(
-            context = this@MainActivity,)
+        HeadOfViewModelFactory(context = this@MainActivity)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -139,6 +141,8 @@ class MainActivity : ComponentActivity() {
                 val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
                 val textProgress by headOfViewModels.textProgress.collectAsState()
 
+                var showSupplierPopup by remember { mutableStateOf(false) }
+
                 Scaffold(
                     bottomBar = {
                         if (isNavBarVisible) {
@@ -152,7 +156,8 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(navController.graph.startDestinationId)
                                             launchSingleTop = true
                                         }
-                                    }
+                                    },
+                                    showPopup = { show -> showSupplierPopup = show }
                                 )
                             }
                         }
@@ -188,7 +193,8 @@ class MainActivity : ComponentActivity() {
                             ),
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                             headOfViewModels = headOfViewModels,
-
+                            showSupplierPopup = showSupplierPopup,
+                            onShowSupplierPopupChange = { showSupplierPopup = it }
                         )
                     }
                 }
@@ -247,20 +253,20 @@ fun AppNavHost(
     viewModels: AppViewModels,
     onToggleNavBar: () -> Unit,
     headOfViewModels: HeadOfViewModels,
+    showSupplierPopup: Boolean,
+    onShowSupplierPopupChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by headOfViewModels.uiState.collectAsState()
-
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     var dialogeDisplayeDetailleChanger by remember { mutableStateOf<BaseDonneECBTabelle?>(null) }
-
-    var currentSupplier by rememberSaveable() { mutableStateOf(11L) }
-
+    var currentSupplier by rememberSaveable { mutableStateOf(11L) }
     val currentEditedArticle by headOfViewModels.currentEditedArticle.collectAsState()
     var reloadTrigger by remember { mutableIntStateOf(0) }
-    // Remove this LaunchedEffect as it's overwriting our manual settings
+
+
     LaunchedEffect(currentEditedArticle) {
         dialogeDisplayeDetailleChanger = currentEditedArticle
     }
@@ -293,7 +299,9 @@ fun AppNavHost(
                 onNewArticleAdded={dialogeDisplayeDetailleChanger=it}
             )
         }
+
         composable("FragmentMapArticleInSupplierStore") { backStackEntry ->
+
             FragmentMapArticleInSupplierStore(
                 uiState = uiState,
                 viewModel = headOfViewModels,
@@ -410,9 +418,44 @@ fun AppNavHost(
             reloadTrigger = reloadTrigger
         )
     }
-
+    if (showSupplierPopup) {
+        SupplierSelectionPopup(
+            onDismiss = { onShowSupplierPopupChange(false) },
+            onSupplierSelected = { selectedSupplier ->
+                currentSupplier = selectedSupplier
+                onShowSupplierPopupChange(false)
+                navController.navigate("FragmentMapArticleInSupplierStore")
+            }
+        )
+    }
 }
-
+@Composable
+fun SupplierSelectionPopup(
+    onDismiss: () -> Unit,
+    onSupplierSelected: (Long) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Supplier") },
+        text = {
+            Column {
+                Button(onClick = { onSupplierSelected(10L) }) {
+                    Text("Supplier 10")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { onSupplierSelected(9L) }) {
+                    Text("Supplier 9")
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
 @Composable
 fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
     FloatingActionButton(onClick = onToggle) {
@@ -445,7 +488,11 @@ sealed class Screen(val route: String, val icon: ImageVector, val title: String,
         Icons.Default.Map,
         "Map Articles",
         Color(0xFF00BCD4)
-    )         //TODO fait que au maintant du buttobn ca pop up une bpetite affiche contien 2 buton 10 et 9 au release ca change   currentSupplier avec le num du button et navige au fragement
+    ) {
+        fun showPopup(showPopup: (Boolean) -> Unit) {
+            showPopup(true)
+        }
+    }
     data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
     data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
     data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.EditRoad, "Create New Articles", Color(
@@ -458,9 +505,9 @@ sealed class Screen(val route: String, val icon: ImageVector, val title: String,
 fun CustomNavigationBar(
     items: List<Screen>,
     currentRoute: String?,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    showPopup: (Boolean) -> Unit
 ) {
-
     NavigationBar {
         items.forEach { screen ->
             NavigationBarItem(
@@ -472,7 +519,13 @@ fun CustomNavigationBar(
                     )
                 },
                 selected = currentRoute == screen.route,
-                onClick = { onNavigate(screen.route) },
+                onClick = {
+                    if (screen is Screen.FragmentMapArticleInSupplierStoreFragment) {
+                        screen.showPopup(showPopup)
+                    } else {
+                        onNavigate(screen.route)
+                    }
+                },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = screen.color,
                     unselectedIconColor = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
