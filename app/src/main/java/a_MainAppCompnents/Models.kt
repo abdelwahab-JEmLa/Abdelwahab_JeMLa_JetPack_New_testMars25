@@ -14,7 +14,7 @@ data class PlacesOfArticelsInCamionette(
 
 data class TabelleSupplierArticlesRecived(
     val aa_vid: Long = 0,
-    val a_c_idarticle_c: Long = 0,
+    var a_c_idarticle_c: Long = 0,
     val a_d_nomarticlefinale_c: String = "",
     var idSupplierTSA: Int = 0,
     var nomSupplierTSA: String? = null,

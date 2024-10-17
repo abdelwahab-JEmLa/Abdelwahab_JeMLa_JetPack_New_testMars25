@@ -3,6 +3,7 @@ package i2_FragmentMapArticleInSupplierStore
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
+import a_MainAppCompnents.PlacesOfArticelsInCamionette
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
@@ -15,7 +16,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,18 +35,12 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -63,122 +56,46 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
+import i_SupplierArticlesRecivedManager.CardArticlePlace
 import i_SupplierArticlesRecivedManager.WindowArticleDetail
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FragmentMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     viewModel: HeadOfViewModels,
-    navController: NavController,
     modifier: Modifier = Modifier,
     idSupplierOfFloatingButtonClicked: Long?,
     onIdSupplierChanged: (Long) -> Unit
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
-    var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFab by remember { mutableStateOf(false) }
-    var itsFilterInFindedAskSupplierSA by remember { mutableStateOf(false) }
 
-    Scaffold(
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column {
-                val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-                supplier?.let {
-                    Card(
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Text(
-                            text = "Supplier: ${it.nomSupplierSu}",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.padding(2.dp)
-                        )
-                    }
-                }
-                LazyColumn(
-                    contentPadding = PaddingValues(8.dp),
-                    modifier = modifier
-                        .fillMaxSize()
-                        .clickable { showFab = !showFab }
-                ) {
-                    val places = uiState.mapArticleInSupplierStore.filter { it.idSupplierOfStore == idSupplierOfFloatingButtonClicked }
-
-                    places.forEach { placeItem ->
-                        stickyHeader {
-                            PlaceHeader(placeItem)
-                        }
-
-                        val articlesForThisPlace = uiState.tabelleSupplierArticlesRecived.filter { article ->
-                            uiState.placesOfArticelsInEacheSupplierSrore.any { place ->
-                                place.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}" &&
-                                        place.idPlace == placeItem.idPlace
-                            }
-                        }
-
-                        items(articlesForThisPlace) { article ->
-                            ArticleItemOfPlace(
-                                article = article,
-                                viewModel = viewModel,
-                                onDismissWithUpdate = { /* Handle update */ },
-                                onDismiss = { /* Handle dismiss */ }
-                            )
-                            HorizontalDivider(
-                                modifier = modifier.fillMaxWidth(),
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
-                    }
-                }
+                DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked, modifier)
+                ArticlesList(uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
-                Row(
-                    modifier = modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                ) {
-                    MoveArticlesFAB(
-                        uiState = uiState,
-                        viewModel = viewModel,
-                        idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-                        onIdSupplierChanged = onIdSupplierChanged
-                    )
-
-                    FilterFAB(
-                        itsFilterInFindedAskSupplierSA = itsFilterInFindedAskSupplierSA,
-                        onFilterChanged = { itsFilterInFindedAskSupplierSA = it }
-                    )
-
-                    AddPlaceFAB(
-                        fabOffset = fabOffset,
-                        onFabOffsetChanged = { fabOffset = it },
-                        onAddDialogRequested = { showAddDialog = true }
-                    )
-                }
+                FabGroup(
+                    uiState, viewModel, idSupplierOfFloatingButtonClicked, onIdSupplierChanged
+                )
             }
         }
     }
@@ -193,21 +110,9 @@ fun FragmentMapArticleInSupplierStore(
             viewModel = viewModel
         )
     }
-
-    if (showAddDialog) {
-        AddPlaceDialog(
-            onDismiss = { showAddDialog = false },
-            onAddPlace = { name ->
-                viewModel.addNewPlace(name, idSupplierOfFloatingButtonClicked)
-                showAddDialog = false
-            }
-        )
-    }
 }
 @Composable
-fun PlaceHeader(
-                    placeItem: MapArticleInSupplierStore,
-                    modifier: Modifier = Modifier,) {
+fun PlaceHeader(placeItem: PlacesOfArticelsInCamionette, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -217,7 +122,7 @@ fun PlaceHeader(
         )
     ) {
         Text(
-            text = "${placeItem.namePlace} ",
+            text = placeItem.namePlace,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimary,
             modifier = modifier
@@ -225,6 +130,64 @@ fun PlaceHeader(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             textAlign = TextAlign.Center
         )
+    }
+}
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ArticlesList(uiState: CreatAndEditeInBaseDonnRepositeryModels, viewModel: HeadOfViewModels, modifier: Modifier, onClickToggleFab: () -> Unit) {
+    LazyColumn(
+        contentPadding = PaddingValues(8.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .clickable(onClick = onClickToggleFab)
+    ) {
+        val groupedArticles = uiState.tabelleSupplierArticlesRecived
+            .groupBy { article ->
+                uiState.placesOfArticelsInEacheSupplierSrore.find {
+                    it.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
+                } ?: PlacesOfArticelsInCamionette(idPlace = 10, namePlace = "Unplaced")
+            }
+
+        groupedArticles.forEach { (place, articles) ->
+            stickyHeader {
+                PlaceHeader(placeItem = place as PlacesOfArticelsInCamionette)
+            }
+
+            items(articles) { article ->
+                ArticleItemOfPlace(
+                    article = article,
+                    viewModel = viewModel,
+                    onDismissWithUpdate = { /* Handle update */ },
+                    onDismiss = { /* Handle dismiss */ }
+                )
+                HorizontalDivider(
+                    modifier = modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+        }
+    }
+}
+
+
+
+
+@Composable
+fun DisplaySupplierCard(uiState: CreatAndEditeInBaseDonnRepositeryModels, idSupplier: Long?, modifier: Modifier) {
+    uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }?.let {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Text(
+                text = "Supplier: ${it.nomSupplierSu}",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(2.dp)
+            )
+        }
     }
 }
 
@@ -359,6 +322,27 @@ fun CardArticlePlace(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun FabGroup(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    viewModel: HeadOfViewModels,
+    idSupplierOfFloatingButtonClicked: Long?,
+    onIdSupplierChanged: (Long) -> Unit,
+
+    ) {
+    Row(
+        modifier = Modifier
+            .padding(16.dp)
+    ) {
+        MoveArticlesFAB(
+            uiState = uiState,
+            viewModel = viewModel,
+            idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
+            onIdSupplierChanged = onIdSupplierChanged
+        )
     }
 }
 
@@ -594,42 +578,7 @@ private  fun performAction(
     }
 }
 
-@Composable
-private fun FilterFAB(
-    itsFilterInFindedAskSupplierSA: Boolean,
-    onFilterChanged: (Boolean) -> Unit
-) {
-    FloatingActionButton(
-        onClick = { onFilterChanged(!itsFilterInFindedAskSupplierSA) },
-        modifier = Modifier.padding(end = 16.dp)
-    ) {
-        Icon(
-            if (itsFilterInFindedAskSupplierSA) Icons.Filled.FilterList else Icons.Filled.FilterListOff,
-            contentDescription = "Toggle Filter"
-        )
-    }
-}
 
-@Composable
-private fun AddPlaceFAB(
-    fabOffset: Offset,
-    onFabOffsetChanged: (Offset) -> Unit,
-    onAddDialogRequested: () -> Unit
-) {
-    FloatingActionButton(
-        onClick = onAddDialogRequested,
-        modifier = Modifier
-            .offset { IntOffset(fabOffset.x.toInt(), fabOffset.y.toInt()) }
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    onFabOffsetChanged(fabOffset + dragAmount)
-                }
-            }
-    ) {
-        Icon(Icons.Filled.Add, contentDescription = "Add Place")
-    }
-}
 @Composable
 fun DisplayeImageById(
     idArticle: Long,

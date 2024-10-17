@@ -314,7 +314,6 @@ fun AppNavHost(
             FragmentMapArticleInSupplierStore(
                 uiState = uiState,
                 viewModel = headOfViewModels,
-                navController = navController,
                 idSupplierOfFloatingButtonClicked = currentSupplier,
                 onIdSupplierChanged = { currentSupplier = it }
             )
