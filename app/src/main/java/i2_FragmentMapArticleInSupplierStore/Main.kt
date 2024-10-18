@@ -50,7 +50,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import i_SupplierArticlesRecivedManager.WindowArticleDetail
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -207,6 +207,63 @@ fun ArticlesList(
 }
 
 @Composable
+fun ProgressBarWithAnimation(progress: Float, buttonName: String, modifier: Modifier) {
+    var progressValue by remember { mutableStateOf(100f) }
+    var isAnimating by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var job by remember { mutableStateOf<Job?>(null) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(24.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .clickable {
+                if (!isAnimating) {
+                    isAnimating = true
+                    job = scope.launch {
+                        repeat(100) {
+                            delay(10)
+                            if (isAnimating) {
+                                progressValue = 100f - it
+                                if (progressValue <= 0f) {
+                                    isAnimating = false
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    isAnimating = false
+                    job?.cancel()
+                    progressValue = 100f
+                }
+            }
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxHeight()
+                .fillMaxWidth(0.3f)
+                .background(Color.Red)
+        )
+
+        Box(
+            modifier = modifier
+                .fillMaxHeight()
+                .fillMaxWidth(progressValue / 100f)
+                .background(MaterialTheme.colorScheme.primary)
+        )
+
+        Text(
+            text = buttonName,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            modifier = modifier.align(Alignment.Center)
+        )
+    }
+}
+@Composable
 fun DisplaySupplierCard(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     idSupplier: Long?,
@@ -234,7 +291,7 @@ fun DisplaySupplierCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
-                .padding(top = 24.dp), // Add top padding to make space for ProgressBar
+                .padding(top = 24.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -275,7 +332,6 @@ fun DisplaySupplierCard(
                                     }
                                 }
                             } else {
-                                // Cancel the action on second click
                                 isPressed = false
                                 progress = 0f
                                 isActionCompleted = false
@@ -305,67 +361,6 @@ fun DisplaySupplierCard(
                     Text(if (isPressed) "Cancel" else "Move to Next Supplier")
                 }
             }
-        }
-    }
-}
-@Composable
-fun ProgressBarWithAnimation(progress: Float, buttonName: String,modifier: Modifier) {
-    var isBlinking by remember { mutableStateOf(false) }
-    var showProgressBar by remember { mutableStateOf(false) }
-
-    LaunchedEffect(progress) {
-        if (progress > 0f) {
-            showProgressBar = true
-            isBlinking = false
-        } else if (progress == 0f && showProgressBar) {
-            isBlinking = true
-            delay(3000) // Blink for 3 seconds
-            isBlinking = false
-            showProgressBar = false
-        }
-    }
-
-    if (showProgressBar) {
-        val transition = rememberInfiniteTransition(label = "")
-        val alpha by transition.animateFloat(
-            initialValue = 1f,
-            targetValue = 0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(500),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = ""
-        )
-
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .alpha(if (isBlinking) alpha else 1f)
-        ) {
-            Box(
-                modifier = modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.3f)
-                    .background(Color.Red)
-            )
-
-            Box(
-                modifier = modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(progress / 100f)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
-
-            Text(
-                text = buttonName,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                modifier = modifier.align(Alignment.Center)
-            )
         }
     }
 }
