@@ -36,7 +36,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.NotListedLocation
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
@@ -335,6 +335,7 @@ fun CardArticlePlace(
                                     disponibylityStatInSupplierStore = ""
                                 )
                                 article.disponibylityStatInSupplierStore != "Finded" -> article.copy(
+                                    itsInFindedAskSupplierSA = false,
                                     disponibylityStatInSupplierStore = "Finded"
                                 )
                                 else -> article.copy(
@@ -347,15 +348,15 @@ fun CardArticlePlace(
                     ) {
                         Icon(
                             imageVector = when {
-                                !article.itsInFindedAskSupplierSA -> Icons.Default.Add
+                                !article.itsInFindedAskSupplierSA -> Icons.AutoMirrored.Filled.NotListedLocation
                                 article.disponibylityStatInSupplierStore != "Finded" -> Icons.Default.Check
                                 else -> Icons.Default.Visibility
                             },
                             contentDescription = "Toggle Article Status",
                             tint = when {
-                                !article.itsInFindedAskSupplierSA -> Color.White
-                                article.disponibylityStatInSupplierStore != "Finded" -> Color(0xFFFFD700)
-                                else -> Color.Green
+                                !article.itsInFindedAskSupplierSA -> Color(0xFFFFD700)
+                                article.disponibylityStatInSupplierStore != "Finded" -> Color.Red
+                                else -> Color.White
                             }
                         )
                     }
