@@ -562,7 +562,7 @@ fun WindowArticleDetail(
         Surface(
             modifier = modifier
                 .fillMaxSize()
-                .clickable { onDismissWithUpdateOfnonDispo(article) },
+                .clickable { onDismissWithUpdatePlaceArticle() },
             shape = MaterialTheme.shapes.large,
             color = if (article.itsInFindedAskSupplierSA) Color.Blue.copy(alpha = 0.3f)
             else Color.Red.copy(alpha = 0.3f)

@@ -237,7 +237,12 @@ fun ArticleItemOfPlace(
             article = articleDisplay,
             onDismissWithUpdatePlaceArticle = {
                 showArticleDetails = null
-                onDismissWithUpdate(article)
+                val updatedArticle =  article.copy(
+                        itsInFindedAskSupplierSA = false,
+                        disponibylityStatInSupplierStore = "Finded"
+                    )
+                viewModel.updateArticleStatus(updatedArticle)
+                onDismiss()
             },
             onDismiss = {
                 onDismiss()
