@@ -122,6 +122,94 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+    fun updateArticleStatus(article: TabelleSupplierArticlesRecived) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { currentState ->
+                    val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
+                        if (it.aa_vid == article.aa_vid) article else it
+                    }
+                    currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
+                }
+
+                _currentSupplierArticle.update {
+                    it?.takeIf { it.aa_vid == article.aa_vid }?.let { _ -> article }
+                }
+
+                refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).apply {
+                    child("itsInFindedAskSupplierSA").setValue(article.itsInFindedAskSupplierSA)
+                    child("disponibylityStatInSupplierStore").setValue(article.disponibylityStatInSupplierStore)
+                }
+            } catch (e: Exception) {
+                // Log.e(TAG, "Error in updateArticleStatus", e)
+            }
+        }
+    }
+    fun filterArticles(supplierId: Long?) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { currentState ->
+                    val filteredArticles = currentState.tabelleSupplierArticlesRecived.filter { article ->
+                        article.idSupplierTSA.toLong() == supplierId && article.itsInFindedAskSupplierSA
+                    }
+                    currentState.copy(tabelleSupplierArticlesRecived = filteredArticles)
+                }
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Filtered articles",
+                    progressDimunuentDe100A0 = 0,
+                    end = true,
+                    delayUi = 1000
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in filterArticles", e)
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Error filtering articles",
+                    progressDimunuentDe100A0 = 100,
+                    end = true,
+                    delayUi = 1000
+                )
+            }
+        }
+    }
+
+    fun markAllArticlesAsFound(supplierId: Long?) {
+        viewModelScope.launch {
+            try {
+                val updates = mutableMapOf<String, Any>()
+
+                _uiState.update { currentState ->
+                    val updatedArticles = currentState.tabelleSupplierArticlesRecived.map { article ->
+                        if (article.idSupplierTSA.toLong() == supplierId) {
+                            updates["${article.aa_vid}/itsInFindedAskSupplierSA"] = true
+                            article.copy(itsInFindedAskSupplierSA = true)
+                        } else {
+                            article
+                        }
+                    }
+                    currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
+                }
+
+                // Update Firebase
+                refTabelleSupplierArticlesRecived.updateChildren(updates).await()
+
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Marked all articles as found",
+                    progressDimunuentDe100A0 = 0,
+                    end = true,
+                    delayUi = 1000
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in markAllArticlesAsFound", e)
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Error marking articles as found",
+                    progressDimunuentDe100A0 = 100,
+                    end = true,
+                    delayUi = 1000
+                )
+            }
+        }
+    }
+
     fun updateArticleStandardPlace(articleId: Int, newPlaceId: Long) {
         viewModelScope.launch {
             try {
@@ -793,29 +881,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
 
-    fun updateArticleStatus(article: TabelleSupplierArticlesRecived) {
-        viewModelScope.launch {
-            try {
-                _uiState.update { currentState ->
-                    val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
-                        if (it.aa_vid == article.aa_vid) article else it
-                    }
-                    currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
-                }
 
-                _currentSupplierArticle.update {
-                    it?.takeIf { it.aa_vid == article.aa_vid }?.let { _ -> article }
-                }
-
-                refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).apply {
-                    child("itsInFindedAskSupplierSA").setValue(article.itsInFindedAskSupplierSA)
-                    child("disponibylityStatInSupplierStore").setValue(article.disponibylityStatInSupplierStore)
-                }
-            } catch (e: Exception) {
-                // Log.e(TAG, "Error in updateArticleStatus", e)
-            }
-        }
-    }
     fun moveArticlesToSupplier(
         articlesToMove: List<TabelleSupplierArticlesRecived>,
         toSupp: Long

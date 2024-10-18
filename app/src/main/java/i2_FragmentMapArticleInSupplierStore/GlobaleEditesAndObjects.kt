@@ -4,13 +4,20 @@ import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
@@ -42,17 +49,56 @@ fun FabGroup(
     viewModel: HeadOfViewModels,
     idSupplierOfFloatingButtonClicked: Long?,
     onIdSupplierChanged: (Long) -> Unit,
-
-    ) {
+) {
     Row(
         modifier = Modifier
             .padding(16.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         MoveArticlesFAB(
             uiState = uiState,
             viewModel = viewModel,
             idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
             onIdSupplierChanged = onIdSupplierChanged
+        )
+
+        FilterFAB(
+            onClick = {
+                viewModel.filterArticles(idSupplierOfFloatingButtonClicked)
+            }
+        )
+
+        MarkAllFAB(
+            onClick = {
+                viewModel.markAllArticlesAsFound(idSupplierOfFloatingButtonClicked)
+            }
+        )
+    }
+}
+
+@Composable
+fun FilterFAB(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Icon(
+            imageVector = Icons.Default.FilterList,
+            contentDescription = "Filter found articles"
+        )
+    }
+}
+
+@Composable
+fun MarkAllFAB(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+    ) {
+        Icon(
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = "Mark all articles as found"
         )
     }
 }

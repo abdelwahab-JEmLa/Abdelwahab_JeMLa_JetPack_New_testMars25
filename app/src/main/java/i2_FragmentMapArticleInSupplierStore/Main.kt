@@ -87,7 +87,7 @@ fun FragmentMapArticleInSupplierStore(
     Scaffold { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column {
-                DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked,viewModel, onIdSupplierChanged, modifier)
+                if (showFab) { DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked,viewModel, onIdSupplierChanged, modifier)}
                 ArticlesList(articlesFilterByIdSupp,uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
@@ -227,22 +227,29 @@ fun DisplaySupplierCard(
 
             Button(
                 onClick = {
-                    isPressed = true
-                    isActionCompleted = false
-                    progress = 0f
+                    if (isPressed) {
+                        // Cancel the action on second click
+                        isPressed = false
+                        progress = 0f
+                        isActionCompleted = false
+                    } else {
+                        isPressed = true
+                        isActionCompleted = false
+                        progress = 0f
 
-                    scope.launch {
-                        repeat(100) {
-                            delay(10)
-                            if (isPressed) {
-                                progress = (it + 1).toFloat()
-                                if (progress >= 100f) {
-                                    moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
-                                    isActionCompleted = true
-                                    isPressed = false
+                        scope.launch {
+                            repeat(100) {
+                                delay(10)
+                                if (isPressed) {
+                                    progress = (it + 1).toFloat()
+                                    if (progress >= 100f) {
+                                        moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
+                                        isActionCompleted = true
+                                        isPressed = false
+                                    }
+                                } else {
+                                    return@launch
                                 }
-                            } else {
-                                return@launch
                             }
                         }
                     }
@@ -256,7 +263,7 @@ fun DisplaySupplierCard(
                     }
                 )
             ) {
-                Text("Move to Next Supplier")
+                Text(if (isPressed) "Cancel" else "Move to Next Supplier")
             }
         }
     }
