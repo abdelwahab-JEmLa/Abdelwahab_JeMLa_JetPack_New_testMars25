@@ -72,6 +72,7 @@ import i_SupplierArticlesRecivedManager.WindowArticleDetail
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
 @Composable
 fun FragmentMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -81,18 +82,39 @@ fun FragmentMapArticleInSupplierStore(
     onIdSupplierChanged: (Long) -> Unit
 ) {
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
-    var showFab by remember { mutableStateOf(false) }
-    val articlesFilterByIdSupp= uiState.tabelleSupplierArticlesRecived
-        .filter { it.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked}
+    var showFab by remember { mutableStateOf(true) }
+    val (articlesFilterByIdSupp, onFilterDispoActivate) = remember(
+        uiState.tabelleSupplierArticlesRecived,
+        idSupplierOfFloatingButtonClicked,
+        uiState.showOnlyWithFilter
+    ) {
+        val filteredArticles = uiState.tabelleSupplierArticlesRecived
+            .filter { article ->
+                if (uiState.showOnlyWithFilter) {
+                    article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked &&
+                            article.itsInFindedAskSupplierSA
+                } else {
+                    article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked
+                }
+            }
+        Pair(filteredArticles) {
+            viewModel.toggleFilter()
+        }
+    }
+
     Scaffold { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column {
-                if (showFab) { DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked,viewModel, onIdSupplierChanged, modifier)}
-                ArticlesList(articlesFilterByIdSupp,uiState, viewModel, modifier) { showFab = !showFab }
+                if (showFab) { DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked, viewModel, onIdSupplierChanged, modifier) }
+                ArticlesList(articlesFilterByIdSupp, uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
                 FabGroup(
-                    uiState, viewModel, idSupplierOfFloatingButtonClicked, onIdSupplierChanged
+                    uiState = uiState,
+                    viewModel = viewModel,
+                    idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
+                    onIdSupplierChanged = onIdSupplierChanged,
+                    onFilterDispoActivate = onFilterDispoActivate
                 )
             }
         }
@@ -130,6 +152,7 @@ fun PlaceHeader(placeItem: PlacesOfArticelsInCamionette, modifier: Modifier = Mo
         )
     }
 }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArticlesList(
@@ -185,7 +208,6 @@ fun ArticlesList(
     }
 }
 
-
 @Composable
 fun DisplaySupplierCard(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -203,74 +225,93 @@ fun DisplaySupplierCard(
 
     val scope = rememberCoroutineScope()
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Supplier: ${supplier?.nomSupplierSu ?: "Unknown"}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+    Box(modifier = modifier.fillMaxWidth()) {
+        ProgressBarWithAnimation(
+            progress = progress,
+            buttonName = nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???",
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .padding(top = 24.dp), // Add top padding to make space for ProgressBar
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Supplier: ${supplier?.nomSupplierSu ?: "Unknown"}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
-            ProgressBarWithAnimation(
-                progress = progress,
-                buttonName = nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???"
-            )
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Next: ${nextSupplier?.nomVocaleArabeDuSupplier ?: "Unknown"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(4.dp)
+                        .clickable {
+                            if (!isPressed) {
+                                isPressed = true
+                                isActionCompleted = false
+                                progress = 0f
 
-            Button(
-                onClick = {
-                    if (isPressed) {
-                        // Cancel the action on second click
-                        isPressed = false
-                        progress = 0f
-                        isActionCompleted = false
-                    } else {
-                        isPressed = true
-                        isActionCompleted = false
-                        progress = 0f
-
-                        scope.launch {
-                            repeat(100) {
-                                delay(10)
-                                if (isPressed) {
-                                    progress = (it + 1).toFloat()
-                                    if (progress >= 100f) {
-                                        moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
-                                        isActionCompleted = true
-                                        isPressed = false
+                                scope.launch {
+                                    repeat(100) {
+                                        delay(10)
+                                        if (isPressed) {
+                                            progress = (it + 1).toFloat()
+                                            if (progress >= 100f) {
+                                                moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
+                                                isActionCompleted = true
+                                                isPressed = false
+                                            }
+                                        } else {
+                                            return@launch
+                                        }
                                     }
-                                } else {
-                                    return@launch
                                 }
+                            } else {
+                                // Cancel the action on second click
+                                isPressed = false
+                                progress = 0f
+                                isActionCompleted = false
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when {
-                        isActionCompleted -> Color.Yellow
-                        isPressed -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.secondary
-                    }
                 )
-            ) {
-                Text(if (isPressed) "Cancel" else "Move to Next Supplier")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        isPressed = !isPressed
+                        if (!isPressed) {
+                            progress = 0f
+                            isActionCompleted = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = when {
+                            isActionCompleted -> Color.Yellow
+                            isPressed -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.secondary
+                        }
+                    )
+                ) {
+                    Text(if (isPressed) "Cancel" else "Move to Next Supplier")
+                }
             }
         }
     }
 }
-
 @Composable
-fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
+fun ProgressBarWithAnimation(progress: Float, buttonName: String,modifier: Modifier) {
     var isBlinking by remember { mutableStateOf(false) }
     var showProgressBar by remember { mutableStateOf(false) }
 
@@ -299,7 +340,7 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
         )
 
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .height(24.dp)
                 .clip(MaterialTheme.shapes.small)
@@ -307,14 +348,14 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
                 .alpha(if (isBlinking) alpha else 1f)
         ) {
             Box(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxHeight()
                     .fillMaxWidth(0.3f)
                     .background(Color.Red)
             )
 
             Box(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxHeight()
                     .fillMaxWidth(progress / 100f)
                     .background(MaterialTheme.colorScheme.primary)
@@ -325,7 +366,7 @@ fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
+                modifier = modifier.align(Alignment.Center)
             )
         }
     }

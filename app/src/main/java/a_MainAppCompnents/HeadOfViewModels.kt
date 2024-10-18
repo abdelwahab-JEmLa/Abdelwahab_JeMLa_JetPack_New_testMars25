@@ -111,6 +111,12 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         private const val TAG = "HeadOfViewModels"
     }
 
+    fun toggleFilter() {
+        _uiState.update { currentState ->
+            currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
+        }
+    }
+
     private fun updateSmothUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "",
                                                              progressDimunuentDe100A0: Int=100,
                                                              end:Boolean=false,
@@ -142,32 +148,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 // Log.e(TAG, "Error in updateArticleStatus", e)
-            }
-        }
-    }
-    fun filterArticles(supplierId: Long?) {
-        viewModelScope.launch {
-            try {
-                _uiState.update { currentState ->
-                    val filteredArticles = currentState.tabelleSupplierArticlesRecived.filter { article ->
-                        article.idSupplierTSA.toLong() == supplierId && article.itsInFindedAskSupplierSA
-                    }
-                    currentState.copy(tabelleSupplierArticlesRecived = filteredArticles)
-                }
-                updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Filtered articles",
-                    progressDimunuentDe100A0 = 0,
-                    end = true,
-                    delayUi = 1000
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in filterArticles", e)
-                updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Error filtering articles",
-                    progressDimunuentDe100A0 = 100,
-                    end = true,
-                    delayUi = 1000
-                )
             }
         }
     }
@@ -1821,11 +1801,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
 
-    fun toggleFilter() {
-        _uiState.update { currentState ->
-            currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
-        }
-    }
+
 
     suspend fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB): DataBaseArticles {
         return withContext(Dispatchers.IO) {

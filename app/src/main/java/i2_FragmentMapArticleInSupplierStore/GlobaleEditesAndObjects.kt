@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,12 +44,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
+
+
 @Composable
 fun FabGroup(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     viewModel: HeadOfViewModels,
     idSupplierOfFloatingButtonClicked: Long?,
     onIdSupplierChanged: (Long) -> Unit,
+    onFilterDispoActivate: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -64,9 +68,8 @@ fun FabGroup(
         )
 
         FilterFAB(
-            onClick = {
-                viewModel.filterArticles(idSupplierOfFloatingButtonClicked)
-            }
+            onClick = onFilterDispoActivate,
+            isActive = uiState.showOnlyWithFilter
         )
 
         MarkAllFAB(
@@ -78,14 +81,14 @@ fun FabGroup(
 }
 
 @Composable
-fun FilterFAB(onClick: () -> Unit) {
+fun FilterFAB(onClick: () -> Unit, isActive: Boolean) {
     FloatingActionButton(
         onClick = onClick,
         containerColor = MaterialTheme.colorScheme.secondaryContainer
     ) {
         Icon(
-            imageVector = Icons.Default.FilterList,
-            contentDescription = "Filter found articles"
+            imageVector = if (isActive) Icons.Default.FilterListOff else Icons.Default.FilterList,
+            contentDescription = if (isActive) "Disable filter" else "Enable filter"
         )
     }
 }
