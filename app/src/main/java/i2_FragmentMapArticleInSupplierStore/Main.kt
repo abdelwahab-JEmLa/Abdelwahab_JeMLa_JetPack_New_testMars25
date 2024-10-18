@@ -5,7 +5,6 @@ import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.PlacesOfArticelsInCamionette
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -13,15 +12,14 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,27 +32,25 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NotListedLocation
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,23 +59,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
-import coil.size.Size
-import com.example.abdelwahabjemlajetpack.R
 import i_SupplierArticlesRecivedManager.WindowArticleDetail
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun FragmentMapArticleInSupplierStore(
@@ -96,7 +87,7 @@ fun FragmentMapArticleInSupplierStore(
     Scaffold { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column {
-                DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked, modifier)
+                DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked,viewModel, onIdSupplierChanged, modifier)
                 ArticlesList(articlesFilterByIdSupp,uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
@@ -194,19 +185,140 @@ fun ArticlesList(
     }
 }
 
+
 @Composable
-fun DisplaySupplierCard(uiState: CreatAndEditeInBaseDonnRepositeryModels, idSupplier: Long?, modifier: Modifier) {
-    uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }?.let {
-        Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
+fun DisplaySupplierCard(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    idSupplier: Long?,
+    viewModel: HeadOfViewModels,
+    onIdSupplierChanged: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }
+    val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == supplier?.classmentSupplier?.minus(1.0) }
+
+    var progress by remember { mutableStateOf(0f) }
+    var isPressed by remember { mutableStateOf(false) }
+    var isActionCompleted by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Supplier: ${it.nomSupplierSu}",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(2.dp)
+                text = "Supplier: ${supplier?.nomSupplierSu ?: "Unknown"}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ProgressBarWithAnimation(
+                progress = progress,
+                buttonName = nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???"
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    isPressed = true
+                    isActionCompleted = false
+                    progress = 0f
+
+                    scope.launch {
+                        repeat(100) {
+                            delay(10)
+                            if (isPressed) {
+                                progress = (it + 1).toFloat()
+                                if (progress >= 100f) {
+                                    moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
+                                    isActionCompleted = true
+                                    isPressed = false
+                                }
+                            } else {
+                                return@launch
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = when {
+                        isActionCompleted -> Color.Yellow
+                        isPressed -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.secondary
+                    }
+                )
+            ) {
+                Text("Move to Next Supplier")
+            }
+        }
+    }
+}
+
+@Composable
+fun ProgressBarWithAnimation(progress: Float, buttonName: String) {
+    var isBlinking by remember { mutableStateOf(false) }
+    var showProgressBar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(progress) {
+        if (progress > 0f) {
+            showProgressBar = true
+            isBlinking = false
+        } else if (progress == 0f && showProgressBar) {
+            isBlinking = true
+            delay(3000) // Blink for 3 seconds
+            isBlinking = false
+            showProgressBar = false
+        }
+    }
+
+    if (showProgressBar) {
+        val transition = rememberInfiniteTransition(label = "")
+        val alpha by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(500),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = ""
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .alpha(if (isBlinking) alpha else 1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.3f)
+                    .background(Color.Red)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress / 100f)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+
+            Text(
+                text = buttonName,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
@@ -374,26 +486,6 @@ fun CardArticlePlace(
         }
     }
 }
-@Composable
-fun FabGroup(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    viewModel: HeadOfViewModels,
-    idSupplierOfFloatingButtonClicked: Long?,
-    onIdSupplierChanged: (Long) -> Unit,
-
-    ) {
-    Row(
-        modifier = Modifier
-            .padding(16.dp)
-    ) {
-        MoveArticlesFAB(
-            uiState = uiState,
-            viewModel = viewModel,
-            idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-            onIdSupplierChanged = onIdSupplierChanged
-        )
-    }
-}
 
 @Composable
 fun WindowsOfNonPlacedArticles(
@@ -499,204 +591,5 @@ fun WindowsOfNonPlacedArticles(
             }
         }
     }
-}
-
-@Composable
-private fun MoveArticlesFAB(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    viewModel: HeadOfViewModels,
-    idSupplierOfFloatingButtonClicked: Long?,
-    onIdSupplierChanged: (Long) -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    var progress by remember { mutableStateOf(0f) }
-    var isActionCompleted by remember { mutableStateOf(false) }
-    var isPressed by remember { mutableStateOf(false) }
-
-    val buttonColor by animateColorAsState(
-        targetValue = when {
-            isActionCompleted -> Color.Yellow
-            isPressed -> MaterialTheme.colorScheme.error
-            else -> MaterialTheme.colorScheme.secondary
-        },
-        label = "buttonColor"
-    )
-
-    val currentSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-    val currentClassment = currentSupplier?.classmentSupplier
-    val nextClassment = currentClassment?.minus(1.0)
-    val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
-    Box(
-        modifier = Modifier
-            .padding(end = 16.dp)
-            .size(56.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        isPressed = true
-                        isActionCompleted = false
-                        progress = 0f
-                        val pressStartTime = System.currentTimeMillis()
-
-                        scope.launch {
-                            try {
-                                tryAwaitRelease()
-                            } finally {
-                                isPressed = false
-                                val pressDuration = System.currentTimeMillis() - pressStartTime
-                                if (pressDuration >= 1000) {
-                                    performAction(
-                                        uiState,
-                                        viewModel,
-                                        idSupplierOfFloatingButtonClicked,
-                                        onIdSupplierChanged
-                                    )
-                                    isActionCompleted = true
-                                } else {
-                                    progress = 0f
-                                }
-                            }
-                        }
-
-                        // Progress animation
-                        scope.launch {
-                            repeat(100) {
-                                delay(10)
-                                if (isPressed) {
-                                    progress = (it + 1) / 100f
-                                } else {
-                                    return@launch
-                                }
-                            }
-                        }
-                    }
-                )
-            }
-    ) {
-        // Button background
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            shape = CircleShape,
-            color = buttonColor
-        ) {}
-
-        // Progress indicator
-        CircularProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxSize(),
-            color = Color.White,
-            strokeWidth = 4.dp,
-            trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
-        )
-
-        // Button text
-        Text(
-            nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???",
-            color = Color.White,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
-
-private  fun performAction(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    viewModel: HeadOfViewModels,
-    idSupplierOfFloatingButtonClicked: Long?,
-    onIdSupplierChanged: (Long) -> Unit
-) {
-    val filterBytabelleSupplierArticlesRecived =
-        uiState.tabelleSupplierArticlesRecived.filter {
-            it.itsInFindedAskSupplierSA
-        }
-
-    val currentSupplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplierOfFloatingButtonClicked }
-    val currentClassment = currentSupplier?.classmentSupplier
-
-    if (currentClassment != null) {
-        val nextClassment = currentClassment - 1.0
-        val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == nextClassment }
-
-        if (nextSupplier != null) {
-            viewModel.moveArticlesToSupplier(
-                articlesToMove = filterBytabelleSupplierArticlesRecived,
-                toSupp = nextSupplier.idSupplierSu
-            )
-            onIdSupplierChanged(nextSupplier.idSupplierSu)
-        }
-    }
-}
-
-
-@Composable
-fun DisplayeImageById(
-    idArticle: Long,
-    index: Int = 0,
-    reloadKey: Any = Unit,
-    modifier: Modifier
-) {
-    val context = LocalContext.current
-    val baseImagePath =
-        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${idArticle}_${index + 1}"
-
-    val imageExist = remember(reloadKey) {
-        listOf("jpg", "webp").firstNotNullOfOrNull { extension ->
-            listOf(baseImagePath).firstOrNull { path ->
-                File("$path.$extension").exists()
-            }?.let { "$it.$extension" }
-        }
-    }
-
-    val imageSource = imageExist ?: R.drawable.blanc
-
-    val painter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
-            .data(imageSource)
-            .size(Size.ORIGINAL)
-            .crossfade(true)
-            .build()
-    )
-
-    Image(
-        painter = painter,
-        contentDescription = null,
-        modifier = modifier,
-        contentScale = ContentScale.Crop,
-        alignment = Alignment.Center
-    )
-}
-
-@Composable
-fun AddPlaceDialog(
-    onDismiss: () -> Unit,
-    onAddPlace: (String) -> Unit
-) {
-    var newPlaceName by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add New Place") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = newPlaceName,
-                    onValueChange = { input ->
-                        newPlaceName = input.replaceFirstChar { it.uppercase() }
-                    },
-                    label = { Text("Place Name") }
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onAddPlace(newPlaceName) }) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }
 
