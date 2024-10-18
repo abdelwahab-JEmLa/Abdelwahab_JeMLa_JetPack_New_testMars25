@@ -1,8 +1,8 @@
 package com.example.abdelwahabjemlajetpack
 
 import ZA_Learn_WhelPiker.PickerExample
-import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModelFactory
 import a_MainAppCompnents.HeadOfViewModels
 import a_RoomDB.AppDatabase
@@ -24,16 +24,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
@@ -62,6 +62,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -110,6 +111,7 @@ import i_SupplierArticlesRecivedManager.Fragment_SupplierArticlesRecivedManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.random.Random
 
 data class AppViewModels(
     val headOfViewModels: HeadOfViewModels,
@@ -438,40 +440,80 @@ fun AppNavHost(
         )
     }
 }
+
 @Composable
 fun SupplierSelectionPopup(
     onDismiss: () -> Unit,
     onSupplierSelected: (Long) -> Unit,
     uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
+    var showOnlyWithArticles by remember { mutableStateOf(true) }
+
+    val filteredSuppliers = remember(uiState.tabelleSuppliersSA, uiState.tabelleSupplierArticlesRecived, showOnlyWithArticles) {
+        uiState.tabelleSuppliersSA
+            .filter { supplier ->
+                !showOnlyWithArticles || uiState.tabelleSupplierArticlesRecived.any { article ->
+                    article.idSupplierTSA == supplier.idSupplierSu.toInt()
+                }
+            }
+            .sortedBy { it.classmentSupplier }
+    }
+
+    val randomColors = remember(filteredSuppliers) {
+        filteredSuppliers.map {
+            Color(
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+                0.5f
+            )
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Supplier") },
         text = {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(uiState.tabelleSuppliersSA.size) { index ->
-                    val supplier = uiState.tabelleSuppliersSA[index]
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1.5f)
-                            .clickable { onSupplierSelected(supplier.idSupplierSu) },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Show only suppliers with articles")
+                    Switch(
+                        checked = showOnlyWithArticles,
+                        onCheckedChange = { showOnlyWithArticles = it }
+                    )
+                }
+
+                LazyColumn(
+                    contentPadding = PaddingValues(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredSuppliers) { supplier ->
+                        val color = randomColors[filteredSuppliers.indexOf(supplier)]
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .clickable { onSupplierSelected(supplier.idSupplierSu) },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = color)
                         ) {
-                            Text(
-                                text = supplier.nomVocaleArabeDuSupplier,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(8.dp)
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "${supplier.classmentSupplier}. ${supplier.nomVocaleArabeDuSupplier}",
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(8.dp),
+                                    color = Color.Black
+                                )
+                            }
                         }
                     }
                 }
