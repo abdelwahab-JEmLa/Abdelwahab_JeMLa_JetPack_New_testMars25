@@ -348,7 +348,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 },
                 onDismissWithUpdateOfnonDispo = { updatedArticle ->
                     dialogeDisplayeDetailleChanger = null
-                    viewModel.changeAskSupplier(updatedArticle)
+                    viewModel.updateArticleStatus(updatedArticle)
                 },
                 onDismiss = {
                     dialogeDisplayeDetailleChanger = null

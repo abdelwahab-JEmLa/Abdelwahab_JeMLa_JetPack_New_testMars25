@@ -38,7 +38,9 @@ data class TabelleSupplierArticlesRecived(
     val totalquantity: Int = 0,
     val etatdecommendcolum: Int = 0,
     var itsInFindedAskSupplierSA: Boolean = false,
-) {
+    var disponibylityStatInSupplierStore: String = "",
+
+    ) {
     constructor() : this(0L)
 }
 

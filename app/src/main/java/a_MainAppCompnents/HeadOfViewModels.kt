@@ -793,36 +793,29 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
 
-
-    fun changeAskSupplier(article: TabelleSupplierArticlesRecived) {
+    fun updateArticleStatus(article: TabelleSupplierArticlesRecived) {
         viewModelScope.launch {
             try {
-                // Toggle the boolean status
-                val newStatus = !article.itsInFindedAskSupplierSA
-
-
-                // Update the local state
                 _uiState.update { currentState ->
                     val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
-                        if (it.aa_vid == article.aa_vid) it.copy(itsInFindedAskSupplierSA = newStatus) else it
+                        if (it.aa_vid == article.aa_vid) article else it
                     }
                     currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
                 }
 
-                // Update the currentSupplierArticle if it matches the updated article
                 _currentSupplierArticle.update {
-                    it?.takeIf { it.aa_vid == article.aa_vid }?.copy(itsInFindedAskSupplierSA = newStatus)
+                    it?.takeIf { it.aa_vid == article.aa_vid }?.let { _ -> article }
                 }
-                // Update the article in the database
-                refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).child("itsInFindedAskSupplierSA").setValue(newStatus)
 
+                refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).apply {
+                    child("itsInFindedAskSupplierSA").setValue(article.itsInFindedAskSupplierSA)
+                    child("disponibylityStatInSupplierStore").setValue(article.disponibylityStatInSupplierStore)
+                }
             } catch (e: Exception) {
-                // Handle the error silently or log it if necessary
-                // Log.e(TAG, "Error in changeAskSupplier", e)
+                // Log.e(TAG, "Error in updateArticleStatus", e)
             }
         }
     }
-
     fun moveArticlesToSupplier(
         articlesToMove: List<TabelleSupplierArticlesRecived>,
         toSupp: Long

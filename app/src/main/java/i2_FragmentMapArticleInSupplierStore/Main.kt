@@ -35,12 +35,18 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -69,7 +75,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
-import i_SupplierArticlesRecivedManager.CardArticlePlace
 import i_SupplierArticlesRecivedManager.WindowArticleDetail
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -205,14 +210,12 @@ fun DisplaySupplierCard(uiState: CreatAndEditeInBaseDonnRepositeryModels, idSupp
         }
     }
 }
-
-
 @Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
-    viewModel: HeadOfViewModels,     modifier: Modifier = Modifier,
-
-    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit ,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier = Modifier,
+    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
     onDismiss: () -> Unit
 ) {
     var showArticleDetails by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
@@ -220,43 +223,47 @@ fun ArticleItemOfPlace(
 
     CardArticlePlace(
         article = article,
-        onClickToShowWindowsInfoArt = { showArticleDetails = it } ,
-        reloadKey=reloadKey
+        onClickToShowWindowsInfoArt = { showArticleDetails = it },
+        onUpdateArticleStatus = { updatedArticle ->
+            viewModel.updateArticleStatus(updatedArticle)
+        },
+        reloadKey = reloadKey,
+        modifier = modifier
     )
 
-    showArticleDetails?.let { articleDisplate ->
+    showArticleDetails?.let { articleDisplay ->
         WindowArticleDetail(
-            article = articleDisplate,
+            article = articleDisplay,
             onDismissWithUpdatePlaceArticle = {
                 showArticleDetails = null
                 onDismissWithUpdate(article)
             },
-            onDismiss = { onDismiss()
+            onDismiss = {
+                onDismiss()
                 showArticleDetails = null
             },
-            onDismissWithUpdateOfnonDispo ={
+            onDismissWithUpdateOfnonDispo = {
                 showArticleDetails = null
-                viewModel.changeAskSupplier(it)
+                viewModel.updateArticleStatus(it)
             },
             viewModel = viewModel,
-            modifier = modifier.padding(horizontal = 3.dp),
+            modifier = Modifier.padding(horizontal = 3.dp),
         )
     }
 }
-/**[CardArticlePlace]
- * "PS:To Claude Dont Delet This Comment"*/
 
 @Composable
 fun CardArticlePlace(
     article: TabelleSupplierArticlesRecived,
     modifier: Modifier = Modifier,
     onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
-    reloadKey: Long  =0,
+    onUpdateArticleStatus: (TabelleSupplierArticlesRecived) -> Unit,
+    reloadKey: Long = 0,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
     val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.1f,  // Start from a more visible state
-        targetValue = 0.7f,   // Go to a more opaque state
+        initialValue = 0.1f,
+        targetValue = 0.7f,
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
@@ -272,38 +279,32 @@ fun CardArticlePlace(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
-        Box(
-            modifier = modifier.fillMaxSize()
-        ) {
-            // Background image
+        Box(modifier = Modifier.fillMaxSize()) {
             DisplayeImageById(
                 idArticle = article.a_c_idarticle_c,
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp),
                 reloadKey = reloadKey
             )
 
-            // Semi-transparent overlay
             Box(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.4f))
             )
 
-            // Darker blinking yellow overlay for itsInFindedAskSupplierSA
             if (article.itsInFindedAskSupplierSA) {
                 Box(
-                    modifier = modifier
+                    modifier = Modifier
                         .fillMaxSize()
                         .alpha(alpha)
-                        .background(Color(0xFFFFD700).copy(alpha = 0.7f))  // Darker yellow
+                        .background(Color(0xFFFFD700).copy(alpha = 0.7f))
                 )
             }
 
-            // Article details
             Column(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp),
                 verticalArrangement = Arrangement.SpaceBetween
@@ -319,19 +320,43 @@ fun CardArticlePlace(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val text = "[${article.aa_vid}] Q: ${article.totalquantity}"
                     Text(
-                        text = text,
+                        text = "[${article.aa_vid}] Q: ${article.totalquantity}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
-                    if (article.itsInFindedAskSupplierSA) {
-                        Text(
-                            text = "Ask",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFFFFD700)  // Matching yellow color
+                    IconButton(
+                        onClick = {
+                            val updatedArticle = when {
+                                !article.itsInFindedAskSupplierSA -> article.copy(
+                                    itsInFindedAskSupplierSA = true,
+                                    disponibylityStatInSupplierStore = ""
+                                )
+                                article.disponibylityStatInSupplierStore != "Finded" -> article.copy(
+                                    disponibylityStatInSupplierStore = "Finded"
+                                )
+                                else -> article.copy(
+                                    itsInFindedAskSupplierSA = false,
+                                    disponibylityStatInSupplierStore = ""
+                                )
+                            }
+                            onUpdateArticleStatus(updatedArticle)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                !article.itsInFindedAskSupplierSA -> Icons.Default.Add
+                                article.disponibylityStatInSupplierStore != "Finded" -> Icons.Default.Check
+                                else -> Icons.Default.Visibility
+                            },
+                            contentDescription = "Toggle Article Status",
+                            tint = when {
+                                !article.itsInFindedAskSupplierSA -> Color.White
+                                article.disponibylityStatInSupplierStore != "Finded" -> Color(0xFFFFD700)
+                                else -> Color.Green
+                            }
                         )
                     }
                 }
