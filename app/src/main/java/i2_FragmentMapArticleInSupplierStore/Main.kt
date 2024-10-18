@@ -327,45 +327,53 @@ fun CardArticlePlace(
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
-                    IconButton(
-                        onClick = {
-                            val updatedArticle = when {
-                                !article.itsInFindedAskSupplierSA -> article.copy(
-                                    itsInFindedAskSupplierSA = true,
-                                    disponibylityStatInSupplierStore = ""
-                                )
-                                article.disponibylityStatInSupplierStore != "Finded" -> article.copy(
-                                    itsInFindedAskSupplierSA = false,
-                                    disponibylityStatInSupplierStore = "Finded"
-                                )
-                                else -> article.copy(
-                                    itsInFindedAskSupplierSA = false,
-                                    disponibylityStatInSupplierStore = ""
-                                )
-                            }
-                            onUpdateArticleStatus(updatedArticle)
-                        }
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(Color.Transparent),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = when {
-                                !article.itsInFindedAskSupplierSA -> Icons.AutoMirrored.Filled.NotListedLocation
-                                article.disponibylityStatInSupplierStore != "Finded" -> Icons.Default.Check
-                                else -> Icons.Default.Visibility
+                        IconButton(
+                            onClick = {
+                                val updatedArticle = when {
+                                    !article.itsInFindedAskSupplierSA -> article.copy(
+                                        itsInFindedAskSupplierSA = true,
+                                        disponibylityStatInSupplierStore = ""
+                                    )
+                                    article.disponibylityStatInSupplierStore != "Finded" -> article.copy(
+                                        itsInFindedAskSupplierSA = false,
+                                        disponibylityStatInSupplierStore = "Finded"
+                                    )
+                                    else -> article.copy(
+                                        itsInFindedAskSupplierSA = false,
+                                        disponibylityStatInSupplierStore = ""
+                                    )
+                                }
+                                onUpdateArticleStatus(updatedArticle)
                             },
-                            contentDescription = "Toggle Article Status",
-                            tint = when {
-                                !article.itsInFindedAskSupplierSA -> Color(0xFFFFD700)
-                                article.disponibylityStatInSupplierStore != "Finded" -> Color.Red
-                                else -> Color.White
-                            }
-                        )
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = when {
+                                    !article.itsInFindedAskSupplierSA -> Icons.AutoMirrored.Filled.NotListedLocation
+                                    article.disponibylityStatInSupplierStore != "Finded" -> Icons.Default.Check
+                                    else -> Icons.Default.Visibility
+                                },
+                                contentDescription = "Toggle Article Status",
+                                tint = when {
+                                    !article.itsInFindedAskSupplierSA -> Color(0xFFFFD700)
+                                    article.disponibylityStatInSupplierStore != "Finded" -> Color.Red
+                                    else -> Color.White
+                                },
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 @Composable
 fun FabGroup(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
