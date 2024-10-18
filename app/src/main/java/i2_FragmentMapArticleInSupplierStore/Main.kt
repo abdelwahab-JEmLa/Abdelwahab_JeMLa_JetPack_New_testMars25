@@ -85,12 +85,13 @@ fun FragmentMapArticleInSupplierStore(
 ) {
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
     var showFab by remember { mutableStateOf(false) }
-
+    val articlesFilterByIdSupp= uiState.tabelleSupplierArticlesRecived
+        .filter { it.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked}
     Scaffold { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column {
                 DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked, modifier)
-                ArticlesList(uiState, viewModel, modifier) { showFab = !showFab }
+                ArticlesList(articlesFilterByIdSupp,uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
                 FabGroup(
@@ -134,23 +135,40 @@ fun PlaceHeader(placeItem: PlacesOfArticelsInCamionette, modifier: Modifier = Mo
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ArticlesList(uiState: CreatAndEditeInBaseDonnRepositeryModels, viewModel: HeadOfViewModels, modifier: Modifier, onClickToggleFab: () -> Unit) {
+fun ArticlesList(
+    tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier,
+    onClickToggleFab: () -> Unit
+) {
     LazyColumn(
         contentPadding = PaddingValues(8.dp),
         modifier = modifier
             .fillMaxSize()
             .clickable(onClick = onClickToggleFab)
     ) {
-        val groupedArticles = uiState.tabelleSupplierArticlesRecived
+        val corespendetArticleInDataBase = uiState.articlesBaseDonneECB
+        val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette
+        val groupedArticles = tabelleSupplierArticlesRecived
             .groupBy { article ->
-                uiState.placesOfArticelsInEacheSupplierSrore.find {
-                    it.idCombinedIdArticleIdSupplier == "${article.a_c_idarticle_c}_${article.idSupplierTSA}"
-                } ?: PlacesOfArticelsInCamionette(idPlace = 10, namePlace = "Unplaced")
+                val correspondingDbArticle = corespendetArticleInDataBase.find { dbArticle ->
+                    dbArticle.idArticle.toLong() == article.a_c_idarticle_c
+                }
+                placesOfArticelsInCamionette.find { placeInCam ->
+                    placeInCam.idPlace == correspondingDbArticle?.idArticlePlaceInCamionette
+                } ?: PlacesOfArticelsInCamionette(
+                    idPlace = placesOfArticelsInCamionette.maxOf { it.idPlace } + 1,
+                    namePlace = "Unplaced",
+                    classement = placesOfArticelsInCamionette.maxOf { it.classement } + 1
+                )
             }
+            .toList()
+            .sortedBy { (place, _) -> place.classement }
 
         groupedArticles.forEach { (place, articles) ->
             stickyHeader {
-                PlaceHeader(placeItem = place as PlacesOfArticelsInCamionette)
+                PlaceHeader(placeItem = place)
             }
 
             items(articles) { article ->
@@ -169,9 +187,6 @@ fun ArticlesList(uiState: CreatAndEditeInBaseDonnRepositeryModels, viewModel: He
         }
     }
 }
-
-
-
 
 @Composable
 fun DisplaySupplierCard(uiState: CreatAndEditeInBaseDonnRepositeryModels, idSupplier: Long?, modifier: Modifier) {
