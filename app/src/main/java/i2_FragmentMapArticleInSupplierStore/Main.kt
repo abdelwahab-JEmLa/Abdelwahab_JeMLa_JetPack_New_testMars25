@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -185,7 +186,7 @@ fun ArticlesList(
                 )
                 HorizontalDivider(
                     modifier = modifier.fillMaxWidth(),
-                    thickness = 1.dp,
+                    thickness = 4.dp,
                     color = MaterialTheme.colorScheme.outlineVariant
                 )
             }
@@ -283,8 +284,7 @@ fun CardArticlePlace(
             DisplayeImageById(
                 idArticle = article.a_c_idarticle_c,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                    .fillMaxSize(),
                 reloadKey = reloadKey
             )
 
@@ -303,72 +303,67 @@ fun CardArticlePlace(
                 )
             }
 
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = article.a_d_nomarticlefinale_c,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
+                    Text(
+                        text = article.a_d_nomarticlefinale_c,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Text(
                         text = "[${article.aa_vid}] Q: ${article.totalquantity}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(Color.Transparent),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        IconButton(
-                            onClick = {
-                                val updatedArticle = when {
-                                    !article.itsInFindedAskSupplierSA -> article.copy(
-                                        itsInFindedAskSupplierSA = true,
-                                        disponibylityStatInSupplierStore = ""
-                                    )
-                                    article.disponibylityStatInSupplierStore != "Finded" -> article.copy(
-                                        itsInFindedAskSupplierSA = false,
-                                        disponibylityStatInSupplierStore = "Finded"
-                                    )
-                                    else -> article.copy(
-                                        itsInFindedAskSupplierSA = false,
-                                        disponibylityStatInSupplierStore = ""
-                                    )
-                                }
-                                onUpdateArticleStatus(updatedArticle)
-                            },
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = when {
-                                    !article.itsInFindedAskSupplierSA -> Icons.AutoMirrored.Filled.NotListedLocation
-                                    article.disponibylityStatInSupplierStore != "Finded" -> Icons.Default.Check
-                                    else -> Icons.Default.Visibility
-                                },
-                                contentDescription = "Toggle Article Status",
-                                tint = when {
-                                    !article.itsInFindedAskSupplierSA -> Color(0xFFFFD700)
-                                    article.disponibylityStatInSupplierStore != "Finded" -> Color.Red
-                                    else -> Color.White
-                                },
-                                modifier = Modifier.size(32.dp)
+                }
+
+                IconButton(
+                    onClick = {
+                        val updatedArticle = when {
+                            !article.itsInFindedAskSupplierSA -> article.copy(
+                                itsInFindedAskSupplierSA = true,
+                                disponibylityStatInSupplierStore = ""
+                            )
+                            article.disponibylityStatInSupplierStore != "Finded" -> article.copy(
+                                itsInFindedAskSupplierSA = false,
+                                disponibylityStatInSupplierStore = "Finded"
+                            )
+                            else -> article.copy(
+                                itsInFindedAskSupplierSA = false,
+                                disponibylityStatInSupplierStore = ""
                             )
                         }
-                    }
+                        onUpdateArticleStatus(updatedArticle)
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = when {
+                            !article.itsInFindedAskSupplierSA -> Icons.AutoMirrored.Filled.NotListedLocation
+                            article.disponibylityStatInSupplierStore != "Finded" -> Icons.Default.Check
+                            else -> Icons.Default.Visibility
+                        },
+                        contentDescription = "Toggle Article Status",
+                        tint = when {
+                            !article.itsInFindedAskSupplierSA -> Color(0xFFFFD700)
+                            article.disponibylityStatInSupplierStore != "Finded" -> Color.Red
+                            else -> Color.White
+                        },
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
         }
