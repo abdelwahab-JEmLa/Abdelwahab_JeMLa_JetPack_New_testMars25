@@ -65,7 +65,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
 
 class HeadOfViewModels(private val context: Context) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
+    val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
 
     private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
@@ -94,7 +94,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
     private val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
-    private val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
+    val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
     private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
     private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
@@ -117,7 +117,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
-    private fun updateSmothUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "",
+    fun updateSmothUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "",
                                                              progressDimunuentDe100A0: Int=100,
                                                              end:Boolean=false,
                                                              delayUi: Long = 0) {
@@ -148,78 +148,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 // Log.e(TAG, "Error in updateArticleStatus", e)
-            }
-        }
-    }
-
-    fun markAllArticlesAsFound(supplierId: Long?) {
-        viewModelScope.launch {
-            try {
-                val updates = mutableMapOf<String, Any>()
-
-                _uiState.update { currentState ->
-                    val updatedArticles = currentState.tabelleSupplierArticlesRecived.map { article ->
-                        if (article.idSupplierTSA.toLong() == supplierId) {
-                            updates["${article.aa_vid}/itsInFindedAskSupplierSA"] = true
-                            article.copy(itsInFindedAskSupplierSA = true)
-                        } else {
-                            article
-                        }
-                    }
-                    currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
-                }
-
-                // Update Firebase
-                refTabelleSupplierArticlesRecived.updateChildren(updates).await()
-
-                updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Marked all articles as found",
-                    progressDimunuentDe100A0 = 0,
-                    end = true,
-                    delayUi = 1000
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in markAllArticlesAsFound", e)
-                updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Error marking articles as found",
-                    progressDimunuentDe100A0 = 100,
-                    end = true,
-                    delayUi = 1000
-                )
-            }
-        }
-    }
-
-    fun updateArticleStandardPlace(articleId: Int, newPlaceId: Long) {
-        viewModelScope.launch {
-            try {
-                // Update local state
-                _uiState.update { currentState ->
-                    val updatedArticles = currentState.articlesBaseDonneECB.map { article ->
-                        if (article.idArticle == articleId) {
-                            article.copy(idPlaceStandartInStoreSupplier = newPlaceId)
-                        } else {
-                            article
-                        }
-                    }
-                    currentState.copy(articlesBaseDonneECB = updatedArticles)
-                }
-
-                // Update Firebase database
-                refDBJetPackExport
-                    .child(articleId.toString())
-                    .child("idPlaceStandartInStoreSupplier")
-                    .setValue(newPlaceId)
-                    .addOnSuccessListener {
-                        Log.d(TAG, "Successfully updated standard place for article $articleId to place $newPlaceId")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e(TAG, "Failed to update standard place for article $articleId", e)
-                    }
-
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating article standard place", e)
             }
         }
     }

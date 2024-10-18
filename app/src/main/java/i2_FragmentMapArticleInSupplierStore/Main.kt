@@ -72,7 +72,6 @@ import i_SupplierArticlesRecivedManager.WindowArticleDetail
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
 @Composable
 fun FragmentMapArticleInSupplierStore(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -113,7 +112,6 @@ fun FragmentMapArticleInSupplierStore(
                     uiState = uiState,
                     viewModel = viewModel,
                     idSupplierOfFloatingButtonClicked = idSupplierOfFloatingButtonClicked,
-                    onIdSupplierChanged = onIdSupplierChanged,
                     onFilterDispoActivate = onFilterDispoActivate
                 )
             }
