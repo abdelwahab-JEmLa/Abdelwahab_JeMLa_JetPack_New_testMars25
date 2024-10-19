@@ -5,12 +5,20 @@ import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.PlacesOfArticelsInCamionette
 import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,7 +74,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import i_SupplierArticlesRecivedManager.WindowArticleDetail
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -133,6 +140,7 @@ fun FragmentMapArticleInSupplierStore(
     }
 }
 
+
 @Composable
 fun CardProgressBarWithDisplaySuppAndNext(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -141,7 +149,6 @@ fun CardProgressBarWithDisplaySuppAndNext(
     onIdSupplierChanged: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var progressValue by remember { mutableStateOf(100f) }
     var isAnimating by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) }
@@ -149,68 +156,74 @@ fun CardProgressBarWithDisplaySuppAndNext(
     val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }
     val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == supplier?.classmentSupplier?.minus(1.0) }
 
+    val animationDuration = 3000 // Increased to 3 seconds
+
+    val progress by animateFloatAsState(
+        targetValue = if (isAnimating) 0f else 1f,
+        animationSpec = tween(animationDuration, easing = LinearEasing),
+        finishedListener = {
+            if (it == 0f) {
+                moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
+                isAnimating = false
+            }
+        },
+        label = "Progress Animation"
+    )
+
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isAnimating) Color.Red else MaterialTheme.colorScheme.primaryContainer,
+        animationSpec = tween(animationDuration),
+        label = "Background Color Animation"
+    )
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(24.dp)
+            .padding(6.dp)
+            .height(40.dp)
             .clickable {
                 if (!isAnimating) {
                     isAnimating = true
                     job = scope.launch {
-                        repeat(100) {
-                            delay(10)
-                            if (isAnimating) {
-                                progressValue = 100f - it
-                                if (progressValue <= 0f) {
-                                    moveNonFindefArticles(
-                                        uiState,
-                                        viewModel,
-                                        idSupplier,
-                                        onIdSupplierChanged
-                                    )
-                                    isAnimating = false
-                                    progressValue = 100f
-                                }
-                            }
-                        }
+                        // Animation is now handled by Compose
                     }
                 } else {
                     isAnimating = false
                     job?.cancel()
-                    progressValue = 100f
                 }
             },
         shape = MaterialTheme.shapes.small,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Red background
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.3f)
-                    .background(Color.Red)
-            )
-
             // Progress bar
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth(progressValue / 100f)
+                    .fillMaxWidth(progress)
                     .background(MaterialTheme.colorScheme.primary)
             )
 
             // Text
             if (supplier != null) {
-                Text(
-                    text = "${supplier.nomSupplierSu} -> ${nextSupplier?.nomSupplierSu ?: "???"}",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(horizontal = 8.dp)
-                )
+                AnimatedContent(
+                    targetState = if (isAnimating) nextSupplier?.nomSupplierSu ?: "???" else supplier.nomSupplierSu,
+                    transitionSpec = {
+                        (slideInVertically { height -> height } + fadeIn(animationSpec = tween(animationDuration / 2)))
+                            .togetherWith(slideOutVertically { height -> -height } + fadeOut(animationSpec = tween(animationDuration / 2)))
+                    },
+                    label = "Supplier Name Animation"
+                ) { targetText ->
+                    Text(
+                        text = targetText,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 8.dp)
+                    )
+                }
             }
         }
     }
