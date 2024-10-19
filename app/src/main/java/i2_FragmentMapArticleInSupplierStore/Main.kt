@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.automirrored.filled.NotListedLocation
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -58,7 +56,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,12 +86,8 @@ fun FragmentMapArticleInSupplierStore(
     ) {
         val filteredArticles = uiState.tabelleSupplierArticlesRecived
             .filter { article ->
-                if (uiState.showOnlyWithFilter) {
-                    article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked &&
-                            article.itsInFindedAskSupplierSA
-                } else {
-                    article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked
-                }
+                article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked &&
+                        (!uiState.showOnlyWithFilter || article.itsInFindedAskSupplierSA)
             }
         Pair(filteredArticles) {
             viewModel.toggleFilter()
@@ -102,9 +95,19 @@ fun FragmentMapArticleInSupplierStore(
     }
 
     Scaffold { innerPadding ->
-        Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = modifier
+            .fillMaxSize()
+            .padding(innerPadding)) {
             Column {
-                if (showFab) { DisplaySupplierCard(uiState, idSupplierOfFloatingButtonClicked, viewModel, onIdSupplierChanged, modifier) }
+                if (showFab) {
+                    CardProgressBarWithDisplaySuppAndNext(
+                        uiState = uiState,
+                        idSupplier = idSupplierOfFloatingButtonClicked,
+                        viewModel = viewModel,
+                        onIdSupplierChanged = onIdSupplierChanged,
+                        modifier = modifier
+                    )
+                }
                 ArticlesList(articlesFilterByIdSupp, uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
@@ -127,6 +130,89 @@ fun FragmentMapArticleInSupplierStore(
             place = place,
             viewModel = viewModel
         )
+    }
+}
+
+@Composable
+fun CardProgressBarWithDisplaySuppAndNext(
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    idSupplier: Long?,
+    viewModel: HeadOfViewModels,
+    onIdSupplierChanged: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var progressValue by remember { mutableStateOf(100f) }
+    var isAnimating by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var job by remember { mutableStateOf<Job?>(null) }
+
+    val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }
+    val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == supplier?.classmentSupplier?.minus(1.0) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(24.dp)
+            .clickable {
+                if (!isAnimating) {
+                    isAnimating = true
+                    job = scope.launch {
+                        repeat(100) {
+                            delay(10)
+                            if (isAnimating) {
+                                progressValue = 100f - it
+                                if (progressValue <= 0f) {
+                                    moveNonFindefArticles(
+                                        uiState,
+                                        viewModel,
+                                        idSupplier,
+                                        onIdSupplierChanged
+                                    )
+                                    isAnimating = false
+                                    progressValue = 100f
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    isAnimating = false
+                    job?.cancel()
+                    progressValue = 100f
+                }
+            },
+        shape = MaterialTheme.shapes.small,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Red background
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.3f)
+                    .background(Color.Red)
+            )
+
+            // Progress bar
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progressValue / 100f)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+
+            // Text
+            if (supplier != null) {
+                Text(
+                    text = "${supplier.nomSupplierSu} -> ${nextSupplier?.nomSupplierSu ?: "???"}",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 8.dp)
+                )
+            }
+        }
     }
 }
 @Composable
@@ -206,164 +292,7 @@ fun ArticlesList(
     }
 }
 
-@Composable
-fun ProgressBarWithAnimation(progress: Float, buttonName: String, modifier: Modifier) {
-    var progressValue by remember { mutableStateOf(100f) }
-    var isAnimating by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) }
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(24.dp)
-            .clip(MaterialTheme.shapes.small)
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .clickable {
-                if (!isAnimating) {
-                    isAnimating = true
-                    job = scope.launch {
-                        repeat(100) {
-                            delay(10)
-                            if (isAnimating) {
-                                progressValue = 100f - it
-                                if (progressValue <= 0f) {
-                                    isAnimating = false
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    isAnimating = false
-                    job?.cancel()
-                    progressValue = 100f
-                }
-            }
-    ) {
-        Box(
-            modifier = modifier
-                .fillMaxHeight()
-                .fillMaxWidth(0.3f)
-                .background(Color.Red)
-        )
-
-        Box(
-            modifier = modifier
-                .fillMaxHeight()
-                .fillMaxWidth(progressValue / 100f)
-                .background(MaterialTheme.colorScheme.primary)
-        )
-
-        Text(
-            text = buttonName,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = modifier.align(Alignment.Center)
-        )
-    }
-}
-@Composable
-fun DisplaySupplierCard(
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    idSupplier: Long?,
-    viewModel: HeadOfViewModels,
-    onIdSupplierChanged: (Long) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }
-    val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == supplier?.classmentSupplier?.minus(1.0) }
-
-    var progress by remember { mutableStateOf(0f) }
-    var isPressed by remember { mutableStateOf(false) }
-    var isActionCompleted by remember { mutableStateOf(false) }
-
-    val scope = rememberCoroutineScope()
-
-    Box(modifier = modifier.fillMaxWidth()) {
-        ProgressBarWithAnimation(
-            progress = progress,
-            buttonName = nextSupplier?.nomVocaleArabeDuSupplier?.take(3) ?: "???",
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .padding(top = 24.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Supplier: ${supplier?.nomSupplierSu ?: "Unknown"}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Next: ${nextSupplier?.nomVocaleArabeDuSupplier ?: "Unknown"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(4.dp)
-                        .clickable {
-                            if (!isPressed) {
-                                isPressed = true
-                                isActionCompleted = false
-                                progress = 0f
-
-                                scope.launch {
-                                    repeat(100) {
-                                        delay(10)
-                                        if (isPressed) {
-                                            progress = (it + 1).toFloat()
-                                            if (progress >= 100f) {
-                                                moveNonFindefArticles(uiState, viewModel, idSupplier, onIdSupplierChanged)
-                                                isActionCompleted = true
-                                                isPressed = false
-                                            }
-                                        } else {
-                                            return@launch
-                                        }
-                                    }
-                                }
-                            } else {
-                                isPressed = false
-                                progress = 0f
-                                isActionCompleted = false
-                            }
-                        }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        isPressed = !isPressed
-                        if (!isPressed) {
-                            progress = 0f
-                            isActionCompleted = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = when {
-                            isActionCompleted -> Color.Yellow
-                            isPressed -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.secondary
-                        }
-                    )
-                ) {
-                    Text(if (isPressed) "Cancel" else "Move to Next Supplier")
-                }
-            }
-        }
-    }
-}
 @Composable
 fun ArticleItemOfPlace(
     article: TabelleSupplierArticlesRecived,
