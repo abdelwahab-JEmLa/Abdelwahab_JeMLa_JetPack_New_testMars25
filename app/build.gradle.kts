@@ -11,7 +11,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.abdelwahabjemlajetpack"
+        applicationId = "com.example.abdelwahabclientjetpack"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

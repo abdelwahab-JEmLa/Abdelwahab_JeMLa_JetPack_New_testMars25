@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Timer
@@ -544,14 +543,12 @@ object NavigationItems {
         Screen.FragmentMapArticleInSupplierStoreFragment,
         Screen.EntreBonsGro,
         Screen.Credits,
-        Screen.CreditsClients,
         Screen.FactoryClassemntsArticles,
         Screen.EditDatabaseWithCreateNewArticles ,
     )
 }
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
     data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
-    data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
     data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
     data  object Fragment_SupplierArticlesRecivedManager : Screen("Fragment_SupplierArticlesRecivedManager", Icons.Default.LiveTv, "Fragment_SupplierArticlesRecivedManager", Color(0xFFF44336))
     data object FragmentMapArticleInSupplierStoreFragment : Screen(
