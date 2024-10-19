@@ -106,7 +106,6 @@ fun FragmentMapArticleInSupplierStore(
             .fillMaxSize()
             .padding(innerPadding)) {
             Column {
-                if (showFab) {
                     CardProgressBarWithDisplaySuppAndNext(
                         uiState = uiState,
                         idSupplier = idSupplierOfFloatingButtonClicked,
@@ -114,7 +113,7 @@ fun FragmentMapArticleInSupplierStore(
                         onIdSupplierChanged = onIdSupplierChanged,
                         modifier = modifier
                     )
-                }
+
                 ArticlesList(articlesFilterByIdSupp, uiState, viewModel, modifier) { showFab = !showFab }
             }
             if (showFab) {
@@ -156,7 +155,7 @@ fun CardProgressBarWithDisplaySuppAndNext(
     val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }
     val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == supplier?.classmentSupplier?.minus(1.0) }
 
-    val animationDuration = 3000 // Increased to 3 seconds
+    val animationDuration = 5000 // Increased to 3 seconds
 
     val progress by animateFloatAsState(
         targetValue = if (isAnimating) 0f else 1f,
