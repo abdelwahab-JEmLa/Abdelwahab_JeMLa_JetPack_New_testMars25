@@ -59,7 +59,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,8 +72,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import i_SupplierArticlesRecivedManager.WindowArticleDetail
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 @Composable
 fun FragmentMapArticleInSupplierStore(
@@ -149,13 +146,11 @@ fun CardProgressBarWithDisplaySuppAndNext(
     modifier: Modifier = Modifier
 ) {
     var isAnimating by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) }
 
     val supplier = uiState.tabelleSuppliersSA.find { it.idSupplierSu == idSupplier }
     val nextSupplier = uiState.tabelleSuppliersSA.find { it.classmentSupplier == supplier?.classmentSupplier?.minus(1.0) }
 
-    val animationDuration = 5000 // Increased to 3 seconds
+    val animationDuration = 5000 //  seconds
 
     val progress by animateFloatAsState(
         targetValue = if (isAnimating) 0f else 1f,
@@ -180,17 +175,7 @@ fun CardProgressBarWithDisplaySuppAndNext(
             .fillMaxWidth()
             .padding(6.dp)
             .height(40.dp)
-            .clickable {
-                if (!isAnimating) {
-                    isAnimating = true
-                    job = scope.launch {
-                        // Animation is now handled by Compose
-                    }
-                } else {
-                    isAnimating = false
-                    job?.cancel()
-                }
-            },
+            .clickable { isAnimating = !isAnimating },
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
@@ -213,15 +198,18 @@ fun CardProgressBarWithDisplaySuppAndNext(
                     },
                     label = "Supplier Name Animation"
                 ) { targetText ->
-                    Text(
-                        text = targetText,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(horizontal = 8.dp)
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = targetText,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
