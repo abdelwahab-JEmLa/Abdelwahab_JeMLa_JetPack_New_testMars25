@@ -11,15 +11,16 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +28,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -83,6 +87,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.abdelwahabjemlajetpack.R
+import h_FactoryClassemntsArticles.AutoResizedTextClas
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -106,10 +111,8 @@ enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
         Triple("monPrixVent", "M.P.V", false)
     )) ,
     NomArticle(listOf(Triple("nomArticleFinale", "", true))),
-    Categorie(listOf(Triple("nomCategorie", "", true))),
-
+    Categorie(listOf(Triple("nomCategorie", "", true) )),
 }
-
 
 @Composable
 fun ArticleDetailWindow(
@@ -205,20 +208,10 @@ fun ArticleDetailWindow(
                                 fieldsGroup.fields.forEach { (column, abbr, _) ->
                                     when (fieldsGroup) {
                                         FieldsDisplayer.Categorie -> {
-                                            CategorySelector(
-                                                startCategory = article.nomCategorie,
-                                                categories = uiState.categoriesECB,
-                                                onCategorySelected = { selectedCategory ->
-                                                    viewModel.updateArticleCategory(
-                                                        article.idArticle,
-                                                        selectedCategory.idCategorieInCategoriesTabele,
-                                                        selectedCategory.nomCategorieInCategoriesTabele
-                                                    )
-                                                    currentChangingField = "nomCategorie"
-                                                },
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .height(67.dp)
+                                            DisplayCategoryField(
+                                                uiState=uiState,
+                                                viewModel = viewModel,
+                                                article = article
                                             )
                                         }
                                         FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
@@ -334,77 +327,203 @@ fun ArticleDetailWindow(
         }
     }
 }
+
+// Update the DisplayField composable to handle the category field
 @Composable
-fun ArticleToggleButton(
+fun DisplayField(
+    columnToChange: String,
+    abbreviation: String,
+    currentChangingField: String,
     article: DataBaseArticles,
     viewModel: HeadOfViewModels,
-    modifier: Modifier = Modifier
+    displayeInOutlines: Boolean,
+    modifier: Modifier = Modifier,
+    onValueChanged: (String) -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
-    Button(
-        onClick = { viewModel.toggleAffichageUniteState(article) },
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (article.affichageUniteState)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.error
-        ),
-        modifier = modifier.fillMaxWidth()
+    when {
+
+        displayeInOutlines -> {
+            OutlineTextECB(
+                columnToChange,
+                abbreviation,
+                currentChangingField,
+                article,
+                viewModel,
+                modifier,
+                onValueChanged,
+                uiState = uiState
+            )
+        }
+        else -> {
+            InfoBoxWhithVoiceInpute(
+                columnToChange = columnToChange,
+                abbreviation = abbreviation,
+                article = article,
+                displayeInOutlines = displayeInOutlines,
+                modifier = modifier
+            )
+        }
+    }
+}
+@Composable
+fun DisplayCategoryField(
+    article: DataBaseArticles,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier = Modifier,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
+) {
+    var showCategorySelection by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .clickable { showCategorySelection = true }
+            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.extraSmall)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = if (article.affichageUniteState) "Cacher les Unités" else "Afficher les Unités"
+            text = article.nomCategorie,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    if (showCategorySelection) {
+        CategorySelectionWindow(
+            categories = uiState.categoriesECB,
+            onDismiss = { showCategorySelection = false },
+            onCategorySelected = { selectedCategory ->
+                viewModel.updateArticleCategory(
+                    article.idArticle,
+                    selectedCategory.idCategorieInCategoriesTabele,
+                    selectedCategory.nomCategorieInCategoriesTabele
+                )
+                viewModel.updateCurrentEditedArticle(article)
+
+                showCategorySelection = false
+            }
         )
     }
 }
 @Composable
-fun CategorySelector(
-    startCategory: String,
+fun CategorySelectionWindow(
     categories: List<CategoriesTabelleECB>,
+    onDismiss: () -> Unit,
     onCategorySelected: (CategoriesTabelleECB) -> Unit,
-    modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var currentCategory by remember { mutableStateOf(startCategory) }
-
     val filteredCategories = remember(searchQuery, categories) {
-        if (searchQuery.length >= 3) {
-            categories.filter { it.nomCategorieInCategoriesTabele.contains(searchQuery, ignoreCase = true) }
+        if (searchQuery.isEmpty()) {
+            categories
         } else {
-            emptyList()
+            categories.filter {
+                it.nomCategorieInCategoriesTabele.contains(searchQuery, ignoreCase = true)
+            }
         }
     }
 
-    Column(modifier = modifier) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = {
-                searchQuery = it
-                expanded = it.length >= 3
-                currentCategory = searchQuery
-            },
-            label = { Text(currentCategory) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f),
+            shape = MaterialTheme.shapes.large
         ) {
-            filteredCategories.forEach { category ->
-                DropdownMenuItem(
-                    text = { Text(category.nomCategorieInCategoriesTabele) },
-                    onClick = {
-                        onCategorySelected(category)
-                        expanded = false
-                        searchQuery = ""
-                        currentCategory= category.nomCategorieInCategoriesTabele
-                    }
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "Select Category",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    placeholder = { Text("Search categories") },
+                    singleLine = true
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    contentPadding = PaddingValues(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(filteredCategories) { category ->
+                        CategoryItem(
+                            category = category,
+                            onClick = onCategorySelected
+                        )
+                    }
+                }
             }
         }
     }
 }
+
+@Composable
+fun CategoryItem(
+    category: CategoriesTabelleECB,
+    onClick: (CategoriesTabelleECB) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxWidth()
+            .clickable(onClick = { onClick(category) }),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            AutoResizedTextClas(category.nomCategorieInCategoriesTabele)
+        }
+    }
+}
+
+@Composable
+fun InfoBoxWhithVoiceInpute(
+    columnToChange: String,
+    abbreviation: String,
+    article: DataBaseArticles,
+    displayeInOutlines: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val displayValue = when (val columnValue = article.getColumnValue(columnToChange)) {
+        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
+        is Int -> columnValue.toString()
+        else -> columnValue?.toString() ?: ""
+    }
+    Box(
+        modifier = modifier
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outline,
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(
+                top = if (displayeInOutlines) 10.dp else 15.dp,
+                start = 4.dp,
+                end = 4.dp
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        AutoResizedTextECB(
+            text = "$abbreviation -> $displayValue",
+            color = MaterialTheme.colorScheme.error
+        )
+    }
+}
+
+
 
 @Composable
 fun OutlineTextECB(
@@ -468,105 +587,8 @@ fun OutlineTextECB(
         )
     )
 }
-@Composable
-fun DisplayField(
-    columnToChange: String,
-    abbreviation: String,
-    currentChangingField: String,
-    article: DataBaseArticles,
-    viewModel: HeadOfViewModels,
-    displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier,
-    onValueChanged: (String) -> Unit,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels
-) {
-    if (displayeInOutlines) {
-        OutlineTextECB(
-            columnToChange,
-            abbreviation,
-            currentChangingField,
-            article,
-            viewModel,
-            modifier,
-            onValueChanged,
-            uiState=uiState
-        )
-    } else {
-        InfoBoxWhithVoiceInpute(
-            columnToChange = columnToChange,
-            abbreviation = abbreviation,
-            article = article,
-            displayeInOutlines = displayeInOutlines,
-            modifier = modifier
-        )
-    }
-}
-@Composable
-fun InfoBoxWhithVoiceInpute(
-    columnToChange: String,
-    abbreviation: String,
-    article: DataBaseArticles,
-    displayeInOutlines: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val displayValue = when (val columnValue = article.getColumnValue(columnToChange)) {
-        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
-        is Int -> columnValue.toString()
-        else -> columnValue?.toString() ?: ""
-    }
-    Box(
-        modifier = modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.extraSmall
-            )
-            .padding(
-                top = if (displayeInOutlines) 10.dp else 15.dp,
-                start = 4.dp,
-                end = 4.dp
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        AutoResizedTextECB(
-            text = "$abbreviation -> $displayValue",
-            color = MaterialTheme.colorScheme.error
-        )
-    }
-}
 
- //CategoryHeaderECB
-@Composable
-fun CategoryHeaderECB(
-    category: CategoriesTabelleECB,
-    viewModel: HeadOfViewModels,
-    isSelected: Boolean,
-    onNewArticleAdded: (DataBaseArticles) -> Unit ,
-    onCategoryClick: (CategoriesTabelleECB) -> Unit
- ) {
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
-
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = category.nomCategorieInCategoriesTabele,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(16.dp)
-                    .clickable { onCategoryClick(category) }
-            )
-            AddArticleButton(viewModel ,category, onNewArticleAdded)
-        }
-    }
-}
 
 @Composable
 private fun rememberCameraLauncher(
@@ -707,7 +729,27 @@ fun DisplayColorsCards(article: DataBaseArticles, viewModel: HeadOfViewModels, m
         }
     }
 }
-
+@Composable
+fun ArticleToggleButton(
+    article: DataBaseArticles,
+    viewModel: HeadOfViewModels,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = { viewModel.toggleAffichageUniteState(article) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (article.affichageUniteState)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.error
+        ),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = if (article.affichageUniteState) "Cacher les Unités" else "Afficher les Unités"
+        )
+    }
+}
 @Composable
 private fun AddColorCard(
     onClickCreatUniteImages: () -> Unit,
@@ -739,31 +781,6 @@ private fun AddColorCard(
                     modifier = Modifier.size(48.dp)
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun UniteImageCard(
-    article: DataBaseArticles,
-    viewModel: HeadOfViewModels,
-    onReloadTrigger: () -> Unit,
-    relodeTigger: Int
-) {
-    Card(
-        modifier = Modifier
-            .size(200.dp)
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            DisplayeImageECB(
-                article = article,
-                viewModel = viewModel,
-                index = -1, // Use a special index for unite image
-                reloadKey = relodeTigger
-            )
         }
     }
 }

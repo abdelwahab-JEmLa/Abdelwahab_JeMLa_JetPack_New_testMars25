@@ -380,7 +380,7 @@ fun AppNavHost(
                 MainFragmentEditDatabaseWithCreateNewArticles(
                     viewModel = viewModels.headOfViewModels,
                     onToggleNavBar = onToggleNavBar ,
-                    onNewArticleAdded={dialogeDisplayeDetailleChanger=it} ,
+                    onClickToOpenWinInfoDataBase={dialogeDisplayeDetailleChanger=it} ,
                     reloadTrigger=reloadTrigger
                 )
                 if (uploadProgress > 0f && uploadProgress < 100f) {
