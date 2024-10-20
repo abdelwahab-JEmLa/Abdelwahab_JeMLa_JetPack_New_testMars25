@@ -1,6 +1,5 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.EditCalendar
@@ -23,11 +21,9 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,9 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @Composable
 fun FloatingActionButtons(
@@ -57,7 +51,6 @@ fun FloatingActionButtons(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     onToggleModeClickDispo: () -> Unit
 ) {
-    var showCategorySelection by remember { mutableStateOf(false) }
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
     var currentGridColumns by remember { mutableIntStateOf(2) }
     var showContentDescription by remember { mutableStateOf(false) }
@@ -112,7 +105,6 @@ fun FloatingActionButtons(
                 if (!showModeClickDispo) {
                     val buttons = listOf(
                         Triple(Icons.Default.EditCalendar, "Outline Filter", onToggleOutlineFilter),
-                        Triple(Icons.Default.Category, "Category") { showCategorySelection = true },
                         Triple(Icons.Default.Home, "Home", onToggleNavBar),
                         Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
                         Triple(Icons.Default.PermMedia, "Database Editor") {
@@ -169,61 +161,4 @@ fun FloatingActionButtons(
                 contentDescription = "Toggle Floating Buttons"
             )
         }
-    }
-
-    AddCategoryDialog(
-        showDialog = showCategorySelection,
-        onDismiss = { showCategorySelection = false },
-        onAddCategory = { newCategoryName ->
-            coroutineScope.launch {
-                val maxId = uiState.categoriesECB.maxByOrNull { it.idCategorieInCategoriesTabele }?.idCategorieInCategoriesTabele ?: 0
-                val newCategory = CategoriesTabelleECB(
-                    idCategorieInCategoriesTabele = maxId + 1,
-                    idClassementCategorieInCategoriesTabele = 1.0,
-                    nomCategorieInCategoriesTabele = newCategoryName
-                )
-                viewModel.addNewCategory(newCategory)
-            }
-        }
-    )
-}
-
-@Composable
-fun AddCategoryDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onAddCategory: (String) -> Unit,
-) {
-    var categoryName by remember { mutableStateOf("") }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Add New Category") },
-            text = {
-                OutlinedTextField(
-                    value = categoryName,
-                    onValueChange = { categoryName = it },
-                    label = { Text("Category Name") }
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (categoryName.isNotBlank()) {
-                            onAddCategory(categoryName)
-                            onDismiss()
-                        }
-                    }
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                Button(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
+}}

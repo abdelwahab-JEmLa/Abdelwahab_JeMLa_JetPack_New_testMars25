@@ -395,6 +395,7 @@ fun DisplayCategoryField(
 
     if (showCategorySelection) {
         CategorySelectionWindow(
+            viewModel = viewModel,
             categories = uiState.categoriesECB,
             onDismiss = { showCategorySelection = false },
             onCategorySelected = { selectedCategory ->
@@ -414,8 +415,12 @@ fun CategorySelectionWindow(
     categories: List<CategoriesTabelleECB>,
     onDismiss: () -> Unit,
     onCategorySelected: (CategoriesTabelleECB) -> Unit,
+    viewModel: HeadOfViewModels // Add proper ViewModel type here
 ) {
+    var showCategorySelection by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+
     val filteredCategories = remember(searchQuery, categories) {
         if (searchQuery.isEmpty()) {
             categories
@@ -434,11 +439,21 @@ fun CategorySelectionWindow(
             shape = MaterialTheme.shapes.large
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "Select Category",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Select Category",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    IconButton(onClick = { showCategorySelection = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Category")
+                    }
+                }
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -464,6 +479,65 @@ fun CategorySelectionWindow(
                 }
             }
         }
+    }
+
+    AddCategoryDialog(
+        showDialog = showCategorySelection,
+        onDismiss = { showCategorySelection = false },
+        onAddCategory = { newCategoryName ->
+            coroutineScope.launch {
+                val maxId = categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0
+                val newCategory = CategoriesTabelleECB(
+                    idCategorieInCategoriesTabele = maxId + 1,
+                    idClassementCategorieInCategoriesTabele = 1.0,
+                    nomCategorieInCategoriesTabele = newCategoryName
+                )
+                viewModel.addNewCategory(newCategory)
+                showCategorySelection = false
+            }
+        }
+    )
+}
+
+@Composable
+fun AddCategoryDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onAddCategory: (String) -> Unit,
+) {
+    var categoryName by remember { mutableStateOf("") }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Add New Category") },
+            text = {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text("Category Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (categoryName.isNotBlank()) {
+                            onAddCategory(categoryName)
+                            categoryName = "" // Reset the input
+                            onDismiss()
+                        }
+                    }
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
