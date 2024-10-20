@@ -211,7 +211,10 @@ fun ArticleDetailWindow(
                                             DisplayCategoryField(
                                                 uiState=uiState,
                                                 viewModel = viewModel,
-                                                article = article
+                                                article = article ,
+                                                onWentToUpdateDataBaseArt = {
+                                                    viewModel.updateCurrentEditedArticle(article)
+                                                }
                                             )
                                         }
                                         FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
@@ -371,6 +374,7 @@ fun DisplayCategoryField(
     article: DataBaseArticles,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
+    onWentToUpdateDataBaseArt: (DataBaseArticles) -> Unit,
     uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
     var showCategorySelection by remember { mutableStateOf(false) }
@@ -399,8 +403,7 @@ fun DisplayCategoryField(
                     selectedCategory.idCategorieInCategoriesTabele,
                     selectedCategory.nomCategorieInCategoriesTabele
                 )
-                viewModel.updateCurrentEditedArticle(article)
-
+                onWentToUpdateDataBaseArt(article)
                 showCategorySelection = false
             }
         )
