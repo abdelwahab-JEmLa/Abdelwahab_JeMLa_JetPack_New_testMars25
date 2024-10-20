@@ -60,75 +60,109 @@ fun FloatingActionButtons(
     var showCategorySelection by remember { mutableStateOf(false) }
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
     var currentGridColumns by remember { mutableIntStateOf(2) }
-    val maxGridColumns = 4
     var showContentDescription by remember { mutableStateOf(false) }
-    var showonToggleModeClickDispo by remember { mutableStateOf(false) }
+    var showModeClickDispo by remember { mutableStateOf(false) }
+    val maxGridColumns = 4
 
     Column {
-        if (showFloatingButtons&&!showonToggleModeClickDispo) {
-            Triple(if (showonToggleModeClickDispo) Icons.Default.Close else Icons.Default.Person, "onToggleModeClickDispo")
-            { onToggleModeClickDispo ()
-                showonToggleModeClickDispo=!showonToggleModeClickDispo
-            }
-        }
-
         if (showFloatingButtons) {
-            val buttons = listOf(
-
-                Triple(Icons.Default.EditCalendar, "outline Filter", onToggleOutlineFilter),
-                Triple(Icons.Default.Category, "Category") { showCategorySelection = true },
-                Triple(Icons.Default.Home, "Home", onToggleNavBar),
-                Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
-                Triple(Icons.Default.PermMedia, "Database Editor") {
-                    showDialogeDataBaseEditer = true
-                },
-                Triple(Icons.Default.GridView, "Change Grid") {
-                    currentGridColumns = (currentGridColumns % maxGridColumns) + 1
-                    onChangeGridColumns(currentGridColumns)
-                },
-                Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
-                    showContentDescription = !showContentDescription
-                }
-            )
-
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.End
             ) {
-                buttons.forEach { (icon, contentDescription, onClick) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    ) {
-                        if (showContentDescription) {
-                            Card(
-                                modifier = Modifier
-                                    .padding(end = 8.dp)
-                                    .heightIn(min = 30.dp)
+                // ModeClickDispo button is always shown when showFloatingButtons is true
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    if (showContentDescription) {
+                        Card(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .heightIn(min = 30.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.CenterStart,
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.CenterStart,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                ) {
-                                    Text(
-                                        text = contentDescription,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                                Text(
+                                    text = "Mode Click Dispo",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
-                        FloatingActionButton(
-                            onClick = onClick ,
-                            modifier = Modifier.size(56.dp)
+                    }
+                    FloatingActionButton(
+                        onClick = {
+                            onToggleModeClickDispo()
+                            showModeClickDispo = !showModeClickDispo
+                        },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            if (showModeClickDispo) Icons.Default.Close else Icons.Default.Person,
+                            contentDescription = "Mode Click Dispo"
+                        )
+                    }
+                }
+
+                // Other buttons are only shown when ModeClickDispo is not active
+                if (!showModeClickDispo) {
+                    val buttons = listOf(
+                        Triple(Icons.Default.EditCalendar, "Outline Filter", onToggleOutlineFilter),
+                        Triple(Icons.Default.Category, "Category") { showCategorySelection = true },
+                        Triple(Icons.Default.Home, "Home", onToggleNavBar),
+                        Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
+                        Triple(Icons.Default.PermMedia, "Database Editor") {
+                            showDialogeDataBaseEditer = true
+                        },
+                        Triple(Icons.Default.GridView, "Change Grid") {
+                            currentGridColumns = (currentGridColumns % maxGridColumns) + 1
+                            onChangeGridColumns(currentGridColumns)
+                        },
+                        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
+                            showContentDescription = !showContentDescription
+                        }
+                    )
+
+                    buttons.forEach { (icon, contentDescription, onClick) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 16.dp)
                         ) {
-                            Icon(icon, contentDescription = contentDescription)
+                            if (showContentDescription) {
+                                Card(
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .heightIn(min = 30.dp)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.CenterStart,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = contentDescription,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                            FloatingActionButton(
+                                onClick = onClick,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Icon(icon, contentDescription = contentDescription)
+                            }
                         }
                     }
                 }
             }
         }
+
+        // Toggle button is always visible
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
                 if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -150,12 +184,9 @@ fun FloatingActionButtons(
                 )
                 viewModel.addNewCategory(newCategory)
             }
-        },
+        }
     )
 }
-
-
-
 
 @Composable
 fun AddCategoryDialog(
