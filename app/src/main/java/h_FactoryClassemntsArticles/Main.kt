@@ -174,7 +174,6 @@ fun FloatingActionButtonGroup(
     }
 }
 
-
 class ClassementsArticlesViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance()
     private val refClassmentsArtData = database.getReference("H_ClassementsArticlesTabel")

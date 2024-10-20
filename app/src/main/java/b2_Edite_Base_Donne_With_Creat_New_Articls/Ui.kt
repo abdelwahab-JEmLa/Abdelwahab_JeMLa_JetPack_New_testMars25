@@ -1,9 +1,9 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
-import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
+import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
 import android.net.Uri
 import android.util.Log
@@ -11,7 +11,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -538,13 +540,17 @@ fun InfoBoxWhithVoiceInpute(
 fun CategoryHeaderECB(
     category: CategoriesTabelleECB,
     viewModel: HeadOfViewModels,
-    onNewArticleAdded: (DataBaseArticles) -> Unit
-) {
+    isSelected: Boolean,
+    onNewArticleAdded: (DataBaseArticles) -> Unit ,
+    onCategoryClick: (CategoriesTabelleECB) -> Unit
+ ) {
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -555,6 +561,7 @@ fun CategoryHeaderECB(
                 text = category.nomCategorieInCategoriesTabele,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
+                    .clickable { onCategoryClick(category) }
             )
             AddArticleButton(viewModel ,category, onNewArticleAdded)
         }

@@ -128,6 +128,51 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+    fun goUpAndshiftsAutersDownCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
+        viewModelScope.launch {
+            // Get current categories from uiState
+            val currentCategories = _uiState.value.categoriesECB
+
+            // Reorder categories
+            val updatedCategories = reorderCategories(currentCategories, fromCategoryId, toCategoryId)
+
+            // Update the state with new categories
+            _uiState.update { currentState ->
+                currentState.copy(categoriesECB = updatedCategories)
+            }
+
+            // Update Firebase
+            updateFirebaseCategories(updatedCategories)
+        }
+    }
+
+    private fun reorderCategories(
+        categories: List<CategoriesTabelleECB>,
+        fromCategoryId: Long,
+        toCategoryId: Long
+    ): List<CategoriesTabelleECB> {
+        val mutableCategories = categories.toMutableList()
+        val fromIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == fromCategoryId }
+        val toIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == toCategoryId }
+
+        if (fromIndex != -1 && toIndex != -1) {
+            val movedCategory = mutableCategories.removeAt(fromIndex)
+            mutableCategories.add(toIndex, movedCategory)
+            return mutableCategories.mapIndexed { index, category ->
+                category.copy(idClassementCategorieInCategoriesTabele = (index + 1).toDouble())
+            }
+        }
+        return categories
+    }
+
+    private suspend fun updateFirebaseCategories(categories: List<CategoriesTabelleECB>) {
+        refCategorieTabelee.removeValue().await()
+        categories.forEach { category ->
+            refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString())
+                .setValue(category).await()
+        }
+    }
+
     fun updateArticleStatus(article: TabelleSupplierArticlesRecived) {
         viewModelScope.launch {
             try {

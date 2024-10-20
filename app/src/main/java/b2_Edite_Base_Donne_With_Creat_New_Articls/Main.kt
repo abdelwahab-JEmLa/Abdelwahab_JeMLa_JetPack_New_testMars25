@@ -46,6 +46,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     var filterNonDispo by remember { mutableStateOf(false) }
     var outlineFilter by remember { mutableStateOf(false) }
     var filterText by remember { mutableStateOf("") }
+    var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -84,6 +85,20 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 onNewArticleAdded = { newArticle ->
                                     onNewArticleAdded(newArticle)
                                     Log.d("MainFragment", "New article added: $newArticle")
+                                } ,
+                                isSelected = holdedIdCateForMove == category.idCategorieInCategoriesTabele,
+                                onCategoryClick = { clickedCategory ->
+                                    if (holdedIdCateForMove == null) {
+                                        holdedIdCateForMove = clickedCategory.idCategorieInCategoriesTabele
+                                    } else if (holdedIdCateForMove != clickedCategory.idCategorieInCategoriesTabele) {
+                                        viewModel.goUpAndshiftsAutersDownCategoryPositions(
+                                            holdedIdCateForMove!!,
+                                            clickedCategory.idCategorieInCategoriesTabele
+                                        )
+                                        holdedIdCateForMove = null
+                                    } else {
+                                        holdedIdCateForMove = null
+                                    }
                                 }
                             )
                         }
