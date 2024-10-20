@@ -128,6 +128,47 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+    fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
+        viewModelScope.launch {
+            try {
+                // Update the state with new article disponibility
+                _uiState.update { currentState ->
+                    val updatedArticles = updateArticleDisponibilityState(
+                        currentState.articlesBaseDonneECB,
+                        articleId,
+                        newDisponibilityState
+                    )
+                    currentState.copy(articlesBaseDonneECB = updatedArticles)
+                }
+
+                // Update Firebase
+                refClassmentsArtData
+                    .child(articleId.toString())
+                    .child("diponibilityState")
+                    .setValue(newDisponibilityState)
+                    .await()
+            } catch (e: Exception) {
+                // Handle error if needed
+                _uiState.update { currentState ->
+                    currentState.copy(error = e.message)
+                }
+            }
+        }
+    }
+
+    private fun updateArticleDisponibilityState(
+        articles: List<DataBaseArticles>,
+        articleId: Long,
+        newDisponibilityState: String
+    ): List<DataBaseArticles> {
+        return articles.map { article ->
+            if (article.idArticle.toLong() == articleId) {
+                article.copy(diponibilityState = newDisponibilityState)
+            } else {
+                article
+            }
+        }
+    }
     fun goUpAndshiftsAutersDownCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
         viewModelScope.launch {
             // Get current categories from uiState

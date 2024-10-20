@@ -45,8 +45,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
     var outlineFilter by remember { mutableStateOf(false) }
-    var filterText by remember { mutableStateOf("") }
+    var filterText by remember { mutableStateOf("")}
+
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
+    var clickChangeDispoMode by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -106,9 +108,12 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                             ArticleItemECB(
                                 article = article,
                                 onClickOnImg = { clickedArticle ->
-                                    Log.d("MainFragment", "Article clicked: $clickedArticle")
-                                    onNewArticleAdded(clickedArticle)
-                                    viewModel.updateCurrentEditedArticle(clickedArticle)
+                                    if (!clickChangeDispoMode) {
+                                        onNewArticleAdded(clickedArticle)
+                                        viewModel.updateCurrentEditedArticle(clickedArticle)
+                                    } else {
+                                            viewModel.updateArticleDisponibility(clickedArticle.idArticle.toLong(),  getNextDisponibilityState(clickedArticle.diponibilityState))
+                                    }
                                 },
                                 viewModel = viewModel,
                                 reloadTrigger = reloadTrigger
@@ -139,10 +144,18 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 coroutineScope = coroutineScope,
                 onChangeGridColumns = { gridColumns = it },
                 uiState = uiState,
-                onToggleOutlineFilter = { outlineFilter = !outlineFilter }
+                onToggleOutlineFilter = { outlineFilter = !outlineFilter } ,
+                onToggleModeClickDispo = { clickChangeDispoMode = !clickChangeDispoMode
+                    showFloatingButtons=false} ,
             )
         }
     }
+}
+
+fun getNextDisponibilityState(currentState: String): String = when (currentState) {
+    "" -> "Non Dispo"
+    "Non Dispo" -> "NonForNewsClients"
+    else -> ""
 }
 @Composable
 fun ArticleItemECB(

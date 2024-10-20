@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PermMedia
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -53,22 +54,80 @@ fun FloatingActionButtons(
     viewModel: HeadOfViewModels,
     coroutineScope: CoroutineScope,
     onChangeGridColumns: (Int) -> Unit,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+    onToggleModeClickDispo: () -> Unit
 ) {
     var showCategorySelection by remember { mutableStateOf(false) }
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
+    var currentGridColumns by remember { mutableIntStateOf(2) }
+    val maxGridColumns = 4
+    var showContentDescription by remember { mutableStateOf(false) }
+    var showonToggleModeClickDispo by remember { mutableStateOf(false) }
 
     Column {
+        if (showFloatingButtons&&!showonToggleModeClickDispo) {
+            Triple(if (showonToggleModeClickDispo) Icons.Default.Close else Icons.Default.Person, "onToggleModeClickDispo")
+            { onToggleModeClickDispo ()
+                showonToggleModeClickDispo=!showonToggleModeClickDispo
+            }
+        }
+
         if (showFloatingButtons) {
-            FloatingActionButtonGroup(
-                onCategorySelectionClick = { showCategorySelection = true },
-                onToggleNavBar = onToggleNavBar,
-                onToggleFilter = onToggleFilter,
-                showOnlyWithFilter = showOnlyWithFilter,
-                onDialogDataBaseEditerClick = { showDialogeDataBaseEditer = true },
-                onChangeGridColumns = onChangeGridColumns,
-                onToggleOutlineFilter=onToggleOutlineFilter
+            val buttons = listOf(
+
+                Triple(Icons.Default.EditCalendar, "outline Filter", onToggleOutlineFilter),
+                Triple(Icons.Default.Category, "Category") { showCategorySelection = true },
+                Triple(Icons.Default.Home, "Home", onToggleNavBar),
+                Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
+                Triple(Icons.Default.PermMedia, "Database Editor") {
+                    showDialogeDataBaseEditer = true
+                },
+                Triple(Icons.Default.GridView, "Change Grid") {
+                    currentGridColumns = (currentGridColumns % maxGridColumns) + 1
+                    onChangeGridColumns(currentGridColumns)
+                },
+                Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
+                    showContentDescription = !showContentDescription
+                }
             )
+
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.End
+            ) {
+                buttons.forEach { (icon, contentDescription, onClick) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    ) {
+                        if (showContentDescription) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .heightIn(min = 30.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.CenterStart,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Text(
+                                        text = contentDescription,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                        FloatingActionButton(
+                            onClick = onClick ,
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Icon(icon, contentDescription = contentDescription)
+                        }
+                    }
+                }
+            }
         }
         FloatingActionButton(onClick = onToggleFloatingButtons) {
             Icon(
@@ -96,74 +155,6 @@ fun FloatingActionButtons(
 }
 
 
-@Composable
-fun FloatingActionButtonGroup(
-    onCategorySelectionClick: () -> Unit,
-    onToggleNavBar: () -> Unit,
-    onToggleFilter: () -> Unit,
-    showOnlyWithFilter: Boolean,
-    onToggleOutlineFilter: () -> Unit,
-    onDialogDataBaseEditerClick: () -> Unit,
-    onChangeGridColumns: (Int) -> Unit,
-) {
-    var currentGridColumns by remember { mutableIntStateOf(2) }
-    val maxGridColumns = 4
-    var showContentDescription by remember { mutableStateOf(false) }
-
-    val buttons = listOf(
-        Triple(Icons.Default.EditCalendar, "outline Filter", onToggleOutlineFilter),
-
-        Triple(Icons.Default.Category, "Category", onCategorySelectionClick),
-        Triple(Icons.Default.Home, "Home", onToggleNavBar),
-        Triple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", onToggleFilter),
-        Triple(Icons.Default.PermMedia, "Database Editor", onDialogDataBaseEditerClick),
-        Triple(Icons.Default.GridView, "Change Grid") {
-            currentGridColumns = (currentGridColumns % maxGridColumns) + 1
-            onChangeGridColumns(currentGridColumns)
-        },
-        Triple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description") {
-            showContentDescription = !showContentDescription
-        }
-    )
-
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.Bottom,
-        horizontalAlignment = Alignment.End
-    ) {
-        buttons.forEach { (icon, contentDescription, onClick) ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                if (showContentDescription) {
-                    Card(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .heightIn(min = 30.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.CenterStart,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Text(
-                                text = contentDescription,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-                FloatingActionButton(
-                    onClick = onClick as () -> Unit,
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Icon(icon, contentDescription = contentDescription)
-                }
-            }
-        }
-    }
-}
 
 
 @Composable
