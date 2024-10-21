@@ -50,7 +50,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val coroutineScope = rememberCoroutineScope()
     var filterNonDispo by remember { mutableStateOf(false) }
     var outlineFilter by remember { mutableStateOf(false) }
-    var filterText by remember { mutableStateOf("")}
+    var filterText by remember { mutableStateOf("") }
 
     var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
     var clickChangeDispoMode by remember { mutableStateOf(false) }
@@ -91,13 +91,13 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 viewModel = viewModel,
                                 onClickToOpenWinInfoDataBase = { newArticle ->
                                     onClickToOpenWinInfoDataBase(newArticle)
-                                } ,
+                                },
                                 isSelected = holdedIdCateForMove == category.idCategorieInCategoriesTabele,
                                 onCategoryClick = { clickedCategory ->
                                     if (holdedIdCateForMove == null) {
                                         holdedIdCateForMove = clickedCategory.idCategorieInCategoriesTabele
                                     } else if (holdedIdCateForMove != clickedCategory.idCategorieInCategoriesTabele) {
-                                        viewModel.goUpAndshiftsAutersDownCategoryPositions(
+                                        viewModel.moveCategory(
                                             holdedIdCateForMove!!,
                                             clickedCategory.idCategorieInCategoriesTabele
                                         )
@@ -116,7 +116,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                         onClickToOpenWinInfoDataBase(clickedArticle)
                                         viewModel.updateCurrentEditedArticle(clickedArticle)
                                     } else {
-                                        viewModel.updateArticleDisponibility(clickedArticle.idArticle.toLong(),  getNextDisponibilityState(clickedArticle.diponibilityState))
+                                        viewModel.updateArticleDisponibility(clickedArticle.idArticle.toLong(), getNextDisponibilityState(clickedArticle.diponibilityState))
                                     }
                                 },
                                 viewModel = viewModel,
@@ -160,8 +160,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                     }
                 },
                 onChangeGridColumns = { gridColumns = it },
-                onToggleModeClickDispo = { clickChangeDispoMode = !clickChangeDispoMode
-                    showFloatingButtons=false},
+                onToggleModeClickDispo = {
+                    clickChangeDispoMode = !clickChangeDispoMode
+                    showFloatingButtons = false
+                },
             )
         }
     }

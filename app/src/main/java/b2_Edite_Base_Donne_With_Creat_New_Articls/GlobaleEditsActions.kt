@@ -2,6 +2,7 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.Close
@@ -217,12 +219,16 @@ private fun CategoryReorderAndSelectionWindow(
                             category = category,
                             isSelected = category in selectedCategories,
                             isMoving = category == movingCategory,
+                            selectionOrder = selectedCategories.indexOf(category) + 1,
                             onClick = {
                                 when {
-                                    multiSelectionMode -> selectedCategories =
-                                        selectedCategories.toMutableList().apply {
-                                            if (contains(category)) remove(category) else add(category)
+                                    multiSelectionMode -> {
+                                        selectedCategories = if (category in selectedCategories) {
+                                            selectedCategories - category
+                                        } else {
+                                            selectedCategories + category
                                         }
+                                    }
                                     movingCategory != null -> {
                                         viewModel.moveCategory(movingCategory!!.idCategorieInCategoriesTabele, category.idCategorieInCategoriesTabele)
                                         movingCategory = null
@@ -277,11 +283,13 @@ private fun CategoryReorderAndSelectionWindow(
         }
     }
 }
+
 @Composable
 fun CategoryItem(
     category: CategoriesTabelleECB,
     isSelected: Boolean,
     isMoving: Boolean,
+    selectionOrder: Int,
     onClick: () -> Unit
 ) {
     Card(
@@ -303,8 +311,18 @@ fun CategoryItem(
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            AutoResizedTextClas(category.nomCategorieInCategoriesTabele, )
+            if (isSelected) {
+                Text(
+                    text = selectionOrder.toString(),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                        .padding(4.dp),
+                    color = MaterialTheme.colorScheme.onSecondary,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+            AutoResizedTextClas(category.nomCategorieInCategoriesTabele)
         }
     }
 }
-
