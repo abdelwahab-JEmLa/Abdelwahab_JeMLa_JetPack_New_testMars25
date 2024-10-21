@@ -65,14 +65,10 @@ class CategoriesRepositoryImpl(
         (categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0) + 1
     }
 
-
-    // Update existing updateCategoryPosition to handle both local and Firebase updates
     override suspend fun updateCategoryPosition(categoryId: Long, newPosition: Int) {
         try {
-            // Update local database
             categoriesDao.updateCategoryPosition(categoryId, newPosition)
 
-            // Update Firebase
             refCategorieTabelee.child(categoryId.toString())
                 .child("idClassementCategorieInCategoriesTabele")
                 .setValue(newPosition)
@@ -105,7 +101,6 @@ class CategoriesRepositoryImpl(
     }
     override suspend fun addNewCategory(categoryName: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            // Create new category with position 1
             val newCategory = CategoriesTabelleECB(
                 idCategorieInCategoriesTabele = getNextCategoryId(),
                 idClassementCategorieInCategoriesTabele = 1,
@@ -115,7 +110,6 @@ class CategoriesRepositoryImpl(
             // Increment all existing positions in one SQL query
             categoriesDao.incrementPositionsFromStartPosition(1)
 
-            // Insert the new category
             categoriesDao.insert(newCategory)
 
             // Update Firebase with new category
@@ -194,8 +188,6 @@ class CategoriesRepositoryImpl(
         }
     }
 }
-
-
 
 @Entity(tableName = "CategoriesTabelleECB")
 data class CategoriesTabelleECB(
