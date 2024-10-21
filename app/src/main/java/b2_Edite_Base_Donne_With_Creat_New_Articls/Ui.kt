@@ -1,7 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
-import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -489,7 +488,7 @@ fun CategorySelectionWindow(
                 val maxId = categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0
                 val newCategory = CategoriesTabelleECB(
                     idCategorieInCategoriesTabele = maxId + 1,
-                    idClassementCategorieInCategoriesTabele = 1.0,
+                    idClassementCategorieInCategoriesTabele = 1,
                     nomCategorieInCategoriesTabele = newCategoryName
                 )
                 viewModel.addNewCategory(newCategory)

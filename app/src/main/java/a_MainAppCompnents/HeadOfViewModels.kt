@@ -8,10 +8,12 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import b2_Edite_Base_Donne_With_Creat_New_Articls.CategoriesRepository
+import b2_Edite_Base_Donne_With_Creat_New_Articls.CategoriesTabelleECB
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import c_ManageBonsClients.roundToOneDecimal
@@ -63,7 +65,10 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
 )
 
 
-class HeadOfViewModels(private val context: Context) : ViewModel() {
+class HeadOfViewModels(
+    private val context: Context,
+    private val repository: CategoriesRepository
+) : ViewModel() {
 
     val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
@@ -128,6 +133,52 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             delay(delayUi)
         }
     }
+
+    init {
+        viewModelScope.launch {
+            repository.getAllCategories().collect { categories ->
+                _uiState.update { it.copy(categoriesECB = categories) }
+            }
+        }
+    }
+    fun syncCategoriesFromFirebase() {
+        viewModelScope.launch {
+            try {
+                repository.importCategoriesFromFirebase()
+                // Optionally update UI or show a success message
+            } catch (e: Exception) {
+                // Handle any errors, update UI or show an error message
+            }
+        }
+    }
+    fun moveCategory(fromCategoryId: Long, toCategoryId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.moveCategory(
+                    fromCategoryId = fromCategoryId,
+                    toCategoryId = toCategoryId
+                )
+            } catch (e: Exception) {
+                // Handle error if needed
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun reorderCategories(fromCategoryId: Long, toCategoryId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.reorderCategories(
+                    fromCategoryId = fromCategoryId,
+                    toCategoryId = toCategoryId
+                )
+            } catch (e: Exception) {
+                // Handle error if needed
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
     fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
         viewModelScope.launch {
             try {
@@ -187,7 +238,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         }
     }
 
-    private fun reorderCategories(
+    fun reorderCategories(
         categories: List<CategoriesTabelleECB>,
         fromCategoryId: Long,
         toCategoryId: Long
@@ -200,7 +251,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
             val movedCategory = mutableCategories.removeAt(fromIndex)
             mutableCategories.add(toIndex, movedCategory)
             return mutableCategories.mapIndexed { index, category ->
-                category.copy(idClassementCategorieInCategoriesTabele = (index + 1).toDouble())
+                category.copy(idClassementCategorieInCategoriesTabele = (index + 1))
             }
         }
         return categories
@@ -269,7 +320,6 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
                     progressDimunuentDe100A0 = 0,
                     end = true
                 )
-                showToast("Timer completed!")
             }
             _isTimerActive.value = false
         }
@@ -285,9 +335,7 @@ class HeadOfViewModels(private val context: Context) : ViewModel() {
         )
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
+
 
     fun importFromFirebase(refFireBase: String ) {
         viewModelScope.launch {
@@ -840,9 +888,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     throw Exception("Article not found for updating in Firebase")
                 }
             } catch (e: Exception) {
-                // Handle the error (e.g., log it or update UI to show error message)
-                Log.e("AddOrUpdateArticlePlacement", "Error adding or updating article placement", e)
-                // You might want to revert the local state update here if the Firebase update fails
             }
         }
     }
@@ -1001,9 +1046,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val articles = fetchArticles()
             updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
-            val categories = fetchCategories()
-            updateUploadProgressBarCounterAndItText("Fetched categories", ++currentStep, 100f)
-
             val colorsArticles = fetchColorsArticles()
             updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
 
@@ -1026,7 +1068,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
             updateUiState(
-                articles, categories, supplierArticlesRecived, suppliersSA,
+                articles, supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
                 placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles
             )
@@ -1050,10 +1092,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
         .sortedBy{ it.classmentSupplier }
 
-    private suspend fun fetchCategories() = refCategorieTabelee.get().await().children
-        .mapNotNull { it.getValue(CategoriesTabelleECB::class.java) }
-        .sortedBy { it.idClassementCategorieInCategoriesTabele }
-
     private suspend fun fetchMapArticleInSupplierStore() = refMapArticleInSupplierStore.get().await().children
         .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
         .sortedBy { it.itClassement }
@@ -1073,7 +1111,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun updateUiState(
         articles: List<DataBaseArticles>,
-        categories: List<CategoriesTabelleECB>,
         supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
         suppliersSA: List<TabelleSuppliersSA>,
         mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
@@ -1084,7 +1121,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
-            categoriesECB = categories,
             tabelleSupplierArticlesRecived = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,
             mapArticleInSupplierStore = mapArticleInSupplierStore,
@@ -1711,6 +1747,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private suspend fun convertToWebP(file: File): ByteArray? {
         return withContext(Dispatchers.IO) {
             try {
@@ -1801,6 +1838,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 val destFile = File(viewModelImagesPath, fileName)
 
                 context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                    //TODO fix Unresolved reference: context
                     destFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
@@ -1950,7 +1988,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
         if (!existingCategories.any { it.nomCategorieInCategoriesTabele == newArticlesCategory }) {
             val newCategory = CategoriesTabelleECB(
-                idClassementCategorieInCategoriesTabele = 0.5,
+                idClassementCategorieInCategoriesTabele = 1,
                 nomCategorieInCategoriesTabele = newArticlesCategory
             )
 
@@ -2102,14 +2140,3 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 }
 
 
-class HeadOfViewModelFactory(
-    private val context: Context,
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HeadOfViewModels::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HeadOfViewModels(context) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}

@@ -155,11 +155,7 @@ data class DataBaseArticles(
     }
 }
 
-data class CategoriesTabelleECB(
-    val idCategorieInCategoriesTabele: Long = 0,
-    var idClassementCategorieInCategoriesTabele: Double = 0.0,
-    val nomCategorieInCategoriesTabele: String = "",
-)
+
 data class PlacesOfArticelsInEacheSupplierSrore(
     val idCombinedIdArticleIdSupplier: String = "",
     val idPlace: Long= 0,

@@ -1,6 +1,5 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.background
@@ -35,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainFragmentEditDatabaseWithCreateNewArticles(
@@ -136,6 +136,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 .zIndex(1f)
         ) {
             FloatingActionButtons(
+                uiState = uiState,
                 showFloatingButtons = showFloatingButtons,
                 onToggleNavBar = onToggleNavBar,
                 onToggleFloatingButtons = { showFloatingButtons = !showFloatingButtons },
@@ -143,14 +144,24 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                     viewModel.toggleFilter()
                     filterNonDispo = !filterNonDispo
                 },
+                onToggleOutlineFilter = { outlineFilter = !outlineFilter },
                 showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
-                coroutineScope = coroutineScope,
+                onCategorySelected = { selectedCategory ->
+                    coroutineScope.launch {
+                        val index =
+                            uiState.categoriesECB.indexOfFirst { it.idCategorieInCategoriesTabele == selectedCategory.idCategorieInCategoriesTabele }
+                        if (index != -1) {
+                            val position = uiState.categoriesECB.take(index).sumOf { category ->
+                                1 + uiState.articlesBaseDonneECB.count { it.idCategorie == category.idCategorieInCategoriesTabele.toDouble() }
+                            }
+                            gridState.scrollToItem(position)
+                        }
+                    }
+                },
                 onChangeGridColumns = { gridColumns = it },
-                uiState = uiState,
-                onToggleOutlineFilter = { outlineFilter = !outlineFilter } ,
                 onToggleModeClickDispo = { clickChangeDispoMode = !clickChangeDispoMode
-                    showFloatingButtons=false} ,
+                    showFloatingButtons=false},
             )
         }
     }

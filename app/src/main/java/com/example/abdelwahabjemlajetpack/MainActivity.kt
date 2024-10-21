@@ -3,9 +3,9 @@ package com.example.abdelwahabjemlajetpack
 import ZA_Learn_WhelPiker.PickerExample
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
-import a_MainAppCompnents.HeadOfViewModelFactory
 import a_MainAppCompnents.HeadOfViewModels
 import a_RoomDB.AppDatabase
+import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
@@ -85,6 +86,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -92,11 +95,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.ArticleDetailWindow
+import b2_Edite_Base_Donne_With_Creat_New_Articls.CategoriesRepositoryImpl
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
+import com.google.firebase.FirebaseApp
+import com.google.firebase.database.FirebaseDatabase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
@@ -113,6 +119,14 @@ import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.random.Random
 
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseApp.initializeApp(this)
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+    }
+}
+
 data class AppViewModels(
     val headOfViewModels: HeadOfViewModels,
     val editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -121,18 +135,44 @@ data class AppViewModels(
     val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     val classementsArticlesViewModel: ClassementsArticlesViewModel
 )
+
+// Updated MainActivity
 class MainActivity : ComponentActivity() {
     private lateinit var permissionHandler: PermissionHandler
     private val database by lazy { AppDatabase.getInstance(this) }
-    private val editeBaseDonneViewModel: EditeBaseDonneViewModel by viewModels {
-        MainAppViewModelFactory(database.articleDao())
+    private val viewModelFactory by lazy {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return when {
+                    modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java) ->
+                        EditeBaseDonneViewModel(database.articleDao()) as T
+                    modelClass.isAssignableFrom(HeadOfViewModels::class.java) -> {
+                        val repository = CategoriesRepositoryImpl(database.categoriesTabelleECBDao(),FirebaseDatabase.getInstance())
+                        HeadOfViewModels(this@MainActivity, repository) as T
+                    }
+                    else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                }
+            }
+        }
     }
+
+
+    private val editeBaseDonneViewModel: EditeBaseDonneViewModel by viewModels { viewModelFactory }
     private val creditsViewModel: CreditsViewModel by viewModels()
     private val creditsClientsViewModel: CreditsClientsViewModel by viewModels()
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
-    private val headOfViewModels: HeadOfViewModels by viewModels {
-        HeadOfViewModelFactory(context = this@MainActivity)
+    private val headOfViewModels: HeadOfViewModels by viewModels { viewModelFactory }
+
+    private val appViewModels by lazy {
+        AppViewModels(
+            headOfViewModels = headOfViewModels,
+            editeBaseDonneViewModel = editeBaseDonneViewModel,
+            creditsViewModel = creditsViewModel,
+            creditsClientsViewModel = creditsClientsViewModel,
+            boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
+            classementsArticlesViewModel = classementsArticlesViewModel
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -194,14 +234,7 @@ class MainActivity : ComponentActivity() {
                         AppNavHost(
                             navController = navController,
                             database = database,
-                            viewModels = AppViewModels(
-                                headOfViewModels,
-                                editeBaseDonneViewModel,
-                                creditsViewModel,
-                                creditsClientsViewModel,
-                                boardStatistiquesStatViewModel,
-                                classementsArticlesViewModel
-                            ),
+                            appViewModels,
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                             headOfViewModels = headOfViewModels,
                             showSupplierPopup = showSupplierPopup,
@@ -684,27 +717,48 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
     val coroutineScope = rememberCoroutineScope()
     val isTimerActive by headOfViewModels.isTimerActive.collectAsState()
 
-    FloatingActionButton(
-        onClick = {
-            coroutineScope.launch {
-                headOfViewModels.updateColorsFromArticles()
-            }
-        },
-        containerColor = Color.Red,
-        modifier = Modifier.size(56.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.ThumbUp,
-            contentDescription = "Update Colors",
-            tint = Color.White
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Existing FAB for updating colors
+        FloatingActionButton(
+            onClick = {
+                coroutineScope.launch {
+                    headOfViewModels.updateColorsFromArticles()
+                }
+            },
+            containerColor = Color.Red,
+            modifier = Modifier.size(56.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ThumbUp,
+                contentDescription = "Update Colors",
+                tint = Color.White
+            )
+        }
+
+        // New FAB for syncing categories
+        FloatingActionButton(
+            onClick = {
+                coroutineScope.launch {
+                    headOfViewModels.syncCategoriesFromFirebase()
+                }
+            },
+            containerColor = Color.Blue,
+            modifier = Modifier.size(56.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Sync,
+                contentDescription = "Sync Categories",
+                tint = Color.White
+            )
+        }
+
+        // Existing PressHoldButton
+        PressHoldButton(
+            onPress = { headOfViewModels.startTimer() },
+            onRelease = { headOfViewModels.stopTimer() },
+            isActive = isTimerActive
         )
     }
-
-    PressHoldButton(
-        onPress = { headOfViewModels.startTimer() },
-        onRelease = { headOfViewModels.stopTimer() },
-        isActive = isTimerActive
-    )
 }
 
 @Composable

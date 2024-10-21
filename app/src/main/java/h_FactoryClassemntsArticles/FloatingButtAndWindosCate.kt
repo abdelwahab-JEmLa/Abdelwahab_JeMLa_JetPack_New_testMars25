@@ -85,7 +85,7 @@ fun FloatingActionButtons(
     }
 
     if (showCategorySelection) {
-        CategorySelectionWindow(
+        CategoryReorderAndSelectionWindow(
             categories = categories,
             viewModel = viewModel,
             onDismiss = { showCategorySelection = false },
@@ -224,7 +224,7 @@ fun ConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 }
 
 @Composable
-fun CategorySelectionWindow(
+fun CategoryReorderAndSelectionWindow(
     categories: List<CategoriesTabelle>,
     onDismiss: () -> Unit,
     viewModel: ClassementsArticlesViewModel,
