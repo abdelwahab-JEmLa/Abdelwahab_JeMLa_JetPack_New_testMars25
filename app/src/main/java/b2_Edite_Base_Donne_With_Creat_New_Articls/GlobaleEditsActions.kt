@@ -52,6 +52,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import h_FactoryClassemntsArticles.AutoResizedTextClas
 
+data class ButtonInfo(
+    val icon: ImageVector,
+    val description: String,
+    val color: Color,
+    val onClick: () -> Unit
+)
+
 @Composable
 fun FloatingActionButtons(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -81,40 +88,36 @@ fun FloatingActionButtons(
                 horizontalAlignment = Alignment.End
             ) {
                 FloatingButton(
-                    icon = if (showModeClickDispo) Icons.Default.Close else Icons.Default.Person,
-                    contentDescription = "Mode Click Dispo",
-                    showContentDescription = showContentDescription,
-                    onClick = {
-                        onToggleModeClickDispo()
-                        showModeClickDispo = !showModeClickDispo
-                    },
-                    color = Color(0xFFE91E63) // Pink
+                    ButtonInfo(
+                        icon = if (showModeClickDispo) Icons.Default.Close else Icons.Default.Person,
+                        description = "Mode Click Dispo",
+                        color = Color(0xFFE91E63),
+                        onClick = {
+                            onToggleModeClickDispo()
+                            showModeClickDispo = !showModeClickDispo
+                        }
+                    ),
+                    showContentDescription
                 )
 
                 if (!showModeClickDispo) {
                     val buttons = listOf(
-                        Quadruple(Icons.Default.CalendarViewMonth, "Category Selection", Color(0xFF9C27B0)) { showCategorySelection = true }, // Purple
-                        Quadruple(Icons.Default.EditCalendar, "Outline Filter", Color(0xFF2196F3), onToggleOutlineFilter), // Blue
-                        Quadruple(Icons.Default.Home, "Home", Color(0xFF4CAF50), onToggleNavBar), // Green
-                        Quadruple(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", Color(0xFFFFC107), onToggleFilter), // Amber
-                        Quadruple(Icons.Default.PermMedia, "Database Editor", Color(0xFFFF5722)) { showDialogeDataBaseEditer = true }, // Deep Orange
-                        Quadruple(Icons.Default.GridView, "Change Grid", Color(0xFF795548)) { // Brown
+                        ButtonInfo(Icons.Default.CalendarViewMonth, "Category Selection", Color(0xFF9C27B0)) { showCategorySelection = true },
+                        ButtonInfo(Icons.Default.EditCalendar, "Outline Filter", Color(0xFF2196F3), onToggleOutlineFilter),
+                        ButtonInfo(Icons.Default.Home, "Home", Color(0xFF4CAF50), onToggleNavBar),
+                        ButtonInfo(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", Color(0xFFFFC107), onToggleFilter),
+                        ButtonInfo(Icons.Default.PermMedia, "Database Editor", Color(0xFFFF5722)) { showDialogeDataBaseEditer = true },
+                        ButtonInfo(Icons.Default.GridView, "Change Grid", Color(0xFF795548)) {
                             currentGridColumns = (currentGridColumns % maxGridColumns) + 1
                             onChangeGridColumns(currentGridColumns)
                         },
-                        Quadruple(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description", Color(0xFF607D8B)) { // Blue Grey
+                        ButtonInfo(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description", Color(0xFF607D8B)) {
                             showContentDescription = !showContentDescription
                         }
                     )
 
-                    buttons.forEach { (icon, contentDescription, color, onClick) ->
-                        FloatingButton(
-                            icon = icon,
-                            contentDescription = contentDescription,
-                            showContentDescription = showContentDescription,
-                            onClick = onClick,
-                            color = color
-                        )
+                    buttons.forEach { buttonInfo ->
+                        FloatingButton(buttonInfo, showContentDescription)
                     }
                 }
             }
@@ -122,7 +125,7 @@ fun FloatingActionButtons(
 
         FloatingActionButton(
             onClick = onToggleFloatingButtons,
-            containerColor = Color(0xFF3F51B5) // Indigo
+            containerColor = Color(0xFF3F51B5)
         ) {
             Icon(
                 if (showFloatingButtons) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -146,11 +149,8 @@ fun FloatingActionButtons(
 
 @Composable
 private fun FloatingButton(
-    icon: ImageVector,
-    contentDescription: String,
-    showContentDescription: Boolean,
-    onClick: () -> Unit,
-    color: Color
+    buttonInfo: ButtonInfo,
+    showContentDescription: Boolean
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -167,7 +167,7 @@ private fun FloatingButton(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Text(
-                        text = contentDescription,
+                        text = buttonInfo.description,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -175,17 +175,14 @@ private fun FloatingButton(
             }
         }
         FloatingActionButton(
-            onClick = onClick,
+            onClick = buttonInfo.onClick,
             modifier = Modifier.size(56.dp),
-            containerColor = color
+            containerColor = buttonInfo.color
         ) {
-            Icon(icon, contentDescription = contentDescription)
+            Icon(buttonInfo.icon, contentDescription = buttonInfo.description)
         }
     }
 }
-
-data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
-
 @Composable
 private fun CategoryReorderAndSelectionWindow(
     onDismiss: () -> Unit,
@@ -310,3 +307,4 @@ fun CategoryItem(
         }
     }
 }
+

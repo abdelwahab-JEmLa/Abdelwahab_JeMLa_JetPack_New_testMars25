@@ -485,13 +485,7 @@ fun CategorySelectionWindow(
         onDismiss = { showCategorySelection = false },
         onAddCategory = { newCategoryName ->
             coroutineScope.launch {
-                val maxId = categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0
-                val newCategory = CategoriesTabelleECB(
-                    idCategorieInCategoriesTabele = maxId + 1,
-                    idClassementCategorieInCategoriesTabele = 1,
-                    nomCategorieInCategoriesTabele = newCategoryName
-                )
-                viewModel.addNewCategory(newCategory)
+                viewModel.addNewCategory(newCategoryName)
                 showCategorySelection = false
             }
         }

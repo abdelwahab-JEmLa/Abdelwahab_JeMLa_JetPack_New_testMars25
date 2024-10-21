@@ -141,13 +141,32 @@ class HeadOfViewModels(
             }
         }
     }
-    fun syncCategoriesFromFirebase() {
+
+    fun importCategoriesFromFirebase() {
         viewModelScope.launch {
             try {
                 repository.importCategoriesFromFirebase()
-                // Optionally update UI or show a success message
             } catch (e: Exception) {
-                // Handle any errors, update UI or show an error message
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+    fun addNewCategory(categoryName: String) {
+        viewModelScope.launch {
+            updateSmothUploadProgressBarCounterAndItText(
+                nameFunInProgressBar = "Adding new category...",
+                progressDimunuentDe100A0 = 50
+            )
+
+            try {
+                repository.addNewCategory(categoryName)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding category", e)
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Error adding category",
+                    progressDimunuentDe100A0 = 0,
+                    end = true
+                )
             }
         }
     }
@@ -159,7 +178,6 @@ class HeadOfViewModels(
                     toCategoryId = toCategoryId
                 )
             } catch (e: Exception) {
-                // Handle error if needed
                 _uiState.update { it.copy(error = e.message) }
             }
         }
@@ -771,24 +789,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         })
     }
-    fun addNewCategory(newCategory: CategoriesTabelleECB) {
-        viewModelScope.launch {
-            // Update local state
-            _uiState.update { currentState ->
-                currentState.copy(categoriesECB = currentState.categoriesECB + newCategory)
-            }
 
-            // Update Firebase
-            refCategorieTabelee.child(newCategory.idCategorieInCategoriesTabele.toString()).setValue(newCategory)
-                .addOnSuccessListener {
-                    // Handle success if needed
-                }
-                .addOnFailureListener { e ->
-                    // Handle failure if needed
-                    Log.e(TAG, "Failed to add new category", e)
-                }
-        }
-    }
     fun updateSupplierVocalFrencheName(supplierId: Long, newName: String) {
         viewModelScope.launch {
             val currentSuppliers = _uiState.value.tabelleSuppliersSA

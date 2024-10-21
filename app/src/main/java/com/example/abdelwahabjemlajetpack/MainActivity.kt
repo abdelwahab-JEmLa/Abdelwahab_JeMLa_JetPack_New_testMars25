@@ -739,7 +739,7 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
         FloatingActionButton(
             onClick = {
                 coroutineScope.launch {
-                    headOfViewModels.syncCategoriesFromFirebase()
+                    headOfViewModels.importCategoriesFromFirebase()
                 }
             },
             containerColor = Color.Blue,
