@@ -147,7 +147,7 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java) ->
                         EditeBaseDonneViewModel(database.articleDao()) as T
                     modelClass.isAssignableFrom(HeadOfViewModels::class.java) -> {
-                        val repository = CategoriesRepositoryImpl(FirebaseDatabase.getInstance(),
+                        val repository = CategoriesRepositoryImpl(database.categoriesTabelleECBDao(), FirebaseDatabase.getInstance(),
                             )
                         HeadOfViewModels(this@MainActivity, repository) as T
                     }

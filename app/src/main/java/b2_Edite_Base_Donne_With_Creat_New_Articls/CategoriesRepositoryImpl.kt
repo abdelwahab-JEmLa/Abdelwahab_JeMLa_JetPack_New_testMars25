@@ -19,14 +19,14 @@ interface CategoriesTabelleECBDao {
     @Query("SELECT * FROM CategoriesTabelleECB ORDER BY idClassementCategorieInCategoriesTabele")
     fun getAllCategories(): Flow<List<CategoriesTabelleECB>>
 
+    @Query("SELECT * FROM CategoriesTabelleECB ORDER BY idClassementCategorieInCategoriesTabele")
+    suspend fun getAllCategoriesList(): MutableList<CategoriesTabelleECB>
+
     @Query("UPDATE CategoriesTabelleECB SET idClassementCategorieInCategoriesTabele = :newPosition WHERE idCategorieInCategoriesTabele = :categoryId")
     suspend fun updateCategoryPosition(categoryId: Long, newPosition: Int)
 
     @Query("SELECT idClassementCategorieInCategoriesTabele FROM CategoriesTabelleECB WHERE idCategorieInCategoriesTabele = :categoryId")
     suspend fun getCategoryPosition(categoryId: Long): Int
-
-    @Query("SELECT * FROM CategoriesTabelleECB WHERE idClassementCategorieInCategoriesTabele BETWEEN :start AND :end ORDER BY idClassementCategorieInCategoriesTabele")
-    suspend fun getCategoriesTabelleECBBetweenPositions(start: Int, end: Int): List<CategoriesTabelleECB>
 
     @Query("""
             UPDATE CategoriesTabelleECB 
@@ -37,6 +37,12 @@ interface CategoriesTabelleECBDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(category: CategoriesTabelleECB)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(categories: List<CategoriesTabelleECB>)
+
+    @Query("DELETE FROM CategoriesTabelleECB")
+    suspend fun deleteAll()
 }
 
 interface CategoriesRepository {
@@ -95,10 +101,10 @@ class CategoriesRepositoryImpl(
         }
     }
 
-
     override suspend fun reorderCategories(fromCategoryId: Long, toCategoryId: Long) {
         moveCategory(fromCategoryId, toCategoryId)
     }
+
     override suspend fun addNewCategory(categoryName: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val newCategory = CategoriesTabelleECB(
@@ -148,43 +154,30 @@ class CategoriesRepositoryImpl(
 
     override suspend fun moveCategory(fromCategoryId: Long, toCategoryId: Long) {
         withContext(Dispatchers.IO) {
-            val fromPosition = categoriesDao.getCategoryPosition(fromCategoryId)
-            val toPosition = categoriesDao.getCategoryPosition(toCategoryId)
+            val allCategories = categoriesDao.getAllCategoriesList()
 
-            if (fromPosition == toPosition) return@withContext
+            val fromIndex = allCategories.indexOfFirst { it.idCategorieInCategoriesTabele == fromCategoryId }
+            val toIndex = allCategories.indexOfFirst { it.idCategorieInCategoriesTabele == toCategoryId }
 
-            val start = minOf(fromPosition, toPosition)
-            val end = maxOf(fromPosition, toPosition)
+            if (fromIndex != -1 && toIndex != -1) {
+                val movedCategory = allCategories.removeAt(fromIndex)
 
-            val affectedCategories = categoriesDao.getCategoriesTabelleECBBetweenPositions(start, end)
-
-            // Update local database positions
-            when {
-                fromPosition < toPosition -> {
-                    affectedCategories.forEach { category ->
-                        when (category.idCategorieInCategoriesTabele) {
-                            fromCategoryId -> categoriesDao.updateCategoryPosition(category.idCategorieInCategoriesTabele, toPosition)
-                            else -> categoriesDao.updateCategoryPosition(
-                                category.idCategorieInCategoriesTabele,
-                                category.idClassementCategorieInCategoriesTabele - 1
-                            )
-                        }
-                    }
+                if (fromIndex < toIndex) {
+                    allCategories.add(toIndex, movedCategory)
+                } else {
+                    allCategories.add(toIndex + 1, movedCategory)
                 }
-                else -> {
-                    affectedCategories.forEach { category ->
-                        when (category.idCategorieInCategoriesTabele) {
-                            fromCategoryId -> categoriesDao.updateCategoryPosition(category.idCategorieInCategoriesTabele, toPosition)
-                            else -> categoriesDao.updateCategoryPosition(
-                                category.idCategorieInCategoriesTabele,
-                                category.idClassementCategorieInCategoriesTabele + 1
-                            )
-                        }
-                    }
+
+                // Update positions
+                allCategories.forEachIndexed { index, category ->
+                    category.idClassementCategorieInCategoriesTabele = index + 1
                 }
+
+                categoriesDao.deleteAll()
+                categoriesDao.insertAll(allCategories)
+
+                batchUpdateFirebasePositions(allCategories)
             }
-
-            batchUpdateFirebasePositions(affectedCategories)
         }
     }
 }
