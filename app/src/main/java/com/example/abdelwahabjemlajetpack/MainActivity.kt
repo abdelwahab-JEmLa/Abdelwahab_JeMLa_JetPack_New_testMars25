@@ -147,7 +147,8 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java) ->
                         EditeBaseDonneViewModel(database.articleDao()) as T
                     modelClass.isAssignableFrom(HeadOfViewModels::class.java) -> {
-                        val repository = CategoriesRepositoryImpl(database.categoriesTabelleECBDao(),FirebaseDatabase.getInstance())
+                        val repository = CategoriesRepositoryImpl(FirebaseDatabase.getInstance(),
+                            )
                         HeadOfViewModels(this@MainActivity, repository) as T
                     }
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
