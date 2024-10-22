@@ -3,7 +3,9 @@ package b2_Edite_Base_Donne_With_Creat_New_Articls
 import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,20 +14,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarViewMonth
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.EditCalendar
@@ -35,16 +38,18 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 data class ButtonInfo(
     val icon: ImageVector,
@@ -194,6 +200,7 @@ private fun FloatingButton(
         }
     }
 }
+
 @Composable
 fun CategoryReorderAndSelectionWindow(
     onDismiss: () -> Unit,
@@ -208,32 +215,21 @@ fun CategoryReorderAndSelectionWindow(
     var heldCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
     var filterText by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.8f),
+            modifier = Modifier.fillMaxSize(),
             shape = MaterialTheme.shapes.large
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                DialogHeader(
-                    title = "Select Category"
-                )
+        )    {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
 
-                OutlinedTextField(
-                    value = filterText,
-                    onValueChange = { filterText = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    placeholder = { Text("Filter categories or enter new category name") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
-                        )
-                    },
-                    singleLine = true
+                SearchField(
+                    filterText = filterText,
+                    onFilterTextChange = { filterText = it }
                 )
 
                 val filteredCategories = remember(uiState.categoriesECB, filterText) {
@@ -246,75 +242,57 @@ fun CategoryReorderAndSelectionWindow(
                     }
                 }
 
-                CategoryGrid(
-                    categories = filteredCategories,
-                    selectedCategories = selectedCategories,
-                    movingCategory = movingCategory,
-                    heldCategory = heldCategory,
-                    onCategoryClick = { category ->
-                        when {
-                            category.nomCategorieInCategoriesTabele == "Add New Category" -> {
-                                if (filterText.isNotBlank()) {
-                                    viewModel.addNewCategory(filterText)
-                                    filterText = ""
-                                }
-                            }
-                            renameOrFusionMode -> {
-                                if (heldCategory == null) {
-                                    heldCategory = category
-                                } else if (heldCategory != category) {
-                                    viewModel.moveArticlesBetweenCategories(
-                                        fromCategoryId = heldCategory!!.idCategorieInCategoriesTabele,
-                                        toCategoryId = category.idCategorieInCategoriesTabele
-                                    )
-                                    heldCategory = null
-                                    renameOrFusionMode = false
-                                }
-                            }
-                            multiSelectionMode -> {
-                                selectedCategories = if (category in selectedCategories) {
-                                    selectedCategories - category
-                                } else {
-                                    selectedCategories + category
-                                }
-                            }
-                            movingCategory != null -> {
-                                viewModel.handleCategoryMove(
-                                    holdedIdCate = movingCategory!!.idCategorieInCategoriesTabele,
-                                    clickedCategoryId = category.idCategorieInCategoriesTabele
-                                ) {
-                                    movingCategory = null
-                                }
-                            }
-                            else -> {
-                                onCategorySelected(category)
-                                onDismiss()
-                            }
+                Box(modifier = Modifier.weight(1f)) {
+                    CategoryGrid(
+                        categories = filteredCategories,
+                        selectedCategories = selectedCategories,
+                        movingCategory = movingCategory,
+                        heldCategory = heldCategory,
+                        onCategoryClick = { category ->
+                            handleCategoryClick(
+                                category = category,
+                                filterText = filterText,
+                                viewModel = viewModel,
+                                renameOrFusionMode = renameOrFusionMode,
+                                multiSelectionMode = multiSelectionMode,
+                                heldCategory = heldCategory,
+                                selectedCategories = selectedCategories,
+                                movingCategory = movingCategory,
+                                onHeldCategoryChange = { heldCategory = it },
+                                onSelectedCategoriesChange = { selectedCategories = it },
+                                onRenameOrFusionModeChange = { renameOrFusionMode = it },
+                                onMovingCategoryChange = { movingCategory = it },
+                                onCategorySelected = onCategorySelected,
+                                onDismiss = onDismiss
+                            )
                         }
-                    }
-                )
+                    )
+                }
 
-                ActionButtons(
+                BottomActions(
                     multiSelectionMode = multiSelectionMode,
                     renameOrFusionMode = renameOrFusionMode,
                     selectedCategories = selectedCategories,
                     movingCategory = movingCategory,
-                    heldCategory = heldCategory,
-                    onMultiSelectionToggle = { newMode ->
+                    onMultiSelectionModeChange = { newMode ->
                         multiSelectionMode = newMode
-                        if (!newMode) selectedCategories = emptyList()
-                        movingCategory = null
-                        renameOrFusionMode = false
-                        heldCategory = null
+                        if (!newMode) {
+                            selectedCategories = emptyList()
+                            movingCategory = null
+                            renameOrFusionMode = false
+                            heldCategory = null
+                        }
                     },
-                    onRenameOrFusionToggle = { newMode ->
+                    onRenameOrFusionModeChange = { newMode ->
                         renameOrFusionMode = newMode
-                        if (!newMode) heldCategory = null
-                        multiSelectionMode = false
-                        selectedCategories = emptyList()
-                        movingCategory = null
+                        if (!newMode) {
+                            heldCategory = null
+                            multiSelectionMode = false
+                            selectedCategories = emptyList()
+                            movingCategory = null
+                        }
                     },
-                    onReorder = { fromCategory, toCategory ->
+                    onReorderCategories = { fromCategory, toCategory ->
                         viewModel.handleCategoryMove(
                             holdedIdCate = fromCategory.idCategorieInCategoriesTabele,
                             clickedCategoryId = toCategory.idCategorieInCategoriesTabele
@@ -333,6 +311,51 @@ fun CategoryReorderAndSelectionWindow(
         }
     }
 }
+
+@Composable
+private fun DialogHeader(
+    title: String,
+    onDismiss: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Default.Close, contentDescription = "Close")
+        }
+    }
+}
+
+@Composable
+private fun SearchField(
+    filterText: String,
+    onFilterTextChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = filterText,
+        onValueChange = onFilterTextChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        placeholder = { Text("Filter or new category") },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search"
+            )
+        },
+        singleLine = true
+    )
+}
+
 @Composable
 private fun CategoryGrid(
     categories: List<CategoriesTabelleECB>,
@@ -345,7 +368,7 @@ private fun CategoryGrid(
     val addNewCategory = CategoriesTabelleECB(
         idCategorieInCategoriesTabele = (categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0) + 1,
         nomCategorieInCategoriesTabele = "Add New Category",
-        idClassementCategorieInCategoriesTabele = categories.size
+        idClassementCategorieInCategoriesTabele = 0
     )
 
     LazyVerticalGrid(
@@ -353,7 +376,7 @@ private fun CategoryGrid(
         contentPadding = PaddingValues(8.dp),
         modifier = modifier
     ) {
-        items(categories + addNewCategory) { category ->
+        items(listOf(addNewCategory) + categories) { category ->
             CategoryItem(
                 category = category,
                 isSelected = category in selectedCategories,
@@ -362,7 +385,6 @@ private fun CategoryGrid(
                 selectionOrder = selectedCategories.indexOf(category) + 1,
                 onClick = { onCategoryClick(category) }
             )
-
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -377,80 +399,69 @@ private fun CategoryItem(
     selectionOrder: Int,
     onClick: () -> Unit
 ) {
-    Card(
+    val backgroundColor = when {
+        isHeld -> MaterialTheme.colorScheme.primaryContainer
+        isSelected -> MaterialTheme.colorScheme.secondaryContainer
+        isMoving -> MaterialTheme.colorScheme.tertiaryContainer
+        category.nomCategorieInCategoriesTabele == "Add New Category" -> MaterialTheme.colorScheme.surfaceVariant
+        else -> MaterialTheme.colorScheme.surface
+    }
+
+    Surface(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                category.nomCategorieInCategoriesTabele == "Add New Category" ->
-                    MaterialTheme.colorScheme.secondary
-                isHeld -> MaterialTheme.colorScheme.error
-                isMoving -> MaterialTheme.colorScheme.secondary
-                isSelected -> MaterialTheme.colorScheme.primaryContainer
-                else -> MaterialTheme.colorScheme.primary
-            }
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isHeld || isSelected || isMoving) 8.dp else 2.dp
-        )
+            .clickable(onClick = onClick)
+            .border(
+                BorderStroke(
+                    width = if (isSelected || isHeld || isMoving) 2.dp else 1.dp,
+                    color = when {
+                        isHeld -> MaterialTheme.colorScheme.primary
+                        isSelected -> MaterialTheme.colorScheme.secondary
+                        isMoving -> MaterialTheme.colorScheme.tertiary
+                        else -> MaterialTheme.colorScheme.outline
+                    }
+                ),
+                shape = MaterialTheme.shapes.medium
+            ),
+        shape = MaterialTheme.shapes.medium,
+        color = backgroundColor
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+                .padding(8.dp)
+                .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            if (isSelected) {
+            if (selectionOrder > 0) {
                 Text(
                     text = selectionOrder.toString(),
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .background(
-                            MaterialTheme.colorScheme.secondary,
-                            shape = CircleShape
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.shapes.small
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                    color = MaterialTheme.colorScheme.onSecondary,
+                        .padding(4.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelSmall
-                )
-            }
-
-            if (category.nomCategorieInCategoriesTabele == "Add New Category") {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add New Category",
-                    tint = MaterialTheme.colorScheme.onSecondary
                 )
             }
 
             Text(
                 text = category.nomCategorieInCategoriesTabele,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium,
-                color = when {
-                    category.nomCategorieInCategoriesTabele == "Add New Category" ->
-                        MaterialTheme.colorScheme.onSecondary
-                    isHeld -> MaterialTheme.colorScheme.onError
-                    isMoving -> MaterialTheme.colorScheme.onSecondary
-                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                    else -> MaterialTheme.colorScheme.onPrimary
-                },
-                modifier = Modifier.padding(
-                    top = if (isSelected) 24.dp else 0.dp
-                )
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium
             )
 
-            if (isHeld) {
+            if (category.nomCategorieInCategoriesTabele == "Add New Category") {
                 Icon(
-                    imageVector = Icons.Default.SwapHoriz,
-                    contentDescription = "Fusion Mode Active",
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 4.dp),
-                    tint = MaterialTheme.colorScheme.onError
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
         }
@@ -458,15 +469,14 @@ private fun CategoryItem(
 }
 
 @Composable
-private fun ActionButtons(
+private fun BottomActions(
     multiSelectionMode: Boolean,
     renameOrFusionMode: Boolean,
     selectedCategories: List<CategoriesTabelleECB>,
     movingCategory: CategoriesTabelleECB?,
-    heldCategory: CategoriesTabelleECB?,
-    onMultiSelectionToggle: (Boolean) -> Unit,
-    onRenameOrFusionToggle: (Boolean) -> Unit,
-    onReorder: (CategoriesTabelleECB, CategoriesTabelleECB) -> Unit,
+    onMultiSelectionModeChange: (Boolean) -> Unit,
+    onRenameOrFusionModeChange: (Boolean) -> Unit,
+    onReorderCategories: (CategoriesTabelleECB, CategoriesTabelleECB) -> Unit,
     onCancelMove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -474,56 +484,111 @@ private fun ActionButtons(
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        when {
-            multiSelectionMode -> {
-                Button(onClick = { onMultiSelectionToggle(false) }) {
-                    Text("Cancel")
+        OutlinedButton(
+            onClick = { onMultiSelectionModeChange(!multiSelectionMode) },
+            enabled = !renameOrFusionMode && movingCategory == null
+        ) {
+            Icon(
+                imageVector = if (multiSelectionMode) Icons.Default.Clear else Icons.Default.CheckBox,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(if (multiSelectionMode) "C" else "Mul")
+        }
+
+        OutlinedButton(
+            onClick = { onRenameOrFusionModeChange(!renameOrFusionMode) },
+            enabled = !multiSelectionMode && movingCategory == null
+        ) {
+            Icon(
+                imageVector = if (renameOrFusionMode) Icons.Default.Clear else Icons.Default.Merge,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(if (renameOrFusionMode) "C" else "Merg")
+        }
+
+        if (selectedCategories.size >= 2) {
+            Button(
+                onClick = {
+                    onReorderCategories(selectedCategories[0], selectedCategories[1])
                 }
-                Button(
-                    onClick = {
-                        if (selectedCategories.size >= 2) {
-                            onReorder(selectedCategories.first(), selectedCategories.last())
-                        }
-                    },
-                    enabled = selectedCategories.size >= 2
-                ) {
-                    Text("Reorder")
-                }
+            ) {
+                Icon(Icons.Default.SwapVert, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Reo")
             }
-            renameOrFusionMode -> {
-                Button(onClick = { onRenameOrFusionToggle(false) }) {
-                    Text("Cancel Fusion")
-                }
-            }
-            movingCategory != null -> {
-                Button(onClick = onCancelMove) {
-                    Text("Cancel Move")
-                }
-            }
-            else -> {
-                Button(onClick = { onMultiSelectionToggle(true) }) {
-                    Text("Select Multiple")
-                }
-                Button(onClick = { onRenameOrFusionToggle(true) }) {
-                    Text("Fusion Mode")
-                }
+        }
+
+        if (movingCategory != null) {
+            Button(onClick = onCancelMove) {
+                Icon(Icons.Default.Close, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Mov")
             }
         }
     }
 }
 
-@Composable
-private fun DialogHeader(
-    title: String,
-    modifier: Modifier = Modifier
+private fun handleCategoryClick(
+    category: CategoriesTabelleECB,
+    filterText: String,
+    viewModel: HeadOfViewModels,
+    renameOrFusionMode: Boolean,
+    multiSelectionMode: Boolean,
+    heldCategory: CategoriesTabelleECB?,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    onHeldCategoryChange: (CategoriesTabelleECB?) -> Unit,
+    onSelectedCategoriesChange: (List<CategoriesTabelleECB>) -> Unit,
+    onRenameOrFusionModeChange: (Boolean) -> Unit,
+    onMovingCategoryChange: (CategoriesTabelleECB?) -> Unit,
+    onCategorySelected: (CategoriesTabelleECB) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = modifier.padding(bottom = 16.dp)
-    )
+    when {
+        category.nomCategorieInCategoriesTabele == "Add New Category" -> {
+            if (filterText.isNotBlank()) {
+                viewModel.addNewCategory(filterText)
+            }
+        }
+        renameOrFusionMode -> {
+            if (heldCategory == null) {
+                onHeldCategoryChange(category)
+            } else if (heldCategory != category) {
+                viewModel.moveArticlesBetweenCategories(
+                    fromCategoryId = heldCategory.idCategorieInCategoriesTabele,
+                    toCategoryId = category.idCategorieInCategoriesTabele
+                )
+                onHeldCategoryChange(null)
+                onRenameOrFusionModeChange(false)
+            }
+        }
+        multiSelectionMode -> {
+            onSelectedCategoriesChange(
+                if (category in selectedCategories) {
+                    selectedCategories - category
+                } else {
+                    selectedCategories + category
+                }
+            )
+        }
+        movingCategory != null -> {
+            viewModel.handleCategoryMove(
+                holdedIdCate = movingCategory.idCategorieInCategoriesTabele,
+                clickedCategoryId = category.idCategorieInCategoriesTabele
+            ) {
+                onMovingCategoryChange(null)
+            }
+        }
+        else -> {
+            onCategorySelected(category)
+            onDismiss()
+        }
+    }
 }
+
 
 

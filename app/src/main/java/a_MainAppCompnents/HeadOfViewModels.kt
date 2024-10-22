@@ -198,8 +198,7 @@ class HeadOfViewModels(
                 categories.forEach { category ->
                     refCategorieTabelee
                         .child(category.idCategorieInCategoriesTabele.toString())
-                        .child("idClassementCategorieInCategoriesTabele")
-                        .setValue(category.idClassementCategorieInCategoriesTabele)
+                        .setValue(category)
                         .addOnSuccessListener {
                             completedUpdates++
                             viewModelScope.launch {
@@ -366,66 +365,75 @@ class HeadOfViewModels(
     fun addNewCategory(categoryName: String) {
         viewModelScope.launch {
             try {
-                // Récupérer l'ID maximum actuel des catégories
-                val maxId = _uiState.value.categoriesECB
-                    .maxOfOrNull { it.idCategorieInCategoriesTabele }
-                    ?: 0
+                // Create new category at the beginning of the list
+                val newCategory = createNewCategory(categoryName)
 
-                // Récupérer la position maximum actuelle
-                val maxPosition = _uiState.value.categoriesECB
-                    .maxOfOrNull { it.idClassementCategorieInCategoriesTabele }
-                    ?: 0
+                // Update existing categories' positions
+                val updatedCategories = updateExistingCategoriesPositions()
+                // Update UI state
+                updateUiState(newCategory, updatedCategories)
 
-                val newCategory = CategoriesTabelleECB(
-                    idCategorieInCategoriesTabele = maxId + 1,
-                    idClassementCategorieInCategoriesTabele = maxPosition + 1,
-                    nomCategorieInCategoriesTabele = categoryName
-                )
-
-                // Mise à jour locale
-                categoriesDao.insert(newCategory)
-
-                // Mise à jour Firebase
-                refCategorieTabelee
-                    .child(newCategory.idCategorieInCategoriesTabele.toString())
-                    .setValue(newCategory)
-                    .await()
-
-                // Mise à jour UI
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        categoriesECB = currentState.categoriesECB + newCategory
-                    )
-                }
+                updateRoomDatabase(newCategory, updatedCategories)
 
                 setNeedUpdateFireBase()
 
             } catch (e: Exception) {
-                _uiState.update { currentState ->
-                    currentState.copy(error = e.message)
-                }
-                Log.e("CategoriesRepository", "Failed to add new category", e)
+                handleError(e)
             }
         }
     }
 
+    private  fun createNewCategory(categoryName: String): CategoriesTabelleECB {
+        val maxId = _uiState.value.categoriesECB
+            .maxOfOrNull { it.idCategorieInCategoriesTabele }
+            ?: 0
 
-    suspend fun batchUpdateFirebasePositions(categories: List<CategoriesTabelleECB>) {
-        try {
-            if (categories.isEmpty()) return
+        return CategoriesTabelleECB(
+            idCategorieInCategoriesTabele = maxId + 1,
+            idClassementCategorieInCategoriesTabele = 0, // Place at beginning
+            nomCategorieInCategoriesTabele = categoryName
+        )
+    }
 
-            val updates = categories.associate { category ->
-                "/${category.idCategorieInCategoriesTabele}/idClassementCategorieInCategoriesTabele" to
-                        category.idClassementCategorieInCategoriesTabele
-            }
-
-            refCategorieTabelee.updateChildren(updates).await()
-        } catch (e: Exception) {
-            Log.e("CategoriesRepository", "Failed to batch update Firebase positions", e)
-            throw e
+    private fun updateExistingCategoriesPositions(): List<CategoriesTabelleECB> {
+        return _uiState.value.categoriesECB.map { category ->
+            category.copy(
+                idClassementCategorieInCategoriesTabele =
+                category.idClassementCategorieInCategoriesTabele + 1
+            )
         }
     }
 
+    private suspend fun updateRoomDatabase(
+        newCategory: CategoriesTabelleECB,
+        updatedCategories: List<CategoriesTabelleECB>
+    ) {
+        categoriesDao.transaction {
+            insert(newCategory)
+            updateAll(updatedCategories)
+        }
+    }
+
+    private fun updateUiState(
+        newCategory: CategoriesTabelleECB,
+        updatedCategories: List<CategoriesTabelleECB>
+    ) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                categoriesECB = listOf(newCategory) + updatedCategories,
+                error = null
+            )
+        }
+    }
+
+    private fun handleError(e: Exception) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                error = e.message ?: "An unknown error occurred"
+            )
+        }
+        Log.e("HeadOfViewModels", "Failed to add new category", e)
+    }
 
 
     private fun updateArticleDisponibilityState(

@@ -6,10 +6,15 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 
 @Dao
 interface CategoriesTabelleECBDao {
+    @Transaction
+    suspend fun transaction(block: suspend CategoriesTabelleECBDao.() -> Unit) {
+        block()
+    }
 
     @Query("SELECT * FROM CategoriesTabelleECB ORDER BY idClassementCategorieInCategoriesTabele")
     suspend fun getAllCategoriesList(): MutableList<CategoriesTabelleECB>
