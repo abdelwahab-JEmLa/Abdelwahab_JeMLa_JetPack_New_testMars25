@@ -1,5 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.background
@@ -24,16 +25,19 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -46,14 +50,33 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     val uiState by viewModel.uiState.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableStateOf(2) }
+
+    // Mémoriser la position de défilement
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
+
+    // État pour le déplacement des catégories
+    var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
+    var movingCategory by remember { mutableStateOf(false) }
+
+    // États pour le filtrage
     var filterNonDispo by remember { mutableStateOf(false) }
     var outlineFilter by remember { mutableStateOf(false) }
     var filterText by remember { mutableStateOf("") }
-
-    var holdedIdCateForMove by remember { mutableStateOf<Long?>(null) }
     var clickChangeDispoMode by remember { mutableStateOf(false) }
+
+    // Gérer la position de défilement actuelle
+    val firstVisibleItemIndex = remember { mutableStateOf(0) }
+    val firstVisibleItemScrollOffset = remember { mutableStateOf(0) }
+
+    // Effet pour sauvegarder la position de défilement
+    LaunchedEffect(gridState) {
+        snapshotFlow { gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) ->
+                firstVisibleItemIndex.value = index
+                firstVisibleItemScrollOffset.value = offset
+            }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -84,30 +107,54 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                 (!filterNonDispo || article.diponibilityState == "") &&
                                 (filterText.isEmpty() || article.nomArticleFinale.contains(filterText, ignoreCase = true))
                     }
+
                     if (articlesInCategory.isNotEmpty() || category.nomCategorieInCategoriesTabele == "New Articles") {
                         item(span = { GridItemSpan(gridColumns) }) {
                             CategoryHeaderECB(
                                 category = category,
                                 viewModel = viewModel,
-                                onClickToOpenWinInfoDataBase = { newArticle ->
-                                    onClickToOpenWinInfoDataBase(newArticle)
-                                },
+                                onClickToOpenWinInfoDataBase = onClickToOpenWinInfoDataBase,
                                 isSelected = holdedIdCateForMove == category.idCategorieInCategoriesTabele,
                                 onCategoryClick = { clickedCategory ->
-                                    if (holdedIdCateForMove == null) {
-                                        holdedIdCateForMove = clickedCategory.idCategorieInCategoriesTabele
-                                    } else if (holdedIdCateForMove != clickedCategory.idCategorieInCategoriesTabele) {
-                                        viewModel.moveCategory(
-                                            holdedIdCateForMove!!,
-                                            clickedCategory.idCategorieInCategoriesTabele
-                                        )
-                                        holdedIdCateForMove = null
-                                    } else {
-                                        holdedIdCateForMove = null
+                                    if (!movingCategory) {
+                                        if (holdedIdCateForMove == null) {
+                                            holdedIdCateForMove = clickedCategory.idCategorieInCategoriesTabele
+                                        } else if (holdedIdCateForMove != clickedCategory.idCategorieInCategoriesTabele) {
+                                            movingCategory = true
+                                            coroutineScope.launch {
+                                                try {
+                                                    // Sauvegarder la position actuelle
+                                                    val currentIndex = gridState.firstVisibleItemIndex
+                                                    val currentOffset = gridState.firstVisibleItemScrollOffset
+
+                                                    viewModel.handleCategoryMove(
+                                                        holdedIdCateForMove!!,
+                                                        clickedCategory.idCategorieInCategoriesTabele
+                                                    ) {
+                                                        holdedIdCateForMove = null
+                                                    }
+
+                                                    // Petit délai pour laisser l'UI se mettre à jour
+                                                    delay(100)
+
+                                                    // Restaurer la position
+                                                    gridState.scrollToItem(
+                                                        index = currentIndex,
+                                                        scrollOffset = currentOffset
+                                                    )
+                                                } finally {
+                                                    holdedIdCateForMove = null
+                                                    movingCategory = false
+                                                }
+                                            }
+                                        } else {
+                                            holdedIdCateForMove = null
+                                        }
                                     }
                                 }
                             )
                         }
+
                         items(articlesInCategory) { article ->
                             ArticleItemECB(
                                 article = article,
@@ -116,7 +163,10 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                                         onClickToOpenWinInfoDataBase(clickedArticle)
                                         viewModel.updateCurrentEditedArticle(clickedArticle)
                                     } else {
-                                        viewModel.updateArticleDisponibility(clickedArticle.idArticle.toLong(), getNextDisponibilityState(clickedArticle.diponibilityState))
+                                        viewModel.updateArticleDisponibility(
+                                            clickedArticle.idArticle.toLong(),
+                                            getNextDisponibilityState(clickedArticle.diponibilityState)
+                                        )
                                     }
                                 },
                                 viewModel = viewModel,
@@ -128,7 +178,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             }
         }
 
-        // Floating Action Buttons
+        // Floating Action Buttons (reste inchangé)
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -149,11 +199,14 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 viewModel = viewModel,
                 onCategorySelected = { selectedCategory ->
                     coroutineScope.launch {
-                        val index =
-                            uiState.categoriesECB.indexOfFirst { it.idCategorieInCategoriesTabele == selectedCategory.idCategorieInCategoriesTabele }
+                        val index = uiState.categoriesECB.indexOfFirst {
+                            it.idCategorieInCategoriesTabele == selectedCategory.idCategorieInCategoriesTabele
+                        }
                         if (index != -1) {
                             val position = uiState.categoriesECB.take(index).sumOf { category ->
-                                1 + uiState.articlesBaseDonneECB.count { it.idCategorie == category.idCategorieInCategoriesTabele.toDouble() }
+                                1 + uiState.articlesBaseDonneECB.count {
+                                    it.idCategorie == category.idCategorieInCategoriesTabele.toDouble()
+                                }
                             }
                             gridState.scrollToItem(position)
                         }
@@ -163,7 +216,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 onToggleModeClickDispo = {
                     clickChangeDispoMode = !clickChangeDispoMode
                     showFloatingButtons = false
-                },
+                }
             )
         }
     }

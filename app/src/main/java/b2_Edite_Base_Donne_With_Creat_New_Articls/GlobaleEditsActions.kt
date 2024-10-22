@@ -1,5 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.background
@@ -204,80 +205,147 @@ private fun CategoryReorderAndSelectionWindow(
             shape = MaterialTheme.shapes.large
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "Select Category",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                DialogHeader(
+                    title = "Select Category"
                 )
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(uiState.categoriesECB) { category ->
-                        CategoryItem(
-                            category = category,
-                            isSelected = category in selectedCategories,
-                            isMoving = category == movingCategory,
-                            selectionOrder = selectedCategories.indexOf(category) + 1,
-                            onClick = {
-                                when {
-                                    multiSelectionMode -> {
-                                        selectedCategories = if (category in selectedCategories) {
-                                            selectedCategories - category
-                                        } else {
-                                            selectedCategories + category
-                                        }
-                                    }
-                                    movingCategory != null -> {
-                                        viewModel.moveCategory(movingCategory!!.idCategorieInCategoriesTabele, category.idCategorieInCategoriesTabele)
-                                        movingCategory = null
-                                    }
-                                    else -> {
-                                        onCategorySelected(category)
-                                        onDismiss()
-                                    }
+
+                CategoryGrid(
+                    categories = uiState.categoriesECB,
+                    selectedCategories = selectedCategories,
+                    movingCategory = movingCategory,
+                    multiSelectionMode = multiSelectionMode,
+                    onCategoryClick = { category ->
+                        when {
+                            multiSelectionMode -> {
+                                selectedCategories = if (category in selectedCategories) {
+                                    selectedCategories - category
+                                } else {
+                                    selectedCategories + category
                                 }
                             }
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(onClick = {
-                        multiSelectionMode = !multiSelectionMode
-                        if (!multiSelectionMode) selectedCategories = emptyList()
-                        movingCategory = null
-                    }) {
-                        Text(if (multiSelectionMode) "Cancel" else "Select Multiple")
-                    }
-                    if (multiSelectionMode) {
-                        Button(
-                            onClick = {
-                                if (selectedCategories.size >= 2) {
-                                    val fromCategory = selectedCategories.first()
-                                    val toCategory = selectedCategories.last()
-                                    viewModel.reorderCategories(
-                                        fromCategoryId = fromCategory.idCategorieInCategoriesTabele,
-                                        toCategoryId = toCategory.idCategorieInCategoriesTabele
-                                    )
+                            movingCategory != null -> {
+                                viewModel.handleCategoryMove(
+                                    holdedIdCate = movingCategory!!.idCategorieInCategoriesTabele,
+                                    clickedCategoryId = category.idCategorieInCategoriesTabele
+                                ) {
+                                    movingCategory = null
                                 }
-                                multiSelectionMode = false
-                                selectedCategories = emptyList()
-                            },
-                            enabled = selectedCategories.size >= 2
-                        ) {
-                            Text("Reorder")
-                        }
-                    } else if (movingCategory != null) {
-                        Button(onClick = { movingCategory = null }) {
-                            Text("Cancel Move")
+                            }
+                            else -> {
+                                onCategorySelected(category)
+                                onDismiss()
+                            }
                         }
                     }
+                )
+
+                ActionButtons(
+                    multiSelectionMode = multiSelectionMode,
+                    selectedCategories = selectedCategories,
+                    movingCategory = movingCategory,
+                    onMultiSelectionToggle = { newMode ->
+                        multiSelectionMode = newMode
+                        if (!newMode) selectedCategories = emptyList()
+                        movingCategory = null
+                    },
+                    onReorder = { fromCategory, toCategory ->
+                        viewModel.handleCategoryMove(
+                            holdedIdCate = fromCategory.idCategorieInCategoriesTabele,
+                            clickedCategoryId = toCategory.idCategorieInCategoriesTabele
+                        ) {
+                            multiSelectionMode = false
+                            selectedCategories = emptyList()
+                        }
+                    },
+                    onCancelMove = {
+                        movingCategory = null
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DialogHeader(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.headlineSmall,
+        modifier = modifier.padding(bottom = 16.dp)
+    )
+}
+
+@Composable
+private fun CategoryGrid(
+    categories: List<CategoriesTabelleECB>,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    multiSelectionMode: Boolean,
+    onCategoryClick: (CategoriesTabelleECB) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        contentPadding = PaddingValues(8.dp),
+    ) {
+        items(categories) { category ->
+            CategoryItem(
+                category = category,
+                isSelected = category in selectedCategories,
+                isMoving = category == movingCategory,
+                selectionOrder = selectedCategories.indexOf(category) + 1,
+                onClick = { onCategoryClick(category) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionButtons(
+    multiSelectionMode: Boolean,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    onMultiSelectionToggle: (Boolean) -> Unit,
+    onReorder: (CategoriesTabelleECB, CategoriesTabelleECB) -> Unit,
+    onCancelMove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Button(
+            onClick = { onMultiSelectionToggle(!multiSelectionMode) }
+        ) {
+            Text(if (multiSelectionMode) "Cancel" else "Select Multiple")
+        }
+
+        when {
+            multiSelectionMode -> {
+                Button(
+                    onClick = {
+                        if (selectedCategories.size >= 2) {
+                            onReorder(
+                                selectedCategories.first(),
+                                selectedCategories.last()
+                            )
+                        }
+                    },
+                    enabled = selectedCategories.size >= 2
+                ) {
+                    Text("Reorder")
+                }
+            }
+            movingCategory != null -> {
+                Button(
+                    onClick = onCancelMove
+                ) {
+                    Text("Cancel Move")
                 }
             }
         }

@@ -1,6 +1,7 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
 
+import a_MainAppCompnents.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels

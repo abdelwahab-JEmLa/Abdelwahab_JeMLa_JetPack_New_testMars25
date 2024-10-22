@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
@@ -95,7 +97,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
 import b2_Edite_Base_Donne_With_Creat_New_Articls.ArticleDetailWindow
-import b2_Edite_Base_Donne_With_Creat_New_Articls.CategoriesRepositoryImpl
 import b2_Edite_Base_Donne_With_Creat_New_Articls.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
@@ -147,16 +148,13 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java) ->
                         EditeBaseDonneViewModel(database.articleDao()) as T
                     modelClass.isAssignableFrom(HeadOfViewModels::class.java) -> {
-                        val repository = CategoriesRepositoryImpl(database.categoriesTabelleECBDao(), FirebaseDatabase.getInstance(),
-                            )
-                        HeadOfViewModels(this@MainActivity, repository) as T
+                        HeadOfViewModels(this@MainActivity, database.categoriesTabelleECBDao()) as T
                     }
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
             }
         }
     }
-
 
     private val editeBaseDonneViewModel: EditeBaseDonneViewModel by viewModels { viewModelFactory }
     private val creditsViewModel: CreditsViewModel by viewModels()
@@ -185,15 +183,20 @@ class MainActivity : ComponentActivity() {
             AbdelwahabJeMLaJetPackTheme {
                 val navController = rememberNavController()
                 val items = NavigationItems.getItems()
-
                 var isNavBarVisible by remember { mutableStateOf(true) }
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
-
+                val indicateurDeNeedUpdateFireBase by headOfViewModels.indicateurDeNeedUpdateFireBase.collectAsState()
                 val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
                 val textProgress by headOfViewModels.textProgress.collectAsState()
-
                 var showSupplierPopup by remember { mutableStateOf(false) }
+
+                // Effect to handle Firebase updates when indicator is true
+                LaunchedEffect(indicateurDeNeedUpdateFireBase) {
+                    if (indicateurDeNeedUpdateFireBase) {
+                        headOfViewModels.updateFirebasePositionsWithDisplayeProgress()
+                    }
+                }
 
                 Scaffold(
                     bottomBar = {
@@ -209,7 +212,8 @@ class MainActivity : ComponentActivity() {
                                             launchSingleTop = true
                                         }
                                     },
-                                    showPopup = { show -> showSupplierPopup = show }
+                                    showPopup = { show -> showSupplierPopup = show },
+                                    indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase
                                 )
                             }
                         }
@@ -247,7 +251,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 
 
 @Composable
@@ -475,6 +478,104 @@ fun AppNavHost(
     }
 }
 
+
+object NavigationItems {
+    fun getItems() = listOf(
+        Screen.MainScreen,
+        Screen.ManageBonsClients,
+        Screen.Fragment_SupplierArticlesRecivedManager,
+        Screen.FragmentMapArticleInSupplierStoreFragment,
+        Screen.EntreBonsGro,
+        Screen.Credits,
+        Screen.CreditsClients,
+        Screen.FactoryClassemntsArticles,
+        Screen.EditDatabaseWithCreateNewArticles ,
+    )
+}
+sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
+    data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
+    data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
+    data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
+    data  object Fragment_SupplierArticlesRecivedManager : Screen("Fragment_SupplierArticlesRecivedManager", Icons.Default.LiveTv, "Fragment_SupplierArticlesRecivedManager", Color(0xFFF44336))
+    data object FragmentMapArticleInSupplierStoreFragment : Screen(
+        "FragmentMapArticleInSupplierStore",
+        Icons.Default.Map,
+        "Map Articles",
+        Color(0xFF00BCD4)
+    ) {
+        fun showPopup(showPopup: (Boolean) -> Unit) {
+            showPopup(true)
+        }
+    }
+    data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
+    data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
+    data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.EditRoad, "Create New Articles", Color(
+        0xFFE30E0E
+    )
+    )
+    data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
+}
+
+@Composable
+fun CustomNavigationBar(
+    items: List<Screen>,
+    currentRoute: String?,
+    onNavigate: (String) -> Unit,
+    showPopup: (Boolean) -> Unit,
+    indicateurDeNeedUpdateFireBase: Boolean = false
+) {
+    // Create infinite animation for the indicator
+    val infiniteTransition = rememberInfiniteTransition(label = "indicator")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    NavigationBar {
+        items.forEach { screen ->
+            NavigationBarItem(
+                icon = {
+                    Box {
+                        Icon(
+                            imageVector = screen.icon,
+                            contentDescription = screen.title,
+                            tint = screen.color
+                        )
+                        if (indicateurDeNeedUpdateFireBase && screen == Screen.MainScreen) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        Color.Red.copy(alpha = alpha),
+                                        CircleShape
+                                    )
+                                    .align(Alignment.TopEnd)
+                            )
+                        }
+                    }
+                },
+                selected = currentRoute == screen.route,
+                onClick = {
+                    if (screen is Screen.FragmentMapArticleInSupplierStoreFragment) {
+                        screen.showPopup(showPopup)
+                    } else {
+                        onNavigate(screen.route)
+                    }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = screen.color,
+                    unselectedIconColor = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+                )
+            )
+        }
+    }
+}
+
 @Composable
 fun SupplierSelectionPopup(
     onDismiss: () -> Unit,
@@ -570,78 +671,6 @@ fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
         )
     }
 }
-object NavigationItems {
-    fun getItems() = listOf(
-        Screen.MainScreen,
-        Screen.ManageBonsClients,
-        Screen.Fragment_SupplierArticlesRecivedManager,
-        Screen.FragmentMapArticleInSupplierStoreFragment,
-        Screen.EntreBonsGro,
-        Screen.Credits,
-        Screen.CreditsClients,
-        Screen.FactoryClassemntsArticles,
-        Screen.EditDatabaseWithCreateNewArticles ,
-    )
-}
-sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
-    data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
-    data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
-    data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
-    data  object Fragment_SupplierArticlesRecivedManager : Screen("Fragment_SupplierArticlesRecivedManager", Icons.Default.LiveTv, "Fragment_SupplierArticlesRecivedManager", Color(0xFFF44336))
-    data object FragmentMapArticleInSupplierStoreFragment : Screen(
-        "FragmentMapArticleInSupplierStore",
-        Icons.Default.Map,
-        "Map Articles",
-        Color(0xFF00BCD4)
-    ) {
-        fun showPopup(showPopup: (Boolean) -> Unit) {
-            showPopup(true)
-        }
-    }
-    data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
-    data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
-    data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.EditRoad, "Create New Articles", Color(
-        0xFFE30E0E
-    )
-    )
-    data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
-}
-@Composable
-fun CustomNavigationBar(
-    items: List<Screen>,
-    currentRoute: String?,
-    onNavigate: (String) -> Unit,
-    showPopup: (Boolean) -> Unit
-) {
-    NavigationBar {
-        items.forEach { screen ->
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.title,
-                        tint = screen.color
-                    )
-                },
-                selected = currentRoute == screen.route,
-                onClick = {
-                    if (screen is Screen.FragmentMapArticleInSupplierStoreFragment) {
-                        screen.showPopup(showPopup)
-                    } else {
-                        onNavigate(screen.route)
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = screen.color,
-                    unselectedIconColor = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
-                )
-            )
-        }
-    }
-}
-
-
-
 
 /** [MainActionsFab]
  * "PS:To Claude Dont Delet This Comment"*/

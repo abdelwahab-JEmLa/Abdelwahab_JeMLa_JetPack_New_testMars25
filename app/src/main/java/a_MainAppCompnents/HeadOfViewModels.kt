@@ -12,8 +12,6 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import b2_Edite_Base_Donne_With_Creat_New_Articls.CategoriesRepository
-import b2_Edite_Base_Donne_With_Creat_New_Articls.CategoriesTabelleECB
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import c_ManageBonsClients.roundToOneDecimal
@@ -29,6 +27,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import h_FactoryClassemntsArticles.ClassementsArticlesTabel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -64,14 +63,14 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val error: String? = null
 )
 
-
 class HeadOfViewModels(
     private val context: Context,
-    private val repository: CategoriesRepository
+    private val categoriesDao: CategoriesTabelleECBDao
 ) : ViewModel() {
 
     val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
+
 
     private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
     val currentEditedArticle: StateFlow<DataBaseArticles?> = _currentEditedArticle.asStateFlow()
@@ -79,6 +78,8 @@ class HeadOfViewModels(
     private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
     val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
 
+    private val _indicateurDeNeedUpdateFireBase = MutableStateFlow(false)
+    val indicateurDeNeedUpdateFireBase: StateFlow<Boolean> = _indicateurDeNeedUpdateFireBase.asStateFlow()
 
     private val _uploadProgress = MutableStateFlow(100f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
@@ -133,66 +134,134 @@ class HeadOfViewModels(
             delay(delayUi)
         }
     }
-
-    init {
-        viewModelScope.launch {
-            repository.getAllCategories().collect { categories ->
-                _uiState.update { it.copy(categoriesECB = categories) }
-            }
-        }
+    private fun setNeedUpdateFireBase(needed: Boolean=true) {
+        _indicateurDeNeedUpdateFireBase.value = needed
     }
 
-    fun importCategoriesFromFirebase() {
+    fun updateFirebasePositionsWithDisplayeProgress() {
         viewModelScope.launch {
             try {
-                repository.importCategoriesFromFirebase()
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
-            }
-        }
-    }
-    fun addNewCategory(categoryName: String) {
-        viewModelScope.launch {
-            updateSmothUploadProgressBarCounterAndItText(
-                nameFunInProgressBar = "Adding new category...",
-                progressDimunuentDe100A0 = 50
-            )
+                val categories = _uiState.value.categoriesECB
+                if (categories.isEmpty()) {
+                    setNeedUpdateFireBase(false)
+                    return@launch
+                }
 
-            try {
-                repository.addNewCategory(categoryName)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error adding category", e)
+                // Starting update
                 updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Error adding category",
-                    progressDimunuentDe100A0 = 0,
-                    end = true
+                    nameFunInProgressBar = "Preparing update...",
+                    progressDimunuentDe100A0 = 100,
+                    delayUi = 0
                 )
-            }
-        }
-    }
-    fun moveCategory(fromCategoryId: Long, toCategoryId: Long) {
-        viewModelScope.launch {
-            try {
-                repository.moveCategory(
-                    fromCategoryId = fromCategoryId,
-                    toCategoryId = toCategoryId
-                )
+
+                val totalUpdates = categories.size
+                var completedUpdates = 0
+
+
+                // Create a deferred completion to track the update
+                val updateDeferred = CompletableDeferred<Unit>()
+
+                // Create individual updates to track progress
+                categories.forEach { category ->
+                    refCategorieTabelee
+                        .child(category.idCategorieInCategoriesTabele.toString())
+                        .child("idClassementCategorieInCategoriesTabele")
+                        .setValue(category.idClassementCategorieInCategoriesTabele)
+                        .addOnSuccessListener {
+                            completedUpdates++
+                            viewModelScope.launch {
+                                val progress = ((completedUpdates.toFloat() / totalUpdates) * 100).toInt()
+                                updateSmothUploadProgressBarCounterAndItText(
+                                    nameFunInProgressBar = "Updated $completedUpdates of $totalUpdates articles...",
+                                    progressDimunuentDe100A0 = 100 - progress,
+                                    delayUi = 0
+                                )
+
+                                if (completedUpdates == totalUpdates) {
+                                    updateDeferred.complete(Unit)
+                                }
+                            }
+                        }
+                        .addOnFailureListener { error ->
+                            updateDeferred.completeExceptionally(error)
+                        }
+                }
+
+                // Wait for completion or handle error
+                try {
+                    updateDeferred.await()
+
+                    // Update complete
+                    updateSmothUploadProgressBarCounterAndItText(
+                        nameFunInProgressBar = "Successfully updated $totalUpdates articles",
+                        progressDimunuentDe100A0 = 0,
+                        delayUi = 0
+                    )
+
+                    // Reset indicators
+                    delay(1000)
+                    setNeedUpdateFireBase(false)
+                    updateSmothUploadProgressBarCounterAndItText(
+                        nameFunInProgressBar = "",
+                        progressDimunuentDe100A0 = 100,
+                        end = true,
+                        delayUi = 0
+                    )
+
+                } catch (e: Exception) {
+                    throw e
+                }
+
             } catch (e: Exception) {
+                Log.e("HeadOfViewModels", "Failed to batch update Firebase", e)
                 _uiState.update { it.copy(error = e.message) }
+                setNeedUpdateFireBase(false)
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Update failed: ${e.message}",
+                    progressDimunuentDe100A0 = 100,
+                    end = true,
+                    delayUi = 0
+                )
             }
         }
     }
 
-    fun reorderCategories(fromCategoryId: Long, toCategoryId: Long) {
+    fun handleCategoryMove(
+        holdedIdCate: Long,
+        clickedCategoryId: Long,
+        onComplete: () -> Unit
+    ) {
         viewModelScope.launch {
-            try {
-                repository.reorderCategories(
-                    fromCategoryId = fromCategoryId,
-                    toCategoryId = toCategoryId
-                )
-            } catch (e: Exception) {
-                // Handle error if needed
-                _uiState.update { it.copy(error = e.message) }
+            val categories = _uiState.value.categoriesECB.toMutableList()
+
+            val fromIndex = categories.indexOfFirst { it.idCategorieInCategoriesTabele == holdedIdCate }
+            val toIndex = categories.indexOfFirst { it.idCategorieInCategoriesTabele == clickedCategoryId }
+
+            if (fromIndex != -1 && toIndex != -1) {
+                val movedCategory = categories[fromIndex]
+
+                // Remove and insert at new position
+                categories.removeAt(fromIndex)
+                categories.add(toIndex, movedCategory)
+
+                // Update UI with only affected items
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        categoriesECB = categories
+                    )
+                }
+
+                // Update positions in database
+                categories.forEachIndexed { index, category ->
+                    category.idClassementCategorieInCategoriesTabele = index + 1
+                }
+
+                // Batch update local database
+                categoriesDao.updateAll(categories) // Unresolved reference: categoriesDao
+
+                setNeedUpdateFireBase()
+
+                onComplete()
             }
         }
     }
@@ -224,6 +293,107 @@ class HeadOfViewModels(
             }
         }
     }
+
+    fun importCategoriesFromFirebase() {
+        viewModelScope.launch {
+            try {
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Importing categories...",
+                    progressDimunuentDe100A0 = 50
+                )
+
+                val snapshot = refCategorieTabelee.get().await()
+                val categories = snapshot.children.mapNotNull { categorySnapshot ->
+                    categorySnapshot.getValue(CategoriesTabelleECB::class.java)
+                }.sortedBy { it.idClassementCategorieInCategoriesTabele }
+
+                // Mise à jour en batch de toutes les catégories
+                if (categories.isNotEmpty()) {
+                    categoriesDao.updateAll(categories)
+                }
+
+                _uiState.update { currentState ->
+                    currentState.copy(categoriesECB = categories)
+                }
+
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Import complete",
+                    progressDimunuentDe100A0 = 0,
+                    end = true
+                )
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(error = e.message)
+                }
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun addNewCategory(categoryName: String) {
+        viewModelScope.launch {
+            try {
+                // Récupérer l'ID maximum actuel des catégories
+                val maxId = _uiState.value.categoriesECB
+                    .maxOfOrNull { it.idCategorieInCategoriesTabele }
+                    ?: 0
+
+                // Récupérer la position maximum actuelle
+                val maxPosition = _uiState.value.categoriesECB
+                    .maxOfOrNull { it.idClassementCategorieInCategoriesTabele }
+                    ?: 0
+
+                val newCategory = CategoriesTabelleECB(
+                    idCategorieInCategoriesTabele = maxId + 1,
+                    idClassementCategorieInCategoriesTabele = maxPosition + 1,
+                    nomCategorieInCategoriesTabele = categoryName
+                )
+
+                // Mise à jour locale
+                categoriesDao.insert(newCategory)
+
+                // Mise à jour Firebase
+                refCategorieTabelee
+                    .child(newCategory.idCategorieInCategoriesTabele.toString())
+                    .setValue(newCategory)
+                    .await()
+
+                // Mise à jour UI
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        categoriesECB = currentState.categoriesECB + newCategory
+                    )
+                }
+
+                setNeedUpdateFireBase()
+
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(error = e.message)
+                }
+                Log.e("CategoriesRepository", "Failed to add new category", e)
+            }
+        }
+    }
+
+
+    suspend fun batchUpdateFirebasePositions(categories: List<CategoriesTabelleECB>) {
+        try {
+            if (categories.isEmpty()) return
+
+            val updates = categories.associate { category ->
+                "/${category.idCategorieInCategoriesTabele}/idClassementCategorieInCategoriesTabele" to
+                        category.idClassementCategorieInCategoriesTabele
+            }
+
+            refCategorieTabelee.updateChildren(updates).await()
+        } catch (e: Exception) {
+            Log.e("CategoriesRepository", "Failed to batch update Firebase positions", e)
+            throw e
+        }
+    }
+
+
 
     private fun updateArticleDisponibilityState(
         articles: List<DataBaseArticles>,
@@ -1047,6 +1217,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val articles = fetchArticles()
             updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
+            val categories = categoriesDao.getAllCategoriesList()
+            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
+
             val colorsArticles = fetchColorsArticles()
             updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
 
@@ -1069,7 +1242,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
             updateUiState(
-                articles, supplierArticlesRecived, suppliersSA,
+                articles, categories,supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
                 placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles
             )
@@ -1086,6 +1259,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             idArticle = snapshot.key?.toIntOrNull() ?: 0
         }
     }
+
     private suspend fun fetchColorsArticles() = refColorsArticles.get().await().children
         .mapNotNull { it.getValue(ColorsArticles::class.java) }
 
@@ -1112,6 +1286,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun updateUiState(
         articles: List<DataBaseArticles>,
+        categories : List<CategoriesTabelleECB>,
         supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
         suppliersSA: List<TabelleSuppliersSA>,
         mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
@@ -1122,6 +1297,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
+            categoriesECB = categories,
             tabelleSupplierArticlesRecived = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,
             mapArticleInSupplierStore = mapArticleInSupplierStore,
