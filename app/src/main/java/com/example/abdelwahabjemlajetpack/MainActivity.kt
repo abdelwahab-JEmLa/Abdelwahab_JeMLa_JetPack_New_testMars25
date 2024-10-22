@@ -191,13 +191,6 @@ class MainActivity : ComponentActivity() {
                 val textProgress by headOfViewModels.textProgress.collectAsState()
                 var showSupplierPopup by remember { mutableStateOf(false) }
 
-                // Effect to handle Firebase updates when indicator is true
-                LaunchedEffect(indicateurDeNeedUpdateFireBase) {
-                    if (indicateurDeNeedUpdateFireBase) {
-                        headOfViewModels.updateFirebasePositionsWithDisplayeProgress()
-                    }
-                }
-
                 Scaffold(
                     bottomBar = {
                         if (isNavBarVisible) {
@@ -213,7 +206,8 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     showPopup = { show -> showSupplierPopup = show },
-                                    indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase
+                                    indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase ,
+                                    headOfViewModels=headOfViewModels
                                 )
                             }
                         }
@@ -522,9 +516,9 @@ fun CustomNavigationBar(
     currentRoute: String?,
     onNavigate: (String) -> Unit,
     showPopup: (Boolean) -> Unit,
-    indicateurDeNeedUpdateFireBase: Boolean = false
+    indicateurDeNeedUpdateFireBase: Boolean = false,
+    headOfViewModels: HeadOfViewModels    // Added parameter for handling updates
 ) {
-    // Create infinite animation for the indicator
     val infiniteTransition = rememberInfiniteTransition(label = "indicator")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -561,10 +555,15 @@ fun CustomNavigationBar(
                 },
                 selected = currentRoute == screen.route,
                 onClick = {
-                    if (screen is Screen.FragmentMapArticleInSupplierStoreFragment) {
-                        screen.showPopup(showPopup)
-                    } else {
-                        onNavigate(screen.route)
+                    when (screen) {
+                        is Screen.FragmentMapArticleInSupplierStoreFragment -> screen.showPopup(showPopup)
+                        is Screen.MainScreen -> {
+                            if (indicateurDeNeedUpdateFireBase) {
+                                headOfViewModels.updateFirebasePositionsWithDisplayeProgress()
+                            }
+                            onNavigate(screen.route)
+                        }
+                        else -> onNavigate(screen.route)
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
