@@ -138,6 +138,39 @@ class HeadOfViewModels(
         _indicateurDeNeedUpdateFireBase.value = needed
     }
 
+    fun moveArticlesBetweenCategories(
+        fromCategoryId: Long,
+        toCategoryId: Long
+    ) {
+        viewModelScope.launch {
+            try {
+                val articles = _uiState.value.articlesBaseDonneECB
+
+                // Update all articles from the source category to the destination category
+                val updatedArticles = articles.map { article ->
+                    if (article.idCategorieNewMetode == fromCategoryId) {
+                        article.copy(idCategorieNewMetode = toCategoryId)
+                    } else {
+                        article
+                    }
+                }
+
+                // Update UI state
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        articlesBaseDonneECB = updatedArticles
+                    )
+                }
+
+                // Set flag to update Firebase
+                setNeedUpdateFireBase()
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to move articles between categories", e)
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
     fun updateFirebasePositionsWithDisplayeProgress() {
         viewModelScope.launch {
             try {

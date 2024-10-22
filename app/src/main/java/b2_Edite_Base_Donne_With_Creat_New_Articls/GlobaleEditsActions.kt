@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +24,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
@@ -32,12 +37,15 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,10 +58,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import h_FactoryClassemntsArticles.AutoResizedTextClas
 
 data class ButtonInfo(
     val icon: ImageVector,
@@ -187,15 +195,18 @@ private fun FloatingButton(
     }
 }
 @Composable
-private fun CategoryReorderAndSelectionWindow(
+fun CategoryReorderAndSelectionWindow(
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
     onCategorySelected: (CategoriesTabelleECB) -> Unit,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
 ) {
     var multiSelectionMode by remember { mutableStateOf(false) }
+    var renameOrFusionMode by remember { mutableStateOf(false) }
     var selectedCategories by remember { mutableStateOf<List<CategoriesTabelleECB>>(emptyList()) }
     var movingCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
+    var heldCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
+    var filterText by remember { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -209,13 +220,57 @@ private fun CategoryReorderAndSelectionWindow(
                     title = "Select Category"
                 )
 
+                OutlinedTextField(
+                    value = filterText,
+                    onValueChange = { filterText = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    placeholder = { Text("Filter categories or enter new category name") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search"
+                        )
+                    },
+                    singleLine = true
+                )
+
+                val filteredCategories = remember(uiState.categoriesECB, filterText) {
+                    if (filterText.isBlank()) {
+                        uiState.categoriesECB
+                    } else {
+                        uiState.categoriesECB.filter {
+                            it.nomCategorieInCategoriesTabele.contains(filterText, ignoreCase = true)
+                        }
+                    }
+                }
+
                 CategoryGrid(
-                    categories = uiState.categoriesECB,
+                    categories = filteredCategories,
                     selectedCategories = selectedCategories,
                     movingCategory = movingCategory,
-                    multiSelectionMode = multiSelectionMode,
+                    heldCategory = heldCategory,
                     onCategoryClick = { category ->
                         when {
+                            category.nomCategorieInCategoriesTabele == "Add New Category" -> {
+                                if (filterText.isNotBlank()) {
+                                    viewModel.addNewCategory(filterText)
+                                    filterText = ""
+                                }
+                            }
+                            renameOrFusionMode -> {
+                                if (heldCategory == null) {
+                                    heldCategory = category
+                                } else if (heldCategory != category) {
+                                    viewModel.moveArticlesBetweenCategories(
+                                        fromCategoryId = heldCategory!!.idCategorieInCategoriesTabele,
+                                        toCategoryId = category.idCategorieInCategoriesTabele
+                                    )
+                                    heldCategory = null
+                                    renameOrFusionMode = false
+                                }
+                            }
                             multiSelectionMode -> {
                                 selectedCategories = if (category in selectedCategories) {
                                     selectedCategories - category
@@ -241,11 +296,22 @@ private fun CategoryReorderAndSelectionWindow(
 
                 ActionButtons(
                     multiSelectionMode = multiSelectionMode,
+                    renameOrFusionMode = renameOrFusionMode,
                     selectedCategories = selectedCategories,
                     movingCategory = movingCategory,
+                    heldCategory = heldCategory,
                     onMultiSelectionToggle = { newMode ->
                         multiSelectionMode = newMode
                         if (!newMode) selectedCategories = emptyList()
+                        movingCategory = null
+                        renameOrFusionMode = false
+                        heldCategory = null
+                    },
+                    onRenameOrFusionToggle = { newMode ->
+                        renameOrFusionMode = newMode
+                        if (!newMode) heldCategory = null
+                        multiSelectionMode = false
+                        selectedCategories = emptyList()
                         movingCategory = null
                     },
                     onReorder = { fromCategory, toCategory ->
@@ -259,8 +325,190 @@ private fun CategoryReorderAndSelectionWindow(
                     },
                     onCancelMove = {
                         movingCategory = null
+                        heldCategory = null
+                        renameOrFusionMode = false
                     }
                 )
+            }
+        }
+    }
+}
+@Composable
+private fun CategoryGrid(
+    categories: List<CategoriesTabelleECB>,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    heldCategory: CategoriesTabelleECB?,
+    onCategoryClick: (CategoriesTabelleECB) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val addNewCategory = CategoriesTabelleECB(
+        idCategorieInCategoriesTabele = (categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0) + 1,
+        nomCategorieInCategoriesTabele = "Add New Category",
+        idClassementCategorieInCategoriesTabele = categories.size
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        contentPadding = PaddingValues(8.dp),
+        modifier = modifier
+    ) {
+        items(categories + addNewCategory) { category ->
+            CategoryItem(
+                category = category,
+                isSelected = category in selectedCategories,
+                isMoving = category == movingCategory,
+                isHeld = category == heldCategory,
+                selectionOrder = selectedCategories.indexOf(category) + 1,
+                onClick = { onCategoryClick(category) }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun CategoryItem(
+    category: CategoriesTabelleECB,
+    isSelected: Boolean,
+    isMoving: Boolean,
+    isHeld: Boolean,
+    selectionOrder: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .padding(4.dp)
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                category.nomCategorieInCategoriesTabele == "Add New Category" ->
+                    MaterialTheme.colorScheme.secondary
+                isHeld -> MaterialTheme.colorScheme.error
+                isMoving -> MaterialTheme.colorScheme.secondary
+                isSelected -> MaterialTheme.colorScheme.primaryContainer
+                else -> MaterialTheme.colorScheme.primary
+            }
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isHeld || isSelected || isMoving) 8.dp else 2.dp
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isSelected) {
+                Text(
+                    text = selectionOrder.toString(),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .background(
+                            MaterialTheme.colorScheme.secondary,
+                            shape = CircleShape
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    color = MaterialTheme.colorScheme.onSecondary,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+
+            if (category.nomCategorieInCategoriesTabele == "Add New Category") {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add New Category",
+                    tint = MaterialTheme.colorScheme.onSecondary
+                )
+            }
+
+            Text(
+                text = category.nomCategorieInCategoriesTabele,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                color = when {
+                    category.nomCategorieInCategoriesTabele == "Add New Category" ->
+                        MaterialTheme.colorScheme.onSecondary
+                    isHeld -> MaterialTheme.colorScheme.onError
+                    isMoving -> MaterialTheme.colorScheme.onSecondary
+                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                    else -> MaterialTheme.colorScheme.onPrimary
+                },
+                modifier = Modifier.padding(
+                    top = if (isSelected) 24.dp else 0.dp
+                )
+            )
+
+            if (isHeld) {
+                Icon(
+                    imageVector = Icons.Default.SwapHoriz,
+                    contentDescription = "Fusion Mode Active",
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 4.dp),
+                    tint = MaterialTheme.colorScheme.onError
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionButtons(
+    multiSelectionMode: Boolean,
+    renameOrFusionMode: Boolean,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    heldCategory: CategoriesTabelleECB?,
+    onMultiSelectionToggle: (Boolean) -> Unit,
+    onRenameOrFusionToggle: (Boolean) -> Unit,
+    onReorder: (CategoriesTabelleECB, CategoriesTabelleECB) -> Unit,
+    onCancelMove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        when {
+            multiSelectionMode -> {
+                Button(onClick = { onMultiSelectionToggle(false) }) {
+                    Text("Cancel")
+                }
+                Button(
+                    onClick = {
+                        if (selectedCategories.size >= 2) {
+                            onReorder(selectedCategories.first(), selectedCategories.last())
+                        }
+                    },
+                    enabled = selectedCategories.size >= 2
+                ) {
+                    Text("Reorder")
+                }
+            }
+            renameOrFusionMode -> {
+                Button(onClick = { onRenameOrFusionToggle(false) }) {
+                    Text("Cancel Fusion")
+                }
+            }
+            movingCategory != null -> {
+                Button(onClick = onCancelMove) {
+                    Text("Cancel Move")
+                }
+            }
+            else -> {
+                Button(onClick = { onMultiSelectionToggle(true) }) {
+                    Text("Select Multiple")
+                }
+                Button(onClick = { onRenameOrFusionToggle(true) }) {
+                    Text("Fusion Mode")
+                }
             }
         }
     }
@@ -278,119 +526,4 @@ private fun DialogHeader(
     )
 }
 
-@Composable
-private fun CategoryGrid(
-    categories: List<CategoriesTabelleECB>,
-    selectedCategories: List<CategoriesTabelleECB>,
-    movingCategory: CategoriesTabelleECB?,
-    multiSelectionMode: Boolean,
-    onCategoryClick: (CategoriesTabelleECB) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        contentPadding = PaddingValues(8.dp),
-    ) {
-        items(categories) { category ->
-            CategoryItem(
-                category = category,
-                isSelected = category in selectedCategories,
-                isMoving = category == movingCategory,
-                selectionOrder = selectedCategories.indexOf(category) + 1,
-                onClick = { onCategoryClick(category) }
-            )
-        }
-    }
-}
 
-@Composable
-private fun ActionButtons(
-    multiSelectionMode: Boolean,
-    selectedCategories: List<CategoriesTabelleECB>,
-    movingCategory: CategoriesTabelleECB?,
-    onMultiSelectionToggle: (Boolean) -> Unit,
-    onReorder: (CategoriesTabelleECB, CategoriesTabelleECB) -> Unit,
-    onCancelMove: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Button(
-            onClick = { onMultiSelectionToggle(!multiSelectionMode) }
-        ) {
-            Text(if (multiSelectionMode) "Cancel" else "Select Multiple")
-        }
-
-        when {
-            multiSelectionMode -> {
-                Button(
-                    onClick = {
-                        if (selectedCategories.size >= 2) {
-                            onReorder(
-                                selectedCategories.first(),
-                                selectedCategories.last()
-                            )
-                        }
-                    },
-                    enabled = selectedCategories.size >= 2
-                ) {
-                    Text("Reorder")
-                }
-            }
-            movingCategory != null -> {
-                Button(
-                    onClick = onCancelMove
-                ) {
-                    Text("Cancel Move")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CategoryItem(
-    category: CategoriesTabelleECB,
-    isSelected: Boolean,
-    isMoving: Boolean,
-    selectionOrder: Int,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                isMoving -> MaterialTheme.colorScheme.secondary
-                isSelected -> MaterialTheme.colorScheme.primaryContainer
-                else -> MaterialTheme.colorScheme.primary
-            }
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isSelected) {
-                Text(
-                    text = selectionOrder.toString(),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
-                        .padding(4.dp),
-                    color = MaterialTheme.colorScheme.onSecondary,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-            AutoResizedTextClas(category.nomCategorieInCategoriesTabele)
-        }
-    }
-}
