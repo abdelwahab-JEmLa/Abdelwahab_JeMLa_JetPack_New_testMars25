@@ -71,16 +71,15 @@ fun CategoryReorderAndSelectionWindow(
         Surface(
             modifier = Modifier.fillMaxSize(),
             shape = MaterialTheme.shapes.large
-        )    {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Search field
                 SearchField(
                     filterText = filterText,
                     onFilterTextChange = { filterText = it }
                 )
 
+                // Filter categories based on search text
                 val filteredCategories = remember(uiState.categoriesECB, filterText) {
                     if (filterText.isBlank()) {
                         uiState.categoriesECB
@@ -91,6 +90,7 @@ fun CategoryReorderAndSelectionWindow(
                     }
                 }
 
+                // Category grid
                 Box(modifier = Modifier.weight(1f)) {
                     CategoryGrid(
                         categories = filteredCategories,
@@ -118,6 +118,7 @@ fun CategoryReorderAndSelectionWindow(
                     )
                 }
 
+                // Bottom actions
                 BottomActions(
                     multiSelectionMode = multiSelectionMode,
                     renameOrFusionMode = renameOrFusionMode,
@@ -322,7 +323,7 @@ private fun BottomActions(
                 contentDescription = null
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (multiSelectionMode) "C" else "Mul")
+            Text(if (multiSelectionMode) "Cancel" else "Select")
         }
 
         OutlinedButton(
@@ -334,20 +335,19 @@ private fun BottomActions(
                 contentDescription = null
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (renameOrFusionMode) "C" else "Merg")
+            Text(if (renameOrFusionMode) "Cancel" else "Merge")
         }
 
-        if (selectedCategories.size >= 2) {    //TODO fait que le click fait entre au mode nextClickMakeSelectedCategorieAfter
-            //ici le click fait les elements stocke au     var selectedCategories by remember { mutableStateOf<List<CategoriesTabelleECB>>(emptyList()) }
-            //soit leur index soit apre la categorie click et eux soit ordre pasr le selected order
+        if (selectedCategories.size >= 2) {
             Button(
                 onClick = {
-                    onReorderCategories(selectedCategories[0], selectedCategories[1])
+                    val orderedCategories = selectedCategories.take(2)
+                    onReorderCategories(orderedCategories[0], orderedCategories[1])
                 }
             ) {
                 Icon(Icons.Default.SwapVert, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Reo")
+                Text("Reorder")
             }
         }
 
@@ -355,7 +355,7 @@ private fun BottomActions(
             Button(onClick = onCancelMove) {
                 Icon(Icons.Default.Close, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Mov")
+                Text("Cancel Move")
             }
         }
     }
@@ -397,8 +397,8 @@ private fun handleCategoryClick(
         }
         multiSelectionMode -> {
             onSelectedCategoriesChange(
-                if (category in selectedCategories) { //TODO fait que la categreie ajoute soit au bas de la list
-                    selectedCategories - category
+                if (category in selectedCategories) {
+                    selectedCategories.filterNot { it == category }
                 } else {
                     selectedCategories + category
                 }
@@ -418,6 +418,3 @@ private fun handleCategoryClick(
         }
     }
 }
-
-
-
