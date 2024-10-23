@@ -63,6 +63,8 @@ fun CategoryReorderAndSelectionWindow(
     var movingCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
     var heldCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
     var filterText by remember { mutableStateOf("") }
+    // Nouvel état pour le mode de réorganisation
+    var reorderMode by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -97,6 +99,7 @@ fun CategoryReorderAndSelectionWindow(
                         selectedCategories = selectedCategories,
                         movingCategory = movingCategory,
                         heldCategory = heldCategory,
+                        reorderMode = reorderMode,
                         onCategoryClick = { category ->
                             handleCategoryClick(
                                 category = category,
@@ -104,6 +107,7 @@ fun CategoryReorderAndSelectionWindow(
                                 viewModel = viewModel,
                                 renameOrFusionMode = renameOrFusionMode,
                                 multiSelectionMode = multiSelectionMode,
+                                reorderMode = reorderMode,
                                 heldCategory = heldCategory,
                                 selectedCategories = selectedCategories,
                                 movingCategory = movingCategory,
@@ -111,6 +115,7 @@ fun CategoryReorderAndSelectionWindow(
                                 onSelectedCategoriesChange = { selectedCategories = it },
                                 onRenameOrFusionModeChange = { renameOrFusionMode = it },
                                 onMovingCategoryChange = { movingCategory = it },
+                                onReorderModeChange = { reorderMode = it },
                                 onCategorySelected = onCategorySelected,
                                 onDismiss = onDismiss
                             )
@@ -118,12 +123,12 @@ fun CategoryReorderAndSelectionWindow(
                     )
                 }
 
-                // Bottom actions
                 BottomActions(
                     multiSelectionMode = multiSelectionMode,
                     renameOrFusionMode = renameOrFusionMode,
                     selectedCategories = selectedCategories,
                     movingCategory = movingCategory,
+                    reorderMode = reorderMode,
                     onMultiSelectionModeChange = { newMode ->
                         multiSelectionMode = newMode
                         if (!newMode) {
@@ -131,6 +136,7 @@ fun CategoryReorderAndSelectionWindow(
                             movingCategory = null
                             renameOrFusionMode = false
                             heldCategory = null
+                            reorderMode = false
                         }
                     },
                     onRenameOrFusionModeChange = { newMode ->
@@ -140,21 +146,17 @@ fun CategoryReorderAndSelectionWindow(
                             multiSelectionMode = false
                             selectedCategories = emptyList()
                             movingCategory = null
+                            reorderMode = false
                         }
                     },
-                    onReorderCategories = { fromCategory, toCategory ->
-                        viewModel.handleCategoryMove(
-                            holdedIdCate = fromCategory.idCategorieInCategoriesTabele,
-                            clickedCategoryId = toCategory.idCategorieInCategoriesTabele
-                        ) {
-                            multiSelectionMode = false
-                            selectedCategories = emptyList()
-                        }
+                    onReorderModeActivate = {
+                        reorderMode = true
                     },
                     onCancelMove = {
                         movingCategory = null
                         heldCategory = null
                         renameOrFusionMode = false
+                        reorderMode = false
                     }
                 )
             }
@@ -162,6 +164,68 @@ fun CategoryReorderAndSelectionWindow(
     }
 }
 
+@Composable
+private fun BottomActions(
+    multiSelectionMode: Boolean,
+    renameOrFusionMode: Boolean,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    reorderMode: Boolean,
+    onMultiSelectionModeChange: (Boolean) -> Unit,
+    onRenameOrFusionModeChange: (Boolean) -> Unit,
+    onReorderModeActivate: () -> Unit,
+    onCancelMove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        OutlinedButton(
+            onClick = { onMultiSelectionModeChange(!multiSelectionMode) },
+            enabled = !renameOrFusionMode && movingCategory == null
+        ) {
+            Icon(
+                imageVector = if (multiSelectionMode) Icons.Default.Clear else Icons.Default.CheckBox,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(if (multiSelectionMode) "Cancel" else "Select")
+        }
+
+        OutlinedButton(
+            onClick = { onRenameOrFusionModeChange(!renameOrFusionMode) },
+            enabled = !multiSelectionMode && movingCategory == null
+        ) {
+            Icon(
+                imageVector = if (renameOrFusionMode) Icons.Default.Clear else Icons.Default.Merge,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(if (renameOrFusionMode) "Cancel" else "Merge")
+        }
+
+        if (selectedCategories.size >= 2 && !reorderMode) {
+            Button(
+                onClick = onReorderModeActivate
+            ) {
+                Icon(Icons.Default.SwapVert, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Reo")
+            }
+        }
+
+        if (reorderMode) {
+            Button(onClick = onCancelMove) {
+                Icon(Icons.Default.Close, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Cancel")
+            }
+        }
+    }
+}
 @Composable
 private fun SearchField(
     filterText: String,
@@ -184,12 +248,85 @@ private fun SearchField(
     )
 }
 
+private fun handleCategoryClick(
+    category: CategoriesTabelleECB,
+    filterText: String,
+    viewModel: HeadOfViewModels,
+    renameOrFusionMode: Boolean,
+    multiSelectionMode: Boolean,
+    reorderMode: Boolean,
+    heldCategory: CategoriesTabelleECB?,
+    selectedCategories: List<CategoriesTabelleECB>,
+    movingCategory: CategoriesTabelleECB?,
+    onHeldCategoryChange: (CategoriesTabelleECB?) -> Unit,
+    onSelectedCategoriesChange: (List<CategoriesTabelleECB>) -> Unit,
+    onRenameOrFusionModeChange: (Boolean) -> Unit,
+    onMovingCategoryChange: (CategoriesTabelleECB?) -> Unit,
+    onReorderModeChange: (Boolean) -> Unit,
+    onCategorySelected: (CategoriesTabelleECB) -> Unit,
+    onDismiss: () -> Unit
+) {
+    when {
+        category.nomCategorieInCategoriesTabele == "Add New Category" -> {
+            if (filterText.isNotBlank()) {
+                viewModel.addNewCategory(filterText)
+            }
+        }
+        reorderMode -> {
+            // Déplace toutes les catégories sélectionnées après la catégorie cliquée
+            selectedCategories.forEach { selectedCategory ->
+                viewModel.handleCategoryMove(
+                    holdedIdCate = selectedCategory.idCategorieInCategoriesTabele,
+                    clickedCategoryId = category.idCategorieInCategoriesTabele
+                ) {}
+            }
+            // Réinitialise le mode de réorganisation
+            onReorderModeChange(false)
+            onSelectedCategoriesChange(emptyList())
+        }
+        renameOrFusionMode -> {
+            if (heldCategory == null) {
+                onHeldCategoryChange(category)
+            } else if (heldCategory != category) {
+                viewModel.moveArticlesBetweenCategories(
+                    fromCategoryId = heldCategory.idCategorieInCategoriesTabele,
+                    toCategoryId = category.idCategorieInCategoriesTabele
+                )
+                onHeldCategoryChange(null)
+                onRenameOrFusionModeChange(false)
+            }
+        }
+        multiSelectionMode -> {
+            onSelectedCategoriesChange(
+                if (category in selectedCategories) {
+                    selectedCategories.filterNot { it == category }
+                } else {
+                    selectedCategories + category
+                }
+            )
+        }
+        movingCategory != null -> {
+            viewModel.handleCategoryMove(
+                holdedIdCate = movingCategory.idCategorieInCategoriesTabele,
+                clickedCategoryId = category.idCategorieInCategoriesTabele
+            ) {
+                onMovingCategoryChange(null)
+            }
+        }
+        else -> {
+            onCategorySelected(category)
+            onDismiss()
+        }
+    }
+}
+
 @Composable
 private fun CategoryGrid(
     categories: List<CategoriesTabelleECB>,
     selectedCategories: List<CategoriesTabelleECB>,
     movingCategory: CategoriesTabelleECB?,
     heldCategory: CategoriesTabelleECB?,
+    reorderMode: Boolean,
     onCategoryClick: (CategoriesTabelleECB) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -210,6 +347,7 @@ private fun CategoryGrid(
                 isSelected = category in selectedCategories,
                 isMoving = category == movingCategory,
                 isHeld = category == heldCategory,
+                isReorderTarget = reorderMode && category !in selectedCategories,
                 selectionOrder = selectedCategories.indexOf(category) + 1,
                 onClick = { onCategoryClick(category) }
             )
@@ -224,6 +362,7 @@ private fun CategoryItem(
     isSelected: Boolean,
     isMoving: Boolean,
     isHeld: Boolean,
+    isReorderTarget: Boolean,
     selectionOrder: Int,
     onClick: () -> Unit
 ) {
@@ -231,6 +370,7 @@ private fun CategoryItem(
         isHeld -> MaterialTheme.colorScheme.primaryContainer
         isSelected -> MaterialTheme.colorScheme.secondaryContainer
         isMoving -> MaterialTheme.colorScheme.tertiaryContainer
+        isReorderTarget -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
         category.nomCategorieInCategoriesTabele == "Add New Category" -> MaterialTheme.colorScheme.surfaceVariant
         else -> MaterialTheme.colorScheme.surface
     }
@@ -292,129 +432,6 @@ private fun CategoryItem(
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun BottomActions(
-    multiSelectionMode: Boolean,
-    renameOrFusionMode: Boolean,
-    selectedCategories: List<CategoriesTabelleECB>,
-    movingCategory: CategoriesTabelleECB?,
-    onMultiSelectionModeChange: (Boolean) -> Unit,
-    onRenameOrFusionModeChange: (Boolean) -> Unit,
-    onReorderCategories: (CategoriesTabelleECB, CategoriesTabelleECB) -> Unit,
-    onCancelMove: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        OutlinedButton(
-            onClick = { onMultiSelectionModeChange(!multiSelectionMode) },
-            enabled = !renameOrFusionMode && movingCategory == null
-        ) {
-            Icon(
-                imageVector = if (multiSelectionMode) Icons.Default.Clear else Icons.Default.CheckBox,
-                contentDescription = null
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(if (multiSelectionMode) "Cancel" else "Select")
-        }
-
-        OutlinedButton(
-            onClick = { onRenameOrFusionModeChange(!renameOrFusionMode) },
-            enabled = !multiSelectionMode && movingCategory == null
-        ) {
-            Icon(
-                imageVector = if (renameOrFusionMode) Icons.Default.Clear else Icons.Default.Merge,
-                contentDescription = null
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(if (renameOrFusionMode) "Cancel" else "Merge")
-        }
-
-        if (selectedCategories.size >= 2) {
-            Button(
-                onClick = {
-                    val orderedCategories = selectedCategories.take(2)
-                    onReorderCategories(orderedCategories[0], orderedCategories[1])
-                }
-            ) {
-                Icon(Icons.Default.SwapVert, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Reorder")
-            }
-        }
-
-        if (movingCategory != null) {
-            Button(onClick = onCancelMove) {
-                Icon(Icons.Default.Close, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Cancel Move")
-            }
-        }
-    }
-}
-
-private fun handleCategoryClick(
-    category: CategoriesTabelleECB,
-    filterText: String,
-    viewModel: HeadOfViewModels,
-    renameOrFusionMode: Boolean,
-    multiSelectionMode: Boolean,
-    heldCategory: CategoriesTabelleECB?,
-    selectedCategories: List<CategoriesTabelleECB>,
-    movingCategory: CategoriesTabelleECB?,
-    onHeldCategoryChange: (CategoriesTabelleECB?) -> Unit,
-    onSelectedCategoriesChange: (List<CategoriesTabelleECB>) -> Unit,
-    onRenameOrFusionModeChange: (Boolean) -> Unit,
-    onMovingCategoryChange: (CategoriesTabelleECB?) -> Unit,
-    onCategorySelected: (CategoriesTabelleECB) -> Unit,
-    onDismiss: () -> Unit
-) {
-    when {
-        category.nomCategorieInCategoriesTabele == "Add New Category" -> {
-            if (filterText.isNotBlank()) {
-                viewModel.addNewCategory(filterText)
-            }
-        }
-        renameOrFusionMode -> {
-            if (heldCategory == null) {
-                onHeldCategoryChange(category)
-            } else if (heldCategory != category) {
-                viewModel.moveArticlesBetweenCategories(
-                    fromCategoryId = heldCategory.idCategorieInCategoriesTabele,
-                    toCategoryId = category.idCategorieInCategoriesTabele
-                )
-                onHeldCategoryChange(null)
-                onRenameOrFusionModeChange(false)
-            }
-        }
-        multiSelectionMode -> {
-            onSelectedCategoriesChange(
-                if (category in selectedCategories) {
-                    selectedCategories.filterNot { it == category }
-                } else {
-                    selectedCategories + category
-                }
-            )
-        }
-        movingCategory != null -> {
-            viewModel.handleCategoryMove(
-                holdedIdCate = movingCategory.idCategorieInCategoriesTabele,
-                clickedCategoryId = category.idCategorieInCategoriesTabele
-            ) {
-                onMovingCategoryChange(null)
-            }
-        }
-        else -> {
-            onCategorySelected(category)
-            onDismiss()
         }
     }
 }
