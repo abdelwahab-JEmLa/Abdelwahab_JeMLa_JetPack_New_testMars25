@@ -41,7 +41,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
@@ -193,16 +192,15 @@ fun ArticleDetailWindow(
                                     onReloadTrigger()
                                 }
                             ) {
-                                Icon(
-                                    imageVector = if (!article.funChangeImagsDimention)
-                                        Icons.Default.Close
-                                    else
-                                        Icons.Default.Image,
-                                    contentDescription = if (!article.funChangeImagsDimention)
-                                        "Switch to Close View"
-                                    else
-                                        "Switch to Image View"
-                                )
+                                if (article.funChangeImagsDimention) {
+                                    Icon(
+                                        imageVector = Icons.Default.Image,
+                                        contentDescription = if (!article.funChangeImagsDimention)
+                                            "Switch to Close View"
+                                        else
+                                            "Switch to Image View"
+                                    )
+                                }
                             }
                         }
 
