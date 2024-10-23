@@ -2233,7 +2233,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             diponibilityState = "",
             couleur1 = "Couleur 1",
             dateCreationCategorie = System.currentTimeMillis().toString(),
-            classementCate = newClassementCate
+            classementCate = newClassementCate,
+            funChangeImagsDimention = true
         )
     }
 
