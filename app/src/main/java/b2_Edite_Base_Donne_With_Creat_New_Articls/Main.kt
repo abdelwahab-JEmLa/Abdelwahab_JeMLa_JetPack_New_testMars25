@@ -19,7 +19,11 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -227,6 +231,7 @@ fun getNextDisponibilityState(currentState: String): String = when (currentState
     "Non Dispo" -> "NonForNewsClients"
     else -> ""
 }
+
 @Composable
 fun ArticleItemECB(
     article: DataBaseArticles,
@@ -247,7 +252,6 @@ fun ArticleItemECB(
                     .clickable { onClickOnImg(article) },
                 contentAlignment = Alignment.Center
             ) {
-
                 DisplayeImageECB(
                     article = article,
                     viewModel = viewModel,
@@ -255,6 +259,15 @@ fun ArticleItemECB(
                     reloadKey = reloadTrigger
                 )
                 DisponibilityOverlayECB(article.diponibilityState)
+
+                // Icon overlay in top-left corner
+                Icon(
+                    imageVector = if (!article.funChangeImagsDimention) Icons.Default.Close else Icons.Default.Image,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                )
             }
             AutoResizedTextECB(text = article.nomArticleFinale)
         }

@@ -1,10 +1,8 @@
 package a_MainAppCompnents
 
 import androidx.room.Dao
-import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
@@ -32,12 +30,3 @@ interface CategoriesTabelleECBDao {
     suspend fun updateAll(categories: List<CategoriesTabelleECB>)
 }
 
-@Entity(tableName = "CategoriesTabelleECB")
-data class CategoriesTabelleECB(
-    @PrimaryKey(autoGenerate = true)
-    val idCategorieInCategoriesTabele: Long = 0,
-    val nomCategorieInCategoriesTabele: String = "",
-    var idClassementCategorieInCategoriesTabele: Int = 0
-) {
-    constructor() : this(0, "", 0)
-}

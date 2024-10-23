@@ -1,5 +1,8 @@
 package a_MainAppCompnents
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
 data class ColorsArticles(
     val idColore: Long = 0,
     val nameColore: String = "",
@@ -168,3 +171,13 @@ data class MapArticleInSupplierStore(
     val inRightOfPlace: Boolean = false,
     val itClassement: Int = 0,
     )
+
+@Entity(tableName = "CategoriesTabelleECB")
+data class CategoriesTabelleECB(
+    @PrimaryKey(autoGenerate = true)
+    val idCategorieInCategoriesTabele: Long = 0,
+    val nomCategorieInCategoriesTabele: String = "",
+    var idClassementCategorieInCategoriesTabele: Int = 0
+) {
+    constructor() : this(0, "", 0)
+}

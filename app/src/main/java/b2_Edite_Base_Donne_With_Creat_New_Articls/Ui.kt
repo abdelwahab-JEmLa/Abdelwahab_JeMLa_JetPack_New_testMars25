@@ -41,7 +41,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -175,6 +177,35 @@ fun ArticleDetailWindow(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
+                        // Add IconButton that changes based on article.funChangeImagsDimention
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    article.funChangeImagsDimention = !article.funChangeImagsDimention
+                                    viewModel.updateCurrentEditedArticle(article)
+                                    viewModel.updateArticleInfoDataBase(article)
+                                    onReloadTrigger()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (!article.funChangeImagsDimention)
+                                        Icons.Default.Close
+                                    else
+                                        Icons.Default.Image,
+                                    contentDescription = if (!article.funChangeImagsDimention)
+                                        "Switch to Close View"
+                                    else
+                                        "Switch to Image View"
+                                )
+                            }
+                        }
+
                         DisplayColorsCards(
                             article = article,
                             viewModel = viewModel,

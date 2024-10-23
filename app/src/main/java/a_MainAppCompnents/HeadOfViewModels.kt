@@ -122,7 +122,18 @@ class HeadOfViewModels(
             currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
         }
     }
-
+    // Helper function to update a single article
+    fun updateArticleInfoDataBase(updatedArticle: DataBaseArticles) {
+        _uiState.update { currentState ->
+            val updatedList = currentState.articlesBaseDonneECB.map { article ->
+                if (article.idArticle == updatedArticle.idArticle) updatedArticle else article
+            }
+            currentState.copy(
+                articlesBaseDonneECB = updatedList,
+            )
+        }
+        setNeedUpdateFireBase()
+    }
     fun updateSmothUploadProgressBarCounterAndItText(
         nameFunInProgressBar: String = "",
         progressDimunuentDe100A0: Int=100,
