@@ -32,7 +32,6 @@ interface CategoriesTabelleECBDao {
     suspend fun updateAll(categories: List<CategoriesTabelleECB>)
 }
 
-
 @Entity(tableName = "CategoriesTabelleECB")
 data class CategoriesTabelleECB(
     @PrimaryKey(autoGenerate = true)

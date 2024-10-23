@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Try
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -94,6 +95,7 @@ fun FloatingActionButtons(
     var showContentDescription by remember { mutableStateOf(false) }
     var showModeClickDispo by remember { mutableStateOf(false) }
     var showCategorySelection by remember { mutableStateOf(false) }
+    var windosFunctions by remember { mutableStateOf(false) }
     val maxGridColumns = 4
 
     Column {
@@ -118,6 +120,7 @@ fun FloatingActionButtons(
 
                 if (!showModeClickDispo) {
                     val buttons = listOf(
+                        ButtonInfo(Icons.Default.Try, "Windos Functions", Color(0xFF452719)) { windosFunctions = true },
                         ButtonInfo(Icons.Default.CalendarViewMonth, "Category Selection", Color(0xFF9C27B0)) { showCategorySelection = true },
                         ButtonInfo(Icons.Default.EditCalendar, "Outline Filter", Color(0xFF2196F3), onToggleOutlineFilter),
                         ButtonInfo(Icons.Default.Home, "Home", Color(0xFF4CAF50), onToggleNavBar),
@@ -161,8 +164,39 @@ fun FloatingActionButtons(
             }
         )
     }
+    if (windosFunctions) {
+        WindosFunctions(
+            uiState = uiState,
+            viewModel = viewModel,
+            onDismiss = { windosFunctions = false },
+        )
+    }
 }
+@Composable
+fun WindosFunctions(
+    onDismiss: () -> Unit,
+    viewModel: HeadOfViewModels,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels,
+) {
 
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Button(
+                onClick = {
+                        viewModel.updateArticleCategories()
+                }
+            ) {
+                Text("Update Article Categories")
+            }
+        }
+    }
+}
 @Composable
 private fun FloatingButton(
     buttonInfo: ButtonInfo,

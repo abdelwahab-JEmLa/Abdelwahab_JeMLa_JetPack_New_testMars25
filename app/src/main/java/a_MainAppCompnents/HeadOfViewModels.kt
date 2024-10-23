@@ -134,8 +134,220 @@ class HeadOfViewModels(
             delay(delayUi)
         }
     }
+    fun addNewCategory(categoryName: String) {
+        viewModelScope.launch {
+            try {
+                // Create new category at the beginning of the list
+                val newCategory = createNewCategory(categoryName)
+
+                // Update existing categories' positions
+                val updatedCategories = updateExistingCategoriesPositions()
+                // Update UI state
+                updateUiState(newCategory, updatedCategories)
+
+                updateRoomDatabase(newCategory, updatedCategories)
+
+                setNeedUpdateFireBase()
+
+            } catch (e: Exception) {
+                handleError(e)
+            }
+        }
+    }
+    fun updateFirebaseWithDisplayeProgress() {
+        viewModelScope.launch {
+            try {
+                val categories = categoriesDao.getAllCategoriesList()
+                val articles = _uiState.value.articlesBaseDonneECB
+                if (categories.isEmpty() && articles.isEmpty()) {
+                    setNeedUpdateFireBase(false)
+                    return@launch
+                }
+
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Preparing update...",
+                    progressDimunuentDe100A0 = 100,
+                    delayUi = 0
+                )
+
+                val totalUpdates = categories.size + articles.size
+                var completedUpdates = 0
+
+                val updateDeferred = CompletableDeferred<Unit>()
+
+                // Update categories
+                categories.forEach { category ->
+                    refCategorieTabelee
+                        .child(category.idCategorieInCategoriesTabele.toString())
+                        .setValue(category)
+                        .addOnSuccessListener {
+                            completedUpdates++
+                            updateProgress(completedUpdates, totalUpdates, updateDeferred)
+                        }
+                        .addOnFailureListener { error ->
+                            updateDeferred.completeExceptionally(error)
+                        }
+                }
+
+                // Update articles
+                articles.forEach { article ->
+                    refDBJetPackExport
+                        .child(article.idArticle.toString())
+                        .setValue(article)
+                        .addOnSuccessListener {
+                            completedUpdates++
+                            updateProgress(completedUpdates, totalUpdates, updateDeferred)
+                        }
+                        .addOnFailureListener { error ->
+                            updateDeferred.completeExceptionally(error)
+                        }
+                }
+
+                try {
+                    updateDeferred.await()
+
+                    updateSmothUploadProgressBarCounterAndItText(
+                        nameFunInProgressBar = "Successfully updated $totalUpdates items",
+                        progressDimunuentDe100A0 = 0,
+                        delayUi = 0
+                    )
+
+                    delay(1000)
+                    setNeedUpdateFireBase(false)
+                    updateSmothUploadProgressBarCounterAndItText(
+                        nameFunInProgressBar = "",
+                        progressDimunuentDe100A0 = 100,
+                        end = true,
+                        delayUi = 0
+                    )
+
+                } catch (e: Exception) {
+                    throw e
+                }
+
+            } catch (e: Exception) {
+                Log.e("HeadOfViewModels", "Failed to batch update Firebase", e)
+                _uiState.update { it.copy(error = e.message) }
+                setNeedUpdateFireBase(false)
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Update failed: ${e.message}",
+                    progressDimunuentDe100A0 = 100,
+                    end = true,
+                    delayUi = 0
+                )
+            }
+        }
+    }
+    private fun updateProgress(completedUpdates: Int, totalUpdates: Int, updateDeferred: CompletableDeferred<Unit>) {
+        viewModelScope.launch {
+            val progress = ((completedUpdates.toFloat() / totalUpdates) * 100).toInt()
+            updateSmothUploadProgressBarCounterAndItText(
+                nameFunInProgressBar = "Updated $completedUpdates of $totalUpdates items...",
+                progressDimunuentDe100A0 = 100 - progress,
+                delayUi = 0
+            )
+
+            if (completedUpdates == totalUpdates) {
+                updateDeferred.complete(Unit)
+            }
+        }
+    }
+
+    private  fun createNewCategory(categoryName: String): CategoriesTabelleECB {
+        val maxId = _uiState.value.categoriesECB
+            .maxOfOrNull { it.idCategorieInCategoriesTabele }
+            ?: 0
+
+        return CategoriesTabelleECB(
+            idCategorieInCategoriesTabele = maxId + 1,
+            idClassementCategorieInCategoriesTabele = 0, // Place at beginning
+            nomCategorieInCategoriesTabele = categoryName
+        )
+    }
+
+    private fun updateExistingCategoriesPositions(): List<CategoriesTabelleECB> {
+        return _uiState.value.categoriesECB.map { category ->
+            category.copy(
+                idClassementCategorieInCategoriesTabele =
+                category.idClassementCategorieInCategoriesTabele + 1
+            )
+        }
+    }
+
+    private suspend fun updateRoomDatabase(
+        newCategory: CategoriesTabelleECB,
+        updatedCategories: List<CategoriesTabelleECB>
+    ) {
+        categoriesDao.transaction {
+            insert(newCategory)
+            updateAll(updatedCategories)
+        }
+    }
+
+    private fun updateUiState(
+        newCategory: CategoriesTabelleECB,
+        updatedCategories: List<CategoriesTabelleECB>
+    ) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                categoriesECB = listOf(newCategory) + updatedCategories,
+                error = null
+            )
+        }
+    }
+
+    private fun handleError(e: Exception) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                error = e.message ?: "An unknown error occurred"
+            )
+        }
+        Log.e("HeadOfViewModels", "Failed to add new category", e)
+    }
+
+    private fun updateArticleDataBaseInUiStateAndSeetNeedUpdateFireBase(articles: List<DataBaseArticles>) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                articlesBaseDonneECB = articles,
+                error = null
+            )
+        }
+        // Mark for Firebase update
+        setNeedUpdateFireBase()
+    }
+
+    private fun handleError(e: Exception, errorMessage: String) {
+        _uiState.update { currentState ->
+            currentState.copy(error = e.message ?: errorMessage)
+        }
+        Log.e(TAG, errorMessage, e)
+    }
+    
     private fun setNeedUpdateFireBase(needed: Boolean=true) {
         _indicateurDeNeedUpdateFireBase.value = needed
+    }
+    fun updateArticleCategories() {
+        viewModelScope.launch {
+            try {
+                _uiState.value.categoriesECB.forEach { category ->
+                    val categoryId = category.idCategorieInCategoriesTabele
+                    val categoryName = category.nomCategorieInCategoriesTabele
+
+                    // Update articles with matching category names
+                    val updatedArticles = _uiState.value.articlesBaseDonneECB.map { article ->
+                        if (article.nomCategorie == categoryName) {
+                            article.copy(idCategorieNewMetode = categoryId)
+                        } else {
+                            article
+                        }
+                    }
+
+                    updateArticleDataBaseInUiStateAndSeetNeedUpdateFireBase(updatedArticles)
+                }
+            } catch (e: Exception) {
+                handleError(e, "Failed to update article categories")
+            }
+        }
     }
 
     fun moveArticlesBetweenCategories(
@@ -162,6 +374,8 @@ class HeadOfViewModels(
                     )
                 }
 
+                deleteCategorie(fromCategoryId)
+
                 // Set flag to update Firebase
                 setNeedUpdateFireBase()
 
@@ -171,89 +385,68 @@ class HeadOfViewModels(
             }
         }
     }
-    fun updateFirebasePositionsWithDisplayeProgress() {
+
+
+    private fun deleteCategorie(fromCategoryId: Long) {
         viewModelScope.launch {
             try {
-                val categories = _uiState.value.categoriesECB
-                if (categories.isEmpty()) {
-                    setNeedUpdateFireBase(false)
-                    return@launch
+                // Get current categories excluding the one to delete
+                val updatedCategories = _uiState.value.categoriesECB
+                    .filter { it.idCategorieInCategoriesTabele != fromCategoryId }
+
+                updateClassmentsCategories(updatedCategories)
+
+            } catch (e: Exception) {
+                handleError(e, "Failed to delete category")
+            }
+        }
+    }
+
+    private fun updateClassmentsCategories(updatedCategories: List<CategoriesTabelleECB>) {
+        viewModelScope.launch {
+            try {
+                // Update positions based on current order
+                val updatedClassmentCategories = updatedCategories.mapIndexed { index, category ->
+                    category.copy(idClassementCategorieInCategoriesTabele = index + 1)
                 }
+                updateHandel(updatedClassmentCategories)
+            } catch (e: Exception) {
+                handleError(e, "Failed to update category classifications")
+            }
+        }
+    }
 
-                // Starting update
-                updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Preparing update...",
-                    progressDimunuentDe100A0 = 100,
-                    delayUi = 0
-                )
+    private fun updateHandel(updatedCategories: List<CategoriesTabelleECB>): Unit {
+        updateUiStat(updatedCategories)
+        updateCategorieRoomAndNeedForDistant(updatedCategories)
+    }
 
-                val totalUpdates = categories.size
-                var completedUpdates = 0
-
-
-                // Create a deferred completion to track the update
-                val updateDeferred = CompletableDeferred<Unit>()
-
-                // Create individual updates to track progress
-                categories.forEach { category ->
-                    refCategorieTabelee
-                        .child(category.idCategorieInCategoriesTabele.toString())
-                        .setValue(category)
-                        .addOnSuccessListener {
-                            completedUpdates++
-                            viewModelScope.launch {
-                                val progress = ((completedUpdates.toFloat() / totalUpdates) * 100).toInt()
-                                updateSmothUploadProgressBarCounterAndItText(
-                                    nameFunInProgressBar = "Updated $completedUpdates of $totalUpdates articles...",
-                                    progressDimunuentDe100A0 = 100 - progress,
-                                    delayUi = 0
-                                )
-
-                                if (completedUpdates == totalUpdates) {
-                                    updateDeferred.complete(Unit)
-                                }
-                            }
-                        }
-                        .addOnFailureListener { error ->
-                            updateDeferred.completeExceptionally(error)
-                        }
-                }
-
-                // Wait for completion or handle error
-                try {
-                    updateDeferred.await()
-
-                    // Update complete
-                    updateSmothUploadProgressBarCounterAndItText(
-                        nameFunInProgressBar = "Successfully updated $totalUpdates articles",
-                        progressDimunuentDe100A0 = 0,
-                        delayUi = 0
-                    )
-
-                    // Reset indicators
-                    delay(1000)
-                    setNeedUpdateFireBase(false)
-                    updateSmothUploadProgressBarCounterAndItText(
-                        nameFunInProgressBar = "",
-                        progressDimunuentDe100A0 = 100,
-                        end = true,
-                        delayUi = 0
-                    )
-
-                } catch (e: Exception) {
-                    throw e
+    private fun updateUiStat(updatedCategories: List<CategoriesTabelleECB>): Unit {
+        viewModelScope.launch {
+            try {
+                // Update UI state
+                _uiState.update { currentState ->
+                    currentState.copy(categoriesECB = updatedCategories)
                 }
 
             } catch (e: Exception) {
-                Log.e("HeadOfViewModels", "Failed to batch update Firebase", e)
-                _uiState.update { it.copy(error = e.message) }
-                setNeedUpdateFireBase(false)
-                updateSmothUploadProgressBarCounterAndItText(
-                    nameFunInProgressBar = "Update failed: ${e.message}",
-                    progressDimunuentDe100A0 = 100,
-                    end = true,
-                    delayUi = 0
-                )
+                handleError(e, "Failed to update categories locally and remotely")
+            }
+        }
+    }
+    private fun updateCategorieRoomAndNeedForDistant(
+        updatedCategories: List<CategoriesTabelleECB>
+    ) {
+        viewModelScope.launch {
+            try {
+                // Update local database
+                categoriesDao.updateAll(updatedCategories)
+
+                // Mark for Firebase update
+                setNeedUpdateFireBase()
+
+            } catch (e: Exception) {
+                handleError(e, "Failed to update categories locally and remotely")
             }
         }
     }
@@ -362,78 +555,7 @@ class HeadOfViewModels(
         }
     }
 
-    fun addNewCategory(categoryName: String) {
-        viewModelScope.launch {
-            try {
-                // Create new category at the beginning of the list
-                val newCategory = createNewCategory(categoryName)
 
-                // Update existing categories' positions
-                val updatedCategories = updateExistingCategoriesPositions()
-                // Update UI state
-                updateUiState(newCategory, updatedCategories)
-
-                updateRoomDatabase(newCategory, updatedCategories)
-
-                setNeedUpdateFireBase()
-
-            } catch (e: Exception) {
-                handleError(e)
-            }
-        }
-    }
-
-    private  fun createNewCategory(categoryName: String): CategoriesTabelleECB {
-        val maxId = _uiState.value.categoriesECB
-            .maxOfOrNull { it.idCategorieInCategoriesTabele }
-            ?: 0
-
-        return CategoriesTabelleECB(
-            idCategorieInCategoriesTabele = maxId + 1,
-            idClassementCategorieInCategoriesTabele = 0, // Place at beginning
-            nomCategorieInCategoriesTabele = categoryName
-        )
-    }
-
-    private fun updateExistingCategoriesPositions(): List<CategoriesTabelleECB> {
-        return _uiState.value.categoriesECB.map { category ->
-            category.copy(
-                idClassementCategorieInCategoriesTabele =
-                category.idClassementCategorieInCategoriesTabele + 1
-            )
-        }
-    }
-
-    private suspend fun updateRoomDatabase(
-        newCategory: CategoriesTabelleECB,
-        updatedCategories: List<CategoriesTabelleECB>
-    ) {
-        categoriesDao.transaction {
-            insert(newCategory)
-            updateAll(updatedCategories)
-        }
-    }
-
-    private fun updateUiState(
-        newCategory: CategoriesTabelleECB,
-        updatedCategories: List<CategoriesTabelleECB>
-    ) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                categoriesECB = listOf(newCategory) + updatedCategories,
-                error = null
-            )
-        }
-    }
-
-    private fun handleError(e: Exception) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                error = e.message ?: "An unknown error occurred"
-            )
-        }
-        Log.e("HeadOfViewModels", "Failed to add new category", e)
-    }
 
 
     private fun updateArticleDisponibilityState(
@@ -449,25 +571,8 @@ class HeadOfViewModels(
             }
         }
     }
-    fun goUpAndshiftsAutersDownCategoryPositions(fromCategoryId: Long, toCategoryId: Long) {
-        viewModelScope.launch {
-            // Get current categories from uiState
-            val currentCategories = _uiState.value.categoriesECB
 
-            // Reorder categories
-            val updatedCategories = reorderCategories(currentCategories, fromCategoryId, toCategoryId)
-
-            // Update the state with new categories
-            _uiState.update { currentState ->
-                currentState.copy(categoriesECB = updatedCategories)
-            }
-
-            // Update Firebase
-            updateFirebaseCategories(updatedCategories)
-        }
-    }
-
-    fun reorderCategories(
+    private fun reorderCategories(
         categories: List<CategoriesTabelleECB>,
         fromCategoryId: Long,
         toCategoryId: Long

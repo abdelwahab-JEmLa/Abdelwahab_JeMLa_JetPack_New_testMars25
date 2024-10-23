@@ -559,7 +559,7 @@ fun CustomNavigationBar(
                         is Screen.FragmentMapArticleInSupplierStoreFragment -> screen.showPopup(showPopup)
                         is Screen.MainScreen -> {
                             if (indicateurDeNeedUpdateFireBase) {
-                                headOfViewModels.updateFirebasePositionsWithDisplayeProgress()
+                                headOfViewModels.updateFirebaseWithDisplayeProgress()
                             }
                             onNavigate(screen.route)
                         }
