@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -195,10 +196,10 @@ fun ArticleDetailWindow(
                                 if (article.funChangeImagsDimention) {
                                     Icon(
                                         imageVector = Icons.Default.Image,
-                                        contentDescription = if (!article.funChangeImagsDimention)
-                                            "Switch to Close View"
-                                        else
-                                            "Switch to Image View"
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .background(Color.White)    // Ajoute un fond blanc
+                                            .padding(4.dp)             // Optionnel: ajoute un peu d'espace autour de l'icône
                                     )
                                 }
                             }
