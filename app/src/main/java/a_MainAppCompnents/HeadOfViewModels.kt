@@ -123,10 +123,11 @@ class HeadOfViewModels(
         }
     }
 
-    fun updateSmothUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "",
-                                                             progressDimunuentDe100A0: Int=100,
-                                                             end:Boolean=false,
-                                                             delayUi: Long = 0) {
+    fun updateSmothUploadProgressBarCounterAndItText(
+        nameFunInProgressBar: String = "",
+        progressDimunuentDe100A0: Int=100,
+        end:Boolean=false,
+        delayUi: Long = 0) {
         viewModelScope.launch {
             _uploadProgress.value = if (end) 0f else progressDimunuentDe100A0 .toFloat()
             _textProgress.value = nameFunInProgressBar
@@ -333,16 +334,22 @@ class HeadOfViewModels(
                     val categoryId = category.idCategorieInCategoriesTabele
                     val categoryName = category.nomCategorieInCategoriesTabele
 
-                    // Update articles with matching category names
-                    val updatedArticles = _uiState.value.articlesBaseDonneECB.map { article ->
-                        if (article.nomCategorie == categoryName) {
-                            article.copy(idCategorieNewMetode = categoryId)
-                        } else {
-                            article
+                    // Update articles with matching category names and assign classification IDs
+                    val articlesInCategory = _uiState.value.articlesBaseDonneECB
+                        .filter { it.nomCategorie == categoryName }
+                        .sortedBy { it.articleItIdClassementInItCategorieInHVM }
+                        .mapIndexed { index, article ->
+                            article.copy(
+                                idCategorieNewMetode = categoryId,
+                                nomCategorie = categoryName,
+                                articleItIdClassementInItCategorieInHVM = (index + 1).toLong()
+                            )
                         }
-                    }
 
-                    updateArticleDataBaseInUiStateAndSeetNeedUpdateFireBase(updatedArticles)
+                    val otherArticles = _uiState.value.articlesBaseDonneECB
+                        .filter { it.nomCategorie != categoryName }
+
+                    updateArticleDataBaseInUiStateAndSeetNeedUpdateFireBase(articlesInCategory + otherArticles)
                 }
             } catch (e: Exception) {
                 handleError(e, "Failed to update article categories")
@@ -358,25 +365,27 @@ class HeadOfViewModels(
             try {
                 val articles = _uiState.value.articlesBaseDonneECB
 
-                // Update all articles from the source category to the destination category
+                // Find maximum classification ID in destination category
+                val maxClassificationId = articles
+                    .filter { it.idCategorieNewMetode == toCategoryId }
+                    .maxOfOrNull { it.articleItIdClassementInItCategorieInHVM } ?: 0
+
+                // Update articles from source category with new category ID and incremented classification
                 val updatedArticles = articles.map { article ->
-                    if (article.idCategorieNewMetode == fromCategoryId) {
-                        article.copy(idCategorieNewMetode = toCategoryId)
-                    } else {
-                        article
+                    when (article.idCategorieNewMetode) {
+                        fromCategoryId -> article.copy(
+                            idCategorieNewMetode = toCategoryId,
+                            articleItIdClassementInItCategorieInHVM = maxClassificationId + 1
+                        )
+                        else -> article
                     }
                 }
 
-                // Update UI state
                 _uiState.update { currentState ->
-                    currentState.copy(
-                        articlesBaseDonneECB = updatedArticles
-                    )
+                    currentState.copy(articlesBaseDonneECB = updatedArticles)
                 }
 
                 deleteCategorie(fromCategoryId)
-
-                // Set flag to update Firebase
                 setNeedUpdateFireBase()
 
             } catch (e: Exception) {
@@ -572,32 +581,6 @@ class HeadOfViewModels(
         }
     }
 
-    private fun reorderCategories(
-        categories: List<CategoriesTabelleECB>,
-        fromCategoryId: Long,
-        toCategoryId: Long
-    ): List<CategoriesTabelleECB> {
-        val mutableCategories = categories.toMutableList()
-        val fromIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == fromCategoryId }
-        val toIndex = mutableCategories.indexOfFirst { it.idCategorieInCategoriesTabele == toCategoryId }
-
-        if (fromIndex != -1 && toIndex != -1) {
-            val movedCategory = mutableCategories.removeAt(fromIndex)
-            mutableCategories.add(toIndex, movedCategory)
-            return mutableCategories.mapIndexed { index, category ->
-                category.copy(idClassementCategorieInCategoriesTabele = (index + 1))
-            }
-        }
-        return categories
-    }
-
-    private suspend fun updateFirebaseCategories(categories: List<CategoriesTabelleECB>) {
-        refCategorieTabelee.removeValue().await()
-        categories.forEach { category ->
-            refCategorieTabelee.child(category.idCategorieInCategoriesTabele.toString())
-                .setValue(category).await()
-        }
-    }
 
     fun updateArticleStatus(article: TabelleSupplierArticlesRecived) {
         viewModelScope.launch {
