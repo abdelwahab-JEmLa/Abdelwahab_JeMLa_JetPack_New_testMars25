@@ -1,6 +1,11 @@
 package f_credits
 
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +35,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
@@ -216,12 +222,27 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showNameDialog by remember { mutableStateOf(false) }
+    var showVoiceInputDialog by remember { mutableStateOf(false) }
+    var voiceInputValue by remember { mutableStateOf("") }
+    var lastLaunchTime by remember { mutableStateOf(0L) }
+
     val coroutineScope = rememberCoroutineScope()
     val backgroundColor = remember(supplier.couleurSu) {
         try {
             Color(android.graphics.Color.parseColor(supplier.couleurSu))
         } catch (e: IllegalArgumentException) {
-            Color.Gray // Fallback color
+            Color.Gray
+        }
+    }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0) ?: ""
+            voiceInputValue = spokenText
+            showVoiceInputDialog = true
         }
     }
 
@@ -266,7 +287,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     Switch(
                         checked = supplier.isLongTermCredit,
                         onCheckedChange = { isChecked ->
-                            viewModel.updateSupplierList(supplier.idSupplierSu,"isLongTermCredit")
+                            viewModel.updateSupplierList(supplier.idSupplierSu, "isLongTermCredit")
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.Green,
@@ -277,8 +298,6 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     )
                 }
 
-                var showNameDialog by remember { mutableStateOf(false) }
-
                 Text(
                     text = "Name: ${supplier.nomSupplierSu}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
@@ -287,46 +306,6 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                         .clickable { showNameDialog = true }
                 )
 
-                if (showNameDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showNameDialog = false },
-                        title = { Text("Supplier Details") },
-                        text = {
-                            Column {
-                                Text("Name: ${supplier.nomSupplierSu}")
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text("Ignore Products:")
-
-                                    IconToggleButton(
-                                        checked = supplier.ignoreItProdects,
-                                        onCheckedChange = { isChecked ->
-                                            viewModel.updateSupplierList(supplier.idSupplierSu, "ignoreItProdects")
-                                            coroutineScope.launch {
-                                                viewModel.updateSupplierArticlesWithNonDispo(supplier.idSupplierSu, if (isChecked) "Non Dispo" else null)
-                                            }
-                                        }
-                                    ){
-                                        Icon(
-                                            imageVector = if (supplier.ignoreItProdects)
-                                                Icons.Filled.CheckBox
-                                            else
-                                                Icons.Filled.CheckBoxOutlineBlank,
-                                            contentDescription = "Toggle Ignore Products"
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { showNameDialog = false }) {
-                                Text("Close")
-                            }
-                        }
-                    )
-                }
                 if (supplier.bonDuSupplierSu.isNotBlank()) {
                     Text(
                         text = "Bon N°: ${supplier.bonDuSupplierSu}",
@@ -334,6 +313,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                         modifier = Modifier.drawTextWithOutline(Color.Black)
                     )
                 }
+
                 Text(
                     text = "Credit Balance: ${supplier.currentCreditBalance}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
@@ -345,9 +325,31 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                 modifier = Modifier.weight(3f),
                 horizontalArrangement = Arrangement.End
             ) {
+                IconButton(
+                    onClick = {
+                        val currentTime = System.currentTimeMillis()
+                        if (currentTime - lastLaunchTime > 1000) {
+                            lastLaunchTime = currentTime
+                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Parlez maintenant pour mettre à jour cet article...")
+                            }
+                            speechRecognizerLauncher.launch(intent)
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Voice Input",
+                        tint = Color.White
+                    )
+                }
+
                 IconButton(onClick = { showCreditDialog = true }) {
                     Icon(Icons.Default.CreditCard, contentDescription = "Credit", tint = Color.White)
                 }
+
                 IconButton(onClick = { showDialog = true }) {
                     val icon = if (supplier.bonDuSupplierSu.isNotBlank()) {
                         Icons.AutoMirrored.Filled.ReceiptLong
@@ -356,11 +358,15 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                     }
                     Icon(icon, contentDescription = "Invoice", tint = Color.White)
                 }
+
                 IconButton(onClick = { showEditDialog = true }) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
                 }
             }
-        }}
+        }
+    }
+
+    // Dialogs
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -400,15 +406,94 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
         )
     }
 
+    if (showNameDialog) {
+        AlertDialog(
+            onDismissRequest = { showNameDialog = false },
+            title = { Text("Supplier Details") },
+            text = {
+                Column {
+                    Text("Name: ${supplier.nomSupplierSu}")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Ignore Products:")
+                        IconToggleButton(
+                            checked = supplier.ignoreItProdects,
+                            onCheckedChange = { isChecked ->
+                                viewModel.updateSupplierList(supplier.idSupplierSu, "ignoreItProdects")
+                                coroutineScope.launch {
+                                    viewModel.updateSupplierArticlesWithNonDispo(supplier.idSupplierSu, if (isChecked) "Non Dispo" else null)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (supplier.ignoreItProdects)
+                                    Icons.Filled.CheckBox
+                                else
+                                    Icons.Filled.CheckBoxOutlineBlank,
+                                contentDescription = "Toggle Ignore Products"
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showNameDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    if (showVoiceInputDialog) {
+        AlertDialog(
+            onDismissRequest = { showVoiceInputDialog = false },
+            title = { Text("Confirm Voice Input") },
+            text = {
+                OutlinedTextField(
+                    value = voiceInputValue,
+                    onValueChange = { voiceInputValue = it },
+                    label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        voiceInputValue.toDoubleOrNull()?.let { amount ->
+                            viewModel.updateSupplierCredit(
+                                supplierId = supplier.idSupplierSu,
+                                supplierTotal = amount,
+                                supplierPayment = 0.0,
+                                ancienCredit = amount,
+                                fromeOutlineSupInput = true
+                            )
+                        }
+                        showVoiceInputDialog = false
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showVoiceInputDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (showCreditDialog) {
         SupplierCreditDialog(
             showDialog = true,
             onDismiss = { showCreditDialog = false },
             supplierId = supplier.idSupplierSu,
             supplierName = supplier.nomSupplierSu,
-            supplierTotal = 0.0, // You may want to pass the actual total here
+            supplierTotal = 0.0,
             coroutineScope = rememberCoroutineScope(),
-            supplierColor = backgroundColor // Pass the background color here
+            supplierColor = backgroundColor
         )
     }
 
@@ -432,8 +517,7 @@ fun EditSupplierDialog(supplier: SupplierTabelle, onDismiss: () -> Unit, onEditS
         onDismissRequest = onDismiss,
         title = { Text("Edit Supplier") },
         text = {
-            OutlinedTextField(
-                value = editedName,
+            OutlinedTextField(value = editedName,
                 onValueChange = { editedName = it },
                 label = { Text("Supplier Name") },
                 singleLine = true,
@@ -458,9 +542,6 @@ fun EditSupplierDialog(supplier: SupplierTabelle, onDismiss: () -> Unit, onEditS
         }
     )
 }
-
-
-
 
 @Composable
 fun SupplierCreditDialog(
@@ -753,13 +834,6 @@ data class SupplierTabelle(
     constructor() : this(0)
 }
 
-data class SupplierInvoice(
-    val date: String,
-    val totaleDeCeBon: Double,
-    val payeCetteFoit: Double,
-    val creditFaitDonCeBon: Double,
-    val ancienCredits: Double
-)
 @Composable
 fun AddSupplierDialog(onDismiss: () -> Unit, onAddSupplier: (String) -> Unit) {
     var supplierName by remember { mutableStateOf("") }

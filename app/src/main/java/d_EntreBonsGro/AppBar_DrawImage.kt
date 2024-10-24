@@ -192,7 +192,6 @@ fun ImageCountDialog(
     )
 }
 
-
 @Composable
 fun SuggestionsDialog(
     filteredSuggestions: List<String>,

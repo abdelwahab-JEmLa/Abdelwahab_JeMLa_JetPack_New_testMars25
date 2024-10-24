@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
@@ -193,15 +194,14 @@ fun ArticleDetailWindow(
                                     onReloadTrigger()
                                 }
                             ) {
-                                if (article.funChangeImagsDimention) {
                                     Icon(
-                                        imageVector = Icons.Default.Image,
+                                        imageVector =  if (article.funChangeImagsDimention) Icons.Default.Image else Icons.Default.Close,
+                                        tint = Color.Red,
                                         contentDescription = null,
                                         modifier = Modifier
                                             .background(Color.White)    // Ajoute un fond blanc
                                             .padding(4.dp)             // Optionnel: ajoute un peu d'espace autour de l'icône
                                     )
-                                }
                             }
                         }
 
