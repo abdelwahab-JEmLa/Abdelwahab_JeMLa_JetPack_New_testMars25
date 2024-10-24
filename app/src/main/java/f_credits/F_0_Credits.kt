@@ -463,7 +463,7 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                 TextButton(
                     onClick = {
                         voiceInputValue.toDoubleOrNull()?.let { amount ->
-                            viewModel.updateSupplierCredit(
+                            updateSupplierCredit(
                                 supplierId = supplier.idSupplierSu,
                                 supplierTotal = amount,
                                 supplierPayment = 0.0,
