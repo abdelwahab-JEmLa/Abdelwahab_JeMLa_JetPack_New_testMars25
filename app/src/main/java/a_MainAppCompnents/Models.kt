@@ -107,8 +107,9 @@ data class DataBaseArticles(
     var monPrixAchatUniter: Double = 0.0,
     var monPrixVentUniter: Double = 0.0,
     var benificeClient: Double = 0.0,
-    var monBeneficeUniter: Double = 0.0
-) {
+    var monBeneficeUniter: Double = 0.0,
+    var itsNewArrivale: Boolean = false,
+    ) {
     fun getColumnValue(columnName: String): Any? {
         val value = when (columnName) {
             "nomArticleFinale" -> nomArticleFinale

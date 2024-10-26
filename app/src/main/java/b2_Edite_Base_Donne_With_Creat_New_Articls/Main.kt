@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -21,6 +22,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -260,14 +263,35 @@ fun ArticleItemECB(
                 )
                 DisponibilityOverlayECB(article.diponibilityState)
 
-                if (article.funChangeImagsDimention) {
+                // Status indicators row
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Image dimension change indicator
+                    if (article.funChangeImagsDimention) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Image dimensions modified",
+                            tint = Color.Red,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    // New arrival indicator/toggle
                     Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = null,
-                        tint = Color.Red,    // Add this line to make the icon red
+                        imageVector = if (article.itsNewArrivale) Icons.Default.Star else Icons.Default.StarBorder,
+                        contentDescription = "Toggle new arrival status",
+                        tint = if (article.itsNewArrivale) Color.Yellow else Color.Gray,
                         modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp)
+                            .size(24.dp)
+                            .clickable {
+                                viewModel.updateArticleInfoDataBase(
+                                    article.copy(itsNewArrivale = !article.itsNewArrivale)
+                                )
+                            }
                     )
                 }
             }
