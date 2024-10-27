@@ -108,7 +108,7 @@ fun FloatingActionButtons(
                             val buttons = listOf(
                                 ButtonInfo(
                                     icon = Icons.Default.Try,
-                                    description = "Update Colors",
+                                    description = "Update Colors Manager",
                                     color = Color(0xFF452719)
                                 ) { showWindosFunctions = true },
                                 ButtonInfo(
