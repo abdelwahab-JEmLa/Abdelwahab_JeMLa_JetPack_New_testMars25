@@ -247,11 +247,19 @@ fun WindosFunctions(
         ) {
             Button(
                 onClick = {
-                    viewModel.updateArticleCategoriesId()
+                    viewModel.updateArticleCategories()
                     onDismiss()
                 }
             ) {
                 Text("Update Article Colors")
+            }
+            Button(
+                onClick = {
+                    viewModel.updateArticleCategoriesId()
+                    onDismiss()
+                }
+            ) {
+                Text("Update Article Colors Id")
             }
         }
     }
