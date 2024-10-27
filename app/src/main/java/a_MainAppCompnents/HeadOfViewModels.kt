@@ -71,7 +71,6 @@ class HeadOfViewModels(
     val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
 
-
     private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
     val currentEditedArticle: StateFlow<DataBaseArticles?> = _currentEditedArticle.asStateFlow()
 
@@ -146,6 +145,98 @@ class HeadOfViewModels(
             delay(delayUi)
         }
     }
+    private fun updateClassmentsCategories(updatedCategories: List<CategoriesTabelleECB>) {
+        viewModelScope.launch {
+            try {
+                // Update positions based on current order
+                val updatedClassmentCategories = updatedCategories.mapIndexed { index, category ->
+                    category.copy(idClassementCategorieInCategoriesTabele = index + 1)
+                }
+                updateHandel(updatedClassmentCategories)
+            } catch (e: Exception) {
+                handleError(e, "Failed to update category classifications")
+            }
+        }
+    }
+
+    private fun updateHandel(updatedCategories: List<CategoriesTabelleECB>): Unit {
+        updateUiStat(updatedCategories)
+        updateCategorieRoomAndNeedForDistant(updatedCategories)
+    }
+
+    private fun updateUiStat(updatedCategories: List<CategoriesTabelleECB>): Unit {
+        viewModelScope.launch {
+            try {
+                // Update UI state
+                _uiState.update { currentState ->
+                    currentState.copy(categoriesECB = updatedCategories)
+                }
+
+            } catch (e: Exception) {
+                handleError(e, "Failed to update categories locally and remotely")
+            }
+        }
+    }
+    private fun updateCategorieRoomAndNeedForDistant(
+        updatedCategories: List<CategoriesTabelleECB>
+    ) {
+        viewModelScope.launch {
+            try {
+                // Update local database
+                categoriesDao.updateAll(updatedCategories)
+
+                // Mark for Firebase update
+                setNeedUpdateFireBase()
+
+            } catch (e: Exception) {
+                handleError(e, "Failed to update categories locally and remotely")
+            }
+        }
+    }
+    fun updateArticleCategoriesId() {
+        viewModelScope.launch {
+            try {
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Updating Article Colors...",
+                    progressDimunuentDe100A0 = 80
+                )
+
+                val updatedArticles = _uiState.value.articlesBaseDonneECB.map { article ->
+                    article.copy(
+                        idcolor1 = getColorIdFromName(article.couleur1, _uiState.value.colorsArticles),
+                        idcolor2 = getColorIdFromName(article.couleur2, _uiState.value.colorsArticles),
+                        idcolor3 = getColorIdFromName(article.couleur3, _uiState.value.colorsArticles),
+                        idcolor4 = getColorIdFromName(article.couleur4, _uiState.value.colorsArticles)
+                    )
+                }
+
+                _uiState.update { currentState ->
+                    currentState.copy(articlesBaseDonneECB = updatedArticles)
+                }
+
+                setNeedUpdateFireBase()
+
+                updateSmothUploadProgressBarCounterAndItText(
+                    nameFunInProgressBar = "Colors Updated Successfully",
+                    progressDimunuentDe100A0 = 0,
+                    end = true,
+                    delayUi = 1000
+                )
+            } catch (e: Exception) {
+                handleError(e, "Failed to update article colors")
+            }
+        }
+    }
+
+    private fun getColorIdFromName(colorName: String?, colors: List<ColorsArticles>): Long {
+        if (colorName.isNullOrEmpty()) return 0
+
+        val (cleanName, _) = extractEmojisAndCleanName(colorName)
+        return colors.find { it.nameColore.trim() == cleanName.trim() }?.idColore ?: 0
+    }
+
+
+
     fun addNewCategory(categoryName: String) {
         viewModelScope.launch {
             try {
@@ -422,54 +513,7 @@ class HeadOfViewModels(
         }
     }
 
-    private fun updateClassmentsCategories(updatedCategories: List<CategoriesTabelleECB>) {
-        viewModelScope.launch {
-            try {
-                // Update positions based on current order
-                val updatedClassmentCategories = updatedCategories.mapIndexed { index, category ->
-                    category.copy(idClassementCategorieInCategoriesTabele = index + 1)
-                }
-                updateHandel(updatedClassmentCategories)
-            } catch (e: Exception) {
-                handleError(e, "Failed to update category classifications")
-            }
-        }
-    }
 
-    private fun updateHandel(updatedCategories: List<CategoriesTabelleECB>): Unit {
-        updateUiStat(updatedCategories)
-        updateCategorieRoomAndNeedForDistant(updatedCategories)
-    }
-
-    private fun updateUiStat(updatedCategories: List<CategoriesTabelleECB>): Unit {
-        viewModelScope.launch {
-            try {
-                // Update UI state
-                _uiState.update { currentState ->
-                    currentState.copy(categoriesECB = updatedCategories)
-                }
-
-            } catch (e: Exception) {
-                handleError(e, "Failed to update categories locally and remotely")
-            }
-        }
-    }
-    private fun updateCategorieRoomAndNeedForDistant(
-        updatedCategories: List<CategoriesTabelleECB>
-    ) {
-        viewModelScope.launch {
-            try {
-                // Update local database
-                categoriesDao.updateAll(updatedCategories)
-
-                // Mark for Firebase update
-                setNeedUpdateFireBase()
-
-            } catch (e: Exception) {
-                handleError(e, "Failed to update categories locally and remotely")
-            }
-        }
-    }
 
     fun handleCategoryMove(
         holdedIdCate: Long,

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.Close
@@ -73,7 +75,7 @@ fun FloatingActionButtons(
     var showContentDescription by remember { mutableStateOf(false) }
     var showModeClickDispo by remember { mutableStateOf(false) }
     var showCategorySelection by remember { mutableStateOf(false) }
-    var windosFunctions by remember { mutableStateOf(false) }
+    var showWindosFunctions by remember { mutableStateOf(false) }
     val maxGridColumns = 4
 
     Column {
@@ -97,24 +99,67 @@ fun FloatingActionButtons(
                 )
 
                 if (!showModeClickDispo) {
-                    val buttons = listOf(
-                        ButtonInfo(Icons.Default.Try, "Windos Functions", Color(0xFF452719)) { windosFunctions = true },
-                        ButtonInfo(Icons.Default.CalendarViewMonth, "Category Selection", Color(0xFF9C27B0)) { showCategorySelection = true },
-                        ButtonInfo(Icons.Default.EditCalendar, "Outline Filter", Color(0xFF2196F3), onToggleOutlineFilter),
-                        ButtonInfo(Icons.Default.Home, "Home", Color(0xFF4CAF50), onToggleNavBar),
-                        ButtonInfo(if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff, "Filter", Color(0xFFFFC107), onToggleFilter),
-                        ButtonInfo(Icons.Default.PermMedia, "Database Editor", Color(0xFFFF5722)) { showDialogeDataBaseEditer = true },
-                        ButtonInfo(Icons.Default.GridView, "Change Grid", Color(0xFF795548)) {
-                            currentGridColumns = (currentGridColumns % maxGridColumns) + 1
-                            onChangeGridColumns(currentGridColumns)
-                        },
-                        ButtonInfo(if (showContentDescription) Icons.Default.Close else Icons.Default.Details, "Toggle Description", Color(0xFF607D8B)) {
-                            showContentDescription = !showContentDescription
-                        }
-                    )
+                    Box(
+                        modifier = Modifier
+                            .heightIn(max = 300.dp) // Maximum height for the scrollable area
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Column {
+                            val buttons = listOf(
+                                ButtonInfo(
+                                    icon = Icons.Default.Try,
+                                    description = "Update Colors",
+                                    color = Color(0xFF452719)
+                                ) { showWindosFunctions = true },
+                                ButtonInfo(
+                                    icon = Icons.Default.CalendarViewMonth,
+                                    description = "Category Selection",
+                                    color = Color(0xFF9C27B0)
+                                ) { showCategorySelection = true },
+                                ButtonInfo(
+                                    icon = Icons.Default.EditCalendar,
+                                    description = "Outline Filter",
+                                    color = Color(0xFF2196F3),
+                                    onClick = onToggleOutlineFilter
+                                ),
+                                ButtonInfo(
+                                    icon = Icons.Default.Home,
+                                    description = "Home",
+                                    color = Color(0xFF4CAF50),
+                                    onClick = onToggleNavBar
+                                ),
+                                ButtonInfo(
+                                    icon = if (showOnlyWithFilter) Icons.Default.FilterList else Icons.Default.FilterListOff,
+                                    description = "Filter",
+                                    color = Color(0xFFFFC107),
+                                    onClick = onToggleFilter
+                                ),
+                                ButtonInfo(
+                                    icon = Icons.Default.PermMedia,
+                                    description = "Database Editor",
+                                    color = Color(0xFFFF5722)
+                                ) { showDialogeDataBaseEditer = true },
+                                ButtonInfo(
+                                    icon = Icons.Default.GridView,
+                                    description = "Change Grid",
+                                    color = Color(0xFF795548)
+                                ) {
+                                    currentGridColumns = (currentGridColumns % maxGridColumns) + 1
+                                    onChangeGridColumns(currentGridColumns)
+                                },
+                                ButtonInfo(
+                                    icon = if (showContentDescription) Icons.Default.Close else Icons.Default.Details,
+                                    description = "Toggle Description",
+                                    color = Color(0xFF607D8B)
+                                ) {
+                                    showContentDescription = !showContentDescription
+                                }
+                            )
 
-                    buttons.forEach { buttonInfo ->
-                        FloatingButton(buttonInfo, showContentDescription)
+                            buttons.forEach { buttonInfo ->
+                                FloatingButton(buttonInfo, showContentDescription)
+                            }
+                        }
                     }
                 }
             }
@@ -142,37 +187,15 @@ fun FloatingActionButtons(
             }
         )
     }
-    if (windosFunctions) {
+
+    if (showWindosFunctions) {
         WindosFunctions(
-            onDismiss = { windosFunctions = false },
+            onDismiss = { showWindosFunctions = false },
             viewModel = viewModel,
         )
     }
 }
-@Composable
-fun WindosFunctions(
-    onDismiss: () -> Unit,
-    viewModel: HeadOfViewModels,
-) {
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Button(
-                onClick = {
-                        viewModel.updateArticleCategories()
-                }
-            ) {
-                Text("Update Article Categories")
-            }
-        }
-    }
-}
 @Composable
 private fun FloatingButton(
     buttonInfo: ButtonInfo,
@@ -206,6 +229,30 @@ private fun FloatingButton(
             containerColor = buttonInfo.color
         ) {
             Icon(buttonInfo.icon, contentDescription = buttonInfo.description)
+        }
+    }
+}
+@Composable
+fun WindosFunctions(
+    onDismiss: () -> Unit,
+    viewModel: HeadOfViewModels,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Button(
+                onClick = {
+                    viewModel.updateArticleCategoriesId()
+                    onDismiss()
+                }
+            ) {
+                Text("Update Article Colors")
+            }
         }
     }
 }
