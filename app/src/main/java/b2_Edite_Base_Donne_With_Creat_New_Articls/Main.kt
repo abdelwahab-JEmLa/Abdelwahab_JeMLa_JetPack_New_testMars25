@@ -21,7 +21,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Filter1
+import androidx.compose.material.icons.filled.Filter2
+import androidx.compose.material.icons.filled.Filter3
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
@@ -262,7 +264,6 @@ fun ArticleItemECB(
                     reloadKey = reloadTrigger
                 )
                 DisponibilityOverlayECB(article.diponibilityState)
-
                 // Status indicators row
                 Row(
                     modifier = Modifier
@@ -270,15 +271,25 @@ fun ArticleItemECB(
                         .padding(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Image dimension change indicator
-                    if (article.funChangeImagsDimention) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = "Image dimensions modified",
-                            tint = Color.Red,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    // Image dimension indicator and selector
+                    Icon(
+                        imageVector = when (article.imageDimention) {
+                            "Small" -> Icons.Default.Filter3
+                            "Demi" -> Icons.Default.Filter2
+                            "Big" -> Icons.Default.Filter1
+                            else -> Icons.Default.Filter1
+                        },
+                        contentDescription = "Image dimensions",
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                val nextDimension = getNextImageDimension(article.imageDimention)
+                                viewModel.updateArticleInfoDataBase(
+                                    article.copy(imageDimention = nextDimension)
+                                )
+                            }
+                    )
 
                     // New arrival indicator/toggle
                     Icon(
@@ -298,6 +309,14 @@ fun ArticleItemECB(
             AutoResizedTextECB(text = article.nomArticleFinale)
         }
     }
+}
+
+// Helper function to cycle through image dimensions
+private fun getNextImageDimension(currentDimension: String): String = when (currentDimension) {
+    "Small" -> "Demi"
+    "Demi" -> "Big"
+    "Big" -> "Small"
+    else -> "Small"
 }
 //CategoryHeaderECB
 @Composable

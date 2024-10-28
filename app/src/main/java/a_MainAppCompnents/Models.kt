@@ -113,6 +113,7 @@ data class DataBaseArticles(
     var benificeClient: Double = 0.0,
     var monBeneficeUniter: Double = 0.0,
     var itsNewArrivale: Boolean = false,
+    var imageDimention: String = "",
     ) {
     fun getColumnValue(columnName: String): Any? {
         val value = when (columnName) {
