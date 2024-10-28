@@ -274,9 +274,8 @@ fun ArticleItemECB(
                     // Image dimension indicator and selector
                     Icon(
                         imageVector = when (article.imageDimention) {
-                            "Small" -> Icons.Default.Filter3
                             "Demi" -> Icons.Default.Filter2
-                            "Big" -> Icons.Default.Filter1
+                            "Big" -> Icons.Default.Filter3
                             else -> Icons.Default.Filter1
                         },
                         contentDescription = "Image dimensions",
@@ -311,12 +310,12 @@ fun ArticleItemECB(
     }
 }
 
-// Helper function to cycle through image dimensions
+// Helper function to cycle through imageDimention
 private fun getNextImageDimension(currentDimension: String): String = when (currentDimension) {
-    "Small" -> "Demi"
+    "" -> "Demi"
     "Demi" -> "Big"
-    "Big" -> "Small"
-    else -> "Small"
+    "Big" -> ""
+    else -> ""
 }
 //CategoryHeaderECB
 @Composable
