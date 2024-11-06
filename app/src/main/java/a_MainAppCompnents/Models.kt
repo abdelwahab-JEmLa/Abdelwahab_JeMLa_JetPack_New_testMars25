@@ -14,11 +14,29 @@ data class PlacesOfArticelsInCamionette(
     val namePlace: String = "",
     var classement: Int = 0
 )
+@Entity
+data class GroupeurBonCommendToSupplierTabeleab(
+    @PrimaryKey(autoGenerate = true) var vid: Long = 0,
+    val idArticle: Int,
+    val nameArticle: String,
+    val color1IdPicked: Long = 0,
+    val color1SoldQuantity: Int,
 
-data class ArticlesCommendForSupplierList(
+    val color2IdPicked: Long = 0,
+    val color2SoldQuantity: Int,
+
+    val color3IdPicked: Long = 0,
+    val color3SoldQuantity: Int,
+
+    val color4IdPicked: Long = 0,
+    val color4SoldQuantity: Int,
+
+    val clientSoldToItId: String
+)
+data class GroupeurBonCommendToSupplierTabele(
     val vid: Long = 0,
     var a_c_idarticle_c: Long = 0,
-    val a_d_nomarticlefinale_c: String = "",
+    val nameArticle: String = "",
     var idSupplierTSA: Int = 0,
     var nomSupplierTSA: String? = null,
     var idInStoreOfSupp: Long = 0,
@@ -28,16 +46,17 @@ data class ArticlesCommendForSupplierList(
     var a_q_prixachat_c: Double = 0.0,
     val a_l_nmbunite_c: Int = 0,
     val a_r_prixdevent_c: Double = 0.0,
-    val nomclient: String = "",
+    val idsClientsNeedItGBC: String = "",
+    val nameClientsNeedItGBC: String = "",
     val datedachate: String = "",
     val a_d_nomarticlefinale_c_1: String = "",
-    val quantityachete_c_1: Int = 0,
+    val color1SoldQuantity: Int = 0,
     val a_d_nomarticlefinale_c_2: String = "",
-    val quantityachete_c_2: Int = 0,
+    val color2SoldQuantity: Int = 0,
     val a_d_nomarticlefinale_c_3: String = "",
-    val quantityachete_c_3: Int = 0,
+    val color3SoldQuantity: Int = 0,
     val a_d_nomarticlefinale_c_4: String = "",
-    val quantityachete_c_4: Int = 0,
+    val color4SoldQuantity: Int = 0,
     val totalquantity: Int = 0,
     var itsInFindedAskSupplierSA: Boolean = false,
     var disponibylityStatInSupplierStore: String = "",
@@ -65,25 +84,7 @@ data class SoldArticlesTabelle(
     constructor() : this(0)
 }
 
-@Entity
-data class GroupeurBonCommendToSupplierTabele(
-    @PrimaryKey(autoGenerate = true) var vid: Long = 0,
-    val idArticle: Int,
-    val nameArticle: String,
-    val color1IdPicked: Long = 0,
-    val color1SoldQuantity: Int,
 
-    val color2IdPicked: Long = 0,
-    val color2SoldQuantity: Int,
-
-    val color3IdPicked: Long = 0,
-    val color3SoldQuantity: Int,
-
-    val color4IdPicked: Long = 0,
-    val color4SoldQuantity: Int,
-
-    val clientSoldToItId: String
-)
 
 data class TabelleSuppliersSA(
     var idSupplierSu: Long = 0,

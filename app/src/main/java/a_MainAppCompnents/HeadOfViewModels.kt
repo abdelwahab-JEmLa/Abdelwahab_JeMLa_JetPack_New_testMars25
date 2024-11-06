@@ -53,7 +53,8 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
     val colorsArticles: List<ColorsArticles> = emptyList(),
     val articlesAcheteModele: List<ArticlesAcheteModele> = emptyList(),
-    val articlesCommendForSupplierList: List<ArticlesCommendForSupplierList> = emptyList(),
+    val soldArticlesTabelle: List<SoldArticlesTabelle> = emptyList(),
+    val groupeurBonCommendToSupplierTabele: List<GroupeurBonCommendToSupplierTabele> = emptyList(),
     val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
     val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
     val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
@@ -75,8 +76,8 @@ class HeadOfViewModels(
     private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
     val currentEditedArticle: StateFlow<DataBaseArticles?> = _currentEditedArticle.asStateFlow()
 
-    private val _currentSupplierArticle = MutableStateFlow<ArticlesCommendForSupplierList?>(null)
-    val currentSupplierArticle: StateFlow<ArticlesCommendForSupplierList?> = _currentSupplierArticle.asStateFlow()
+    private val _currentSupplierArticle = MutableStateFlow<GroupeurBonCommendToSupplierTabele?>(null)
+    val currentSupplierArticle: StateFlow<GroupeurBonCommendToSupplierTabele?> = _currentSupplierArticle.asStateFlow()
 
     private val _indicateurDeNeedUpdateFireBase = MutableStateFlow(false)
     val indicateurDeNeedUpdateFireBase: StateFlow<Boolean> = _indicateurDeNeedUpdateFireBase.asStateFlow()
@@ -100,13 +101,15 @@ class HeadOfViewModels(
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
     private val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
+    private val refSoldArticlesTabelle = firebaseDatabase.getReference("SoldArticlesTabelle")
+
     val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
     private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
     private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
-    private val refClientsList = firebaseDatabase.getReference("clientsList")
+    private val refClientsList = firebaseDatabase.getReference("")
     val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
     var tempImageUri: Uri? = null
@@ -116,6 +119,104 @@ class HeadOfViewModels(
         private const val MAX_WIDTH = 1024
         private const val MAX_HEIGHT = 1024
         private const val TAG = "HeadOfViewModels"
+    }
+
+    fun creatCommendSupplierFromClientNeed() {
+        viewModelScope.launch {
+            try {
+                refTabelleSupplierArticlesRecived.removeValue()
+
+                refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
+                    val soldArticles = snapshot.children.mapNotNull { it.getValue(SoldArticlesTabelle::class.java) }
+
+                    val groupedArticles = soldArticles.groupBy { it.idArticle }.map { (articleId, articles) ->
+                        val firstArticle = articles.first()
+
+                        // Get list of client IDs
+                        val clientIdsList = articles
+                            .map { it.clientSoldToItId }
+                            .distinct()
+
+                        // Create comma-separated strings for IDs and names
+                        val clientIdsString = clientIdsList.joinToString(",")
+                        val clientNamesString = clientIdsList
+                            .mapNotNull { clientId ->
+                                _uiState.value.clientsList.find { it.idClientsSu == clientId }?.nomClientsSu
+                            }
+                            .joinToString(",")
+
+                        GroupeurBonCommendToSupplierTabele(
+                            vid = System.currentTimeMillis(),
+                            a_c_idarticle_c = articleId,
+                            nameArticle = firstArticle.nameArticle,
+                            idsClientsNeedItGBC = clientIdsString,
+                            nameClientsNeedItGBC = clientNamesString,
+                            color1SoldQuantity = articles.sumOf { it.color1SoldQuantity },
+                            color2SoldQuantity = articles.sumOf { it.color2SoldQuantity },
+                            color3SoldQuantity = articles.sumOf { it.color3SoldQuantity },
+                            color4SoldQuantity = articles.sumOf { it.color4SoldQuantity }
+                        )
+                    }
+
+                    // Fill remaining values before saving
+                    val filledArticles = remplireLesAutreValue(groupedArticles)
+
+                    filledArticles.forEach { groupedArticle ->
+                        refTabelleSupplierArticlesRecived
+                            .child(groupedArticle.vid.toString())
+                            .setValue(groupedArticle)
+                    }
+                }
+               //Update ui _uiState.value.groupeurBonCommendToSupplierTabele
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Error creating supplier commands: ${e.message}") }
+            }
+        }
+    }
+
+    private fun remplireLesAutreValue(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
+        return groupedArticles.map { article ->
+            // Find corresponding article in database
+            val correspondingArticle = _uiState.value.articlesBaseDonneECB.find {
+                it.idArticle.toLong() == article.a_c_idarticle_c
+            }
+
+            // Find color names from ColorsArticles
+            val color1Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor1 }?.nameColore ?: ""
+            } ?: ""
+
+            val color2Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor2 }?.nameColore ?: ""
+            } ?: ""
+
+            val color3Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor3 }?.nameColore ?: ""
+            } ?: ""
+
+            val color4Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor4 }?.nameColore ?: ""
+            } ?: ""
+
+            // Calculate total quantity
+            val totalQuantity = article.color1SoldQuantity +
+                    article.color2SoldQuantity +
+                    article.color3SoldQuantity +
+                    article.color4SoldQuantity
+
+
+            article.copy(
+                idSupplierTSA = generate(correspondingArticle),
+                datedachate = currentDate,
+                totalquantity = totalQuantity,
+                disponibylityStatInSupplierStore = "",
+                itsInFindedAskSupplierSA = false,
+                a_d_nomarticlefinale_c_1 = color1Name,
+                a_d_nomarticlefinale_c_2 = color2Name,
+                a_d_nomarticlefinale_c_3 = color3Name,
+                a_d_nomarticlefinale_c_4 = color4Name
+            )
+        }
     }
 
     fun toggleFilter() {
@@ -639,14 +740,14 @@ class HeadOfViewModels(
     }
 
 
-    fun updateArticleStatus(article: ArticlesCommendForSupplierList) {
+    fun updateArticleStatus(article: GroupeurBonCommendToSupplierTabele) {
         viewModelScope.launch {
             try {
                 _uiState.update { currentState ->
-                    val updatedArticles = currentState.articlesCommendForSupplierList.map {
+                    val updatedArticles = currentState.groupeurBonCommendToSupplierTabele.map {
                         if (it.vid == article.vid) article else it
                     }
-                    currentState.copy(articlesCommendForSupplierList = updatedArticles)
+                    currentState.copy(groupeurBonCommendToSupplierTabele = updatedArticles)
                 }
 
                 _currentSupplierArticle.update {
@@ -1279,7 +1380,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
 
     fun moveArticlesToSupplier(
-        articlesToMove: List<ArticlesCommendForSupplierList>,
+        articlesToMove: List<GroupeurBonCommendToSupplierTabele>,
         toSupp: Long
     ) {
         viewModelScope.launch {
@@ -1288,12 +1389,12 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 articlesToMove.forEach { article ->
                     // Update the article in the local state
                     _uiState.update { currentState ->
-                        val updatedArticles = currentState.articlesCommendForSupplierList.map {
+                        val updatedArticles = currentState.groupeurBonCommendToSupplierTabele.map {
                             if (it.vid == article.vid) {
                                 it.copy(idSupplierTSA = toSupp.toInt(), itsInFindedAskSupplierSA = false)
                             } else it
                         }
-                        currentState.copy(articlesCommendForSupplierList = updatedArticles)
+                        currentState.copy(groupeurBonCommendToSupplierTabele = updatedArticles)
                     }
 
                     // Update the article in the TabelleSupplierArticlesRecived database
@@ -1386,122 +1487,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     /* Start*/
 
-    init {
-        viewModelScope.launch {
-            initDataFromFirebase()
-        }
-    }
 
-    private suspend fun initDataFromFirebase() {
-        try {
-            _uiState.update { it.copy(isLoading = true) }
-            currentStep = 0
-            totalSteps = 10 // Update this if you change the number of steps
-
-            updateUploadProgressBarCounterAndItText("Starting data fetch", ++currentStep, 0f)
-
-            val articles = fetchArticles()
-            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
-
-            val categories = categoriesDao.getAllCategoriesList()
-            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
-
-            val colorsArticles = fetchColorsArticles()
-            updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
-
-            val supplierArticlesRecived = fetchSupplierArticles()
-            updateUploadProgressBarCounterAndItText("Fetched supplier articles", ++currentStep, 100f)
-
-            val suppliersSA = fetchSuppliers()
-            updateUploadProgressBarCounterAndItText("Fetched suppliers", ++currentStep, 100f)
-
-            val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
-            updateUploadProgressBarCounterAndItText("Fetched article map", ++currentStep, 100f)
-
-            val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
-            updateUploadProgressBarCounterAndItText("Fetched supplier store places", ++currentStep, 100f)
-
-            val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
-            updateUploadProgressBarCounterAndItText("Fetched camionette places", ++currentStep, 100f)
-
-            val articlesAcheteModele = fetchArticlesAcheteModele()
-            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
-
-            val clientsList = fetchClientsList()
-            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
-
-            updateUiState(
-                articles, categories,supplierArticlesRecived, suppliersSA,
-                mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
-                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles ,clientsList
-            )
-            updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
-        } catch (e: Exception) {
-            handleError("Failed to load data from Firebase", e)
-        } finally {
-            _uiState.update { it.copy(isLoading = false) }
-        }
-    }
-
-    private suspend fun fetchArticles() = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-        snapshot.getValue(DataBaseArticles::class.java)?.apply {
-            idArticle = snapshot.key?.toIntOrNull() ?: 0
-        }
-    }
-
-    private suspend fun fetchColorsArticles() = refColorsArticles.get().await().children
-        .mapNotNull { it.getValue(ColorsArticles::class.java) }
-
-    private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
-        .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-        .sortedBy{ it.classmentSupplier }
-
-    private suspend fun fetchMapArticleInSupplierStore() = refMapArticleInSupplierStore.get().await().children
-        .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
-        .sortedBy { it.itClassement }
-
-
-    private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
-        .mapNotNull { it.getValue(ArticlesCommendForSupplierList::class.java) }
-
-    private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = refPlacesOfArticelsInEacheSupplierSrore.get().await().children
-        .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
-
-    private suspend fun fetchPlacesOfArticelsInCamionette() = refPlacesOfArticelsInCamionette.get().await().children
-        .mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
-
-    private suspend fun fetchArticlesAcheteModele() = refArticlesAcheteModele.get().await().children
-        .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
-
-    private suspend fun fetchClientsList() = refClientsList.get().await().children
-        .mapNotNull { it.getValue(ClientsList::class.java) }
-
-    private fun updateUiState(
-        articles: List<DataBaseArticles>,
-        categories : List<CategoriesTabelleECB>,
-        supplierArticlesRecived: List<ArticlesCommendForSupplierList>,
-        suppliersSA: List<TabelleSuppliersSA>,
-        mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
-        placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore>,
-        placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette>,
-        articlesAcheteModele: List<ArticlesAcheteModele>,
-        colorsArticles: List<ColorsArticles>,
-        clientsList: List<ClientsList>,
-        ) {
-        _uiState.update { it.copy(
-            articlesBaseDonneECB = articles,
-            categoriesECB = categories,
-            articlesCommendForSupplierList = supplierArticlesRecived,
-            tabelleSuppliersSA = suppliersSA,
-            mapArticleInSupplierStore = mapArticleInSupplierStore,
-            placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
-            placesOfArticelsInCamionette=placesOfArticelsInCamionette,
-            articlesAcheteModele =articlesAcheteModele,
-            colorsArticles =colorsArticles,
-            clientsList =clientsList  ,
-            isLoading = false
-        ) }
-    }
 
 
 
@@ -1620,11 +1606,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         map: Map<String, Any?>,
         correspondingArticle: DataBaseArticles?,
         itsNewArticleFromeBacKE: Boolean
-    ): ArticlesCommendForSupplierList {
-        return ArticlesCommendForSupplierList(
+    ): GroupeurBonCommendToSupplierTabele {
+        return GroupeurBonCommendToSupplierTabele(
             vid = nextVid++,
             a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["idArticle"] as? String)?.toLong() ?: 0L),
-            a_d_nomarticlefinale_c = map["nameArticle"] as? String ?: "",
+            nameArticle = map["nameArticle"] as? String ?: "",
             idSupplierTSA = generate(correspondingArticle),
             nmbrCat = correspondingArticle?.nmbrCat ?: 0,
             trouve_c = false,
@@ -1632,7 +1618,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             a_q_prixachat_c = correspondingArticle?.monPrixAchat ?: 0.0,
             a_l_nmbunite_c = correspondingArticle?.nmbrUnite ?: 0,
             a_r_prixdevent_c = correspondingArticle?.monPrixVent ?: 0.0,
-            nomclient = map["clientSoldToItId"] as? String ?: "",
+            nameClientsNeedItGBC = map["clientSoldToItId"] as? String ?: "",
             //TODO ici on fire base ca va etre comme ca
             //
             //clientSoldToItId
@@ -1661,7 +1647,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             //    val iconColore: String = "",
             //    var classementColore: Int = 0
             //)
-            quantityachete_c_1 = (map["color1SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
+            color1SoldQuantity = (map["color1SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             a_d_nomarticlefinale_c_2 = map["a12"] as? String ?: "",
             //TODO fait la memem chose
             //   data class DataBaseArticles(
@@ -1679,11 +1665,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             //    var idcolor3: Long = 0,
             //    var couleur4: String? = null,
             //    var idcolor4: Long = 0,
-            quantityachete_c_2 = (map["color2SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
+            color2SoldQuantity = (map["color2SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             a_d_nomarticlefinale_c_3 = map["a14"] as? String ?: "",
-            quantityachete_c_3 = (map["color3SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
+            color3SoldQuantity = (map["color3SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             a_d_nomarticlefinale_c_4 = map["a16"] as? String ?: "",
-            quantityachete_c_4 = (map["color4SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
+            color4SoldQuantity = (map["color4SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             totalquantity = (map["a18"] as? String)?.toIntOrNull() ?: 0,//TODO fait que ca ce calcule
         )
     }
@@ -2550,6 +2536,122 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 handleError("Failed to clear temporary image", e)
             }
         }
+    }
+    init {
+        viewModelScope.launch {
+            initDataFromFirebase()
+        }
+    }
+
+    private suspend fun initDataFromFirebase() {
+        try {
+            _uiState.update { it.copy(isLoading = true) }
+            currentStep = 0
+            totalSteps = 10 // Update this if you change the number of steps
+
+            updateUploadProgressBarCounterAndItText("Starting data fetch", ++currentStep, 0f)
+
+            val articles = fetchArticles()
+            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
+
+            val categories = categoriesDao.getAllCategoriesList()
+            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
+
+            val colorsArticles = fetchColorsArticles()
+            updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
+
+            val supplierArticlesRecived = fetchSupplierArticles()
+            updateUploadProgressBarCounterAndItText("Fetched supplier articles", ++currentStep, 100f)
+
+            val suppliersSA = fetchSuppliers()
+            updateUploadProgressBarCounterAndItText("Fetched suppliers", ++currentStep, 100f)
+
+            val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
+            updateUploadProgressBarCounterAndItText("Fetched article map", ++currentStep, 100f)
+
+            val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
+            updateUploadProgressBarCounterAndItText("Fetched supplier store places", ++currentStep, 100f)
+
+            val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
+            updateUploadProgressBarCounterAndItText("Fetched camionette places", ++currentStep, 100f)
+
+            val articlesAcheteModele = fetchArticlesAcheteModele()
+            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
+
+            val clientsList = fetchClientsList()
+            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
+
+            updateUiState(
+                articles, categories,supplierArticlesRecived, suppliersSA,
+                mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles ,clientsList
+            )
+            updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
+        } catch (e: Exception) {
+            handleError("Failed to load data from Firebase", e)
+        } finally {
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    private suspend fun fetchArticles() = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+        snapshot.getValue(DataBaseArticles::class.java)?.apply {
+            idArticle = snapshot.key?.toIntOrNull() ?: 0
+        }
+    }
+
+    private suspend fun fetchColorsArticles() = refColorsArticles.get().await().children
+        .mapNotNull { it.getValue(ColorsArticles::class.java) }
+
+    private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
+        .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
+        .sortedBy{ it.classmentSupplier }
+
+    private suspend fun fetchMapArticleInSupplierStore() = refMapArticleInSupplierStore.get().await().children
+        .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
+        .sortedBy { it.itClassement }
+
+
+    private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
+        .mapNotNull { it.getValue(GroupeurBonCommendToSupplierTabele::class.java) }
+
+    private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = refPlacesOfArticelsInEacheSupplierSrore.get().await().children
+        .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
+
+    private suspend fun fetchPlacesOfArticelsInCamionette() = refPlacesOfArticelsInCamionette.get().await().children
+        .mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
+
+    private suspend fun fetchArticlesAcheteModele() = refArticlesAcheteModele.get().await().children
+        .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
+
+    private suspend fun fetchClientsList() = refClientsList.get().await().children
+        .mapNotNull { it.getValue(ClientsList::class.java) }
+
+    private fun updateUiState(
+        articles: List<DataBaseArticles>,
+        categories : List<CategoriesTabelleECB>,
+        supplierArticlesRecived: List<GroupeurBonCommendToSupplierTabele>,
+        suppliersSA: List<TabelleSuppliersSA>,
+        mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
+        placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore>,
+        placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette>,
+        articlesAcheteModele: List<ArticlesAcheteModele>,
+        colorsArticles: List<ColorsArticles>,
+        clientsList: List<ClientsList>,
+    ) {
+        _uiState.update { it.copy(
+            articlesBaseDonneECB = articles,
+            categoriesECB = categories,
+            groupeurBonCommendToSupplierTabele = supplierArticlesRecived,
+            tabelleSuppliersSA = suppliersSA,
+            mapArticleInSupplierStore = mapArticleInSupplierStore,
+            placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
+            placesOfArticelsInCamionette=placesOfArticelsInCamionette,
+            articlesAcheteModele =articlesAcheteModele,
+            colorsArticles =colorsArticles,
+            clientsList =clientsList  ,
+            isLoading = false
+        ) }
     }
 }
 

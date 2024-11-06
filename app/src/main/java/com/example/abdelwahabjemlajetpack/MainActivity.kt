@@ -583,10 +583,10 @@ fun SupplierSelectionPopup(
 ) {
     var showOnlyWithArticles by remember { mutableStateOf(true) }
 
-    val filteredSuppliers = remember(uiState.tabelleSuppliersSA, uiState.articlesCommendForSupplierList, showOnlyWithArticles) {
+    val filteredSuppliers = remember(uiState.tabelleSuppliersSA, uiState.groupeurBonCommendToSupplierTabele, showOnlyWithArticles) {
         uiState.tabelleSuppliersSA
             .filter { supplier ->
-                !showOnlyWithArticles || uiState.articlesCommendForSupplierList.any { article ->
+                !showOnlyWithArticles || uiState.groupeurBonCommendToSupplierTabele.any { article ->
                     article.idSupplierTSA == supplier.idSupplierSu.toInt()
                 }
             }

@@ -42,8 +42,8 @@ fun FabGroup(
     idSupplierOfFloatingButtonClicked: Long?,
     onFilterDispoActivate: () -> Unit
 ) {
-    val allArticlesMarked = remember(uiState.articlesCommendForSupplierList, idSupplierOfFloatingButtonClicked) {
-        uiState.articlesCommendForSupplierList
+    val allArticlesMarked = remember(uiState.groupeurBonCommendToSupplierTabele, idSupplierOfFloatingButtonClicked) {
+        uiState.groupeurBonCommendToSupplierTabele
             .filter { it.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked }
             .all { it.itsInFindedAskSupplierSA }
     }
@@ -88,7 +88,7 @@ fun HeadOfViewModels.toggleMarkAllArticles(supplierId: Long?, markAll: Boolean) 
             val updates = mutableMapOf<String, Any>()
 
             _uiState.update { currentState ->
-                val updatedArticles = currentState.articlesCommendForSupplierList.map { article ->
+                val updatedArticles = currentState.groupeurBonCommendToSupplierTabele.map { article ->
                     if (article.idSupplierTSA.toLong() == supplierId) {
                         updates["${article.vid}/itsInFindedAskSupplierSA"] = markAll
                         article.copy(itsInFindedAskSupplierSA = markAll)
@@ -96,7 +96,7 @@ fun HeadOfViewModels.toggleMarkAllArticles(supplierId: Long?, markAll: Boolean) 
                         article
                     }
                 }
-                currentState.copy(articlesCommendForSupplierList = updatedArticles)
+                currentState.copy(groupeurBonCommendToSupplierTabele = updatedArticles)
             }
 
             refTabelleSupplierArticlesRecived.updateChildren(updates).await()
@@ -139,7 +139,7 @@ fun moveNonFindefArticles(
     onIdSupplierChanged: (Long) -> Unit
 ) {
     val filterBytabelleSupplierArticlesRecived =
-        uiState.articlesCommendForSupplierList.filter {
+        uiState.groupeurBonCommendToSupplierTabele.filter {
             it.itsInFindedAskSupplierSA
         }
 

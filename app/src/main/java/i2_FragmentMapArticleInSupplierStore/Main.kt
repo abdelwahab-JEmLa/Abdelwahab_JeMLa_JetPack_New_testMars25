@@ -4,7 +4,7 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.PlacesOfArticelsInCamionette
-import a_MainAppCompnents.ArticlesCommendForSupplierList
+import a_MainAppCompnents.GroupeurBonCommendToSupplierTabele
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
@@ -84,11 +84,11 @@ fun FragmentMapArticleInSupplierStore(
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
     var showFab by remember { mutableStateOf(true) }
     val (articlesFilterByIdSupp, onFilterDispoActivate) = remember(
-        uiState.articlesCommendForSupplierList,
+        uiState.groupeurBonCommendToSupplierTabele,
         idSupplierOfFloatingButtonClicked,
         uiState.showOnlyWithFilter
     ) {
-        val filteredArticles = uiState.articlesCommendForSupplierList
+        val filteredArticles = uiState.groupeurBonCommendToSupplierTabele
             .filter { article ->
                 article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked &&
                         (!uiState.showOnlyWithFilter || article.itsInFindedAskSupplierSA)
@@ -240,7 +240,7 @@ fun PlaceHeader(placeItem: PlacesOfArticelsInCamionette, modifier: Modifier = Mo
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArticlesList(
-    articlesCommendForSupplierList: List<ArticlesCommendForSupplierList>,
+    groupeurBonCommendToSupplierTabele: List<GroupeurBonCommendToSupplierTabele>,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     viewModel: HeadOfViewModels,
     modifier: Modifier,
@@ -254,7 +254,7 @@ fun ArticlesList(
     ) {
         val corespendetArticleInDataBase = uiState.articlesBaseDonneECB
         val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette
-        val groupedArticles = articlesCommendForSupplierList
+        val groupedArticles = groupeurBonCommendToSupplierTabele
             .groupBy { article ->
                 val correspondingDbArticle = corespendetArticleInDataBase.find { dbArticle ->
                     dbArticle.idArticle.toLong() == article.a_c_idarticle_c
@@ -295,13 +295,13 @@ fun ArticlesList(
 
 @Composable
 fun ArticleItemOfPlace(
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
-    onDismissWithUpdate: (ArticlesCommendForSupplierList) -> Unit,
+    onDismissWithUpdate: (GroupeurBonCommendToSupplierTabele) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var showArticleDetails by remember { mutableStateOf<ArticlesCommendForSupplierList?>(null) }
+    var showArticleDetails by remember { mutableStateOf<GroupeurBonCommendToSupplierTabele?>(null) }
     val reloadKey = remember(article) { System.currentTimeMillis() }
 
     CardArticlePlace(
@@ -342,10 +342,10 @@ fun ArticleItemOfPlace(
 
 @Composable
 fun CardArticlePlace(
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     modifier: Modifier = Modifier,
-    onClickToShowWindowsInfoArt: (ArticlesCommendForSupplierList) -> Unit,
-    onUpdateArticleStatus: (ArticlesCommendForSupplierList) -> Unit,
+    onClickToShowWindowsInfoArt: (GroupeurBonCommendToSupplierTabele) -> Unit,
+    onUpdateArticleStatus: (GroupeurBonCommendToSupplierTabele) -> Unit,
     reloadKey: Long = 0,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
@@ -404,7 +404,7 @@ fun CardArticlePlace(
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = article.a_d_nomarticlefinale_c,
+                        text = article.nameArticle,
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         maxLines = 1,
@@ -490,12 +490,12 @@ fun WindowsOfNonPlacedArticles(
                     )
 
                     val articlesSupplier = if (searchText.isEmpty()) {
-                        uiState.articlesCommendForSupplierList.filter { article ->
+                        uiState.groupeurBonCommendToSupplierTabele.filter { article ->
                             article.idSupplierTSA.toLong() == place.idSupplierOfStore
                         }
                     } else {
-                        uiState.articlesCommendForSupplierList.filter { article ->
-                            article.a_d_nomarticlefinale_c.contains(searchText, ignoreCase = true)
+                        uiState.groupeurBonCommendToSupplierTabele.filter { article ->
+                            article.nameArticle.contains(searchText, ignoreCase = true)
                         }
                     }
 

@@ -2,8 +2,8 @@ package i_SupplierArticlesRecivedManager
 
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
+import a_MainAppCompnents.GroupeurBonCommendToSupplierTabele
 import a_MainAppCompnents.HeadOfViewModels
-import a_MainAppCompnents.ArticlesCommendForSupplierList
 import a_MainAppCompnents.TabelleSuppliersSA
 import android.app.Activity
 import android.content.Intent
@@ -118,7 +118,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
-    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<ArticlesCommendForSupplierList?>(null) }
+    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<GroupeurBonCommendToSupplierTabele?>(null) }
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableIntStateOf(2) }
     var voiceInputText by remember { mutableStateOf("") }
@@ -174,7 +174,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 if (inputText.length >= 2) {
                                     val clasmentToSupp = inputText.toDoubleOrNull()
                                     // Find the first article from the "Non Defined" supplier (ID 10)
-                                    val nonDefinedArticles = uiState.articlesCommendForSupplierList.filter {
+                                    val nonDefinedArticles = uiState.groupeurBonCommendToSupplierTabele.filter {
                                         it.idSupplierTSA.toLong() == 10L
                                     }
                                     val firstNonDefinedArticle = nonDefinedArticles.firstOrNull()
@@ -209,7 +209,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     }
 
                     filterSupp.forEach { supplier ->
-                        val articlesSupplier = uiState.articlesCommendForSupplierList.filter {
+                        val articlesSupplier = uiState.groupeurBonCommendToSupplierTabele.filter {
                             it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
                                     (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                         }
@@ -287,7 +287,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 
         // Show supplier floating buttons
         SuppliersFloatingButtonsSA(
-            allArticles = uiState.articlesCommendForSupplierList,
+            allArticles = uiState.groupeurBonCommendToSupplierTabele,
             suppliers = uiState.tabelleSuppliersSA,
             supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
             onClickFlotButt = { clickedSupplierId ->
@@ -303,7 +303,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 } else {
                     if (toggleCtrlToFilterToMove) {
                         val filterBytabelleSupplierArticlesRecived =
-                            uiState.articlesCommendForSupplierList.filter {
+                            uiState.groupeurBonCommendToSupplierTabele.filter {
                                 it.itsInFindedAskSupplierSA
                             }
                         viewModel.moveArticlesToSupplier(
@@ -398,7 +398,7 @@ private fun handleTwoPartInput(
 ) {
     val articleId = articleIdStr.toLongOrNull()
     if (articleId != null) {
-        val article = uiState.articlesCommendForSupplierList.find {
+        val article = uiState.groupeurBonCommendToSupplierTabele.find {
             it.vid == articleId
         }
         val supplier = uiState.tabelleSuppliersSA.find {
@@ -416,9 +416,9 @@ private fun handleTwoPartInput(
 @Composable
 fun CardArticlePlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     modifier: Modifier = Modifier,
-    onClickToShowWindowsInfoArt: (ArticlesCommendForSupplierList) -> Unit,
+    onClickToShowWindowsInfoArt: (GroupeurBonCommendToSupplierTabele) -> Unit,
     reloadKey: Long = 0,
 ) {
     val corependentDataBase = uiState.articlesBaseDonneECB.find { it.idArticle.toLong() == article.vid }
@@ -482,7 +482,7 @@ fun CardArticlePlace(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = article.a_d_nomarticlefinale_c,
+                    text = article.nameArticle,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
                     maxLines = 1,
@@ -535,9 +535,9 @@ fun CardArticlePlace(
 
 @Composable
 fun WindowArticleDetail(
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     onDismissWithUpdatePlaceArticle: () -> Unit,
-    onDismissWithUpdateOfnonDispo: (ArticlesCommendForSupplierList) -> Unit,
+    onDismissWithUpdateOfnonDispo: (GroupeurBonCommendToSupplierTabele) -> Unit,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier
@@ -573,7 +573,7 @@ fun WindowArticleDetail(
             ) {
                 Column(modifier = modifier.fillMaxWidth()) {
                     val ifStat =
-                        article.quantityachete_c_2 + article.quantityachete_c_3 + article.quantityachete_c_4 == 0
+                        article.color2SoldQuantity + article.color3SoldQuantity + article.color4SoldQuantity == 0
                     Box(
                         modifier = modifier
                             .clickable { onDismissWithUpdatePlaceArticle() }
@@ -600,7 +600,7 @@ fun WindowArticleDetail(
                         )
                     ) {
                         AutoResizedText(
-                            text = article.a_d_nomarticlefinale_c.capitalize(Locale.current),
+                            text = article.nameArticle.capitalize(Locale.current),
                             fontSize = 25.sp,
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
@@ -615,7 +615,7 @@ fun WindowArticleDetail(
                             .fillMaxWidth()
                             .padding(8.dp)
                     ) {
-                        items(article.nomclient.split(")")) { clientName ->
+                        items(article.nameClientsNeedItGBC.split(")")) { clientName ->
                             val cleanedName = clientName.trim().replace("(", "").replace(")", "")
                             if (cleanedName.isNotBlank()) {
                                 Card(
@@ -677,7 +677,7 @@ fun AutoResizedText(
 
 @Composable
 fun DisplayeImageSA(
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     viewModel: HeadOfViewModels,
     index: Int = 0,
     reloadKey: Any = Unit
@@ -715,7 +715,7 @@ fun DisplayeImageSA(
 
 @Composable
 fun SingleColorImageSA(
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     viewModel: HeadOfViewModels,
     reloadKey: Long
 ) {
@@ -744,7 +744,7 @@ fun SingleColorImageSA(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = article.a_d_nomarticlefinale_c,
+                        text = article.nameArticle,
                         color = Color.Red,
                         modifier = Modifier
                             .rotate(45f)
@@ -790,7 +790,7 @@ fun SingleColorImageSA(
 }
 
 @Composable
-fun MultiColorGridSA(article: ArticlesCommendForSupplierList, viewModel: HeadOfViewModels,
+fun MultiColorGridSA(article: GroupeurBonCommendToSupplierTabele, viewModel: HeadOfViewModels,
                      reloadKey: Any = Unit
 ) {
     LazyVerticalGrid(
@@ -798,10 +798,10 @@ fun MultiColorGridSA(article: ArticlesCommendForSupplierList, viewModel: HeadOfV
         modifier = Modifier.fillMaxSize()
     ) {
         val colorData = listOf(
-            article.quantityachete_c_1 to article.a_d_nomarticlefinale_c_1,
-            article.quantityachete_c_2 to article.a_d_nomarticlefinale_c_2,
-            article.quantityachete_c_3 to article.a_d_nomarticlefinale_c_3,
-            article.quantityachete_c_4 to article.a_d_nomarticlefinale_c_4
+            article.color1SoldQuantity to article.a_d_nomarticlefinale_c_1,
+            article.color2SoldQuantity to article.a_d_nomarticlefinale_c_2,
+            article.color3SoldQuantity to article.a_d_nomarticlefinale_c_3,
+            article.color4SoldQuantity to article.a_d_nomarticlefinale_c_4
         )
 
         items(colorData.size) { index ->
@@ -815,7 +815,7 @@ fun MultiColorGridSA(article: ArticlesCommendForSupplierList, viewModel: HeadOfV
 
 @Composable
 private fun ColorItemCard(
-    article: ArticlesCommendForSupplierList,
+    article: GroupeurBonCommendToSupplierTabele,
     index: Int,
     quantity: Int,
     colorName: String?,
@@ -877,7 +877,7 @@ private fun ColorItemCard(
 }
 @Composable
 fun SuppliersFloatingButtonsSA(
-    allArticles: List<ArticlesCommendForSupplierList>,
+    allArticles: List<GroupeurBonCommendToSupplierTabele>,
     suppliers: List<TabelleSuppliersSA>,
     onClickFlotButt: (Long) -> Unit,
     supplierFlotBisHandled: Long?,
@@ -1063,7 +1063,7 @@ fun SuppliersFloatingButtonsSA(
 @Composable
 private fun SupplierButton(
     supplier: TabelleSuppliersSA,
-    allArticles: List<ArticlesCommendForSupplierList>,
+    allArticles: List<GroupeurBonCommendToSupplierTabele>,
     showDescription: Boolean,
     isSelected: Boolean,
     isFirstClickedForReorder: Boolean,
