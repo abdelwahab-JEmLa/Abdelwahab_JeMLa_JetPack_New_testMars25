@@ -53,7 +53,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
     val colorsArticles: List<ColorsArticles> = emptyList(),
     val articlesAcheteModele: List<ArticlesAcheteModele> = emptyList(),
-    val tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived> = emptyList(),
+    val articlesCommendForSupplierList: List<ArticlesCommendForSupplierList> = emptyList(),
     val tabelleSuppliersSA: List<TabelleSuppliersSA> = emptyList(),
     val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
     val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
@@ -75,8 +75,8 @@ class HeadOfViewModels(
     private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
     val currentEditedArticle: StateFlow<DataBaseArticles?> = _currentEditedArticle.asStateFlow()
 
-    private val _currentSupplierArticle = MutableStateFlow<TabelleSupplierArticlesRecived?>(null)
-    val currentSupplierArticle: StateFlow<TabelleSupplierArticlesRecived?> = _currentSupplierArticle.asStateFlow()
+    private val _currentSupplierArticle = MutableStateFlow<ArticlesCommendForSupplierList?>(null)
+    val currentSupplierArticle: StateFlow<ArticlesCommendForSupplierList?> = _currentSupplierArticle.asStateFlow()
 
     private val _indicateurDeNeedUpdateFireBase = MutableStateFlow(false)
     val indicateurDeNeedUpdateFireBase: StateFlow<Boolean> = _indicateurDeNeedUpdateFireBase.asStateFlow()
@@ -639,21 +639,21 @@ class HeadOfViewModels(
     }
 
 
-    fun updateArticleStatus(article: TabelleSupplierArticlesRecived) {
+    fun updateArticleStatus(article: ArticlesCommendForSupplierList) {
         viewModelScope.launch {
             try {
                 _uiState.update { currentState ->
-                    val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
-                        if (it.aa_vid == article.aa_vid) article else it
+                    val updatedArticles = currentState.articlesCommendForSupplierList.map {
+                        if (it.vid == article.vid) article else it
                     }
-                    currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
+                    currentState.copy(articlesCommendForSupplierList = updatedArticles)
                 }
 
                 _currentSupplierArticle.update {
-                    it?.takeIf { it.aa_vid == article.aa_vid }?.let { _ -> article }
+                    it?.takeIf { it.vid == article.vid }?.let { _ -> article }
                 }
 
-                refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).apply {
+                refTabelleSupplierArticlesRecived.child(article.vid.toString()).apply {
                     child("itsInFindedAskSupplierSA").setValue(article.itsInFindedAskSupplierSA)
                     child("disponibylityStatInSupplierStore").setValue(article.disponibylityStatInSupplierStore)
                 }
@@ -1279,7 +1279,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
 
     fun moveArticlesToSupplier(
-        articlesToMove: List<TabelleSupplierArticlesRecived>,
+        articlesToMove: List<ArticlesCommendForSupplierList>,
         toSupp: Long
     ) {
         viewModelScope.launch {
@@ -1288,16 +1288,16 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 articlesToMove.forEach { article ->
                     // Update the article in the local state
                     _uiState.update { currentState ->
-                        val updatedArticles = currentState.tabelleSupplierArticlesRecived.map {
-                            if (it.aa_vid == article.aa_vid) {
+                        val updatedArticles = currentState.articlesCommendForSupplierList.map {
+                            if (it.vid == article.vid) {
                                 it.copy(idSupplierTSA = toSupp.toInt(), itsInFindedAskSupplierSA = false)
                             } else it
                         }
-                        currentState.copy(tabelleSupplierArticlesRecived = updatedArticles)
+                        currentState.copy(articlesCommendForSupplierList = updatedArticles)
                     }
 
                     // Update the article in the TabelleSupplierArticlesRecived database
-                    refTabelleSupplierArticlesRecived.child(article.aa_vid.toString()).apply {
+                    refTabelleSupplierArticlesRecived.child(article.vid.toString()).apply {
                         child("idSupplierTSA").setValue(toSupp.toInt())
                         child("itsInFindedAskSupplierSA").setValue(false)
                     }
@@ -1462,7 +1462,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
 
     private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
-        .mapNotNull { it.getValue(TabelleSupplierArticlesRecived::class.java) }
+        .mapNotNull { it.getValue(ArticlesCommendForSupplierList::class.java) }
 
     private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = refPlacesOfArticelsInEacheSupplierSrore.get().await().children
         .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
@@ -1479,7 +1479,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     private fun updateUiState(
         articles: List<DataBaseArticles>,
         categories : List<CategoriesTabelleECB>,
-        supplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
+        supplierArticlesRecived: List<ArticlesCommendForSupplierList>,
         suppliersSA: List<TabelleSuppliersSA>,
         mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
         placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore>,
@@ -1491,7 +1491,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
             categoriesECB = categories,
-            tabelleSupplierArticlesRecived = supplierArticlesRecived,
+            articlesCommendForSupplierList = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,
             mapArticleInSupplierStore = mapArticleInSupplierStore,
             placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
@@ -1589,8 +1589,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     // Find the corresponding article in articlesBaseDonneECB
                     val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticle.toLong() == idArticle }
                     val article = fromMap(value, correspondingArticle, itsNewArticleFromeBacKE)
-                    Log.d("TransferData", "Created article with aa_vid: ${article.aa_vid}")
-                    refDestination.child(article.aa_vid.toString()).setValue(article).await()
+                    Log.d("TransferData", "Created article with aa_vid: ${article.vid}")
+                    refDestination.child(article.vid.toString()).setValue(article).await()
 
                     processedItems++
                 } else {
@@ -1620,9 +1620,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         map: Map<String, Any?>,
         correspondingArticle: DataBaseArticles?,
         itsNewArticleFromeBacKE: Boolean
-    ): TabelleSupplierArticlesRecived {
-        return TabelleSupplierArticlesRecived(
-            aa_vid = nextVid++,
+    ): ArticlesCommendForSupplierList {
+        return ArticlesCommendForSupplierList(
+            vid = nextVid++,
             a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["idArticle"] as? String)?.toLong() ?: 0L),
             a_d_nomarticlefinale_c = map["nameArticle"] as? String ?: "",
             idSupplierTSA = generate(correspondingArticle),

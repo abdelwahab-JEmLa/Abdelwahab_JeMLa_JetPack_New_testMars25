@@ -4,7 +4,7 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import a_MainAppCompnents.MapArticleInSupplierStore
 import a_MainAppCompnents.PlacesOfArticelsInCamionette
-import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import a_MainAppCompnents.ArticlesCommendForSupplierList
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
@@ -84,11 +84,11 @@ fun FragmentMapArticleInSupplierStore(
     var showNonPlacedArticles by remember { mutableStateOf<MapArticleInSupplierStore?>(null) }
     var showFab by remember { mutableStateOf(true) }
     val (articlesFilterByIdSupp, onFilterDispoActivate) = remember(
-        uiState.tabelleSupplierArticlesRecived,
+        uiState.articlesCommendForSupplierList,
         idSupplierOfFloatingButtonClicked,
         uiState.showOnlyWithFilter
     ) {
-        val filteredArticles = uiState.tabelleSupplierArticlesRecived
+        val filteredArticles = uiState.articlesCommendForSupplierList
             .filter { article ->
                 article.idSupplierTSA.toLong() == idSupplierOfFloatingButtonClicked &&
                         (!uiState.showOnlyWithFilter || article.itsInFindedAskSupplierSA)
@@ -240,7 +240,7 @@ fun PlaceHeader(placeItem: PlacesOfArticelsInCamionette, modifier: Modifier = Mo
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArticlesList(
-    tabelleSupplierArticlesRecived: List<TabelleSupplierArticlesRecived>,
+    articlesCommendForSupplierList: List<ArticlesCommendForSupplierList>,
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
     viewModel: HeadOfViewModels,
     modifier: Modifier,
@@ -254,7 +254,7 @@ fun ArticlesList(
     ) {
         val corespendetArticleInDataBase = uiState.articlesBaseDonneECB
         val placesOfArticelsInCamionette = uiState.placesOfArticelsInCamionette
-        val groupedArticles = tabelleSupplierArticlesRecived
+        val groupedArticles = articlesCommendForSupplierList
             .groupBy { article ->
                 val correspondingDbArticle = corespendetArticleInDataBase.find { dbArticle ->
                     dbArticle.idArticle.toLong() == article.a_c_idarticle_c
@@ -295,13 +295,13 @@ fun ArticlesList(
 
 @Composable
 fun ArticleItemOfPlace(
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier,
-    onDismissWithUpdate: (TabelleSupplierArticlesRecived) -> Unit,
+    onDismissWithUpdate: (ArticlesCommendForSupplierList) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var showArticleDetails by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
+    var showArticleDetails by remember { mutableStateOf<ArticlesCommendForSupplierList?>(null) }
     val reloadKey = remember(article) { System.currentTimeMillis() }
 
     CardArticlePlace(
@@ -342,10 +342,10 @@ fun ArticleItemOfPlace(
 
 @Composable
 fun CardArticlePlace(
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     modifier: Modifier = Modifier,
-    onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
-    onUpdateArticleStatus: (TabelleSupplierArticlesRecived) -> Unit,
+    onClickToShowWindowsInfoArt: (ArticlesCommendForSupplierList) -> Unit,
+    onUpdateArticleStatus: (ArticlesCommendForSupplierList) -> Unit,
     reloadKey: Long = 0,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
@@ -411,7 +411,7 @@ fun CardArticlePlace(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "[${article.aa_vid}] Q: ${article.totalquantity}",
+                        text = "[${article.vid}] Q: ${article.totalquantity}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
@@ -490,11 +490,11 @@ fun WindowsOfNonPlacedArticles(
                     )
 
                     val articlesSupplier = if (searchText.isEmpty()) {
-                        uiState.tabelleSupplierArticlesRecived.filter { article ->
+                        uiState.articlesCommendForSupplierList.filter { article ->
                             article.idSupplierTSA.toLong() == place.idSupplierOfStore
                         }
                     } else {
-                        uiState.tabelleSupplierArticlesRecived.filter { article ->
+                        uiState.articlesCommendForSupplierList.filter { article ->
                             article.a_d_nomarticlefinale_c.contains(searchText, ignoreCase = true)
                         }
                     }

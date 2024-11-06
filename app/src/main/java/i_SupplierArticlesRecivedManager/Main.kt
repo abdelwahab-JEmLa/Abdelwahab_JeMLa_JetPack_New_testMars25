@@ -3,7 +3,7 @@ package i_SupplierArticlesRecivedManager
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
-import a_MainAppCompnents.TabelleSupplierArticlesRecived
+import a_MainAppCompnents.ArticlesCommendForSupplierList
 import a_MainAppCompnents.TabelleSuppliersSA
 import android.app.Activity
 import android.content.Intent
@@ -118,7 +118,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSupplierArticle by viewModel.currentSupplierArticle.collectAsState()
-    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<TabelleSupplierArticlesRecived?>(null) }
+    var dialogeDisplayeDetailleChanger by remember { mutableStateOf<ArticlesCommendForSupplierList?>(null) }
     var showFloatingButtons by remember { mutableStateOf(false) }
     var gridColumns by remember { mutableIntStateOf(2) }
     var voiceInputText by remember { mutableStateOf("") }
@@ -174,7 +174,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 if (inputText.length >= 2) {
                                     val clasmentToSupp = inputText.toDoubleOrNull()
                                     // Find the first article from the "Non Defined" supplier (ID 10)
-                                    val nonDefinedArticles = uiState.tabelleSupplierArticlesRecived.filter {
+                                    val nonDefinedArticles = uiState.articlesCommendForSupplierList.filter {
                                         it.idSupplierTSA.toLong() == 10L
                                     }
                                     val firstNonDefinedArticle = nonDefinedArticles.firstOrNull()
@@ -209,7 +209,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                     }
 
                     filterSupp.forEach { supplier ->
-                        val articlesSupplier = uiState.tabelleSupplierArticlesRecived.filter {
+                        val articlesSupplier = uiState.articlesCommendForSupplierList.filter {
                             it.idSupplierTSA.toLong() == supplier.idSupplierSu &&
                                     (!toggleCtrlToFilterToMove || it.itsInFindedAskSupplierSA)
                         }
@@ -229,7 +229,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                                 items = articlesSupplier,
                                 key = { article ->
                                     // Create a unique key combining supplier ID and article ID
-                                    "article_${supplier.idSupplierSu}_${article.aa_vid}"
+                                    "article_${supplier.idSupplierSu}_${article.vid}"
                                 }
                             ) { article ->
                                 CardArticlePlace(
@@ -287,7 +287,7 @@ fun Fragment_SupplierArticlesRecivedManager(
 
         // Show supplier floating buttons
         SuppliersFloatingButtonsSA(
-            allArticles = uiState.tabelleSupplierArticlesRecived,
+            allArticles = uiState.articlesCommendForSupplierList,
             suppliers = uiState.tabelleSuppliersSA,
             supplierFlotBisHandled = idSupplierOfFloatingButtonClicked,
             onClickFlotButt = { clickedSupplierId ->
@@ -303,7 +303,7 @@ fun Fragment_SupplierArticlesRecivedManager(
                 } else {
                     if (toggleCtrlToFilterToMove) {
                         val filterBytabelleSupplierArticlesRecived =
-                            uiState.tabelleSupplierArticlesRecived.filter {
+                            uiState.articlesCommendForSupplierList.filter {
                                 it.itsInFindedAskSupplierSA
                             }
                         viewModel.moveArticlesToSupplier(
@@ -398,8 +398,8 @@ private fun handleTwoPartInput(
 ) {
     val articleId = articleIdStr.toLongOrNull()
     if (articleId != null) {
-        val article = uiState.tabelleSupplierArticlesRecived.find {
-            it.aa_vid == articleId
+        val article = uiState.articlesCommendForSupplierList.find {
+            it.vid == articleId
         }
         val supplier = uiState.tabelleSuppliersSA.find {
             it.nameInFrenche.equals(supplierName, ignoreCase = true)
@@ -416,12 +416,12 @@ private fun handleTwoPartInput(
 @Composable
 fun CardArticlePlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     modifier: Modifier = Modifier,
-    onClickToShowWindowsInfoArt: (TabelleSupplierArticlesRecived) -> Unit,
+    onClickToShowWindowsInfoArt: (ArticlesCommendForSupplierList) -> Unit,
     reloadKey: Long = 0,
 ) {
-    val corependentDataBase = uiState.articlesBaseDonneECB.find { it.idArticle.toLong() == article.aa_vid }
+    val corependentDataBase = uiState.articlesBaseDonneECB.find { it.idArticle.toLong() == article.vid }
     val corependentnamePlacePLaceInStore = uiState.mapArticleInSupplierStore.find {
         it.idPlace.toLong() == (corependentDataBase?.idPlaceStandartInStoreSupplier ?: 0)
     }?.namePlace
@@ -494,7 +494,7 @@ fun CardArticlePlace(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    val text = "[${article.aa_vid}] Q: ${article.totalquantity}"
+                    val text = "[${article.vid}] Q: ${article.totalquantity}"
                     Text(
                         text = text,
                         style = MaterialTheme.typography.bodyMedium,
@@ -535,9 +535,9 @@ fun CardArticlePlace(
 
 @Composable
 fun WindowArticleDetail(
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     onDismissWithUpdatePlaceArticle: () -> Unit,
-    onDismissWithUpdateOfnonDispo: (TabelleSupplierArticlesRecived) -> Unit,
+    onDismissWithUpdateOfnonDispo: (ArticlesCommendForSupplierList) -> Unit,
     onDismiss: () -> Unit,
     viewModel: HeadOfViewModels,
     modifier: Modifier = Modifier
@@ -677,7 +677,7 @@ fun AutoResizedText(
 
 @Composable
 fun DisplayeImageSA(
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     viewModel: HeadOfViewModels,
     index: Int = 0,
     reloadKey: Any = Unit
@@ -715,7 +715,7 @@ fun DisplayeImageSA(
 
 @Composable
 fun SingleColorImageSA(
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     viewModel: HeadOfViewModels,
     reloadKey: Long
 ) {
@@ -790,7 +790,7 @@ fun SingleColorImageSA(
 }
 
 @Composable
-fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfViewModels,
+fun MultiColorGridSA(article: ArticlesCommendForSupplierList, viewModel: HeadOfViewModels,
                      reloadKey: Any = Unit
 ) {
     LazyVerticalGrid(
@@ -815,7 +815,7 @@ fun MultiColorGridSA(article: TabelleSupplierArticlesRecived, viewModel: HeadOfV
 
 @Composable
 private fun ColorItemCard(
-    article: TabelleSupplierArticlesRecived,
+    article: ArticlesCommendForSupplierList,
     index: Int,
     quantity: Int,
     colorName: String?,
@@ -877,15 +877,15 @@ private fun ColorItemCard(
 }
 @Composable
 fun SuppliersFloatingButtonsSA(
-    allArticles: List<TabelleSupplierArticlesRecived>,
+    allArticles: List<ArticlesCommendForSupplierList>,
     suppliers: List<TabelleSuppliersSA>,
     onClickFlotButt: (Long) -> Unit,
     supplierFlotBisHandled: Long?,
     itsReorderMode: Boolean,
     firstClickedSupplierForReorder: Long?,
     onToggleReorderMode: () -> Unit,
-    onUpdateVocalArabName: (Long, String) -> Unit  ,
-    onUpdateVocalFrencheName: (Long, String) -> Unit  ,
+    onUpdateVocalArabName: (Long, String) -> Unit,
+    onUpdateVocalFrencheName: (Long, String) -> Unit,
 
     ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -1063,7 +1063,7 @@ fun SuppliersFloatingButtonsSA(
 @Composable
 private fun SupplierButton(
     supplier: TabelleSuppliersSA,
-    allArticles: List<TabelleSupplierArticlesRecived>,
+    allArticles: List<ArticlesCommendForSupplierList>,
     showDescription: Boolean,
     isSelected: Boolean,
     isFirstClickedForReorder: Boolean,

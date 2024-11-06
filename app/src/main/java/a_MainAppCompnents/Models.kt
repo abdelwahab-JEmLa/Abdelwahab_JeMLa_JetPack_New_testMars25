@@ -15,8 +15,8 @@ data class PlacesOfArticelsInCamionette(
     var classement: Int = 0
 )
 
-data class TabelleSupplierArticlesRecived(
-    val aa_vid: Long = 0,
+data class ArticlesCommendForSupplierList(
+    val vid: Long = 0,
     var a_c_idarticle_c: Long = 0,
     val a_d_nomarticlefinale_c: String = "",
     var idSupplierTSA: Int = 0,
@@ -44,6 +44,46 @@ data class TabelleSupplierArticlesRecived(
     ) {
     constructor() : this(0L)
 }
+
+@Entity
+data class SoldArticlesTabelle(
+    @PrimaryKey(autoGenerate = true) val vid: Long = 0,
+    val idArticle: Long = 0,
+    val nameArticle: String = "",
+    val clientSoldToItId: Long = 0,
+    val date: String = "",
+    val color1IdPicked: Long = 0,
+    val color1SoldQuantity: Int = 0,
+    val color2IdPicked: Long = 0,
+    val color2SoldQuantity: Int = 0,
+    val color3IdPicked: Long = 0,
+    val color3SoldQuantity: Int = 0,
+    val color4IdPicked: Long = 0,
+    val color4SoldQuantity: Int = 0,
+    val confimed: Boolean = false,
+    ) {
+    constructor() : this(0)
+}
+
+@Entity
+data class GroupeurBonCommendToSupplierTabele(
+    @PrimaryKey(autoGenerate = true) var vid: Long = 0,
+    val idArticle: Int,
+    val nameArticle: String,
+    val color1IdPicked: Long = 0,
+    val color1SoldQuantity: Int,
+
+    val color2IdPicked: Long = 0,
+    val color2SoldQuantity: Int,
+
+    val color3IdPicked: Long = 0,
+    val color3SoldQuantity: Int,
+
+    val color4IdPicked: Long = 0,
+    val color4SoldQuantity: Int,
+
+    val clientSoldToItId: String
+)
 
 data class TabelleSuppliersSA(
     var idSupplierSu: Long = 0,
@@ -197,35 +237,4 @@ data class ClientsList(
     constructor() : this(0)
 }
 
-@Entity
-data class SoldArticlesTabelle(
-    @PrimaryKey(autoGenerate = true) val vid: Long = 0,
-    val idArticle: Long = 0,
-    val nameArticle: String = "",
-    val clientSoldToItId: Long = 0,
-    val date: String = "",
-    val color1IdPicked: Long = 0,
-    val color1SoldQuantity: Int = 0,
-    val color2IdPicked: Long = 0,
-    val color2SoldQuantity: Int = 0,
-    val color3IdPicked: Long = 0,
-    val color3SoldQuantity: Int = 0,
-    val color4IdPicked: Long = 0,
-    val color4SoldQuantity: Int = 0,
-    val confimed: Boolean = false,
 
-    ) {
-    constructor() : this(0)
-}
-
-@Entity
-data class GroupeurBonCommendToSupplierTabele(
-    @PrimaryKey(autoGenerate = true) var vid: Long = 0,
-    val idArticle: Int,
-    val nameArticle: String,
-    val color1SoldQuantity: Int,
-    val color2SoldQuantity: Int,
-    val color3SoldQuantity: Int,
-    val color4SoldQuantity: Int,
-    val clientSoldToItId: String
-)
