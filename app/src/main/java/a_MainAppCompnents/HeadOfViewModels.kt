@@ -101,7 +101,7 @@ class HeadOfViewModels(
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
     private val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
-    private val refSoldArticlesTabelle = firebaseDatabase.getReference("SoldArticlesTabelle")
+    private val refSoldArticlesTabelle = firebaseDatabase.getReference("O_SoldArticlesTabelle")
 
     val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
@@ -121,103 +121,7 @@ class HeadOfViewModels(
         private const val TAG = "HeadOfViewModels"
     }
 
-    fun creatCommendSupplierFromClientNeed() {
-        viewModelScope.launch {
-            try {
-                refTabelleSupplierArticlesRecived.removeValue()
 
-                refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
-                    val soldArticles = snapshot.children.mapNotNull { it.getValue(SoldArticlesTabelle::class.java) }
-
-                    val groupedArticles = soldArticles.groupBy { it.idArticle }.map { (articleId, articles) ->
-                        val firstArticle = articles.first()
-
-                        // Get list of client IDs
-                        val clientIdsList = articles
-                            .map { it.clientSoldToItId }
-                            .distinct()
-
-                        // Create comma-separated strings for IDs and names
-                        val clientIdsString = clientIdsList.joinToString(",")
-                        val clientNamesString = clientIdsList
-                            .mapNotNull { clientId ->
-                                _uiState.value.clientsList.find { it.idClientsSu == clientId }?.nomClientsSu
-                            }
-                            .joinToString(",")
-
-                        GroupeurBonCommendToSupplierTabele(
-                            vid = System.currentTimeMillis(),
-                            a_c_idarticle_c = articleId,
-                            nameArticle = firstArticle.nameArticle,
-                            idsClientsNeedItGBC = clientIdsString,
-                            nameClientsNeedItGBC = clientNamesString,
-                            color1SoldQuantity = articles.sumOf { it.color1SoldQuantity },
-                            color2SoldQuantity = articles.sumOf { it.color2SoldQuantity },
-                            color3SoldQuantity = articles.sumOf { it.color3SoldQuantity },
-                            color4SoldQuantity = articles.sumOf { it.color4SoldQuantity }
-                        )
-                    }
-
-                    // Fill remaining values before saving
-                    val filledArticles = remplireLesAutreValue(groupedArticles)
-
-                    filledArticles.forEach { groupedArticle ->
-                        refTabelleSupplierArticlesRecived
-                            .child(groupedArticle.vid.toString())
-                            .setValue(groupedArticle)
-                    }
-                }
-               //Update ui _uiState.value.groupeurBonCommendToSupplierTabele
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Error creating supplier commands: ${e.message}") }
-            }
-        }
-    }
-
-    private fun remplireLesAutreValue(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
-        return groupedArticles.map { article ->
-            // Find corresponding article in database
-            val correspondingArticle = _uiState.value.articlesBaseDonneECB.find {
-                it.idArticle.toLong() == article.a_c_idarticle_c
-            }
-
-            // Find color names from ColorsArticles
-            val color1Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor1 }?.nameColore ?: ""
-            } ?: ""
-
-            val color2Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor2 }?.nameColore ?: ""
-            } ?: ""
-
-            val color3Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor3 }?.nameColore ?: ""
-            } ?: ""
-
-            val color4Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor4 }?.nameColore ?: ""
-            } ?: ""
-
-            // Calculate total quantity
-            val totalQuantity = article.color1SoldQuantity +
-                    article.color2SoldQuantity +
-                    article.color3SoldQuantity +
-                    article.color4SoldQuantity
-
-
-            article.copy(
-                idSupplierTSA = generate(correspondingArticle),
-                datedachate = currentDate,
-                totalquantity = totalQuantity,
-                disponibylityStatInSupplierStore = "",
-                itsInFindedAskSupplierSA = false,
-                a_d_nomarticlefinale_c_1 = color1Name,
-                a_d_nomarticlefinale_c_2 = color2Name,
-                a_d_nomarticlefinale_c_3 = color3Name,
-                a_d_nomarticlefinale_c_4 = color4Name
-            )
-        }
-    }
 
     fun toggleFilter() {
         _uiState.update { currentState ->
@@ -1674,39 +1578,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         )
     }
 
-    private fun generate(correspondingArticle: DataBaseArticles?): Int {
-        if (correspondingArticle == null) {
-            return 10 // Default value if correspondingArticle is null
-        }
-
-        val lastSupplierIdBuyedFrom = correspondingArticle.lastSupplierIdBuyedFrom ?: 0
-        val lastIdSupplierChoseToBuy = correspondingArticle.lastIdSupplierChoseToBuy
-
-        // Parse dates, defaulting to epoch time if parsing fails
-        val dateLastSupplierIdBuyedFrom = correspondingArticle.dateLastSupplierIdBuyedFrom.let {
-            try {
-                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
-            } catch (e: Exception) {
-                0L
-            }
-        } ?: 0L
-
-        val dateLastIdSupplierChoseToBuy = correspondingArticle.dateLastIdSupplierChoseToBuy.let {
-            try {
-                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
-            } catch (e: Exception) {
-                0L
-            }
-        } ?: 0L
-
-        return when {
-            dateLastSupplierIdBuyedFrom > dateLastIdSupplierChoseToBuy -> lastSupplierIdBuyedFrom.toInt()
-            dateLastIdSupplierChoseToBuy > dateLastSupplierIdBuyedFrom -> lastIdSupplierChoseToBuy.toInt()
-            lastSupplierIdBuyedFrom.toInt() != 0 -> lastSupplierIdBuyedFrom.toInt()
-            lastIdSupplierChoseToBuy.toInt() != 0 -> lastIdSupplierChoseToBuy.toInt()
-            else -> 10 // Default value if both IDs are 0
-        }
-    }
 
     private suspend fun transferFirebaseDataArticlesAcheteModele(
         context: android.content.Context,
@@ -2537,6 +2408,148 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
+    fun creatCommendSupplierFromClientNeed() {
+        viewModelScope.launch {
+            try {
+                refTabelleSupplierArticlesRecived.removeValue()
+
+                refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
+                    val soldArticles = snapshot.children.mapNotNull { it.getValue(SoldArticlesTabelle::class.java) }
+
+                    val groupedArticles = soldArticles.groupBy { it.idArticle }.map { (articleId, articles) ->
+                        val firstArticle = articles.first()
+
+                        val clientIdsList = articles
+                            .map { it.clientSoldToItId }
+                            .distinct()
+
+                        val clientIdsString = clientIdsList.joinToString(",")
+                        val clientNamesString = clientIdsList
+                            .mapNotNull { clientId ->
+                                _uiState.value.clientsList.find { it.idClientsSu == clientId }?.nomClientsSu
+                            }
+                            .joinToString(",")
+
+                        GroupeurBonCommendToSupplierTabele(
+                            vid = System.currentTimeMillis(),
+                            a_c_idarticle_c = articleId,
+                            nameArticle = firstArticle.nameArticle,
+                            idsClientsNeedItGBC = clientIdsString,
+                            nameClientsNeedItGBC = clientNamesString,
+                            color1SoldQuantity = articles.sumOf { it.color1SoldQuantity },
+                            color2SoldQuantity = articles.sumOf { it.color2SoldQuantity },
+                            color3SoldQuantity = articles.sumOf { it.color3SoldQuantity },
+                            color4SoldQuantity = articles.sumOf { it.color4SoldQuantity }
+                        )
+                    }
+
+                    val filledArticles = remplireLesAutreValue(groupedArticles)
+
+                    // Counter for completed saves
+                    var savedCount = 0
+                    val totalToSave = filledArticles.size
+
+                    filledArticles.forEach { groupedArticle ->
+                        refTabelleSupplierArticlesRecived
+                            .child(groupedArticle.vid.toString())
+                            .setValue(groupedArticle)
+                            .addOnSuccessListener {
+                                savedCount++
+                                // Update UI state only after all items are saved
+                                if (savedCount == totalToSave) {
+                                    _uiState.update { currentState ->
+                                        currentState.copy(
+                                            groupeurBonCommendToSupplierTabele = filledArticles
+                                        )
+                                    }
+                                }
+                            }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Error creating supplier commands: ${e.message}") }
+            }
+        }
+    }
+
+    private fun remplireLesAutreValue(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
+        return groupedArticles.map { article ->
+            // Find corresponding article in database
+            val correspondingArticle = _uiState.value.articlesBaseDonneECB.find {
+                it.idArticle.toLong() == article.a_c_idarticle_c
+            }
+
+            // Find color names from ColorsArticles
+            val color1Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor1 }?.nameColore ?: ""
+            } ?: ""
+
+            val color2Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor2 }?.nameColore ?: ""
+            } ?: ""
+
+            val color3Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor3 }?.nameColore ?: ""
+            } ?: ""
+
+            val color4Name = correspondingArticle?.let { baseArticle ->
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor4 }?.nameColore ?: ""
+            } ?: ""
+
+            // Calculate total quantity
+            val totalQuantity = article.color1SoldQuantity +
+                    article.color2SoldQuantity +
+                    article.color3SoldQuantity +
+                    article.color4SoldQuantity
+
+
+            article.copy(
+                idSupplierTSA = generate(correspondingArticle),
+                datedachate = currentDate,
+                totalquantity = totalQuantity,
+                disponibylityStatInSupplierStore = "",
+                itsInFindedAskSupplierSA = false,
+                a_d_nomarticlefinale_c_1 = color1Name,
+                a_d_nomarticlefinale_c_2 = color2Name,
+                a_d_nomarticlefinale_c_3 = color3Name,
+                a_d_nomarticlefinale_c_4 = color4Name
+            )
+        }
+    }
+    private fun generate(correspondingArticle: DataBaseArticles?): Int {
+        if (correspondingArticle == null) {
+            return 10 // Default value if correspondingArticle is null
+        }
+
+        val lastSupplierIdBuyedFrom = correspondingArticle.lastSupplierIdBuyedFrom ?: 0
+        val lastIdSupplierChoseToBuy = correspondingArticle.lastIdSupplierChoseToBuy
+
+        // Parse dates, defaulting to epoch time if parsing fails
+        val dateLastSupplierIdBuyedFrom = correspondingArticle.dateLastSupplierIdBuyedFrom.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+            } catch (e: Exception) {
+                0L
+            }
+        } ?: 0L
+
+        val dateLastIdSupplierChoseToBuy = correspondingArticle.dateLastIdSupplierChoseToBuy.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+            } catch (e: Exception) {
+                0L
+            }
+        } ?: 0L
+
+        return when {
+            dateLastSupplierIdBuyedFrom > dateLastIdSupplierChoseToBuy -> lastSupplierIdBuyedFrom.toInt()
+            dateLastIdSupplierChoseToBuy > dateLastSupplierIdBuyedFrom -> lastIdSupplierChoseToBuy.toInt()
+            lastSupplierIdBuyedFrom.toInt() != 0 -> lastSupplierIdBuyedFrom.toInt()
+            lastIdSupplierChoseToBuy.toInt() != 0 -> lastIdSupplierChoseToBuy.toInt()
+            else -> 10 // Default value if both IDs are 0
+        }
+    }
+
     init {
         viewModelScope.launch {
             initDataFromFirebase()

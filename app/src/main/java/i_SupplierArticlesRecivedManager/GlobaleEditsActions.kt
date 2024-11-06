@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Filter1
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Moving
+import androidx.compose.material.icons.filled.Upcoming
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -63,6 +64,9 @@ fun GlobaleControlsFloatingButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
+                    Triple(Icons.Default.Upcoming, "creatCommendSupplierFromClientNeed") {
+                        viewModel.creatCommendSupplierFromClientNeed()
+                    },
                     Triple(if (ShowToggleMoveFirstNonDefined) Icons.Default.Close else Icons.Default.Filter1, "ToggleMoveFirstNonDefined") {
                         onToggleMoveFirstNonDefined()
                     },
