@@ -313,7 +313,7 @@ fun ArticleItemECB(
 // Helper function to cycle through imageDimention
 private fun getNextImageDimension(currentDimension: String): String = when (currentDimension) {
     "" -> "Demi"
-    "Demi" -> "Big"
+    "Demi" -> ""
     "Big" -> ""
     else -> ""
 }
