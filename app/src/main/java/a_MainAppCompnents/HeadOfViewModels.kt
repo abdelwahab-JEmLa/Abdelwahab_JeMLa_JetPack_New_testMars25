@@ -58,6 +58,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
     val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
     val placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette> = emptyList(),
+    val clientsList: List<ClientsList> = emptyList(),
     val showOnlyWithFilter: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
@@ -105,6 +106,7 @@ class HeadOfViewModels(
     private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
+    private val refClientsList = firebaseDatabase.getReference("clientsList")
     val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
     var tempImageUri: Uri? = null
@@ -1425,10 +1427,13 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val articlesAcheteModele = fetchArticlesAcheteModele()
             updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
+            val clientsList = fetchClientsList()
+            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
+
             updateUiState(
                 articles, categories,supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
-                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles ,clientsList
             )
             updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
         } catch (e: Exception) {
@@ -1468,6 +1473,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     private suspend fun fetchArticlesAcheteModele() = refArticlesAcheteModele.get().await().children
         .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
 
+    private suspend fun fetchClientsList() = refClientsList.get().await().children
+        .mapNotNull { it.getValue(ClientsList::class.java) }
+
     private fun updateUiState(
         articles: List<DataBaseArticles>,
         categories : List<CategoriesTabelleECB>,
@@ -1478,6 +1486,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette>,
         articlesAcheteModele: List<ArticlesAcheteModele>,
         colorsArticles: List<ColorsArticles>,
+        clientsList: List<ClientsList>,
         ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,
@@ -1489,6 +1498,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             placesOfArticelsInCamionette=placesOfArticelsInCamionette,
             articlesAcheteModele =articlesAcheteModele,
             colorsArticles =colorsArticles,
+            clientsList =clientsList  ,
             isLoading = false
         ) }
     }
@@ -1544,7 +1554,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     ) {
         try {
             Log.d("TransferData", "Starting data transfer from Telegram to SupplierArticlesRecived")
-            val refSource = firebaseDatabase.getReference("telegram")
+            val refSource = firebaseDatabase.getReference("telegram")       // K_GroupeurBonCommendToSupplierRef
             val refDestination = firebaseDatabase.getReference("K_SupplierArticlesRecived")
 
             Log.d("TransferData", "Removing existing data from destination")
@@ -1561,16 +1571,17 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             var skippedItems = 0
 
             dataMap.forEach { (key, value) ->
-                val idArticle = (value["a01"] as? String)?.toLong() ?: 0L
+                val idArticle = (value["idArticle"] as? String)?.toLong() ?: 0L
                 Log.d("TransferData", "Processing item with idArticle: $idArticle")
 
-                val itsNewArticleFromeBacKE = value["a10"] as? String == "" &&
-                        value["a12"] as? String == "" &&
-                        value["a14"] as? String == "" &&
-                        value["a16"] as? String == ""
+                val itsNewArticleFromeBacKE = value["color1SoldQuantity"] as? String == "" &&
+                        value["color2SoldQuantity"] as? String == "" &&
+                        value["color3SoldQuantity"] as? String == "" &&
+                        value["color4SoldQuantity"] as? String == ""
 
                 // Safely parse totalQuantity, defaulting to 0 if null or invalid
-                val totalQuantity = (value["a18"] as? String)?.toIntOrNull() ?: 0
+                val totalQuantity = (value["a18"] as? String)?.toIntOrNull() ?: 0 //TODO ca ce calcule par  la sum
+                //des color1SoldQuantity+ autres
 
                 if (totalQuantity > 0) {
                     Log.d("TransferData", "Valid total quantity: $totalQuantity")
@@ -1612,8 +1623,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     ): TabelleSupplierArticlesRecived {
         return TabelleSupplierArticlesRecived(
             aa_vid = nextVid++,
-            a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["a01"] as? String)?.toLong() ?: 0L),
-            a_d_nomarticlefinale_c = map["a02"] as? String ?: "",
+            a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["idArticle"] as? String)?.toLong() ?: 0L),
+            a_d_nomarticlefinale_c = map["nameArticle"] as? String ?: "",
             idSupplierTSA = generate(correspondingArticle),
             nmbrCat = correspondingArticle?.nmbrCat ?: 0,
             trouve_c = false,
@@ -1621,18 +1632,59 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             a_q_prixachat_c = correspondingArticle?.monPrixAchat ?: 0.0,
             a_l_nmbunite_c = correspondingArticle?.nmbrUnite ?: 0,
             a_r_prixdevent_c = correspondingArticle?.monPrixVent ?: 0.0,
-            nomclient = map["a08"] as? String ?: "",
-            datedachate = map["a09"] as? String ?: "",
+            nomclient = map["clientSoldToItId"] as? String ?: "",
+            //TODO ici on fire base ca va etre comme ca
+            //
+            //clientSoldToItId
+            //:
+            //"1,3"
+            // sort par split par , les ids des clien
+            // apre cherche don        val clientsList: List<ClientsList> = emptyList(),
+            // public final data class ClientsList(
+            //    val vidSu: Long = 0,
+            //    val idClientsSu: Long = 0,          todo par son id qui est sorti
+            //    val nomClientsSu: String = "",           trouve son nom
+            //    val bonDuClientsSu: String = "",
+            //    val couleurSu: String = "#FFFFFF",
+            //    val currentCreditBalance: Double = 0.0
+            //)
+            //     et cree un string separe par , mete le nomclient
+            datedachate = map["a09"] as? String ?: "", //TODO change que ca genere par now
             a_d_nomarticlefinale_c_1 = map["a10"] as? String ?: "",
-            quantityachete_c_1 = (map["a11"] as? String)?.toIntOrNull() ?: 0,
+            //TODO ici fait genere  on chrche don
+            //     val articlesBaseDonneECB: List<DataBaseArticles> = emptyList(),
+            //     idcolor1 par a_c_idarticle_c = id
+            // celuila ca cherche don      val colorsArticles: List<ColorsArticles> = emptyList(),
+            //data class ColorsArticles(
+            //    val idColore: Long = 0,        todo par id
+            //    val nameColore: String = "",     //sort le nom et mete le  ici a_d_nomarticlefinale_c_1
+            //    val iconColore: String = "",
+            //    var classementColore: Int = 0
+            //)
+            quantityachete_c_1 = (map["color1SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             a_d_nomarticlefinale_c_2 = map["a12"] as? String ?: "",
-            quantityachete_c_2 = (map["a13"] as? String)?.toIntOrNull() ?: 0,
+            //TODO fait la memem chose
+            //   data class DataBaseArticles(
+            //    var idArticle: Int = 0,
+            //    var nomArticleFinale: String = "",
+            //    var classementCate: Double = 0.0,
+            //    var nomArab: String = "",
+            //    var autreNomDarticle: String? = null,
+            //    var nmbrCat: Int = 0,
+            //    var couleur1: String? = null,
+            //    var idcolor1: Long = 0,
+            //    var couleur2: String? = null,
+            //    var idcolor2: Long = 0,       //ICI apre cherche color name
+            //    var couleur3: String? = null,
+            //    var idcolor3: Long = 0,
+            //    var couleur4: String? = null,
+            //    var idcolor4: Long = 0,
+            quantityachete_c_2 = (map["color2SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             a_d_nomarticlefinale_c_3 = map["a14"] as? String ?: "",
-            quantityachete_c_3 = (map["a15"] as? String)?.toIntOrNull() ?: 0,
+            quantityachete_c_3 = (map["color3SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
             a_d_nomarticlefinale_c_4 = map["a16"] as? String ?: "",
-            quantityachete_c_4 = (map["a17"] as? String)?.toIntOrNull() ?: 0,
-            totalquantity = (map["a18"] as? String)?.toIntOrNull() ?: 0,
-            etatdecommendcolum = (map["a19"] as? String)?.toIntOrNull() ?: 0
+            quantityachete_c_4 = (map["color4SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
+            totalquantity = (map["a18"] as? String)?.toIntOrNull() ?: 0,//TODO fait que ca ce calcule
         )
     }
 
