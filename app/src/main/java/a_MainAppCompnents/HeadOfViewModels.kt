@@ -2410,32 +2410,24 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
     fun creatCommendSupplierFromClientNeed() {
-         val TAG = "SupplierCommand"
+        val TAG = "SupplierCommand"
         Log.d(TAG, "Starting supplier command creation")
 
         viewModelScope.launch {
             try {
-                // First, get the current maximum VID from the supplier articles table
                 refTabelleSupplierArticlesRecived.get().addOnSuccessListener { supplierSnapshot ->
                     val currentMaxVid = supplierSnapshot.children
-                        .mapNotNull { it.key?.toIntOrNull() }
+                        .mapNotNull { it.key?.toLongOrNull() }
                         .maxOrNull() ?: 0
 
                     Log.d(TAG, "Current max VID in supplier table: $currentMaxVid")
-
-                    // Clear existing data
                     refTabelleSupplierArticlesRecived.removeValue()
 
-                    // Then proceed with creating new entries
                     refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
                         Log.d(TAG, "Total entries in soldArticlesTabelle: ${snapshot.childrenCount}")
 
                         val soldArticles = snapshot.children.mapNotNull {
-                            val article = it.getValue(SoldArticlesTabelle::class.java)
-                            if (article == null) {
-                                Log.w(TAG, "Failed to parse article from snapshot: ${it.key}")
-                            }
-                            article
+                            it.getValue(SoldArticlesTabelle::class.java)
                         }
 
                         val groupedMap = soldArticles.groupBy { it.idArticle }
@@ -2452,41 +2444,35 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                                 }
                                 .joinToString(",")
 
-                            val color1Total = articles.sumOf { it.color1SoldQuantity }
-                            val color2Total = articles.sumOf { it.color2SoldQuantity }
-                            val color3Total = articles.sumOf { it.color3SoldQuantity }
-                            val color4Total = articles.sumOf { it.color4SoldQuantity }
-                            remplireLesAutreValue//TODO fait avant de save de remplire les autre par la fun
-                            mapOf(
-                                "vid" to (currentMaxVid + index + 1),
-                                "a_c_idarticle_c" to articleId,
-                                "nameArticle" to firstArticle.nameArticle,
-                                "idsClientsNeedItGBC" to clientIdsString,
-                                "nameClientsNeedItGBC" to clientNamesString,
-                                "color1SoldQuantity" to color1Total,
-                                "color2SoldQuantity" to color2Total,
-                                "color3SoldQuantity" to color3Total,
-                                "color4SoldQuantity" to color4Total
+                            GroupeurBonCommendToSupplierTabele(
+                                vid = currentMaxVid + index + 1,
+                                a_c_idarticle_c = articleId,
+                                nameArticle = firstArticle.nameArticle,
+                                idsClientsNeedItGBC = clientIdsString,
+                                nameClientsNeedItGBC = clientNamesString,
+                                color1SoldQuantity = articles.sumOf { it.color1SoldQuantity },
+                                color2SoldQuantity = articles.sumOf { it.color2SoldQuantity },
+                                color3SoldQuantity = articles.sumOf { it.color3SoldQuantity },
+                                color4SoldQuantity = articles.sumOf { it.color4SoldQuantity }
                             )
                         }
 
-                        Log.d(TAG, "Created ${groupedArticles.size} grouped entries with VIDs from ${currentMaxVid + 1} to ${currentMaxVid + groupedArticles.size}")
+                        // Process with remplireLesAutreValue before saving
+                        val completeGroupedArticles = remplireLesAutreValue(groupedArticles)
 
-                        groupedArticles.forEach { articleData ->
-                            val vid = articleData["vid"] as Int
-
+                        completeGroupedArticles.forEach { articleData ->
                             refTabelleSupplierArticlesRecived
-                                .child(vid.toString())
+                                .child(articleData.vid.toString())
                                 .setValue(articleData)
                                 .addOnSuccessListener {
-                                    Log.d(TAG, "Successfully saved grouped article: ${articleData["nameArticle"]} with VID: $vid")
+                                    Log.d(TAG, "Successfully saved grouped article: ${articleData.nameArticle} with VID: ${articleData.vid}")
                                 }
                                 .addOnFailureListener { e ->
-                                    Log.e(TAG, "Failed to save grouped article: ${articleData["nameArticle"]} with VID: $vid", e)
+                                    Log.e(TAG, "Failed to save grouped article: ${articleData.nameArticle} with VID: ${articleData.vid}", e)
                                 }
                         }
 
-                        Log.d(TAG, "Completed supplier command creation: ${groupedArticles.size} grouped articles saved")
+                        Log.d(TAG, "Completed supplier command creation: ${completeGroupedArticles.size} grouped articles saved")
                     }.addOnFailureListener { e ->
                         Log.e(TAG, "Failed to fetch sold articles data", e)
                     }
