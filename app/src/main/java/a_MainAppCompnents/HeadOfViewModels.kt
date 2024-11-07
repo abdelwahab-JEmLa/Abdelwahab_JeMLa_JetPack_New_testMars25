@@ -39,6 +39,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -2409,69 +2410,95 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
     fun creatCommendSupplierFromClientNeed() {
+         val TAG = "SupplierCommand"
+        Log.d(TAG, "Starting supplier command creation")
+
         viewModelScope.launch {
             try {
-                refTabelleSupplierArticlesRecived.removeValue()
+                // First, get the current maximum VID from the supplier articles table
+                refTabelleSupplierArticlesRecived.get().addOnSuccessListener { supplierSnapshot ->
+                    val currentMaxVid = supplierSnapshot.children
+                        .mapNotNull { it.key?.toIntOrNull() }
+                        .maxOrNull() ?: 0
 
-                refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
-                    val soldArticles = snapshot.children.mapNotNull { it.getValue(SoldArticlesTabelle::class.java) }
+                    Log.d(TAG, "Current max VID in supplier table: $currentMaxVid")
 
-                    val groupedArticles = soldArticles.groupBy { it.idArticle }.map { (articleId, articles) ->
-                        val firstArticle = articles.first()
+                    // Clear existing data
+                    refTabelleSupplierArticlesRecived.removeValue()
 
-                        val clientIdsList = articles
-                            .map { it.clientSoldToItId }
-                            .distinct()
+                    // Then proceed with creating new entries
+                    refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
+                        Log.d(TAG, "Total entries in soldArticlesTabelle: ${snapshot.childrenCount}")
 
-                        val clientIdsString = clientIdsList.joinToString(",")
-                        val clientNamesString = clientIdsList
-                            .mapNotNull { clientId ->
-                                _uiState.value.clientsList.find { it.idClientsSu == clientId }?.nomClientsSu
+                        val soldArticles = snapshot.children.mapNotNull {
+                            val article = it.getValue(SoldArticlesTabelle::class.java)
+                            if (article == null) {
+                                Log.w(TAG, "Failed to parse article from snapshot: ${it.key}")
                             }
-                            .joinToString(",")
+                            article
+                        }
 
-                        GroupeurBonCommendToSupplierTabele(
-                            vid = System.currentTimeMillis(),
-                            a_c_idarticle_c = articleId,
-                            nameArticle = firstArticle.nameArticle,
-                            idsClientsNeedItGBC = clientIdsString,
-                            nameClientsNeedItGBC = clientNamesString,
-                            color1SoldQuantity = articles.sumOf { it.color1SoldQuantity },
-                            color2SoldQuantity = articles.sumOf { it.color2SoldQuantity },
-                            color3SoldQuantity = articles.sumOf { it.color3SoldQuantity },
-                            color4SoldQuantity = articles.sumOf { it.color4SoldQuantity }
-                        )
-                    }
+                        val groupedMap = soldArticles.groupBy { it.idArticle }
+                        val groupedArticles = groupedMap.entries.withIndex().map { (index, entry) ->
+                            val articleId = entry.key
+                            val articles = entry.value
+                            val firstArticle = articles.first()
 
-                    val filledArticles = remplireLesAutreValue(groupedArticles)
-
-                    // Counter for completed saves
-                    var savedCount = 0
-                    val totalToSave = filledArticles.size
-
-                    filledArticles.forEach { groupedArticle ->
-                        refTabelleSupplierArticlesRecived
-                            .child(groupedArticle.vid.toString())
-                            .setValue(groupedArticle)
-                            .addOnSuccessListener {
-                                savedCount++
-                                // Update UI state only after all items are saved
-                                if (savedCount == totalToSave) {
-                                    _uiState.update { currentState ->
-                                        currentState.copy(
-                                            groupeurBonCommendToSupplierTabele = filledArticles
-                                        )
-                                    }
+                            val clientIdsList = articles.map { it.clientSoldToItId }.distinct()
+                            val clientIdsString = clientIdsList.joinToString(",")
+                            val clientNamesString = clientIdsList
+                                .mapNotNull { clientId ->
+                                    _uiState.value.clientsList.find { it.idClientsSu == clientId }?.nomClientsSu
                                 }
-                            }
+                                .joinToString(",")
+
+                            val color1Total = articles.sumOf { it.color1SoldQuantity }
+                            val color2Total = articles.sumOf { it.color2SoldQuantity }
+                            val color3Total = articles.sumOf { it.color3SoldQuantity }
+                            val color4Total = articles.sumOf { it.color4SoldQuantity }
+                            remplireLesAutreValue//TODO fait avant de save de remplire les autre par la fun
+                            mapOf(
+                                "vid" to (currentMaxVid + index + 1),
+                                "a_c_idarticle_c" to articleId,
+                                "nameArticle" to firstArticle.nameArticle,
+                                "idsClientsNeedItGBC" to clientIdsString,
+                                "nameClientsNeedItGBC" to clientNamesString,
+                                "color1SoldQuantity" to color1Total,
+                                "color2SoldQuantity" to color2Total,
+                                "color3SoldQuantity" to color3Total,
+                                "color4SoldQuantity" to color4Total
+                            )
+                        }
+
+                        Log.d(TAG, "Created ${groupedArticles.size} grouped entries with VIDs from ${currentMaxVid + 1} to ${currentMaxVid + groupedArticles.size}")
+
+                        groupedArticles.forEach { articleData ->
+                            val vid = articleData["vid"] as Int
+
+                            refTabelleSupplierArticlesRecived
+                                .child(vid.toString())
+                                .setValue(articleData)
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "Successfully saved grouped article: ${articleData["nameArticle"]} with VID: $vid")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e(TAG, "Failed to save grouped article: ${articleData["nameArticle"]} with VID: $vid", e)
+                                }
+                        }
+
+                        Log.d(TAG, "Completed supplier command creation: ${groupedArticles.size} grouped articles saved")
+                    }.addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to fetch sold articles data", e)
                     }
+                }.addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to fetch current max VID", e)
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error creating supplier commands", e)
                 _uiState.update { it.copy(error = "Error creating supplier commands: ${e.message}") }
             }
         }
     }
-
     private fun remplireLesAutreValue(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
         return groupedArticles.map { article ->
             // Find corresponding article in database
@@ -2556,89 +2583,184 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
+    init {
+        viewModelScope.launch {
+            initDataFromFirebase()
+        }
+    }
+
     private suspend fun initDataFromFirebase() {
         try {
+            Timber.d("Starting Firebase data initialization")
             _uiState.update { it.copy(isLoading = true) }
             currentStep = 0
-            totalSteps = 10 // Update this if you change the number of steps
+            totalSteps = 10
 
             updateUploadProgressBarCounterAndItText("Starting data fetch", ++currentStep, 0f)
 
             val articles = fetchArticles()
+            Timber.d("Fetched ${articles.size} articles")
             updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
             val categories = categoriesDao.getAllCategoriesList()
+            Timber.d("Fetched ${categories.size} categories")
             updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
             val colorsArticles = fetchColorsArticles()
+            Timber.d("Fetched ${colorsArticles.size} color articles")
             updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
 
             val supplierArticlesRecived = fetchSupplierArticles()
+            Timber.d("Fetched ${supplierArticlesRecived.size} supplier articles")
             updateUploadProgressBarCounterAndItText("Fetched supplier articles", ++currentStep, 100f)
 
             val suppliersSA = fetchSuppliers()
+            Timber.d("Fetched ${suppliersSA.size} suppliers")
             updateUploadProgressBarCounterAndItText("Fetched suppliers", ++currentStep, 100f)
 
             val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
+            Timber.d("Fetched ${mapArticleInSupplierStore.size} article mappings")
             updateUploadProgressBarCounterAndItText("Fetched article map", ++currentStep, 100f)
 
             val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
+            Timber.d("Fetched ${placesOfArticelsInEacheSupplierSrore.size} supplier store places")
             updateUploadProgressBarCounterAndItText("Fetched supplier store places", ++currentStep, 100f)
 
             val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
+            Timber.d("Fetched ${placesOfArticelsInCamionette.size} van places")
             updateUploadProgressBarCounterAndItText("Fetched camionette places", ++currentStep, 100f)
 
             val articlesAcheteModele = fetchArticlesAcheteModele()
+            Timber.d("Fetched ${articlesAcheteModele.size} purchased articles")
             updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
             val clientsList = fetchClientsList()
-            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
+            Timber.d("Fetched ${clientsList.size} clients")
+            updateUploadProgressBarCounterAndItText("Fetched clients", ++currentStep, 100f)
+
+            Timber.d("""
+                Firebase sync summary:
+                Articles: ${articles.size}
+                Categories: ${categories.size}
+                Colors: ${colorsArticles.size}
+                Supplier Articles: ${supplierArticlesRecived.size}
+                Suppliers: ${suppliersSA.size}
+                Article Mappings: ${mapArticleInSupplierStore.size}
+                Supplier Store Places: ${placesOfArticelsInEacheSupplierSrore.size}
+                Van Places: ${placesOfArticelsInCamionette.size}
+                Purchased Articles: ${articlesAcheteModele.size}
+                Clients: ${clientsList.size}
+            """.trimIndent())
 
             updateUiState(
-                articles, categories,supplierArticlesRecived, suppliersSA,
+                articles, categories, supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
-                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles ,clientsList
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList
             )
+            Timber.d("UI state updated successfully")
             updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to load data from Firebase: ${e.message}")
             handleError("Failed to load data from Firebase", e)
         } finally {
+            Timber.d("Firebase initialization completed")
             _uiState.update { it.copy(isLoading = false) }
         }
     }
 
-    private suspend fun fetchArticles() = refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
-        snapshot.getValue(DataBaseArticles::class.java)?.apply {
-            idArticle = snapshot.key?.toIntOrNull() ?: 0
-        }
+    private suspend fun fetchArticles() = try {
+        Timber.d("Fetching articles from Firebase")
+        refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
+            snapshot.getValue(DataBaseArticles::class.java)?.apply {
+                idArticle = snapshot.key?.toIntOrNull() ?: 0
+            }
+        }.also { Timber.d("Successfully fetched ${it.size} articles") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching articles: ${e.message}")
+        emptyList()
     }
 
-    private suspend fun fetchColorsArticles() = refColorsArticles.get().await().children
-        .mapNotNull { it.getValue(ColorsArticles::class.java) }
+    private suspend fun fetchColorsArticles() = try {
+        Timber.d("Fetching color articles")
+        refColorsArticles.get().await().children
+            .mapNotNull { it.getValue(ColorsArticles::class.java) }
+            .also { Timber.d("Successfully fetched ${it.size} color articles") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching color articles: ${e.message}")
+        emptyList()
+    }
 
-    private suspend fun fetchSuppliers() = refTabelleSuppliersSA.get().await().children
-        .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-        .sortedBy{ it.classmentSupplier }
+    private suspend fun fetchSuppliers() = try {
+        Timber.d("Fetching suppliers")
+        refTabelleSuppliersSA.get().await().children
+            .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
+            .sortedBy{ it.classmentSupplier }
+            .also { Timber.d("Successfully fetched ${it.size} suppliers") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching suppliers: ${e.message}")
+        emptyList()
+    }
 
-    private suspend fun fetchMapArticleInSupplierStore() = refMapArticleInSupplierStore.get().await().children
-        .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
-        .sortedBy { it.itClassement }
+    private suspend fun fetchMapArticleInSupplierStore() = try {
+        Timber.d("Fetching article supplier store mapping")
+        refMapArticleInSupplierStore.get().await().children
+            .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
+            .sortedBy { it.itClassement }
+            .also { Timber.d("Successfully fetched ${it.size} article mappings") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching article mappings: ${e.message}")
+        emptyList()
+    }
 
+    private suspend fun fetchSupplierArticles() = try {
+        Timber.d("Fetching supplier articles")
+        refTabelleSupplierArticlesRecived.get().await().children
+            .mapNotNull { it.getValue(GroupeurBonCommendToSupplierTabele::class.java) }
+            .also { Timber.d("Successfully fetched ${it.size} supplier articles") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching supplier articles: ${e.message}")
+        emptyList()
+    }
 
-    private suspend fun fetchSupplierArticles() = refTabelleSupplierArticlesRecived.get().await().children
-        .mapNotNull { it.getValue(GroupeurBonCommendToSupplierTabele::class.java) }
+    private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = try {
+        Timber.d("Fetching supplier store places")
+        refPlacesOfArticelsInEacheSupplierSrore.get().await().children
+            .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
+            .also { Timber.d("Successfully fetched ${it.size} supplier store places") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching supplier store places: ${e.message}")
+        emptyList()
+    }
 
-    private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = refPlacesOfArticelsInEacheSupplierSrore.get().await().children
-        .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
+    private suspend fun fetchPlacesOfArticelsInCamionette() = try {
+        Timber.d("Fetching van places")
+        refPlacesOfArticelsInCamionette.get().await().children
+            .mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
+            .also { Timber.d("Successfully fetched ${it.size} van places") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching van places: ${e.message}")
+        emptyList()
+    }
 
-    private suspend fun fetchPlacesOfArticelsInCamionette() = refPlacesOfArticelsInCamionette.get().await().children
-        .mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
+    private suspend fun fetchArticlesAcheteModele() = try {
+        Timber.d("Fetching purchased articles")
+        refArticlesAcheteModele.get().await().children
+            .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
+            .also { Timber.d("Successfully fetched ${it.size} purchased articles") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching purchased articles: ${e.message}")
+        emptyList()
+    }
 
-    private suspend fun fetchArticlesAcheteModele() = refArticlesAcheteModele.get().await().children
-        .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
-
-    private suspend fun fetchClientsList() = refClientsList.get().await().children
-        .mapNotNull { it.getValue(ClientsList::class.java) }
+    private suspend fun fetchClientsList() = try {
+        Timber.d("Fetching clients list")
+        refClientsList.get().await().children
+            .mapNotNull { it.getValue(ClientsList::class.java) }
+            .also { Timber.d("Successfully fetched ${it.size} clients") }
+    } catch (e: Exception) {
+        Timber.e(e, "Error fetching clients: ${e.message}")
+        emptyList()
+    }
 
     private fun updateUiState(
         articles: List<DataBaseArticles>,
@@ -2653,7 +2775,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         clientsList: List<ClientsList>,
     ) {
         _uiState.update { it.copy(
-            articlesBaseDonneECB = articles,
+            articlesBaseDonneECB = articles,    //TODO cree moi log d pk ca ne s niala
             categoriesECB = categories,
             groupeurBonCommendToSupplierTabele = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,

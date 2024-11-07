@@ -103,6 +103,7 @@ dependencies {
 
     implementation (libs.compose)
     implementation( libs.gson)
+    implementation (libs.timber)
 
 }
 
