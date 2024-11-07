@@ -2409,7 +2409,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
-    fun creatCommendSupplierFromClientNeed() {
+    
+    fun intialaizeArticlesCommendToSupplierFromClientNeed() {
         val TAG = "SupplierCommand"
         Log.d(TAG, "Starting supplier command creation")
 
@@ -2457,8 +2458,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                             )
                         }
 
-                        // Process with remplireLesAutreValue before saving
-                        val completeGroupedArticles = remplireLesAutreValue(groupedArticles)
+                        // Process with intiAuthersFieldFromAuthersModels before saving
+                        val completeGroupedArticles = intiAuthersFieldFromAuthersModels(groupedArticles)
 
                         completeGroupedArticles.forEach { articleData ->
                             refTabelleSupplierArticlesRecived
@@ -2485,7 +2486,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
-    private fun remplireLesAutreValue(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
+    private fun intiAuthersFieldFromAuthersModels(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
         return groupedArticles.map { article ->
             // Find corresponding article in database
             val correspondingArticle = _uiState.value.articlesBaseDonneECB.find {

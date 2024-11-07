@@ -64,8 +64,8 @@ fun GlobaleControlsFloatingButtonsSA(
                 horizontalAlignment = Alignment.End
             ) {
                 val buttons = listOf(
-                    Triple(Icons.Default.Upcoming, "creatCommendSupplierFromClientNeed") {
-                        viewModel.creatCommendSupplierFromClientNeed()
+                    Triple(Icons.Default.Upcoming, "intialaizeArticlesCommendToSupplierFromClientNeed") {
+                        viewModel.intialaizeArticlesCommendToSupplierFromClientNeed()
                     },
                     Triple(if (ShowToggleMoveFirstNonDefined) Icons.Default.Close else Icons.Default.Filter1, "ToggleMoveFirstNonDefined") {
                         onToggleMoveFirstNonDefined()
