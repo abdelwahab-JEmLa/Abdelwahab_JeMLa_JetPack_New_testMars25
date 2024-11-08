@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import a_MainAppCompnents.HeadOfViewModels
 import android.annotation.SuppressLint
 import android.content.Context
@@ -42,7 +43,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ClientsTabelle
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.addNewClient
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.calculateClientProfit

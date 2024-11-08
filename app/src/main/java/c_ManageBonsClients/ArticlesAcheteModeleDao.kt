@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert

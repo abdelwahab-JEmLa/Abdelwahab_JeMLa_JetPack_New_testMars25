@@ -1,6 +1,7 @@
 package d_EntreBonsGro
 
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import a_RoomDB.BaseDonne
 import android.content.Intent
 import android.content.res.Configuration
@@ -59,7 +60,6 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope

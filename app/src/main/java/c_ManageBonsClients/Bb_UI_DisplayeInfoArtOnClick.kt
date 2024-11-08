@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
@@ -47,7 +48,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 

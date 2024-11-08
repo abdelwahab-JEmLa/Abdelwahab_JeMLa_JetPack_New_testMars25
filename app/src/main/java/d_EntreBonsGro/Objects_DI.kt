@@ -1,5 +1,6 @@
 package d_EntreBonsGro
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,7 +45,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import coil.compose.AsyncImagePainter
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.CoroutineScope
 import java.util.Locale

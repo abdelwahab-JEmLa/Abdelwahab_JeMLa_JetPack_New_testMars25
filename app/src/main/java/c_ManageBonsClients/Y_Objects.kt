@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize

@@ -1,5 +1,6 @@
 package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import android.provider.Settings.System
 import com.google.firebase.database.FirebaseDatabase
 import java.time.LocalDate
@@ -13,7 +14,8 @@ fun createEmptyArticle(nomClient: String) {
         val maxVidPlus = snapshot.children.mapNotNull { it.child("vid").getValue(Long::class.java) }.maxOrNull()?.plus(1) ?: 1
 
         articleRef.orderByChild("nomClient").equalTo(nomClient).limitToFirst(1).get().addOnSuccessListener { clientSnapshot ->
-            val firstClientArticle = clientSnapshot.children.firstOrNull()?.getValue(ArticlesAcheteModele::class.java)
+            val firstClientArticle = clientSnapshot.children.firstOrNull()?.getValue(
+                ArticlesAcheteModele::class.java)
             val clientDate = firstClientArticle?.dateDachate ?: LocalDate.now().format(
                 DateTimeFormatter.ofPattern(
                     System.DATE_FORMAT

@@ -12,13 +12,11 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import b_Edite_Base_Donne.ArticleDao
-import b_Edite_Base_Donne.EditeBaseDonneViewModel
+import c_ManageBonsClients.TAG
 import c_ManageBonsClients.roundToOneDecimal
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
-import com.example.abdelwahabjemlajetpack.importFromFirebaseToDataBaseDonne
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
@@ -1388,375 +1386,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-/*2->Section Suppliers Commendes Manager -------------------*/
 
-    /* Start*/
-
-
-
-
-
-
-
-    /*3->Section Imports FireBase And Stor-------------------*/
-
-    fun trensfertData(
-        articleDao: ArticleDao,
-        editeBaseDonneViewModel: EditeBaseDonneViewModel,
-        context: Context
-    ) {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true) }
-                totalSteps = 3
-                currentStep = 0
-
-                // Step 1: Import from Firebase to DataBaseDonne
-                updateUploadProgressBarCounterAndItText("Importing from Firebase to DataBaseDonne", ++currentStep, 0f)
-                importFromFirebaseToDataBaseDonne("e_DBJetPackExport", editeBaseDonneViewModel)
-                updateUploadProgressBarCounterAndItText("Completed Firebase to DataBaseDonne import", currentStep, 100f)
-
-                // Step 2: Transfer Firebase Data ArticlesAcheteModele
-                updateUploadProgressBarCounterAndItText("Transferring ArticlesAcheteModele data", ++currentStep, 0f)
-                transferFirebaseDataArticlesAcheteModele(context) { progress ->
-                    updateUploadProgressBarCounterAndItText("Transferring ArticlesAcheteModele data", currentStep, progress)
-                }
-
-                // Step 3: Transfer from Telegram to SupplierArticlesRecived
-                updateUploadProgressBarCounterAndItText("Transferring from Telegram to SupplierArticlesRecived", ++currentStep, 0f)
-                transfertFromeTelegramToSupplierArticlesRecived(context) { progress ->
-                    updateUploadProgressBarCounterAndItText("Transferring from Telegram to SupplierArticlesRecived", currentStep, progress)
-                }
-
-                updateUploadProgressBarCounterAndItText("Data transfer completed", totalSteps, 100f)
-            } catch (e: Exception) {
-                handleError("Import process failed", e)
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
-        }
-    }
-
-    private var nextVid = 1L
-
-    private suspend fun transfertFromeTelegramToSupplierArticlesRecived(
-        context: Context,
-        onProgressUpdate: (Float) -> Unit
-    ) {
-        try {
-            Log.d("TransferData", "Starting data transfer from Telegram to SupplierArticlesRecived")
-            val refSource = firebaseDatabase.getReference("telegram")       // K_GroupeurBonCommendToSupplierRef
-            val refDestination = firebaseDatabase.getReference("K_SupplierArticlesRecived")
-
-            Log.d("TransferData", "Removing existing data from destination")
-            refDestination.removeValue().await()
-
-            Log.d("TransferData", "Fetching data from source")
-            val dataSnapshot = refSource.get().await()
-
-            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
-            Log.d("TransferData", "Fetched ${dataMap.size} items from source")
-
-            val totalItems = dataMap.size
-            var processedItems = 0
-            var skippedItems = 0
-
-            dataMap.forEach { (key, value) ->
-                val idArticle = (value["idArticle"] as? String)?.toLong() ?: 0L
-                Log.d("TransferData", "Processing item with idArticle: $idArticle")
-
-                val itsNewArticleFromeBacKE = value["color1SoldQuantity"] as? String == "" &&
-                        value["color2SoldQuantity"] as? String == "" &&
-                        value["color3SoldQuantity"] as? String == "" &&
-                        value["color4SoldQuantity"] as? String == ""
-
-                // Safely parse totalQuantity, defaulting to 0 if null or invalid
-                val totalQuantity = (value["a18"] as? String)?.toIntOrNull() ?: 0 //TODO ca ce calcule par  la sum
-                //des color1SoldQuantity+ autres
-
-                if (totalQuantity > 0) {
-                    Log.d("TransferData", "Valid total quantity: $totalQuantity")
-
-                    // Find the corresponding article in articlesBaseDonneECB
-                    val correspondingArticle = _uiState.value.articlesBaseDonneECB.find { it.idArticle.toLong() == idArticle }
-                    val article = fromMap(value, correspondingArticle, itsNewArticleFromeBacKE)
-                    Log.d("TransferData", "Created article with aa_vid: ${article.vid}")
-                    refDestination.child(article.vid.toString()).setValue(article).await()
-
-                    processedItems++
-                } else {
-                    Log.d("TransferData", "Skipping item $key due to invalid total quantity: $totalQuantity")
-                    skippedItems++
-                }
-
-                val progress = (processedItems + skippedItems).toFloat() / totalItems * 100
-                Log.d("TransferData", "Progress: $progress%")
-                onProgressUpdate(progress)
-            }
-            initDataFromFirebase()
-
-            Log.d("TransferData", "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems")
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Data transfer completed. Processed: $processedItems, Skipped: $skippedItems", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            Log.e("TransferData", "Failed to transfer data", e)
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun fromMap(
-        map: Map<String, Any?>,
-        correspondingArticle: DataBaseArticles?,
-        itsNewArticleFromeBacKE: Boolean
-    ): GroupeurBonCommendToSupplierTabele {
-        return GroupeurBonCommendToSupplierTabele(
-            vid = nextVid++,
-            a_c_idarticle_c = if (itsNewArticleFromeBacKE) nextVid + 2500 else ((map["idArticle"] as? String)?.toLong() ?: 0L),
-            nameArticle = map["nameArticle"] as? String ?: "",
-            idSupplierTSA = generate(correspondingArticle),
-            nmbrCat = correspondingArticle?.nmbrCat ?: 0,
-            trouve_c = false,
-            a_u_prix_1_q1_c = correspondingArticle?.monPrixVent ?: 0.0,
-            a_q_prixachat_c = correspondingArticle?.monPrixAchat ?: 0.0,
-            a_l_nmbunite_c = correspondingArticle?.nmbrUnite ?: 0,
-            a_r_prixdevent_c = correspondingArticle?.monPrixVent ?: 0.0,
-            nameClientsNeedItGBC = map["clientSoldToItId"] as? String ?: "",
-            //TODO ici on fire base ca va etre comme ca
-            //
-            //clientSoldToItId
-            //:
-            //"1,3"
-            // sort par split par , les ids des clien
-            // apre cherche don        val clientsList: List<ClientsList> = emptyList(),
-            // public final data class ClientsList(
-            //    val vidSu: Long = 0,
-            //    val idClientsSu: Long = 0,          todo par son id qui est sorti
-            //    val nomClientsSu: String = "",           trouve son nom
-            //    val bonDuClientsSu: String = "",
-            //    val couleurSu: String = "#FFFFFF",
-            //    val currentCreditBalance: Double = 0.0
-            //)
-            //     et cree un string separe par , mete le nomclient
-            datedachate = map["a09"] as? String ?: "", //TODO change que ca genere par now
-            a_d_nomarticlefinale_c_1 = map["a10"] as? String ?: "",
-            //TODO ici fait genere  on chrche don
-            //     val articlesBaseDonneECB: List<DataBaseArticles> = emptyList(),
-            //     idcolor1 par a_c_idarticle_c = id
-            // celuila ca cherche don      val colorsArticles: List<ColorsArticles> = emptyList(),
-            //data class ColorsArticles(
-            //    val idColore: Long = 0,        todo par id
-            //    val nameColore: String = "",     //sort le nom et mete le  ici a_d_nomarticlefinale_c_1
-            //    val iconColore: String = "",
-            //    var classementColore: Int = 0
-            //)
-            color1SoldQuantity = (map["color1SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_2 = map["a12"] as? String ?: "",
-            //TODO fait la memem chose
-            //   data class DataBaseArticles(
-            //    var idArticle: Int = 0,
-            //    var nomArticleFinale: String = "",
-            //    var classementCate: Double = 0.0,
-            //    var nomArab: String = "",
-            //    var autreNomDarticle: String? = null,
-            //    var nmbrCat: Int = 0,
-            //    var couleur1: String? = null,
-            //    var idcolor1: Long = 0,
-            //    var couleur2: String? = null,
-            //    var idcolor2: Long = 0,       //ICI apre cherche color name
-            //    var couleur3: String? = null,
-            //    var idcolor3: Long = 0,
-            //    var couleur4: String? = null,
-            //    var idcolor4: Long = 0,
-            color2SoldQuantity = (map["color2SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_3 = map["a14"] as? String ?: "",
-            color3SoldQuantity = (map["color3SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
-            a_d_nomarticlefinale_c_4 = map["a16"] as? String ?: "",
-            color4SoldQuantity = (map["color4SoldQuantity"] as? String)?.toIntOrNull() ?: 0,
-            totalquantity = (map["a18"] as? String)?.toIntOrNull() ?: 0,//TODO fait que ca ce calcule
-        )
-    }
-
-
-    private suspend fun transferFirebaseDataArticlesAcheteModele(
-        context: android.content.Context,
-        onProgressUpdate: (Float) -> Unit
-    ) {
-        var fireStorHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
-        var totalItems = 0
-        var processedItems = 0
-        var skippedItems = 0
-
-        try {
-            val firestore = Firebase.firestore
-            val querySnapshot = firestore.collection("HistoriqueDesFactures").get().await()
-            fireStorHistoriqueDesFactures = querySnapshot.documents.mapNotNull { document ->
-                document.toObject(ArticlesAcheteModele::class.java)
-            }
-            Log.d("TransferDebug", "Fetched ${fireStorHistoriqueDesFactures.size} items from HistoriqueDesFactures")
-        } catch (e: Exception) {
-            Log.e("TransferDebug", "Error getting documents from Firestore: ", e)
-        }
-
-        val refSource = Firebase.database.getReference("ArticlesAcheteModele")
-        val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
-        try {
-            refDestination.removeValue().await()
-            Log.d("TransferDebug", "Cleared destination reference")
-
-            val dataSnapshot = refSource.get().await()
-            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
-
-            totalItems = dataMap.size
-            Log.d("TransferDebug", "Total items to process: $totalItems")
-
-            var maxIdArticle = 0
-
-            // Find the maximum idArticle
-            dataMap.forEach { (_, value) ->
-                val idArticle = (value["idarticle_c"] as? Long) ?: 0
-                if (idArticle > maxIdArticle) {
-                    maxIdArticle = idArticle.toInt()
-                }
-            }
-            Log.d("TransferDebug", "Max idArticle found: $maxIdArticle")
-
-            dataMap.forEach { (key, value) ->
-                Log.d("TransferDebug", "Processing item with key: $key")
-
-                val idArticle = (value["idarticle_c"] as? Long) ?: 0
-                val nomClient = value["nomclient_c"] as? String ?: ""
-                Log.d("TransferDebug", "idArticle: $idArticle, nomClient: $nomClient")
-
-                // Instead of querying DAO, find the matching article in articlesBaseDonneECB
-                val baseDonne =_uiState.value.articlesBaseDonneECB.find { it.idArticle.toLong() == idArticle }
-                if (baseDonne == null) {
-                    Log.w("TransferDebug", "Article not found in articlesBaseDonneECB for idArticle: $idArticle")
-                }
-
-                val matchingHistorique = fireStorHistoriqueDesFactures.find { it.idArticle == idArticle && it.nomClient == nomClient }
-                val monPrixVentFireStoreBM = matchingHistorique?.monPrixVentFireStoreBM ?: 0.0
-                Log.d("TransferDebug", "Matching historique found: ${matchingHistorique != null}, monPrixVentFireStoreBM: $monPrixVentFireStoreBM")
-
-                val itsNewArticleFromeBacKE = value["nomarticlefinale_c_1"] as? String == "" &&
-                        value["nomarticlefinale_c_2"] as? String == "" &&
-                        value["nomarticlefinale_c_3"] as? String == "" &&
-                        value["nomarticlefinale_c_4"] as? String == ""
-                val generatedID = if (itsNewArticleFromeBacKE) maxIdArticle + 2000 else idArticle
-                Log.d("TransferDebug", "itsNewArticleFromeBacKE: $itsNewArticleFromeBacKE, generatedID: $generatedID")
-
-                // Filter entries where totalquantity is empty or null
-                val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
-                if (totalQuantity != null && totalQuantity > 0) {
-                    Log.d("TransferDebug", "Valid totalQuantity: $totalQuantity")
-
-                    val article = baseDonne?.let {
-                        val vid = (value["id"] as? Long) ?: 0
-                        val nomArticleFinale = if (itsNewArticleFromeBacKE) (value["nomarticlefinale_c"] as? String)?.uppercase() ?: "" else value["nomarticlefinale_c"] as? String ?: ""
-                        val prixAchat = if (itsNewArticleFromeBacKE) 0.0 else it.monPrixAchat
-                        val nmbrunitBC = roundToOneDecimal((value["nmbunite_c"] as? Number)?.toDouble() ?: 0.0)
-                        val clientPrixVentUnite = roundToOneDecimal((value["prixdevent_c"] as? Number)?.toDouble() ?: 0.0)
-                        val dateDachate = value["datedachate"] as? String ?: ""
-
-                        Log.d("TransferDebug", "ArticlesAcheteModele creation values:")
-                        Log.d("TransferDebug", "vid: $vid, nomArticleFinale: $nomArticleFinale")
-                        Log.d("TransferDebug", "prixAchat: $prixAchat, nmbrunitBC: $nmbrunitBC, clientPrixVentUnite: $clientPrixVentUnite")
-                        Log.d("TransferDebug", "dateDachate: $dateDachate")
-
-                        val article = ArticlesAcheteModele(
-                            vid = vid,
-                            idArticle = generatedID.toLong(),
-                            nomArticleFinale = nomArticleFinale,
-                            prixAchat = prixAchat,
-                            nmbrunitBC = nmbrunitBC,
-                            clientPrixVentUnite = clientPrixVentUnite,
-                            nomClient = nomClient,
-                            dateDachate = dateDachate,
-                            nomCouleur1 = value["nomarticlefinale_c_1"] as? String ?: "",
-                            quantityAcheteCouleur1 = (value["quantityachete_c_1"] as? Number)?.toInt() ?: 0,
-                            nomCouleur2 = value["nomarticlefinale_c_2"] as? String ?: "",
-                            quantityAcheteCouleur2 = (value["quantityachete_c_2"] as? Number)?.toInt() ?: 0,
-                            nomCouleur3 = value["nomarticlefinale_c_3"] as? String ?: "",
-                            quantityAcheteCouleur3 = (value["quantityachete_c_3"] as? Number)?.toInt() ?: 0,
-                            nomCouleur4 = value["nomarticlefinale_c_4"] as? String ?: "",
-                            quantityAcheteCouleur4 = (value["quantityachete_c_4"] as? Number)?.toInt() ?: 0,
-                            totalQuantity = totalQuantity,
-                            nonTrouveState = false,
-                            verifieState = false,
-                            typeEmballage = if (it.cartonState == "itsCarton" || it.cartonState == "Carton") "Carton" else "Boit",
-                            choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
-                            monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0),
-                            monPrixVentFireStoreBM = monPrixVentFireStoreBM,
-                        )
-
-                        article.apply {
-                            monPrixVentUniterFireStoreBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentFireStoreBM / nmbrunitBC else 0.0)
-                            monBenificeFireStoreBM = roundToOneDecimal(monPrixVentFireStoreBM - prixAchat)
-                            monBenificeUniterFireStoreBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeFireStoreBM / nmbrunitBC else 0.0)
-                            totalProfitFireStoreBM = roundToOneDecimal((totalQuantity * monBenificeFireStoreBM))
-                            monBenificeBM = roundToOneDecimal(monPrixVentBM - prixAchat)
-                            monBenificeUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monBenificeBM / nmbrunitBC else 0.0)
-                            totalProfitBM = roundToOneDecimal(totalQuantity * monBenificeBM)
-                            monPrixAchatUniterBC = roundToOneDecimal(if (nmbrunitBC != 0.0) prixAchat / nmbrunitBC else 0.0)
-                            monPrixVentUniterBM = roundToOneDecimal(if (nmbrunitBC != 0.0) monPrixVentBM / nmbrunitBC else 0.0)
-                            benificeDivise = roundToOneDecimal(((clientPrixVentUnite * nmbrunitBC) - prixAchat) / 2)
-                            clientBenificeBM = roundToOneDecimal((clientPrixVentUnite * nmbrunitBC) - monPrixVentBM)
-
-                            Log.d("TransferDebug", "Calculated values:")
-                            Log.d("TransferDebug", "monPrixVentUniterFireStoreBM: $monPrixVentUniterFireStoreBM")
-                            Log.d("TransferDebug", "monBenificeFireStoreBM: $monBenificeFireStoreBM")
-                            Log.d("TransferDebug", "monBenificeUniterFireStoreBM: $monBenificeUniterFireStoreBM")
-                            Log.d("TransferDebug", "totalProfitFireStoreBM: $totalProfitFireStoreBM")
-                            Log.d("TransferDebug", "monBenificeBM: $monBenificeBM")
-                            Log.d("TransferDebug", "monBenificeUniterBM: $monBenificeUniterBM")
-                            Log.d("TransferDebug", "totalProfitBM: $totalProfitBM")
-                            Log.d("TransferDebug", "monPrixAchatUniterBC: $monPrixAchatUniterBC")
-                            Log.d("TransferDebug", "monPrixVentUniterBM: $monPrixVentUniterBM")
-                            Log.d("TransferDebug", "benificeDivise: $benificeDivise")
-                            Log.d("TransferDebug", "clientBenificeBM: $clientBenificeBM")
-                        }
-
-                        Log.d("TransferDebug", "Created ArticlesAcheteModele object")
-                        article
-                    }
-
-                    if (article != null) {
-                        refDestination.child(article.vid.toString()).setValue(article).await()
-                        Log.d("TransferDebug", "Article transferred successfully: ${article.vid}")
-                        processedItems++
-                    } else {
-                        Log.w("TransferDebug", "Article object is null, skipping transfer for idArticle: $idArticle")
-                        skippedItems++
-                    }
-                } else {
-                    Log.w("TransferDebug", "Skipping item due to invalid totalQuantity: $totalQuantity")
-                    skippedItems++
-                }
-
-                onProgressUpdate(processedItems.toFloat() / totalItems)
-            }
-
-            Log.d("TransferDebug", "Transfer completed. Processed: $processedItems, Skipped: $skippedItems, Total: $totalItems")
-
-            // Display success message when data transfer is completed
-            withContext(Dispatchers.Main) {
-                if (processedItems == totalItems) {
-                    Toast.makeText(context, "Data transfer completed successfully", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Data transfer completed with some issues. Check logs.", Toast.LENGTH_LONG).show()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("TransferDebug", "Failed to transfer data", e)
-
-            // Display failure message with error details
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
 
     /*1->Section Creat + Handel IMGs Articles -------------------*/
 
@@ -2409,7 +2039,273 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
-    
+
+    /**inti*/
+    suspend fun transferFirebaseDataArticlesAcheteModele(
+    ) {
+        var fireStoreHistoriqueDesFactures: List<ArticlesAcheteModele> = emptyList()
+        var totalItems = 0
+        var processedItems = 0
+        var skippedItems = 0
+
+        try {
+            // Fetch historical data from Firestore
+            fireStoreHistoriqueDesFactures = fetchHistoricalData()
+            Log.d("TransferDebug", "Fetched ${fireStoreHistoriqueDesFactures.size} items from HistoriqueDesFactures")
+
+            // Initialize database references
+            val refSource = refSoldArticlesTabelle
+            val refDestination = Firebase.database.getReference("ArticlesAcheteModeleAdapted")
+
+            // Clear destination before transfer
+            refDestination.removeValue().await()
+            Log.d("TransferDebug", "Cleared destination reference")
+
+            // Get source data
+            val dataSnapshot = refSource.get().await()
+            val dataMap = dataSnapshot.value as? Map<String, Map<String, Any>> ?: emptyMap()
+            totalItems = dataMap.size
+
+            // Process each item
+            dataMap.forEach { (key, value) ->
+                try {
+                    processDataItem(
+                        key = key,
+                        value = value,
+                        fireStoreHistoriqueDesFactures = fireStoreHistoriqueDesFactures,
+                        refDestination = refDestination,
+                        onSuccess = { processedItems++ },
+                        onSkip = { skippedItems++ }
+                    )
+                } catch (e: Exception) {
+                    Log.e("TransferDebug", "Error processing item $key", e)
+                    skippedItems++
+                }
+
+            }
+
+            // Show completion status
+            showCompletionStatus(context, processedItems, totalItems)
+
+        } catch (e: Exception) {
+            Log.e("TransferDebug", "Failed to transfer data", e)
+            showErrorStatus(context, e)
+        }
+    }
+
+    private suspend fun fetchHistoricalData(): List<ArticlesAcheteModele> {
+        return try {
+            val firestore = Firebase.firestore
+            val querySnapshot = firestore.collection("HistoriqueDesFactures").get().await()
+            querySnapshot.documents.mapNotNull { document ->
+                document.toObject(ArticlesAcheteModele::class.java)
+            }
+        } catch (e: Exception) {
+            Log.e("TransferDebug", "Error getting documents from Firestore: ", e)
+            emptyList()
+        }
+    }
+
+    private suspend fun processDataItem(
+        key: String,
+        value: Map<String, Any>,
+        fireStoreHistoriqueDesFactures: List<ArticlesAcheteModele>,
+        refDestination: DatabaseReference,
+        onSuccess: () -> Unit,
+        onSkip: () -> Unit
+    ) {
+        Log.d("TransferDebug", "Processing item with key: $key")
+
+        val idArticle = (value["idArticle"] as? Long) ?: 0
+        val totalQuantity = (value["totalquantity"] as? Number)?.toInt()
+
+        if (totalQuantity == null || totalQuantity <= 0) {
+            Log.w("TransferDebug", "Skipping item due to invalid totalQuantity: $totalQuantity")
+            onSkip()
+            return
+        }
+
+        // Find matching client
+        val nomClient = findMatchingClient(value["clientSoldToItId"] as? Long)
+        val baseDonne = findMatchingArticle(idArticle)
+
+        if (baseDonne == null) {
+            Log.w("TransferDebug", "Article not found in articlesBaseDonneECB for idArticle: $idArticle")
+            onSkip()
+            return
+        }
+
+        // Create article with complete color information
+        val article = createArticleWithColors(
+            value = value,
+            baseDonne = baseDonne,
+            nomClient = nomClient,
+            totalQuantity = totalQuantity,
+            fireStoreHistoriqueDesFactures = fireStoreHistoriqueDesFactures
+        )
+
+        if (article != null) {
+            refDestination.child(article.vid.toString()).setValue(article).await()
+            Log.d("TransferDebug", "Article transferred successfully: ${article.vid}")
+            onSuccess()
+        } else {
+            Log.w("TransferDebug", "Article object is null, skipping transfer for idArticle: $idArticle")
+            onSkip()
+        }
+    }
+
+    private fun findMatchingClient(clientId: Long?): String? {
+        return _uiState.value.clientsList.find {
+            it.idClientsSu == clientId
+        }?.nomClientsSu
+    }
+
+    private fun findMatchingArticle(idArticle: Long): DataBaseArticles? {
+        return _uiState.value.articlesBaseDonneECB.find {
+            it.idArticle.toLong() == idArticle
+        }
+    }
+
+    private fun getColorInfo( baseArticle: DataBaseArticles): ColorInfo {
+        return ColorInfo(
+            color1 = _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor1 }?.nameColore ?: "",
+            color2 = _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor2 }?.nameColore ?: "",
+            color3 = _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor3 }?.nameColore ?: "",
+            color4 = _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor4 }?.nameColore ?: ""
+        )
+    }
+
+
+
+    private fun createArticleWithColors(
+        value: Map<String, Any>,
+        baseDonne: DataBaseArticles,
+        nomClient: String?,
+        totalQuantity: Int,
+        fireStoreHistoriqueDesFactures: List<ArticlesAcheteModele>
+    ): ArticlesAcheteModele? {
+        if (nomClient == null) return null
+
+        val colorInfo = getColorInfo(baseDonne)
+        val monPrixVentFireStoreBM = findMatchingHistoriquePrix(
+            fireStoreHistoriqueDesFactures,
+            baseDonne.idArticle.toLong(),
+            nomClient
+        )
+
+        val monPrixVentBM = roundToOneDecimal((value["prix_1_q1_c"] as? Number)?.toDouble() ?: 0.0)
+
+        return ArticlesAcheteModele(
+            // Note: Let vid auto-generate by using default value
+            idArticle = (value["idArticle"] as? Long) ?: 0,
+            nomArticleFinale = baseDonne.nomArticleFinale,
+            prixAchat = baseDonne.monPrixAchat,
+            nmbrunitBC = baseDonne.nmbrUnite.toDouble(),
+            clientPrixVentUnite = baseDonne.prixDeVentTotaleChezClient,
+            nomClient = nomClient,
+            dateDachate = value["date"] as? String ?: "",
+            nomCouleur1 = colorInfo.color1,
+            quantityAcheteCouleur1 = (value["color1SoldQuantity"] as? Number)?.toInt() ?: 0,
+            nomCouleur2 = colorInfo.color2,
+            quantityAcheteCouleur2 = (value["color2SoldQuantity"] as? Number)?.toInt() ?: 0,
+            nomCouleur3 = colorInfo.color3,
+            quantityAcheteCouleur3 = (value["color3SoldQuantity"] as? Number)?.toInt() ?: 0,
+            nomCouleur4 = colorInfo.color4,
+            quantityAcheteCouleur4 = (value["color4SoldQuantity"] as? Number)?.toInt() ?: 0,
+            totalQuantity = totalQuantity,
+            nonTrouveState = false,
+            verifieState = false,
+            changeCaronState = "",
+            typeEmballage = if (baseDonne.cartonState in listOf("itsCarton", "Carton")) "Carton" else "Boit",
+            idArticlePlaceInCamionette = 0,
+            choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
+            warningRecentlyChanged = false,
+            monPrixVentBM = monPrixVentBM,
+            monPrixAchatUniterBC = roundToOneDecimal(
+                if (baseDonne.nmbrUnite.toDouble() != 0.0) baseDonne.monPrixAchat / baseDonne.nmbrUnite else 0.0
+            ),
+            monPrixVentUniterBM = roundToOneDecimal(
+                if (baseDonne.nmbrUnite.toDouble() != 0.0) monPrixVentBM / baseDonne.nmbrUnite else 0.0
+            ),
+            monBenificeBM = roundToOneDecimal(monPrixVentBM - baseDonne.monPrixAchat),
+            monBenificeUniterBM = roundToOneDecimal(
+                if (baseDonne.nmbrUnite.toDouble() != 0.0)
+                    (monPrixVentBM - baseDonne.monPrixAchat) / baseDonne.nmbrUnite
+                else 0.0
+            ),
+            totalProfitBM = roundToOneDecimal(
+                totalQuantity * (monPrixVentBM - baseDonne.monPrixAchat)
+            ),
+            clientBenificeBM = roundToOneDecimal(
+                (baseDonne.prixDeVentTotaleChezClient * baseDonne.nmbrUnite) - monPrixVentBM
+            ),
+            monPrixVentFireStoreBM = monPrixVentFireStoreBM,
+            monPrixVentUniterFireStoreBM = roundToOneDecimal(
+                if (baseDonne.nmbrUnite.toDouble() != 0.0) monPrixVentFireStoreBM / baseDonne.nmbrUnite else 0.0
+            ),
+            monBenificeFireStoreBM = roundToOneDecimal(monPrixVentFireStoreBM - baseDonne.monPrixAchat),
+            monBenificeUniterFireStoreBM = roundToOneDecimal(
+                if (baseDonne.nmbrUnite.toDouble() != 0.0)
+                    (monPrixVentFireStoreBM - baseDonne.monPrixAchat) / baseDonne.nmbrUnite
+                else 0.0
+            ),
+            totalProfitFireStoreBM = roundToOneDecimal(
+                totalQuantity * (monPrixVentFireStoreBM - baseDonne.monPrixAchat)
+            ),
+            clientBenificeFireStoreBM = roundToOneDecimal(
+                (baseDonne.prixDeVentTotaleChezClient * baseDonne.nmbrUnite) - monPrixVentFireStoreBM
+            ),
+            benificeDivise = roundToOneDecimal(
+                ((baseDonne.prixDeVentTotaleChezClient * baseDonne.nmbrUnite) - baseDonne.monPrixAchat) / 2
+            )
+        )
+    }
+
+
+
+    private fun findMatchingHistoriquePrix(
+        historique: List<ArticlesAcheteModele>,
+        idArticle: Long,
+        nomClient: String
+    ): Double {
+        return historique.find {
+            it.idArticle == idArticle && it.nomClient == nomClient
+        }?.monPrixVentFireStoreBM ?: 0.0
+    }
+
+    private suspend fun showCompletionStatus(
+        context: Context,
+        processedItems: Int,
+        totalItems: Int
+    ) {
+        withContext(Dispatchers.Main) {
+            val message = if (processedItems == totalItems) {
+                "Data transfer completed successfully"
+            } else {
+                "Data transfer completed with some issues. Check logs."
+            }
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private suspend fun showErrorStatus(
+        context: Context,
+        error: Exception
+    ) {
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, "Data transfer failed: ${error.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    data class ColorInfo(
+        val color1: String,
+        val color2: String,
+        val color3: String,
+        val color4: String
+    )
+
+   
+
     fun intialaizeArticlesCommendToSupplierFromClientNeed() {
         val TAG = "SupplierCommand"
         Log.d(TAG, "Starting supplier command creation")
@@ -2570,11 +2466,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    init {
-        viewModelScope.launch {
-            initDataFromFirebase()
-        }
-    }
+
 
     private suspend fun initDataFromFirebase() {
         try {

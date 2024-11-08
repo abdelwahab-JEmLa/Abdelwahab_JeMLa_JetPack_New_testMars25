@@ -1,7 +1,7 @@
 package d_EntreBonsGro
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import a_RoomDB.BaseDonne
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference

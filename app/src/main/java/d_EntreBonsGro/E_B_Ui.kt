@@ -1,5 +1,6 @@
 package d_EntreBonsGro
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import a_RoomDB.BaseDonne
 import android.app.Activity
 import android.content.Intent
@@ -53,7 +54,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope

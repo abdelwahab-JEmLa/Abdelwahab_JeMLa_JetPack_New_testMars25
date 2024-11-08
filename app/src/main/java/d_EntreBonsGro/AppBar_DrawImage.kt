@@ -1,5 +1,6 @@
 package d_EntreBonsGro
 
+import a_MainAppCompnents.ArticlesAcheteModele
 import a_RoomDB.BaseDonne
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -40,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ArticlesAcheteModele
 import com.google.firebase.database.DatabaseReference
 import f_credits.SupplierTabelle
 import kotlinx.coroutines.CoroutineScope

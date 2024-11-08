@@ -493,20 +493,7 @@ private fun Dialog(
                         },
                         tint2 = Color.Red
                     )
-                    DialogButton(
-                        text = "Transfer FirebaseData ArticlesAcheteModele",
-                        icon = Icons.Default.Transform,
-                        tint2 = Color.Black,
-                        onClick = {
-                            coroutineScope.launch {
-                                headOfViewModels.trensfertData(articleDao,
-                                    editeBaseDonneViewModel,
-                                    context
-                                )
-                            }
-                            onDismiss()
-                        }
-                    )
+
                     DialogButton(
                         text = "Name List Operations",
                         icon = Icons.AutoMirrored.Filled.List,
