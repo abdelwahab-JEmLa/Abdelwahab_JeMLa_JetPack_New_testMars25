@@ -2404,6 +2404,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             Timber.d("Fetched ${articlesAcheteModele.size} purchased articles")
             updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
+            val soldArticlesTabelle = fetchSoldArticlesTabelle()
+            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
+
+
             val clientsList = fetchClientsList()
             Timber.d("Fetched ${clientsList.size} clients")
             updateUploadProgressBarCounterAndItText("Fetched clients", ++currentStep, 100f)
@@ -2425,7 +2429,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             updateUiState(
                 articles, categories, supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
-                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList,soldArticlesTabelle
             )
             Timber.d("UI state updated successfully")
             updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
@@ -2521,7 +2525,12 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         Timber.e(e, "Error fetching purchased articles: ${e.message}")
         emptyList()
     }
-
+    private suspend fun fetchSoldArticlesTabelle() = try {
+        refSoldArticlesTabelle.get().await().children
+            .mapNotNull { it.getValue(SoldArticlesTabelle::class.java) }
+    } catch (e: Exception) {
+        emptyList()
+    }
     private suspend fun fetchClientsList() = try {
         Timber.d("Fetching clients list")
         refClientsList.get().await().children
@@ -2543,6 +2552,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         articlesAcheteModele: List<ArticlesAcheteModele>,
         colorsArticles: List<ColorsArticles>,
         clientsList: List<ClientsList>,
+        soldArticlesTabelle: List<SoldArticlesTabelle>,
     ) {
         _uiState.update { it.copy(
             articlesBaseDonneECB = articles,    //TODO cree moi log d pk ca ne s niala
@@ -2553,6 +2563,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
             placesOfArticelsInCamionette=placesOfArticelsInCamionette,
             articlesAcheteModele =articlesAcheteModele,
+            soldArticlesTabelle =soldArticlesTabelle,
             colorsArticles =colorsArticles,
             clientsList =clientsList  ,
             isLoading = false
