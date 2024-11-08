@@ -54,6 +54,7 @@ data class ArticlesAcheteModele(
     val prixAchat: Double = 0.0,
     val nmbrunitBC: Double = 0.0,
     val clientPrixVentUnite: Double = 0.0,
+    var idClient: String? = null ,
     val nomClient: String = "",
     val dateDachate: String = "",
     val nomCouleur1: String = "",
