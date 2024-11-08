@@ -116,6 +116,7 @@ class HeadOfViewModels(
         private const val MAX_HEIGHT = 1024
         private const val TAG = "HeadOfViewModels"
     }
+
     suspend fun transferFirebaseDataArticlesAcheteModele() {
         var processedItems = 0
         var skippedItems = 0
@@ -165,9 +166,7 @@ class HeadOfViewModels(
                         .find { it.idArticle == soldArticle.idArticle && it.nomClient == nomClient }
                         ?.monPrixVentFireStoreBM ?: 0.0
 
-                    val monPrixVentBM = roundToOneDecimal(
-                        (soldArticle as? Map<*, *>)?.get("prix_1_q1_c")?.toString()?.toDoubleOrNull() ?: 0.0
-                    )
+                    val monPrixVentBM = baseArticle.monPrixVent
                     val nmbrUnite = baseArticle.nmbrUnite.toDouble()
 
                     val article = ArticlesAcheteModele(
