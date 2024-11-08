@@ -244,7 +244,9 @@ class HeadOfViewModels(
 
             refArticlesAcheteModele.removeValue()
             // Mettre à jour Firebase avec les nouveaux articles
-            refArticlesAcheteModele.setValue(currentArticles)
+            currentArticles.forEach { article ->
+                refArticlesAcheteModele.child(article.vid.toString()).setValue(article)
+            }
 
             withContext(Dispatchers.Main) {
                 val message = if (processedItems == sourceData.size - skippedItems) {
