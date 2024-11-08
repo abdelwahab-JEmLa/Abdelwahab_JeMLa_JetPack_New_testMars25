@@ -257,7 +257,6 @@ class HeadOfViewModels(
             }
         }
     }
-
     private suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
         return try {
             Firebase.firestore
