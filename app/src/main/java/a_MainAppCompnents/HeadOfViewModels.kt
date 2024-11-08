@@ -105,7 +105,7 @@ class HeadOfViewModels(
     private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
-    private val refClientsList = firebaseDatabase.getReference("")
+    private val refClientsList = firebaseDatabase.getReference("G_Clients")
     val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
     var tempImageUri: Uri? = null
@@ -123,21 +123,22 @@ class HeadOfViewModels(
         try {
             val sourceData = _uiState.value.soldArticlesTabelle
             val historicalData = fetchHistoricalDataFromFirestore()
-            val currentArticles = _uiState.value.articlesAcheteModele.toMutableList()
+            val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
+
+            // Efface les données actuelles dans articlesAcheteModele
+            _uiState.update { it.copy(articlesAcheteModele = emptyList()) }
+            val currentArticles = mutableListOf<ArticlesAcheteModele>()
+
+            // Trouve le vid maximal existant et initialise pour les nouveaux articles
+            var currentVid = _uiState.value.articlesAcheteModele.maxOfOrNull { it.vid } ?: 0
 
             Log.d("Transfer", "Processing ${sourceData.size} items from StateFlow")
 
             sourceData.forEach { soldArticle ->
                 try {
+                    currentVid++ // Incrémente le vid pour chaque nouvel article
                     val totalQuantity = soldArticle.run {
-                        color1SoldQuantity + color2SoldQuantity +
-                                color3SoldQuantity + color4SoldQuantity
-                    }
-
-                    if (totalQuantity <= 0) {
-                        Log.d("Transfer", "Skipping article ${soldArticle.idArticle} - no quantity")
-                        skippedItems++
-                        return@forEach
+                        color1SoldQuantity + color2SoldQuantity + color3SoldQuantity + color4SoldQuantity
                     }
 
                     val nomClient = _uiState.value.clientsList
@@ -170,6 +171,7 @@ class HeadOfViewModels(
                     val nmbrUnite = baseArticle.nmbrUnite.toDouble()
 
                     val article = ArticlesAcheteModele(
+                        vid = currentVid,
                         idArticle = soldArticle.idArticle,
                         nomArticleFinale = baseArticle.nomArticleFinale,
                         prixAchat = baseArticle.monPrixAchat,
@@ -236,10 +238,14 @@ class HeadOfViewModels(
                 }
             }
 
-            // Update UI state with new articles
+            // Mettre à jour UI state avec les nouveaux articles
             _uiState.update { currentState ->
                 currentState.copy(articlesAcheteModele = currentArticles)
             }
+
+            refArticlesAcheteModele.removeValue()
+            // Mettre à jour Firebase avec les nouveaux articles
+            refArticlesAcheteModele.setValue(currentArticles)
 
             withContext(Dispatchers.Main) {
                 val message = if (processedItems == sourceData.size - skippedItems) {
@@ -2531,12 +2537,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         emptyList()
     }
     private suspend fun fetchClientsList() = try {
-        Timber.d("Fetching clients list")
         refClientsList.get().await().children
             .mapNotNull { it.getValue(ClientsList::class.java) }
-            .also { Timber.d("Successfully fetched ${it.size} clients") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching clients: ${e.message}")
         emptyList()
     }
 
