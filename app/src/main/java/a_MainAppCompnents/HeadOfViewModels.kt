@@ -92,6 +92,7 @@ class HeadOfViewModels(
     var totalSteps = 100 // Total number of steps for the timer
     var currentStep = 0 // Current step in the process
 
+
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
@@ -165,7 +166,26 @@ class HeadOfViewModels(
                     val monPrixVentFireStoreBM = historicalData
                         .find { it.idArticle == soldArticle.idArticle && it.nomClient == nomClient }
                         ?.monPrixVentFireStoreBM ?: 0.0
-
+                    private suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
+                        return try {
+                            Firebase.firestore
+                                .collection("HistoriqueDesFactures")
+                                .get()
+                                .await()
+                                .documents
+                                .mapNotNull { doc ->
+                                    try {
+                                        doc.toObject(ArticlesAcheteModele::class.java)
+                                    } catch (e: Exception) {
+                                        Log.e("Transfer", "Error converting document ${doc.id}", e)
+                                        null
+                                    }
+                                }
+                        } catch (e: Exception) {
+                            Log.e("Transfer", "Error fetching historical data", e)
+                            emptyList()
+                        }
+                    }
                     val monPrixVentBM = baseArticle.monPrixVent
                     val nmbrUnite = baseArticle.nmbrUnite.toDouble()
 
