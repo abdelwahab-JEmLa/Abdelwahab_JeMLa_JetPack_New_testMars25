@@ -166,7 +166,7 @@ class HeadOfViewModels(
                     val monPrixVentFireStoreBM = historicalData
                         .find { it.idArticle == soldArticle.idArticle && it.nomClient == nomClient }
                         ?.monPrixVentFireStoreBM ?: 0.0
-                    private suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
+                     suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
                         return try {
                             Firebase.firestore
                                 .collection("HistoriqueDesFactures")
@@ -284,7 +284,7 @@ class HeadOfViewModels(
             }
         }
     }
-    private suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
+     suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
         return try {
             Firebase.firestore
                 .collection("HistoriqueDesFactures")
