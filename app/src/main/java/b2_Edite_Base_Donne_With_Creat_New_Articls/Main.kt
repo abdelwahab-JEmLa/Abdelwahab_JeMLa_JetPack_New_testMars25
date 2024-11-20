@@ -112,7 +112,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
             ) {
                 uiState.categoriesECB.forEach { category ->
                     val articlesInCategory = uiState.articlesBaseDonneECB.filter { article ->
-                        article.idCategorieNewMetode == category.idCategorieInCategoriesTabele &&
+                        article.nomCategorie == category.nomCategorieInCategoriesTabele &&
                                 (!filterNonDispo || article.diponibilityState == "") &&
                                 (filterText.isEmpty() || article.nomArticleFinale.contains(filterText, ignoreCase = true))
                     }
