@@ -61,12 +61,9 @@ class PermissionHandler(private val activity: ComponentActivity) {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
                 requestManageExternalStoragePermission()
             }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                requestLegacyStoragePermissions()
-            }
+
             else -> {
-                // Les versions antérieures à Android 6.0 (API 23) n'ont pas besoin de demander des permissions au runtime
-                onPermissionsGranted()
+                requestLegacyStoragePermissions()
             }
         }
     }
