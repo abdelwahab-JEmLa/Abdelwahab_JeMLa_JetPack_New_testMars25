@@ -3,7 +3,6 @@ package com.example.abdelwahabjemlajetpack
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
@@ -101,10 +100,4 @@ class PermissionHandler(private val activity: ComponentActivity) {
         }
     }
 
-    fun openAppSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        val uri: Uri = Uri.fromParts("package", activity.packageName, null)
-        intent.data = uri
-        activity.startActivity(intent)
-    }
 }

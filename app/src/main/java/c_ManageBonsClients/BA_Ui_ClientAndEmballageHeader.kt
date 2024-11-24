@@ -5,6 +5,7 @@ import a_MainAppCompnents.HeadOfViewModels
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -189,6 +191,38 @@ fun ClientAndEmballageHeader(
                     contentDescription = "Add Empty Article",
                     tint = Color.Black
                 )
+            }  // New IconButton for updating DaySoldBons without printing
+            IconButton(
+                onClick = {
+                    if (clientId != null) {
+                        coroutineScope.launch {
+                            headOfViewModels.updateDaySoldBons(
+                                clientId = clientId!!,
+                                clientName = nomClient,
+                                total = clientTotal,
+                                payed = clientTotal
+                            )
+                            // Show a toast to confirm the update
+                            Toast.makeText(
+                                context,
+                                "Bon ajouté sans impression",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "ID client non trouvé",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Save,  // or Icons.Default.Upload
+                    contentDescription = "Update DaySoldBons",
+                    tint = Color.Black
+                )
             }
             IconButton(
                 onClick = {
@@ -235,25 +269,33 @@ fun ClientAndEmballageHeader(
                     }
                 }
             },
+// In the print dialog confirmation button click handler
             confirmButton = {
                 TextButton(
                     onClick = {
                         val verifiedClientArticles = allArticles.filter { it.nomClient == nomClient && it.verifieState }
 
                         coroutineScope.launch {
-                            updateNonVerifieANonTrouveState(allArticles,nomClient)
+                            updateNonVerifieANonTrouveState(allArticles, nomClient)
                             processClientData(context, nomClient, verifiedClientArticles, ancienCredits = ancienCredits)
                             if (clientId != null) {
                                 updateClientsCreditFromHeader(
                                     clientId!!.toInt(),
-                                    clientsTotalDeCeBon=clientTotal,
-                                    clientsPaymentActuelle=clientTotal,
-                                    restCreditDeCetteBon=0.0,
-                                    newBalenceOfCredits=ancienCredits,
+                                    clientsTotalDeCeBon = clientTotal,
+                                    clientsPaymentActuelle = clientTotal,
+                                    restCreditDeCetteBon = 0.0,
+                                    newBalenceOfCredits = ancienCredits,
+                                )
+
+                                // Add this new call to update DaySoldBons
+                                headOfViewModels.updateDaySoldBons(
+                                    clientId = clientId!!,
+                                    clientName = nomClient,
+                                    total = clientTotal,
+                                    payed = clientTotal
                                 )
                             }
-                            boardStatistiquesStatViewModel.updateTotaleCreditsClients(clientTotal =clientTotal)
-
+                            boardStatistiquesStatViewModel.updateTotaleCreditsClients(clientTotal = clientTotal)
                         }
                         showPrintDialog = false
                     }

@@ -1,5 +1,6 @@
 package a_MainAppCompnents
 
+import a_MainAppCompnents.Models.DaySoldBonsModel
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -107,6 +108,9 @@ class HeadOfViewModels(
     private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
     private val refClientsList = firebaseDatabase.getReference("G_Clients")
+    private val refDaySoldBons = firebaseDatabase.getReference("1_DaySoldBons")
+
+
     val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
     var tempImageUri: Uri? = null
@@ -116,6 +120,54 @@ class HeadOfViewModels(
         private const val MAX_WIDTH = 1024
         private const val MAX_HEIGHT = 1024
         private const val TAG = "HeadOfViewModels"
+    }
+
+    // Add this function to HeadOfViewModels class
+    fun updateDaySoldBons(
+        clientId: Long,
+        clientName: String,
+        total: Double,
+        payed: Double
+    ) {
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        // Get the max ID directly from the root reference
+        refDaySoldBons
+            .orderByChild("id")
+            .limitToLast(1)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                // Get the max ID or use 1 if no entries exist
+                val maxId = if (snapshot.exists()) {
+                    snapshot.children.first().child("id").getValue(Long::class.java) ?: 1L
+                } else {
+                    1L
+                }
+
+                // Create the new bon with incremented ID
+                val daySoldBon = DaySoldBonsModel(
+                    id = maxId + 1,
+                    idClient = clientId,
+                    nameClient = clientName,
+                    total = total,
+                    payed = payed,
+                    date = currentDate
+                )
+
+                // Set value directly using the ID as key, without date hierarchy
+                refDaySoldBons
+                    .child((maxId + 1).toString())
+                    .setValue(daySoldBon)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "DaySoldBons updated successfully for client: $clientName")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error updating DaySoldBons for client: $clientName", e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error getting max ID for DaySoldBons", e)
+            }
     }
 
     suspend fun transferFirebaseDataArticlesAcheteModele() {
