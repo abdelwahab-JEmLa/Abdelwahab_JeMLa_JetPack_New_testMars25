@@ -196,7 +196,7 @@ fun ClientAndEmballageHeader(
                 onClick = {
                     if (clientId != null) {
                         coroutineScope.launch {
-                            headOfViewModels.updateDaySoldBons(
+                            headOfViewModels.upsertDaySoldBons(
                                 clientId = clientId!!,
                                 clientName = nomClient,
                                 total = clientTotal,
@@ -288,7 +288,7 @@ fun ClientAndEmballageHeader(
                                 )
 
                                 // Add this new call to update DaySoldBons
-                                headOfViewModels.updateDaySoldBons(
+                                headOfViewModels.upsertDaySoldBons(
                                     clientId = clientId!!,
                                     clientName = nomClient,
                                     total = clientTotal,

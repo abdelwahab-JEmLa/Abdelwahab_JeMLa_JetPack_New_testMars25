@@ -122,8 +122,7 @@ class HeadOfViewModels(
         private const val TAG = "HeadOfViewModels"
     }
 
-    // Add this function to HeadOfViewModels class
-    fun updateDaySoldBons(
+    fun upsertDaySoldBons(
         clientId: Long,
         clientName: String,
         total: Double,
@@ -131,22 +130,124 @@ class HeadOfViewModels(
     ) {
         val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-        // Get the max ID directly from the root reference
+        Log.d(TAG, "Starting upsertDaySoldBons operation:")
+        Log.d(TAG, "➡️ Client ID: $clientId")
+        Log.d(TAG, "➡️ Client Name: $clientName")
+        Log.d(TAG, "➡️ Current Date: $currentDate")
+        Log.d(TAG, "➡️ Total: $total")
+        Log.d(TAG, "➡️ Payed: $payed")
+
+        refDaySoldBons
+            .get()
+            .addOnSuccessListener { allSnapshot ->
+                Log.d(TAG, "🔍 Searching for existing entries")
+
+                var existingEntry: DaySoldBonsModel? = null
+                var existingKey: String? = null
+                var maxId = 0L
+
+                // Look for matching entry and find max ID in one pass
+                allSnapshot.children.forEach { child ->
+                    val bon = child.getValue(DaySoldBonsModel::class.java)
+                    bon?.let {
+                        // Track maximum ID
+                        if (it.id > maxId) {
+                            maxId = it.id
+                        }
+
+                        // Check for exact match
+                        if (it.idClient == clientId && it.date == currentDate) {
+                            existingEntry = it
+                            existingKey = child.key
+                            Log.d(TAG, "✅ Found exact match - ID: ${it.id}, Key: ${child.key}")
+                        }
+                    }
+                }
+
+                if (existingEntry != null && existingKey != null) {
+                    // Update existing entry
+                    Log.d(TAG, "⚡ UPDATING existing bon with ID: ${existingEntry!!.id}")
+
+                    val updatedBon = existingEntry!!.copy(
+                        total = total,
+                        payed = payed,
+                        nameClient = clientName
+                    )
+
+                    refDaySoldBons
+                        .child(existingKey!!)
+                        .setValue(updatedBon)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "✅ Update successful for bon ID: ${existingEntry!!.id}")
+                            Log.d(TAG, "Updated values saved for client: $clientName")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "❌ Update failed for bon ID: ${existingEntry!!.id}")
+                            Log.e(TAG, "Error details: ${e.message}")
+                        }
+                } else {
+                    // Create new entry with correct ID
+                    val newId = maxId + 1
+                    Log.d(TAG, "🆕 Creating new bon with ID: $newId for client $clientId")
+
+                    val newBon = DaySoldBonsModel(
+                        id = newId,
+                        idClient = clientId,
+                        nameClient = clientName,
+                        total = total,
+                        payed = payed,
+                        date = currentDate
+                    )
+
+                    refDaySoldBons
+                        .child(newId.toString())
+                        .setValue(newBon)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "✅ Successfully created new bon:")
+                            Log.d(TAG, "- ID: $newId")
+                            Log.d(TAG, "- Client: $clientName")
+                            Log.d(TAG, "- Date: $currentDate")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "❌ Failed to create new bon with ID: $newId")
+                            Log.e(TAG, "Error details: ${e.message}")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Failed to fetch data")
+                Log.e(TAG, "Error details: ${e.message}")
+            }
+    }
+
+    private fun createNewBon(
+        clientId: Long,
+        clientName: String,
+        total: Double,
+        payed: Double,
+        currentDate: String
+    ) {
+        Log.d(TAG, "🆕 Creating new bon for client $clientId on date $currentDate")
+
         refDaySoldBons
             .orderByChild("id")
             .limitToLast(1)
             .get()
-            .addOnSuccessListener { snapshot ->
-                // Get the max ID or use 1 if no entries exist
-                val maxId = if (snapshot.exists()) {
-                    snapshot.children.first().child("id").getValue(Long::class.java) ?: 1L
+            .addOnSuccessListener { idSnapshot ->
+                val maxId = if (idSnapshot.exists()) {
+                    val currentMaxId = idSnapshot.children.first().child("id").getValue(Long::class.java) ?: 0L
+                    Log.d(TAG, "Current max ID found: $currentMaxId")
+                    currentMaxId
                 } else {
-                    1L
+                    Log.d(TAG, "No existing bons found, starting with ID: 0")
+                    0L
                 }
 
-                // Create the new bon with incremented ID
-                val daySoldBon = DaySoldBonsModel(
-                    id = maxId + 1,
+                val newId = maxId + 1
+                Log.d(TAG, "➡️ Generating new bon with ID: $newId")
+
+                val newBon = DaySoldBonsModel(
+                    id = newId,
                     idClient = clientId,
                     nameClient = clientName,
                     total = total,
@@ -154,22 +255,25 @@ class HeadOfViewModels(
                     date = currentDate
                 )
 
-                // Set value directly using the ID as key, without date hierarchy
                 refDaySoldBons
-                    .child((maxId + 1).toString())
-                    .setValue(daySoldBon)
+                    .child(newId.toString())
+                    .setValue(newBon)
                     .addOnSuccessListener {
-                        Log.d(TAG, "DaySoldBons updated successfully for client: $clientName")
+                        Log.d(TAG, "✅ Successfully created new bon:")
+                        Log.d(TAG, "- ID: $newId")
+                        Log.d(TAG, "- Client: $clientName")
+                        Log.d(TAG, "- Date: $currentDate")
                     }
                     .addOnFailureListener { e ->
-                        Log.e(TAG, "Error updating DaySoldBons for client: $clientName", e)
+                        Log.e(TAG, "❌ Failed to create new bon with ID: $newId")
+                        Log.e(TAG, "Error details: ${e.message}")
                     }
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Error getting max ID for DaySoldBons", e)
+                Log.e(TAG, "❌ Failed to get max ID for new bon")
+                Log.e(TAG, "Error details: ${e.message}")
             }
     }
-
     suspend fun transferFirebaseDataArticlesAcheteModele() {
         var processedItems = 0
         var skippedItems = 0
