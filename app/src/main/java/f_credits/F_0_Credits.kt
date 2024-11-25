@@ -1,5 +1,6 @@
 package f_credits
 
+import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.Models.BuyBonModel
 import android.app.Activity
 import android.content.Intent
@@ -113,7 +114,8 @@ import kotlin.random.Random
 @Composable
 fun FragmentCredits(
     viewModel: CreditsViewModel = viewModel(),
-    onToggleNavBar: () -> Unit
+    onToggleNavBar: () -> Unit,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
     val suppliers by viewModel.supplierList.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -183,7 +185,7 @@ fun FragmentCredits(
                 .padding(innerPadding)
         ) {
             items(suppliers) { supplier ->
-                SupplierItem(supplier, viewModel)
+                SupplierItem(supplier, viewModel,uiState)
             }
         }
     }
@@ -221,7 +223,12 @@ fun FragmentCredits(
     }
 }
 @Composable
-fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
+fun SupplierItem(
+    supplier: SupplierTabelle,
+    viewModel: CreditsViewModel,
+    uiState: CreatAndEditeInBaseDonnRepositeryModels
+) {
+    
     var showDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -476,14 +483,15 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                             )
 
                             // Then update BuyBon in Firebase
-                            viewModel.updateBuyBon(
-                                supplierId = supplier.idSupplierSu,
-                                supplierName = supplier.nomSupplierSu,
-                                supplierTotal = amount,
-                                supplierPayment = 0.0,
-                                ancienCredit = amount,
-                                fromeOutlineSupInput = true
-                            )
+                            uiState.appSettingsSaverModel.find { it.id.toInt() ==1 }?.let {date->
+                                viewModel.updateBuyBon(
+                                    supplierId = supplier.idSupplierSu,
+                                    supplierName = supplier.nomSupplierSu,
+                                    supplierTotal = amount,
+                                    supplierPayment = 0.0,
+                                    transactionDate = date.dateForNewEntries
+                                )
+                            }
                         }
                         showVoiceInputDialog = false
                     }
@@ -804,6 +812,12 @@ fun SupplierCreditDialog(
                                 try {
                                     updateSupplierCredit(id, supplierTotal, adjustedPayment, ancienCredit)
                                     fetchRecentInvoices()
+                                    //-->
+                                    //Hi Claud,what i went from u to do is to
+                                    //Find All TODOs and Fix Them
+
+                                    //TODO:
+                                    // ajoute un update de BuyBonModel
                                     onDismiss()
                                 } catch (e: Exception) {
                                     errorMessage = "Error updating credit: ${e.message}"
@@ -913,10 +927,22 @@ class CreditsViewModel : ViewModel() {
         supplierName: String,
         supplierTotal: Double,
         supplierPayment: Double,
-        ancienCredit: Double,
-        fromeOutlineSupInput: Boolean
+        transactionDate: String, // Format: yyyy-MM-dd
     ) {
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        // Validate the passed date format
+        val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        dateFormatter.isLenient = false
+
+        // Use the passed transactionDate instead of current date
+        val formattedDate = try {
+            // Parse and format to ensure valid date
+            val parsedDate = dateFormatter.parse(transactionDate)
+            dateFormatter.format(parsedDate)
+        } catch (e: Exception) {
+            Log.e("CreditsViewModel", "Invalid date format: ${e.message}")
+            // Fallback to current date if invalid date is passed
+            dateFormatter.format(Date())
+        }
 
         refBuyBon
             .get()
@@ -932,7 +958,8 @@ class CreditsViewModel : ViewModel() {
                             maxId = it.vid
                         }
 
-                        if (it.idSupplier == supplierId && it.date == currentDate) {
+                        // Use formattedDate instead of currentDate for comparison
+                        if (it.idSupplier == supplierId && it.date == formattedDate) {
                             existingEntry = it
                             existingKey = child.key
                         }
@@ -942,7 +969,7 @@ class CreditsViewModel : ViewModel() {
                 if (existingEntry != null && existingKey != null) {
                     val updatedBon = BuyBonModel(
                         vid = existingEntry!!.vid,
-                        date = currentDate,
+                        date = formattedDate, // Use formattedDate
                         idSupplier = supplierId,
                         nameSupplier = supplierName,
                         total = supplierTotal,
@@ -953,6 +980,7 @@ class CreditsViewModel : ViewModel() {
                         .child(existingKey!!)
                         .setValue(updatedBon)
                         .addOnSuccessListener {
+                            Log.d("CreditsViewModel", "Successfully updated buy bon")
                         }
                         .addOnFailureListener { e ->
                             Log.e("CreditsViewModel", "Error updating buy bon: ${e.message}")
@@ -961,17 +989,18 @@ class CreditsViewModel : ViewModel() {
                     val newId = maxId + 1
                     val newBon = BuyBonModel(
                         vid = newId,
-                        date = currentDate,
+                        date = formattedDate, // Use formattedDate
                         idSupplier = supplierId,
                         nameSupplier = supplierName,
                         total = supplierTotal,
                         payed = supplierPayment,
-                     )
+                    )
 
                     refBuyBon
                         .child(newId.toString())
                         .setValue(newBon)
                         .addOnSuccessListener {
+                            Log.d("CreditsViewModel", "Successfully created new buy bon")
                         }
                         .addOnFailureListener { e ->
                             Log.e("CreditsViewModel", "Error creating new buy bon: ${e.message}")

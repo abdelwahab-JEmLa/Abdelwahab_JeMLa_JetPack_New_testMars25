@@ -19,8 +19,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,9 +45,6 @@ import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -282,6 +277,12 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                //-->
+                //Hi Claud,what i went from u to do is to
+                //Find All TODOs and Fix Them 
+
+                //TODO:
+                // ajoute un elevated card contien un text 
                 CardBoardStatistiques(boardStatistiquesStatViewModel)
             }
         }
@@ -355,7 +356,7 @@ fun AppNavHost(
             FragmentEntreBonsGro(database.articleDao())
         }
         composable("FragmentCredits") {
-            FragmentCredits(viewModels.creditsViewModel, onToggleNavBar = onToggleNavBar)
+            FragmentCredits(viewModels.creditsViewModel, onToggleNavBar = onToggleNavBar,uiState=uiState)
         }
         composable("FragmentCreditsClients") {
             FragmentCreditsClients(

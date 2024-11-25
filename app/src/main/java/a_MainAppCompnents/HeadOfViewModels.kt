@@ -1,5 +1,6 @@
 package a_MainAppCompnents
 
+import a_MainAppCompnents.Models.AppSettingsSaverModel
 import a_MainAppCompnents.Models.DaySoldBonsModel
 import android.content.Context
 import android.graphics.Bitmap
@@ -46,6 +47,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 data class CreatAndEditeInBaseDonnRepositeryModels(
+    val appSettingsSaverModel: List<AppSettingsSaverModel> = emptyList(),
     val articlesBaseDonneECB: List<DataBaseArticles> = emptyList(),
     val categoriesECB: List<CategoriesTabelleECB> = emptyList(),
     val colorsArticles: List<ColorsArticles> = emptyList(),
@@ -109,6 +111,7 @@ class HeadOfViewModels(
     private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
     private val refClientsList = firebaseDatabase.getReference("G_Clients")
     private val refDaySoldBons = firebaseDatabase.getReference("1_DaySoldBons")
+    private val refAppSettingsSaverModel = firebaseDatabase.getReference("2_AppSettingsSaverNew")
 
 
     val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
@@ -128,7 +131,11 @@ class HeadOfViewModels(
         total: Double,
         payed: Double
     ) {
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        // Get the transaction date from app settings, fallback to current date if not found
+        val transactionDate = _uiState.value.appSettingsSaverModel
+            .find { it.id == 1L }
+            ?.dateForNewEntries
+            ?: SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
         refDaySoldBons
             .get()
@@ -144,7 +151,8 @@ class HeadOfViewModels(
                             maxId = it.id
                         }
 
-                        if (it.idClient == clientId && it.date == currentDate) {
+                        // Use transactionDate instead of currentDate for comparison
+                        if (it.idClient == clientId && it.date == transactionDate) {
                             existingEntry = it
                             existingKey = child.key
                         }
@@ -169,7 +177,7 @@ class HeadOfViewModels(
                         nameClient = clientName,
                         total = total,
                         payed = payed,
-                        date = currentDate
+                        date = transactionDate  // Use transactionDate for new entries
                     )
 
                     refDaySoldBons
@@ -2496,27 +2504,16 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
 
             val clientsList = fetchClientsList()
-            Timber.d("Fetched ${clientsList.size} clients")
             updateUploadProgressBarCounterAndItText("Fetched clients", ++currentStep, 100f)
 
-            Timber.d("""
-                Firebase sync summary:
-                Articles: ${articles.size}
-                Categories: ${categories.size}
-                Colors: ${colorsArticles.size}
-                Supplier Articles: ${supplierArticlesRecived.size}
-                Suppliers: ${suppliersSA.size}
-                Article Mappings: ${mapArticleInSupplierStore.size}
-                Supplier Store Places: ${placesOfArticelsInEacheSupplierSrore.size}
-                Van Places: ${placesOfArticelsInCamionette.size}
-                Purchased Articles: ${articlesAcheteModele.size}
-                Clients: ${clientsList.size}
-            """.trimIndent())
+            val appSettingsSaverModel = fetchAppSettingsSaverModel()
+
+
 
             updateUiState(
                 articles, categories, supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
-                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList,soldArticlesTabelle
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList,soldArticlesTabelle ,appSettingsSaverModel
             )
             Timber.d("UI state updated successfully")
             updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
@@ -2528,7 +2525,12 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             _uiState.update { it.copy(isLoading = false) }
         }
     }
-
+    private suspend fun fetchAppSettingsSaverModel() =try {
+        refAppSettingsSaverModel.get().await().children
+            .mapNotNull { it.getValue(AppSettingsSaverModel::class.java) }
+    } catch (e: Exception) {
+        emptyList()
+    }
     private suspend fun fetchArticles() = try {
         Timber.d("Fetching articles from Firebase")
         refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
@@ -2637,9 +2639,12 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         colorsArticles: List<ColorsArticles>,
         clientsList: List<ClientsList>,
         soldArticlesTabelle: List<SoldArticlesTabelle>,
+        appSettingsSaverModel: List<AppSettingsSaverModel>,
+
     ) {
         _uiState.update { it.copy(
-            articlesBaseDonneECB = articles,    //TODO cree moi log d pk ca ne s niala
+            appSettingsSaverModel = appSettingsSaverModel,
+            articlesBaseDonneECB = articles,
             categoriesECB = categories,
             groupeurBonCommendToSupplierTabele = supplierArticlesRecived,
             tabelleSuppliersSA = suppliersSA,

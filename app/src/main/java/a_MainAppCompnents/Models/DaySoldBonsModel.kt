@@ -1,9 +1,6 @@
 package a_MainAppCompnents.Models
 
-
-
     data class DaySoldBonsModel(
-
         var id: Long = 0,
         val idClient: Long = 0,
         val nameClient: String = "",
