@@ -1,5 +1,6 @@
 package f_credits
 
+import a_MainAppCompnents.Models.BuyBonModel
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
@@ -99,9 +100,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import java.util.Date
 import java.util.Locale
 import kotlin.random.Random
 
@@ -463,8 +466,19 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
                 TextButton(
                     onClick = {
                         voiceInputValue.toDoubleOrNull()?.let { amount ->
+                            // First update supplier credit
                             updateSupplierCredit(
                                 supplierId = supplier.idSupplierSu,
+                                supplierTotal = amount,
+                                supplierPayment = 0.0,
+                                ancienCredit = amount,
+                                fromeOutlineSupInput = true
+                            )
+
+                            // Then update BuyBon in Firebase
+                            viewModel.updateBuyBon(
+                                supplierId = supplier.idSupplierSu,
+                                supplierName = supplier.nomSupplierSu,
                                 supplierTotal = amount,
                                 supplierPayment = 0.0,
                                 ancienCredit = amount,
@@ -484,7 +498,6 @@ fun SupplierItem(supplier: SupplierTabelle, viewModel: CreditsViewModel) {
             }
         )
     }
-
     if (showCreditDialog) {
         SupplierCreditDialog(
             showDialog = true,
@@ -878,7 +891,7 @@ class CreditsViewModel : ViewModel() {
     private val _showOnlyWithCredit = MutableStateFlow(true)
     private val database = FirebaseDatabase.getInstance()
     private val suppliersRef = database.getReference("F_Suppliers")
-
+    private val refBuyBon = database.getReference("1C_BuyBon")
     val supplierList: StateFlow<List<SupplierTabelle>> = combine(_supplierList, _showOnlyWithCredit) { suppliers, onlyWithCredit ->
         if (onlyWithCredit) {
             suppliers.filter { it.currentCreditBalance != 0.0 }
@@ -893,6 +906,81 @@ class CreditsViewModel : ViewModel() {
 
     fun toggleFilter() {
         _showOnlyWithCredit.value = !_showOnlyWithCredit.value
+    }
+
+    fun updateBuyBon(
+        supplierId: Long,
+        supplierName: String,
+        supplierTotal: Double,
+        supplierPayment: Double,
+        ancienCredit: Double,
+        fromeOutlineSupInput: Boolean
+    ) {
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        refBuyBon
+            .get()
+            .addOnSuccessListener { allSnapshot ->
+                var existingEntry: BuyBonModel? = null
+                var existingKey: String? = null
+                var maxId = 0L
+
+                allSnapshot.children.forEach { child ->
+                    val bon = child.getValue(BuyBonModel::class.java)
+                    bon?.let {
+                        if (it.vid > maxId) {
+                            maxId = it.vid
+                        }
+
+                        if (it.idSupplier == supplierId && it.date == currentDate) {
+                            existingEntry = it
+                            existingKey = child.key
+                        }
+                    }
+                }
+
+                if (existingEntry != null && existingKey != null) {
+                    val updatedBon = BuyBonModel(
+                        vid = existingEntry!!.vid,
+                        date = currentDate,
+                        idSupplier = supplierId,
+                        nameSupplier = supplierName,
+                        total = supplierTotal,
+                        payed = supplierPayment,
+                    )
+
+                    refBuyBon
+                        .child(existingKey!!)
+                        .setValue(updatedBon)
+                        .addOnSuccessListener {
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("CreditsViewModel", "Error updating buy bon: ${e.message}")
+                        }
+                } else {
+                    val newId = maxId + 1
+                    val newBon = BuyBonModel(
+                        vid = newId,
+                        date = currentDate,
+                        idSupplier = supplierId,
+                        nameSupplier = supplierName,
+                        total = supplierTotal,
+                        payed = supplierPayment,
+                     )
+
+                    refBuyBon
+                        .child(newId.toString())
+                        .setValue(newBon)
+                        .addOnSuccessListener {
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("CreditsViewModel", "Error creating new buy bon: ${e.message}")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("CreditsViewModel", "Error fetching buy bons: ${e.message}")
+            }
     }
 
     private fun loadSuppliers() {
