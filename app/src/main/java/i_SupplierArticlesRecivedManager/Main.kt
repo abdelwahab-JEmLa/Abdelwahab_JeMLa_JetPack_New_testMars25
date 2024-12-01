@@ -413,6 +413,7 @@ private fun handleTwoPartInput(
         }
     }
 }
+
 @Composable
 fun CardArticlePlace(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
@@ -532,7 +533,6 @@ fun CardArticlePlace(
         }
     }
 }
-
 @Composable
 fun WindowArticleDetail(
     article: GroupeurBonCommendToSupplierTabele,
