@@ -69,6 +69,7 @@ fun GlobaleControlsFloatingButtonsSA(
                     },
                     Triple(if (ShowToggleMoveFirstNonDefined) Icons.Default.Close else Icons.Default.Filter1, "ToggleMoveFirstNonDefined") {
                         onToggleMoveFirstNonDefined()
+                        ShowToggleMoveFirstNonDefined=! ShowToggleMoveFirstNonDefined
                     },
                     Triple(Icons.Default.Mic, "Voice Recognition") {
                         onLaunchVoiceRecognition()
@@ -130,8 +131,6 @@ fun GlobaleControlsFloatingButtonsSA(
             )
         }
     }
-
-
 }
 
 
