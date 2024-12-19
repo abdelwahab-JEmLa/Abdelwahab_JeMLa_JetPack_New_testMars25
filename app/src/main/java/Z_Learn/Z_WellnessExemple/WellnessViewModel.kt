@@ -14,8 +14,7 @@ class WellnessViewModel : ViewModel() {
     private val refFirebase = database.getReference("tasks")
 
     private val _tasks = mutableListOf<WellnessTask>().toMutableStateList()
-    val tasks: List<WellnessTask>
-        get() = _tasks
+    val tasks: List<WellnessTask> get() = _tasks
 
     init {
         importFromFirebase()
@@ -32,14 +31,8 @@ class WellnessViewModel : ViewModel() {
             syncWithFirebase(task)
         }
     }
-    fun changeColumeValue(item: WellnessTask, newValue: String) {
-        _tasks.find { it.id == item.id }?.let { task ->
-      //      task.checked = newValue
-            syncWithFirebase(task)
-        }
-    }
 
-    fun importFromFirebase() {
+    private fun importFromFirebase() {
         viewModelScope.launch(Dispatchers.IO) {
             val dataSnapshot = refFirebase.get().await()
             val tasksFromFirebase = dataSnapshot.children.mapNotNull { it.getValue(WellnessTask::class.java) }

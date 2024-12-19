@@ -11,15 +11,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-//
 @Composable
 fun WellnessTasksList(
     list: List<WellnessTask>,
@@ -32,6 +27,7 @@ fun WellnessTasksList(
     ) {
         items(
             items = list,
+            /**TODO*/
             /**
              * Use key param to define unique keys representing the items in a mutable list,
              * instead of using the default key (list position). This prevents unnecessary
@@ -77,22 +73,4 @@ fun WellnessTaskItem(
     }
 }
 
-@Composable
-fun WellnessTaskItemWithState(taskName: String, modifier: Modifier = Modifier) {
-
-    var isChecked by remember { mutableStateOf(false) }
-
-    WellnessTaskItem(
-        taskName = taskName,
-        checked = isChecked,
-        onCheckedChange = { checked ->
-            isChecked = checked
-        },
-        onClose = {
-            // Simule la fermeture de la tâche
-            println("Task closed")
-        },
-        modifier = modifier
-    )
-}
 
