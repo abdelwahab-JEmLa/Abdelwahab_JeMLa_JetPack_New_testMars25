@@ -63,7 +63,6 @@ fun CategoryReorderAndSelectionWindow(
     var movingCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
     var heldCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
     var filterText by remember { mutableStateOf("") }
-    // Nouvel état pour le mode de réorganisation
     var reorderMode by remember { mutableStateOf(false) }
 
     Dialog(
