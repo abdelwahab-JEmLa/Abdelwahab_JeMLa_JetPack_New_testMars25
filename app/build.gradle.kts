@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.compose.material)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

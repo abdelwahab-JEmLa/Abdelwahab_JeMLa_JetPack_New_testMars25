@@ -1,6 +1,5 @@
 package com.example.abdelwahabjemlajetpack
 
-import ZA_Learn_WhelPiker.PickerExample
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -404,9 +403,7 @@ fun AppNavHost(
                 )
             }
         }
-        composable("PickerExample") {
-            PickerExample()
-        }
+
         composable("main_fragment_edit_database_with_create_new_articles") {
             Box(modifier = Modifier.fillMaxSize()) {
                 MainFragmentEditDatabaseWithCreateNewArticles(

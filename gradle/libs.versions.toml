@@ -35,6 +35,7 @@ material3 = "1.3.0"
 osmdroidAndroid = "6.1.18"
 osmdroidWms = "6.1.16"
 osmdroidMapsforge = "6.1.16"
+material = "1.12.0"
 
 [libraries]
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material-icons-extended" }
@@ -79,6 +80,7 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 osmdroid-mapsforge = { module = "org.osmdroid:osmdroid-mapsforge", version.ref = "osmdroidMapsforge" }
 osmdroid-wms = { module = "org.osmdroid:osmdroid-wms", version.ref = "osmdroidWms" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
