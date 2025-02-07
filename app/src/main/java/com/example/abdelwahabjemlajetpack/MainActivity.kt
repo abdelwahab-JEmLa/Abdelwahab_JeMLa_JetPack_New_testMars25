@@ -1,5 +1,7 @@
 package com.example.abdelwahabjemlajetpack
 
+import Z_MasterOfApps.Kotlin.ViewModel.Init.Init.initializeFirebase
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -84,6 +86,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -97,7 +100,6 @@ import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.FragmentManageBonsClients
 import com.example.abdelwahabjemlajetpack.ui.theme.AbdelwahabJeMLaJetPackTheme
 import com.google.firebase.FirebaseApp
-import com.google.firebase.database.FirebaseDatabase
 import d_EntreBonsGro.FragmentEntreBonsGro
 import f_credits.CreditsViewModel
 import f_credits.FragmentCredits
@@ -117,10 +119,12 @@ import kotlin.random.Random
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        FirebaseApp.initializeApp(this)
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        FirebaseApp.initializeApp(this)?.let { firebaseApp ->
+            initializeFirebase(firebaseApp)
+        }
     }
 }
+
 
 data class AppViewModels(
     val headOfViewModels: HeadOfViewModels,
@@ -141,9 +145,11 @@ class MainActivity : ComponentActivity() {
                 return when {
                     modelClass.isAssignableFrom(EditeBaseDonneViewModel::class.java) ->
                         EditeBaseDonneViewModel(database.articleDao()) as T
+
                     modelClass.isAssignableFrom(HeadOfViewModels::class.java) -> {
                         HeadOfViewModels(this@MainActivity, database.categoriesTabelleECBDao()) as T
                     }
+
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
             }
@@ -200,8 +206,8 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     showPopup = { show -> showSupplierPopup = show },
-                                    indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase ,
-                                    headOfViewModels=headOfViewModels
+                                    indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase,
+                                    headOfViewModels = headOfViewModels
                                 )
                             }
                         }
@@ -209,7 +215,9 @@ class MainActivity : ComponentActivity() {
                     floatingActionButton = {
                         if (currentRoute == Screen.MainScreen.route) {
                             Column {
-                                ToggleNavBarButton(isNavBarVisible) { isNavBarVisible = !isNavBarVisible }
+                                ToggleNavBarButton(isNavBarVisible) {
+                                    isNavBarVisible = !isNavBarVisible
+                                }
                                 Spacer(modifier = Modifier.height(16.dp))
                                 MainActionsFab(
                                     headOfViewModels = headOfViewModels,
@@ -227,7 +235,7 @@ class MainActivity : ComponentActivity() {
                         AppNavHost(
                             navController = navController,
                             database = database,
-                            appViewModels,
+                            viewModels = appViewModels,
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                             headOfViewModels = headOfViewModels,
                             showSupplierPopup = showSupplierPopup,
@@ -290,6 +298,7 @@ fun MainScreen(
 
 @Composable
 fun AppNavHost(
+    viewModelInitApp: ViewModelInitApp = viewModel(),
     navController: NavHostController,
     database: AppDatabase,
     viewModels: AppViewModels,
@@ -310,114 +319,133 @@ fun AppNavHost(
     var reloadTrigger by remember { mutableIntStateOf(0) }
 
 
+
     LaunchedEffect(currentEditedArticle) {
         dialogeDisplayeDetailleChanger = currentEditedArticle
     }
 
     // Logging for debugging
     LaunchedEffect(dialogeDisplayeDetailleChanger) {
-        Log.d("MainFragment", "dialogeDisplayeDetailleChanger updated: $dialogeDisplayeDetailleChanger")
+        Log.d(
+            "MainFragment",
+            "dialogeDisplayeDetailleChanger updated: $dialogeDisplayeDetailleChanger"
+        )
     }
+    if (viewModelInitApp.isLoading) {
+        CircularProgressIndicator(
+            modifier = Modifier
+                .size(48.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+    } else {
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.MainScreen.route
-    ) {
-        composable(Screen.MainScreen.route) {
-            MainScreen(
-                editeBaseDonneViewModel = viewModels.editeBaseDonneViewModel,
-                articleDao = database.articleDao(),
-                boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
-                headOfViewModels = headOfViewModels,
-            )
-        }
-
-        composable("C_ManageBonsClients") {
-            FragmentManageBonsClients(viewModels.boardStatistiquesStatViewModel, headOfViewModels)
-        }
-        composable("Fragment_SupplierArticlesRecivedManager") {
-            Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,
-                modifier=modifier,
-                onNewArticleAdded={dialogeDisplayeDetailleChanger=it}
-            )
-        }
-
-        composable("FragmentMapArticleInSupplierStore") { backStackEntry ->
-
-            FragmentMapArticleInSupplierStore(
-                uiState = uiState,
-                viewModel = headOfViewModels,
-                idSupplierOfFloatingButtonClicked = currentSupplier,
-                onIdSupplierChanged = { currentSupplier = it }
-            )
-        }
-        composable("FragmentEntreBonsGro") {
-            FragmentEntreBonsGro(database.articleDao())
-        }
-        composable("FragmentCredits") {
-            FragmentCredits(viewModels.creditsViewModel, onToggleNavBar = onToggleNavBar,uiState=uiState)
-        }
-        composable("FragmentCreditsClients") {
-            FragmentCreditsClients(
-                viewModels.creditsClientsViewModel,
-                boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
-                onToggleNavBar = onToggleNavBar,
-            )
-        }
-        composable("Main_FactoryClassemntsArticles") {
-            Box(modifier = Modifier.fillMaxSize()) {
-                MainFactoryClassementsArticles(
-                    viewModels.classementsArticlesViewModel,
-                    onToggleNavBar = onToggleNavBar,
-                    onUpdateStart = {
-                        headOfViewModels.totalSteps=3
-                        headOfViewModels.currentStep=0
-
-                        coroutineScope.launch {
-                            viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
-                                "Starting Classements Articles Update",
-                                headOfViewModels.currentStep++,
-                                0f
-                            )
-                        }
-                    },
-                    onUpdateProgress = { progress ->
-                        coroutineScope.launch {
-                            viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
-                                "Updating Classements Articles",
-                                headOfViewModels.currentStep++,
-                                progress
-                            )
-                        }
-                    },
-                    onUpdateComplete = {
-                        coroutineScope.launch {
-                            viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
-                                "Classements Articles Update Complete",
-                                headOfViewModels.currentStep++,
-                                100f
-                            )
-                        }
-
-                    }
+        NavHost(
+            navController = navController,
+            startDestination = Screen.MainScreen.route
+        ) {
+            composable(Screen.MainScreen.route) {
+                MainScreen(
+                    editeBaseDonneViewModel = viewModels.editeBaseDonneViewModel,
+                    articleDao = database.articleDao(),
+                    boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
+                    headOfViewModels = headOfViewModels,
                 )
             }
-        }
 
-        composable("main_fragment_edit_database_with_create_new_articles") {
-            Box(modifier = Modifier.fillMaxSize()) {
-                MainFragmentEditDatabaseWithCreateNewArticles(
-                    viewModel = viewModels.headOfViewModels,
-                    onToggleNavBar = onToggleNavBar ,
-                    onClickToOpenWinInfoDataBase={dialogeDisplayeDetailleChanger=it} ,
-                    reloadTrigger=reloadTrigger
+            composable("C_ManageBonsClients") {
+                FragmentManageBonsClients(
+                    viewModels.boardStatistiquesStatViewModel,
+                    headOfViewModels
                 )
-                if (uploadProgress > 0f && uploadProgress < 100f) {
-                    CircularProgressIndicator(
-                        progress = { uploadProgress / 100f },
-                        modifier = Modifier.align(Alignment.Center),
-                        trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
+            }
+            composable("Fragment_SupplierArticlesRecivedManager") {
+                Fragment_SupplierArticlesRecivedManager(viewModels.headOfViewModels,
+                    modifier = modifier,
+                    onNewArticleAdded = { dialogeDisplayeDetailleChanger = it }
+                )
+            }
+
+            composable("FragmentMapArticleInSupplierStore") { backStackEntry ->
+
+                FragmentMapArticleInSupplierStore(
+                    uiState = uiState,
+                    viewModel = headOfViewModels,
+                    idSupplierOfFloatingButtonClicked = currentSupplier,
+                    onIdSupplierChanged = { currentSupplier = it }
+                )
+            }
+            composable("FragmentEntreBonsGro") {
+                FragmentEntreBonsGro(database.articleDao())
+            }
+            composable("FragmentCredits") {
+                FragmentCredits(
+                    viewModels.creditsViewModel,
+                    onToggleNavBar = onToggleNavBar,
+                    uiState = uiState
+                )
+            }
+            composable("FragmentCreditsClients") {
+                FragmentCreditsClients(
+                    viewModels.creditsClientsViewModel,
+                    boardStatistiquesStatViewModel = viewModels.boardStatistiquesStatViewModel,
+                    onToggleNavBar = onToggleNavBar,
+                )
+            }
+            composable("Main_FactoryClassemntsArticles") {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MainFactoryClassementsArticles(
+                        viewModels.classementsArticlesViewModel,
+                        onToggleNavBar = onToggleNavBar,
+                        onUpdateStart = {
+                            headOfViewModels.totalSteps = 3
+                            headOfViewModels.currentStep = 0
+
+                            coroutineScope.launch {
+                                viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
+                                    "Starting Classements Articles Update",
+                                    headOfViewModels.currentStep++,
+                                    0f
+                                )
+                            }
+                        },
+                        onUpdateProgress = { progress ->
+                            coroutineScope.launch {
+                                viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
+                                    "Updating Classements Articles",
+                                    headOfViewModels.currentStep++,
+                                    progress
+                                )
+                            }
+                        },
+                        onUpdateComplete = {
+                            coroutineScope.launch {
+                                viewModels.headOfViewModels.updateUploadProgressBarCounterAndItText(
+                                    "Classements Articles Update Complete",
+                                    headOfViewModels.currentStep++,
+                                    100f
+                                )
+                            }
+
+                        }
                     )
+                }
+            }
+
+            composable("main_fragment_edit_database_with_create_new_articles") {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MainFragmentEditDatabaseWithCreateNewArticles(
+                        viewModel = viewModels.headOfViewModels,
+                        onToggleNavBar = onToggleNavBar,
+                        onClickToOpenWinInfoDataBase = { dialogeDisplayeDetailleChanger = it },
+                        reloadTrigger = reloadTrigger
+                    )
+                    if (uploadProgress > 0f && uploadProgress < 100f) {
+                        CircularProgressIndicator(
+                            progress = { uploadProgress / 100f },
+                            modifier = Modifier.align(Alignment.Center),
+                            trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
+                        )
+                    }
                 }
             }
         }
@@ -426,10 +454,10 @@ fun AppNavHost(
         Log.d("MainFragment", "Displaying ArticleDetailWindow for: $article")
         ArticleDetailWindow(
             article = article,
-            uiState=uiState,
+            uiState = uiState,
             onDismiss = {
                 Log.d("MainFragment", "ArticleDetailWindow dismissed")
-                dialogeDisplayeDetailleChanger=null
+                dialogeDisplayeDetailleChanger = null
                 headOfViewModels.updateCurrentEditedArticle(null)
 
                 // Check if the article is new or if key changes occurred
@@ -447,7 +475,10 @@ fun AppNavHost(
                         }
                         // Increment reloadTrigger to force recomposition
                         reloadTrigger += 1
-                        Log.d("MainFragment", "Image reload triggered, reloadTrigger: $reloadTrigger")
+                        Log.d(
+                            "MainFragment",
+                            "Image reload triggered, reloadTrigger: $reloadTrigger"
+                        )
                     }
                 }
             },
@@ -464,8 +495,8 @@ fun AppNavHost(
                 currentSupplier = selectedSupplier
                 onShowSupplierPopupChange(false)
                 navController.navigate("FragmentMapArticleInSupplierStore")
-            }   ,
-            uiState=uiState
+            },
+            uiState = uiState
         )
     }
 }
@@ -481,14 +512,29 @@ object NavigationItems {
         Screen.Credits,
         Screen.CreditsClients,
         Screen.FactoryClassemntsArticles,
-        Screen.EditDatabaseWithCreateNewArticles ,
+        Screen.EditDatabaseWithCreateNewArticles,
     )
 }
+
 sealed class Screen(val route: String, val icon: ImageVector, val title: String, val color: Color) {
     data object MainScreen : Screen("main_screen", Icons.Default.Home, "Home", Color(0xFF4CAF50))
-    data object CreditsClients : Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
-    data  object ManageBonsClients : Screen("C_ManageBonsClients", Icons.AutoMirrored.Filled.List, "Manage Bons", Color(0xFFFFC107))
-    data  object Fragment_SupplierArticlesRecivedManager : Screen("Fragment_SupplierArticlesRecivedManager", Icons.Default.LiveTv, "Fragment_SupplierArticlesRecivedManager", Color(0xFFF44336))
+    data object CreditsClients :
+        Screen("FragmentCreditsClients", Icons.Default.Person, "Credits Clients", Color(0xFF3F51B5))
+
+    data object ManageBonsClients : Screen(
+        "C_ManageBonsClients",
+        Icons.AutoMirrored.Filled.List,
+        "Manage Bons",
+        Color(0xFFFFC107)
+    )
+
+    data object Fragment_SupplierArticlesRecivedManager : Screen(
+        "Fragment_SupplierArticlesRecivedManager",
+        Icons.Default.LiveTv,
+        "Fragment_SupplierArticlesRecivedManager",
+        Color(0xFFF44336)
+    )
+
     data object FragmentMapArticleInSupplierStoreFragment : Screen(
         "FragmentMapArticleInSupplierStore",
         Icons.Default.Map,
@@ -499,13 +545,28 @@ sealed class Screen(val route: String, val icon: ImageVector, val title: String,
             showPopup(true)
         }
     }
-    data  object EntreBonsGro : Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
-    data   object Credits : Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
-    data object EditDatabaseWithCreateNewArticles : Screen("main_fragment_edit_database_with_create_new_articles", Icons.Default.EditRoad, "Create New Articles", Color(
-        0xFFE30E0E
+
+    data object EntreBonsGro :
+        Screen("FragmentEntreBonsGro", Icons.Default.Add, "Entre Bons", Color(0xFFE91E63))
+
+    data object Credits :
+        Screen("FragmentCredits", Icons.Default.Info, "Credits", Color(0xFF9C27B0))
+
+    data object EditDatabaseWithCreateNewArticles : Screen(
+        "main_fragment_edit_database_with_create_new_articles",
+        Icons.Default.EditRoad,
+        "Create New Articles",
+        Color(
+            0xFFE30E0E
+        )
     )
+
+    data object FactoryClassemntsArticles : Screen(
+        "Main_FactoryClassemntsArticles",
+        Icons.Default.Refresh,
+        "Classements",
+        Color(0xFFFF5722)
     )
-    data   object FactoryClassemntsArticles : Screen("Main_FactoryClassemntsArticles", Icons.Default.Refresh, "Classements", Color(0xFFFF5722))
 }
 
 @Composable
@@ -554,13 +615,17 @@ fun CustomNavigationBar(
                 selected = currentRoute == screen.route,
                 onClick = {
                     when (screen) {
-                        is Screen.FragmentMapArticleInSupplierStoreFragment -> screen.showPopup(showPopup)
+                        is Screen.FragmentMapArticleInSupplierStoreFragment -> screen.showPopup(
+                            showPopup
+                        )
+
                         is Screen.MainScreen -> {
                             if (indicateurDeNeedUpdateFireBase) {
                                 headOfViewModels.updateFirebaseWithDisplayeProgress()
                             }
                             onNavigate(screen.route)
                         }
+
                         else -> onNavigate(screen.route)
                     }
                 },
@@ -581,7 +646,11 @@ fun SupplierSelectionPopup(
 ) {
     var showOnlyWithArticles by remember { mutableStateOf(true) }
 
-    val filteredSuppliers = remember(uiState.tabelleSuppliersSA, uiState.groupeurBonCommendToSupplierTabele, showOnlyWithArticles) {
+    val filteredSuppliers = remember(
+        uiState.tabelleSuppliersSA,
+        uiState.groupeurBonCommendToSupplierTabele,
+        showOnlyWithArticles
+    ) {
         uiState.tabelleSuppliersSA
             .filter { supplier ->
                 !showOnlyWithArticles || uiState.groupeurBonCommendToSupplierTabele.any { article ->
@@ -659,6 +728,7 @@ fun SupplierSelectionPopup(
         }
     )
 }
+
 @Composable
 fun ToggleNavBarButton(isNavBarVisible: Boolean, onToggle: () -> Unit) {
     FloatingActionButton(onClick = onToggle) {

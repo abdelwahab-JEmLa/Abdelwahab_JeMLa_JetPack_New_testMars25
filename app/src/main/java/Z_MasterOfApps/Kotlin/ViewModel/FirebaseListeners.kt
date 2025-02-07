@@ -19,7 +19,8 @@ object FirebaseListeners {
     private var productsListener: ValueEventListener? = null
     private var clientsListener: ValueEventListener? = null
     private var grossistsListener: ValueEventListener? = null
-    val refDBJetPackExport = Firebase.database.getReference("e_DBJetPackExport")
+    private val refDBJetPackExport = Firebase.database.getReference("e_DBJetPackExport")
+    private var jetPackExportListener: ValueEventListener? = null
 
     fun setupRealtimeListeners(viewModel: ViewModelInitApp) {
         Log.d(TAG, "Setting up real-time listeners...")
@@ -28,8 +29,6 @@ object FirebaseListeners {
         setupGrossistsListener(viewModel)
         setupJetPackExportListener() // Add this line
     }
-    // Add this variable at the top with other listeners
-    private var jetPackExportListener: ValueEventListener? = null
 
     // Add this function to setup the new listener
     private fun setupJetPackExportListener() {
