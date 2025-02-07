@@ -126,6 +126,8 @@ class HeadOfViewModels(
         private const val TAG = "HeadOfViewModels"
     }
 
+
+
     fun upsertDaySoldBons(
         clientId: Long,
         clientName: String,

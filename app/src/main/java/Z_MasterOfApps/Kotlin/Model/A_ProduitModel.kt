@@ -35,6 +35,7 @@ class A_ProduitModel(
     class StatuesBase(
         var ilAUneCouleurAvecImage: Boolean = false,
         var characterProduit: CharacterProduit = CharacterProduit(),
+        var infosCoutes: InfosCoutes = InfosCoutes(),
         ) {
         var naAucunImage: Boolean by mutableStateOf(false)
         var sonImageBesoinActualisation: Boolean by mutableStateOf(false)
@@ -42,6 +43,12 @@ class A_ProduitModel(
 
         var prePourCameraCapture: Boolean by mutableStateOf(false)
         var seTrouveAuDernieDuCamionCarCCarton: Boolean by mutableStateOf(false)
+
+        @IgnoreExtraProperties
+        data class InfosCoutes(
+            var monPrixAchat: Double = 0.0,
+            var monPrixVent: Double = 0.0,
+        )
 
         @IgnoreExtraProperties
         data class CharacterProduit(

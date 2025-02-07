@@ -1,13 +1,15 @@
 package Z_MasterOfApps.Kotlin.ViewModel
 
+import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import android.util.Log
+import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.database
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,12 +19,50 @@ object FirebaseListeners {
     private var productsListener: ValueEventListener? = null
     private var clientsListener: ValueEventListener? = null
     private var grossistsListener: ValueEventListener? = null
+    val refDBJetPackExport = Firebase.database.getReference("e_DBJetPackExport")
 
     fun setupRealtimeListeners(viewModel: ViewModelInitApp) {
         Log.d(TAG, "Setting up real-time listeners...")
         setupProductsListener(viewModel)
         setupClientsListener(viewModel)
         setupGrossistsListener(viewModel)
+        setupJetPackExportListener() // Add this line
+    }
+    // Add this variable at the top with other listeners
+    private var jetPackExportListener: ValueEventListener? = null
+
+    // Add this function to setup the new listener
+    private fun setupJetPackExportListener() {
+        jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
+
+        jetPackExportListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach { productSnapshot ->
+                    val productId = productSnapshot.key ?: return@forEach
+                    val prixAchat = productSnapshot.child("monPrixAchat").getValue(Double::class.java) ?: 0.0
+                    val prixVent = productSnapshot.child("monPrixVent").getValue(Double::class.java) ?: 0.0
+
+                    val updates = hashMapOf<String, Any>(
+                        "statuesBase/infosCoutes/monPrixAchat" to prixAchat,
+                        "statuesBase/infosCoutes/monPrixVent" to prixVent
+                    )
+
+                    _ModelAppsFather.produitsFireBaseRef.child(productId).updateChildren(updates)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "Updated InfosCoutes for product $productId")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Error updating InfosCoutes for product $productId", e)
+                        }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "JetPackExport listener cancelled: ${error.message}")
+            }
+        }
+
+        refDBJetPackExport.addValueEventListener(jetPackExportListener!!)
     }
 
     private fun setupProductsListener(viewModel: ViewModelInitApp) {
