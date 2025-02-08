@@ -947,7 +947,7 @@ fun ColorCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
+                            .height(70.dp)
                             .padding(8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -984,7 +984,16 @@ fun ColorCard(
                                 emojiValue = newValue
                                 viewModel.updateColorEmoji(couleurID, newValue)
                             },
-                            label = { Text("Emoji") },
+                            label = {
+                                val text = colorsList.find { it.idColore == couleurID }?.iconColore
+
+                                if (text != null) {
+                                    Text(
+                                        text = text,
+                                        fontSize = 13.sp  // Set font size to 13sp
+                                    )
+                                }
+                            },
                             modifier = Modifier
                                 .weight(0.3f)
                                 .padding(start = 4.dp),
