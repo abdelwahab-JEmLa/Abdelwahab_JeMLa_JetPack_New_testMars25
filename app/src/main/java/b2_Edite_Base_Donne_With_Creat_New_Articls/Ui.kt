@@ -761,30 +761,31 @@ fun DisplayColorsCards(article: DataBaseArticles, viewModel: HeadOfViewModels, m
                     viewModel = viewModel,
                     onDismiss = onDismiss,
                     onReloadTrigger = onReloadTrigger,
-                    relodeTigger = relodeTigger
+                    relodeTigger = relodeTigger,
+                    couleurID = 0
                 )
             }
         }
 
-        val couleursList = listOf(
-            article.couleur1,
-            article.couleur2,
-            article.couleur3,
-            article.couleur4
-        ).filterNot { it.isNullOrEmpty() }
+        // Create paired lists of colors and their IDs
+        val colorPairs = listOf(
+            article.couleur1 to article.idcolor1,
+            article.couleur2 to article.idcolor2,
+            article.couleur3 to article.idcolor3,
+            article.couleur4 to article.idcolor4
+        ).filter { (color, _) -> !color.isNullOrEmpty() }
 
-        itemsIndexed(couleursList) { index, couleur ->
-            if (couleur != null) {
-                ColorCard(
-                    article = article,
-                    index = index,
-                    couleur = couleur,
-                    viewModel = viewModel,
-                    onDismiss = onDismiss,
-                    onReloadTrigger = onReloadTrigger,
-                    relodeTigger = relodeTigger
-                )
-            }
+        itemsIndexed(colorPairs) { index, (couleur, colorId) ->
+            ColorCard(
+                article = article,
+                index = index,
+                couleur = couleur!!,
+                couleurID = colorId,
+                viewModel = viewModel,
+                onDismiss = onDismiss,
+                onReloadTrigger = onReloadTrigger,
+                relodeTigger = relodeTigger
+            )
         }
 
         item {
@@ -858,8 +859,9 @@ private fun AddColorCard(
 }
 
 
+
 @Composable
-private fun ColorCard(
+fun ColorCard(
     article: DataBaseArticles,
     index: Int,
     couleur: String,
@@ -867,6 +869,7 @@ private fun ColorCard(
     onDismiss: () -> Unit,
     onReloadTrigger: () -> Unit,
     relodeTigger: Int,
+    couleurID: Long,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val colorsList = uiState.colorsArticles
@@ -874,6 +877,7 @@ private fun ColorCard(
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var colorName by remember { mutableStateOf("") }
+    var emojiValue by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -923,7 +927,6 @@ private fun ColorCard(
                         .padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Change photo button
                     IconButton(
                         onClick = {
                             viewModel.tempImageUri = viewModel.createTempImageUri(context)
@@ -933,36 +936,61 @@ private fun ColorCard(
                         Icon(Icons.Default.AddAPhoto, contentDescription = "Change photo")
                     }
 
-                    // Delete color button
                     IconButton(
                         onClick = { showDeleteDialog = true }
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete color")
                     }
                 }
-                if (index!=-1) {
-                    // AutoCompleteTextField at the bottom
-                    AutoCompleteTextField(
-                        value = colorName,
-                        onValueChange = { newValue ->
-                            colorName = newValue
-                            viewModel.updateColorName(article, index, newValue)
-                        },
-                        options = colorsList.map { it.nameColore },
-                        label = couleur,
-                        onOptionSelected = { selectedColor ->
-                            colorName = selectedColor
-                            viewModel.updateColorName(
-                                article,
-                                index,
-                                selectedColor,
-                                ecraseLeDernie = true
-                            )
-                        },
+
+                if (index != -1) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
-                    )
+                            .height(56.dp)
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Color name autocomplete (70% width)
+                        AutoCompleteTextField(
+                            value = colorName,
+                            onValueChange = { newValue ->
+                                colorName = newValue
+                                viewModel.updateColorName(article, index, newValue)
+                            },
+                            options = colorsList.map { it.nameColore },
+                            label = couleur,
+                            onOptionSelected = { selectedColor ->
+                                colorName = selectedColor
+                                viewModel.updateColorName(
+                                    article,
+                                    index,
+                                    selectedColor,
+                                    ecraseLeDernie = true
+                                )
+                                // Update emoji when color is selected
+                                val selectedColorData = colorsList.find { it.nameColore == selectedColor }
+                                selectedColorData?.iconColore?.let { emojiValue = it }
+                            },
+                            modifier = Modifier
+                                .weight(0.7f)
+                                .padding(end = 4.dp)
+                        )
+
+                        // Emoji textfield (30% width)
+                        OutlinedTextField(
+                            value = emojiValue,
+                            onValueChange = { newValue ->
+                                emojiValue = newValue
+                                viewModel.updateColorEmoji(couleurID, newValue)
+                            },
+                            label = { Text("Emoji") },
+                            modifier = Modifier
+                                .weight(0.3f)
+                                .padding(start = 4.dp),
+                            singleLine = true
+                        )
+                    }
                 }
             }
         }

@@ -1166,6 +1166,23 @@ class HeadOfViewModels(
      *
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
+    fun updateColorEmoji(colorId: Long, newEmoji: String) {
+        // Update the UI state by finding and updating the color with matching ID
+        _uiState.update { currentState ->
+            val updatedColors = currentState.colorsArticles.map { color ->
+                if (color.idColore == colorId) {
+                    color.copy(iconColore = newEmoji)
+                } else {
+                    color
+                }
+            }
+
+            // Also update in Firebase
+            refColorsArticles.child(colorId.toString()).child("iconColore").setValue(newEmoji)
+
+            currentState.copy(colorsArticles = updatedColors)
+        }
+    }
 
     fun updateColorName(article: DataBaseArticles, index: Int, newColorName: String, ecraseLeDernie: Boolean = false) {
         // Find existing color to get its ID
