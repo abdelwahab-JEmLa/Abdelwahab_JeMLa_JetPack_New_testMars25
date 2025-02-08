@@ -194,23 +194,40 @@ object FirebaseListeners {
         refColorsArticles.addValueEventListener(colorsArticlesListener!!)
     }
 
+
     fun handleColorUpdate(
         productSnapshot: DataSnapshot,
         product: A_ProduitModel
     ): A_ProduitModel {
-        val currentColors = product.statuesBase.coloursEtGoutsIds.toSet()
-        val colorsId = listOfNotNull(
+        // Get current colors as a mutable list for easy modification
+        val currentColors = product.statuesBase.coloursEtGoutsIds.toMutableList()
+
+        // Extract new colors from snapshot, maintaining order
+        val newColors = listOfNotNull(
             productSnapshot.child("idcolor1").getValue(Long::class.java),
             productSnapshot.child("idcolor2").getValue(Long::class.java),
             productSnapshot.child("idcolor3").getValue(Long::class.java),
             productSnapshot.child("idcolor4").getValue(Long::class.java)
-        )
+        ).filter { it > 0 } // Filter out invalid color IDs
 
-        colorsId.forEach { colorId ->
-            if (colorId > 0 && !currentColors.contains(colorId)) {
-                product.statuesBase.coloursEtGoutsIds += colorId
+        // Update colors at their respective positions
+        newColors.forEachIndexed { index, colorId ->
+            if (index < currentColors.size) {
+                // Update existing color at index
+                currentColors[index] = colorId
+            } else {
+                // Add new color if we have room
+                currentColors.add(colorId)
             }
         }
+
+        // Trim any excess colors if new list is shorter
+        while (currentColors.size > newColors.size) {
+            currentColors.removeAt(currentColors.lastIndex)
+        }
+
+        // Convert to SnapshotStateList and update the product
+        product.statuesBase.coloursEtGoutsIds = currentColors
 
         return product
     }
