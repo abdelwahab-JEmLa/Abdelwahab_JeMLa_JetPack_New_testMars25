@@ -3,7 +3,7 @@ package Z_MasterOfApps.Kotlin.ViewModel.Startup.FirebaseListeners
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
-import Z_MasterOfApps.Kotlin.ViewModel.Startup.FirebaseListeners.Current.setupCurrentModels
+import Z_MasterOfApps.Kotlin.ViewModel.Startup.FirebaseListeners.CurrentModels.setupCurrentModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
