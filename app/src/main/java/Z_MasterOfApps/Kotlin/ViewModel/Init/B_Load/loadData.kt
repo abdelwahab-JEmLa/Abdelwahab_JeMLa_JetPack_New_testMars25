@@ -6,6 +6,7 @@ import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.AncienDataBase
+import Z_MasterOfApps.Kotlin.ViewModel.Init.C_Compare.CompareUpdate
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
@@ -46,7 +47,7 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
 
         val snapshots = if (isOnline) {
             AncienDataBase.setupRealtimeListeners(viewModel)
-
+            CompareUpdate.setupeCompareUpdateAncienModels()
             refs.map { it.get().await() }
         } else {
             FirebaseDatabase.getInstance().goOffline()

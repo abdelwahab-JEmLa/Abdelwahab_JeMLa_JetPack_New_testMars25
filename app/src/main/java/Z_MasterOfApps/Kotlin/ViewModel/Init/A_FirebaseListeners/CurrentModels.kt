@@ -21,7 +21,6 @@ object CurrentModels {
         setupProductsListener(viewModel)
         setupClientsListener(viewModel)
         setupGrossistsListener(viewModel)
-
     }
 
     private fun setupProductsListener(viewModel: ViewModelInitApp) {
