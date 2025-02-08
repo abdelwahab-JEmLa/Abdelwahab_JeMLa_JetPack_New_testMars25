@@ -1,6 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
-import Z_MasterOfApps.Kotlin.ViewModel.Startup.Load.initializeFirebase
+import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.initializeFirebase
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels

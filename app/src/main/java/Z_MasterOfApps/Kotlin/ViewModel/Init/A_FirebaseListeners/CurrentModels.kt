@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Kotlin.ViewModel.Startup.FirebaseListeners
+package Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners
 
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
