@@ -80,11 +80,14 @@ class HeadOfViewModels(
     private val _currentEditedArticle = MutableStateFlow<DataBaseArticles?>(null)
     val currentEditedArticle: StateFlow<DataBaseArticles?> = _currentEditedArticle.asStateFlow()
 
-    private val _currentSupplierArticle = MutableStateFlow<GroupeurBonCommendToSupplierTabele?>(null)
-    val currentSupplierArticle: StateFlow<GroupeurBonCommendToSupplierTabele?> = _currentSupplierArticle.asStateFlow()
+    private val _currentSupplierArticle =
+        MutableStateFlow<GroupeurBonCommendToSupplierTabele?>(null)
+    val currentSupplierArticle: StateFlow<GroupeurBonCommendToSupplierTabele?> =
+        _currentSupplierArticle.asStateFlow()
 
     private val _indicateurDeNeedUpdateFireBase = MutableStateFlow(false)
-    val indicateurDeNeedUpdateFireBase: StateFlow<Boolean> = _indicateurDeNeedUpdateFireBase.asStateFlow()
+    val indicateurDeNeedUpdateFireBase: StateFlow<Boolean> =
+        _indicateurDeNeedUpdateFireBase.asStateFlow()
 
     private val _uploadProgress = MutableStateFlow(100f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
@@ -106,15 +109,20 @@ class HeadOfViewModels(
 
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
-    private val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
+    private val refArticlesAcheteModele =
+        firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
     private val refSoldArticlesTabelle = firebaseDatabase.getReference("O_SoldArticlesTabelle")
 
-    val refTabelleSupplierArticlesRecived = firebaseDatabase.getReference("K_SupplierArticlesRecived")
+    val refTabelleSupplierArticlesRecived =
+        firebaseDatabase.getReference("K_SupplierArticlesRecived")
     private val refTabelleSuppliersSA = firebaseDatabase.getReference("F_Suppliers")
-    private val refMapArticleInSupplierStore = firebaseDatabase.getReference("L_MapArticleInSupplierStore")
+    private val refMapArticleInSupplierStore =
+        firebaseDatabase.getReference("L_MapArticleInSupplierStore")
     private val refClassmentsArtData = firebaseDatabase.getReference("H_ClassementsArticlesTabel")
-    private val refPlacesOfArticelsInEacheSupplierSrore = firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
-    private val refPlacesOfArticelsInCamionette = firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
+    private val refPlacesOfArticelsInEacheSupplierSrore =
+        firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
+    private val refPlacesOfArticelsInCamionette =
+        firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
     private val refClientsList = firebaseDatabase.getReference("G_Clients")
     private val refDaySoldBons = firebaseDatabase.getReference("1_DaySoldBons")
     private val refAppSettingsSaverModel = firebaseDatabase.getReference("2_AppSettingsSaverNew")
@@ -123,14 +131,14 @@ class HeadOfViewModels(
     val viewModelImagesPath = File("/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne")
 
     var tempImageUri: Uri? = null
-    private val currentDate: String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    private val currentDate: String =
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
     companion object {
         private const val MAX_WIDTH = 1024
         private const val MAX_HEIGHT = 1024
         private const val TAG = "HeadOfViewModels"
     }
-
 
 
     fun upsertDaySoldBons(
@@ -202,7 +210,8 @@ class HeadOfViewModels(
         try {
             val sourceData = _uiState.value.soldArticlesTabelle
             val historicalData = fetchHistoricalDataFromFirestore()
-            val refArticlesAcheteModele = firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
+            val refArticlesAcheteModele =
+                firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")
 
             // Efface les données actuelles dans articlesAcheteModele
             _uiState.update { it.copy(articlesAcheteModele = emptyList()) }
@@ -226,7 +235,10 @@ class HeadOfViewModels(
                         .find { it.idArticle.toLong() == soldArticle.idArticle }
 
                     if (nomClient == null || baseArticle == null) {
-                        Log.d("Transfer", "Client or article not found for ID: ${soldArticle.idArticle}")
+                        Log.d(
+                            "Transfer",
+                            "Client or article not found for ID: ${soldArticle.idArticle}"
+                        )
                         skippedItems++
                         return@forEach
                     }
@@ -243,7 +255,8 @@ class HeadOfViewModels(
                     val monPrixVentFireStoreBM = historicalData
                         .find { it.idArticle == soldArticle.idArticle && it.nomClient == nomClient }
                         ?.monPrixVentFireStoreBM ?: 0.0
-                     suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
+
+                    suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
                         return try {
                             Firebase.firestore
                                 .collection("HistoriqueDesFactures")
@@ -263,6 +276,7 @@ class HeadOfViewModels(
                             emptyList()
                         }
                     }
+
                     val monPrixVentBM = baseArticle.monPrixVent
                     val nmbrUnite = baseArticle.nmbrUnite.toDouble()
 
@@ -287,7 +301,11 @@ class HeadOfViewModels(
                         nonTrouveState = false,
                         verifieState = false,
                         changeCaronState = "",
-                        typeEmballage = if (baseArticle.cartonState in listOf("itsCarton", "Carton")) "Carton" else "Boit",
+                        typeEmballage = if (baseArticle.cartonState in listOf(
+                                "itsCarton",
+                                "Carton"
+                            )
+                        ) "Carton" else "Boit",
                         idArticlePlaceInCamionette = 0,
                         choisirePrixDepuitFireStoreOuBaseBM = if (monPrixVentFireStoreBM == 0.0) "CardFireBase" else "CardFireStor",
                         warningRecentlyChanged = false,
@@ -329,7 +347,10 @@ class HeadOfViewModels(
                     }
 
                 } catch (e: Exception) {
-                    Log.e("Transfer", "Error processing article ${soldArticle.idArticle}: ${e.message}")
+                    Log.e(
+                        "Transfer",
+                        "Error processing article ${soldArticle.idArticle}: ${e.message}"
+                    )
                     skippedItems++
                 }
             }
@@ -357,11 +378,13 @@ class HeadOfViewModels(
         } catch (e: Exception) {
             Log.e("Transfer", "Transfer failed", e)
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Data transfer failed: ${e.message}", Toast.LENGTH_LONG)
+                    .show()
             }
         }
     }
-     suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
+
+    suspend fun fetchHistoricalDataFromFirestore(): List<ArticlesAcheteModele> {
         return try {
             Firebase.firestore
                 .collection("HistoriqueDesFactures")
@@ -390,12 +413,12 @@ class HeadOfViewModels(
     )
 
 
-
     fun toggleFilter() {
         _uiState.update { currentState ->
             currentState.copy(showOnlyWithFilter = !currentState.showOnlyWithFilter)
         }
     }
+
     // Helper function to update a single article
     fun updateArticleInfoDataBase(updatedArticle: DataBaseArticles) {
         _uiState.update { currentState ->
@@ -408,18 +431,21 @@ class HeadOfViewModels(
         }
         setNeedUpdateFireBase()
     }
+
     fun updateSmothUploadProgressBarCounterAndItText(
         nameFunInProgressBar: String = "",
-        progressDimunuentDe100A0: Int=100,
-        end:Boolean=false,
-        delayUi: Long = 0) {
+        progressDimunuentDe100A0: Int = 100,
+        end: Boolean = false,
+        delayUi: Long = 0
+    ) {
         viewModelScope.launch {
-            _uploadProgress.value = if (end) 0f else progressDimunuentDe100A0 .toFloat()
+            _uploadProgress.value = if (end) 0f else progressDimunuentDe100A0.toFloat()
             _textProgress.value = nameFunInProgressBar
 
             delay(delayUi)
         }
     }
+
     private fun updateClassmentsCategories(updatedCategories: List<CategoriesTabelleECB>) {
         viewModelScope.launch {
             try {
@@ -452,6 +478,7 @@ class HeadOfViewModels(
             }
         }
     }
+
     private fun updateCategorieRoomAndNeedForDistant(
         updatedCategories: List<CategoriesTabelleECB>
     ) {
@@ -468,6 +495,7 @@ class HeadOfViewModels(
             }
         }
     }
+
     fun updateArticleCategoriesId() {
         viewModelScope.launch {
             try {
@@ -478,10 +506,22 @@ class HeadOfViewModels(
 
                 val updatedArticles = _uiState.value.articlesBaseDonneECB.map { article ->
                     article.copy(
-                        idcolor1 = getColorIdFromName(article.couleur1, _uiState.value.colorsArticles),
-                        idcolor2 = getColorIdFromName(article.couleur2, _uiState.value.colorsArticles),
-                        idcolor3 = getColorIdFromName(article.couleur3, _uiState.value.colorsArticles),
-                        idcolor4 = getColorIdFromName(article.couleur4, _uiState.value.colorsArticles)
+                        idcolor1 = getColorIdFromName(
+                            article.couleur1,
+                            _uiState.value.colorsArticles
+                        ),
+                        idcolor2 = getColorIdFromName(
+                            article.couleur2,
+                            _uiState.value.colorsArticles
+                        ),
+                        idcolor3 = getColorIdFromName(
+                            article.couleur3,
+                            _uiState.value.colorsArticles
+                        ),
+                        idcolor4 = getColorIdFromName(
+                            article.couleur4,
+                            _uiState.value.colorsArticles
+                        )
                     )
                 }
 
@@ -511,7 +551,6 @@ class HeadOfViewModels(
     }
 
 
-
     fun addNewCategory(categoryName: String) {
         viewModelScope.launch {
             try {
@@ -532,6 +571,7 @@ class HeadOfViewModels(
             }
         }
     }
+
     fun updateFirebaseWithDisplayeProgress() {
         viewModelScope.launch {
             try {
@@ -616,7 +656,12 @@ class HeadOfViewModels(
             }
         }
     }
-    private fun updateProgress(completedUpdates: Int, totalUpdates: Int, updateDeferred: CompletableDeferred<Unit>) {
+
+    private fun updateProgress(
+        completedUpdates: Int,
+        totalUpdates: Int,
+        updateDeferred: CompletableDeferred<Unit>
+    ) {
         viewModelScope.launch {
             val progress = ((completedUpdates.toFloat() / totalUpdates) * 100).toInt()
             updateSmothUploadProgressBarCounterAndItText(
@@ -631,7 +676,7 @@ class HeadOfViewModels(
         }
     }
 
-    private  fun createNewCategory(categoryName: String): CategoriesTabelleECB {
+    private fun createNewCategory(categoryName: String): CategoriesTabelleECB {
         val maxId = _uiState.value.categoriesECB
             .maxOfOrNull { it.idCategorieInCategoriesTabele }
             ?: 0
@@ -700,10 +745,11 @@ class HeadOfViewModels(
         }
         Log.e(TAG, errorMessage, e)
     }
-    
-    private fun setNeedUpdateFireBase(needed: Boolean=true) {
+
+    private fun setNeedUpdateFireBase(needed: Boolean = true) {
         _indicateurDeNeedUpdateFireBase.value = needed
     }
+
     fun updateArticleCategories() {
         viewModelScope.launch {
             try {
@@ -754,6 +800,7 @@ class HeadOfViewModels(
                             idCategorieNewMetode = toCategoryId,
                             articleItIdClassementInItCategorieInHVM = maxClassificationId + 1
                         )
+
                         else -> article
                     }
                 }
@@ -789,7 +836,6 @@ class HeadOfViewModels(
     }
 
 
-
     fun handleCategoryMove(
         holdedIdCate: Long,
         clickedCategoryId: Long,
@@ -798,8 +844,10 @@ class HeadOfViewModels(
         viewModelScope.launch {
             val categories = _uiState.value.categoriesECB.toMutableList()
 
-            val fromIndex = categories.indexOfFirst { it.idCategorieInCategoriesTabele == holdedIdCate }
-            val toIndex = categories.indexOfFirst { it.idCategorieInCategoriesTabele == clickedCategoryId }
+            val fromIndex =
+                categories.indexOfFirst { it.idCategorieInCategoriesTabele == holdedIdCate }
+            val toIndex =
+                categories.indexOfFirst { it.idCategorieInCategoriesTabele == clickedCategoryId }
 
             if (fromIndex != -1 && toIndex != -1) {
                 val movedCategory = categories[fromIndex]
@@ -895,8 +943,6 @@ class HeadOfViewModels(
     }
 
 
-
-
     private fun updateArticleDisponibilityState(
         articles: List<DataBaseArticles>,
         articleId: Long,
@@ -983,15 +1029,15 @@ class HeadOfViewModels(
     }
 
 
-
-    fun importFromFirebase(refFireBase: String ) {
+    fun importFromFirebase(refFireBase: String) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true, error = null) }
                 updateSmothUploadProgressBarCounterAndItText("Importing data from $refFireBase", 90)
 
                 val snapshot = firebaseDatabase.getReference(refFireBase).get().await()
-                val importedArticles = snapshot.children.mapNotNull { it.getValue(DataBaseArticles::class.java) }
+                val importedArticles =
+                    snapshot.children.mapNotNull { it.getValue(DataBaseArticles::class.java) }
 
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -1002,17 +1048,23 @@ class HeadOfViewModels(
 
                 updateSmothUploadProgressBarCounterAndItText("Import completed", 0, true)
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = "Import failed: ${e.message}") }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Import failed: ${e.message}"
+                    )
+                }
                 updateSmothUploadProgressBarCounterAndItText("Import failed", 0, true)
             }
         }
     }
+
     /** Start [HeadOfViewModels]
      *
      * --------------------------------------------------"PS:To Claude Dont Delet This Comment"
      * ------------------------------------------------*/
 
-    fun exportUiStateArticlesToFirebase(refFireBase: String ) {
+    fun exportUiStateArticlesToFirebase(refFireBase: String) {
         viewModelScope.launch {
             try {
                 val articlesToExport = _uiState.value.articlesBaseDonneECB
@@ -1024,12 +1076,18 @@ class HeadOfViewModels(
                     ref.child(article.idArticle.toString()).setValue(article)
 
                     val progress = ((index + 1) / articlesToExport.size) * 100
-                    updateSmothUploadProgressBarCounterAndItText("Exporting articles to $refFireBase",progress)
+                    updateSmothUploadProgressBarCounterAndItText(
+                        "Exporting articles to $refFireBase",
+                        progress
+                    )
 
                 }
 
 
-                updateSmothUploadProgressBarCounterAndItText("Exporting articles to $refFireBase",end=true)
+                updateSmothUploadProgressBarCounterAndItText(
+                    "Exporting articles to $refFireBase",
+                    end = true
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "Error exporting articles to Firebase: ${e.message}")
                 _uiState.update { it.copy(error = "Failed to export articles: ${e.message}") }
@@ -1038,12 +1096,18 @@ class HeadOfViewModels(
     }
 
 
-    fun updateUploadProgressBarCounterAndItText(nameFunInProgressBar: String = "", addPLusTOCurrentStep: Int, stepProgress: Float = 100f, delayUi: Long = 0) {
+    fun updateUploadProgressBarCounterAndItText(
+        nameFunInProgressBar: String = "",
+        addPLusTOCurrentStep: Int,
+        stepProgress: Float = 100f,
+        delayUi: Long = 0
+    ) {
         viewModelScope.launch {
             val stepSize = 100f / totalSteps
             val baseProgress = stepSize * (addPLusTOCurrentStep - 1)
             val additionalProgress = stepSize * (stepProgress / 100f)
-            _uploadProgress.value = 100f - (baseProgress + additionalProgress).roundToInt().toFloat()
+            _uploadProgress.value =
+                100f - (baseProgress + additionalProgress).roundToInt().toFloat()
             _textProgress.value = nameFunInProgressBar
 
             delay(delayUi)
@@ -1051,13 +1115,13 @@ class HeadOfViewModels(
     }
 
 
-
     fun updateColorsFromArticles() {
         viewModelScope.launch {
             val articles = _uiState.value.articlesBaseDonneECB
             val colors = mutableSetOf<String>()
 
-            totalSteps = 4 // 1. Collecting colors, 2. Updating UI, 3. Updating Firebase, 4. Finalizing
+            totalSteps =
+                4 // 1. Collecting colors, 2. Updating UI, 3. Updating Firebase, 4. Finalizing
             currentStep = 0
 
             // Step 1: Collecting colors
@@ -1065,7 +1129,12 @@ class HeadOfViewModels(
             articles.forEachIndexed { index, article ->
                 collectColors(article, colors)
                 val progress = (index + 1).toFloat() / articles.size * 100f
-                updateUploadProgressBarCounterAndItText("Collecting Colors", currentStep, progress, 10)
+                updateUploadProgressBarCounterAndItText(
+                    "Collecting Colors",
+                    currentStep,
+                    progress,
+                    10
+                )
             }
 
             // Step 2: Updating UI
@@ -1075,7 +1144,11 @@ class HeadOfViewModels(
             updateUploadProgressBarCounterAndItText("Updating UI", currentStep, 100f)
 
             // Step 3: Updating Firebase
-            updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", ++currentStep, 0f)
+            updateUploadProgressBarCounterAndItText(
+                "Updating Colors in Firebase",
+                ++currentStep,
+                0f
+            )
             updateFirebase(updatedColors)
 
             // Step 4: Finalizing
@@ -1147,7 +1220,11 @@ class HeadOfViewModels(
         updatedColors.forEachIndexed { index, color ->
             refColorsArticles.child(color.idColore.toString()).setValue(color)
             val progress = (index + 1).toFloat() / updatedColors.size * 100f
-            updateUploadProgressBarCounterAndItText("Updating Colors in Firebase", currentStep, progress)
+            updateUploadProgressBarCounterAndItText(
+                "Updating Colors in Firebase",
+                currentStep,
+                progress
+            )
             delay(10) // Small delay to avoid blocking the UI
         }
     }
@@ -1184,11 +1261,17 @@ class HeadOfViewModels(
         }
     }
 
-    fun updateColorName(article: DataBaseArticles, index: Int, newColorName: String, ecraseLeDernie: Boolean = false) {
+    fun updateColorName(
+        article: DataBaseArticles,
+        index: Int,
+        newColorName: String,
+        ecraseLeDernie: Boolean = false
+    ) {
         // Find existing color to get its ID
         val existingColor = _uiState.value.colorsArticles.find { it.nameColore == newColorName }
-        val colorId = existingColor?.idColore ?:
-        (_uiState.value.colorsArticles.maxOfOrNull { it.idColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1)
+        val colorId =
+            existingColor?.idColore ?: (_uiState.value.colorsArticles.maxOfOrNull { it.idColore }
+                ?.plus(if (ecraseLeDernie) 0 else 1) ?: 1)
 
         // Update both color name and ID based on index
         val updatedArticle = when (index) {
@@ -1196,18 +1279,22 @@ class HeadOfViewModels(
                 couleur1 = newColorName,
                 idcolor1 = colorId
             )
+
             1 -> article.copy(
                 couleur2 = newColorName,
                 idcolor2 = colorId
             )
+
             2 -> article.copy(
                 couleur3 = newColorName,
                 idcolor3 = colorId
             )
+
             3 -> article.copy(
                 couleur4 = newColorName,
                 idcolor4 = colorId
             )
+
             else -> article
         }
 
@@ -1219,7 +1306,8 @@ class HeadOfViewModels(
             val newColor = ColorsArticles(
                 idColore = colorId,
                 nameColore = newColorName,
-                classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
+                classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }
+                    ?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
             )
             refColorsArticles.child(newColor.idColore.toString()).setValue(newColor)
         }
@@ -1232,18 +1320,22 @@ class HeadOfViewModels(
                         couleur1 = newColorName,
                         idcolor1 = colorId
                     )
+
                     1 -> currentArticle.copy(
                         couleur2 = newColorName,
                         idcolor2 = colorId
                     )
+
                     2 -> currentArticle.copy(
                         couleur3 = newColorName,
                         idcolor3 = colorId
                     )
+
                     3 -> currentArticle.copy(
                         couleur4 = newColorName,
                         idcolor4 = colorId
                     )
+
                     else -> currentArticle
                 }
             } else {
@@ -1256,35 +1348,39 @@ class HeadOfViewModels(
             currentState.copy(
                 colorsArticles = currentState.colorsArticles.toMutableList().apply {
                     if (existingColor == null) {
-                        add(ColorsArticles(
-                            idColore = colorId,
-                            nameColore = newColorName,
-                            classementColore = maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
-                        ))
+                        add(
+                            ColorsArticles(
+                                idColore = colorId,
+                                nameColore = newColorName,
+                                classementColore = maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1)
+                                    ?: 1
+                            )
+                        )
                     }
                 }
             )
         }
     }
-/** Places Dialoge[PlacesOfArticelsInCamionette]
- * "PS:To Claude Dont Delet This Comment"*/
 
-suspend fun updatePlaceInCamionette(editedPlace: PlacesOfArticelsInCamionette) {
-    // Update the place in Firebase
-    refPlacesOfArticelsInCamionette.child(editedPlace.idPlace.toString()).setValue(editedPlace)
-        .addOnSuccessListener {
-            // Update local state
-            _uiState.update { currentState ->
-                val updatedPlaces = currentState.placesOfArticelsInCamionette.map { place ->
-                    if (place.idPlace == editedPlace.idPlace) editedPlace else place
+    /** Places Dialoge[PlacesOfArticelsInCamionette]
+     * "PS:To Claude Dont Delet This Comment"*/
+
+    suspend fun updatePlaceInCamionette(editedPlace: PlacesOfArticelsInCamionette) {
+        // Update the place in Firebase
+        refPlacesOfArticelsInCamionette.child(editedPlace.idPlace.toString()).setValue(editedPlace)
+            .addOnSuccessListener {
+                // Update local state
+                _uiState.update { currentState ->
+                    val updatedPlaces = currentState.placesOfArticelsInCamionette.map { place ->
+                        if (place.idPlace == editedPlace.idPlace) editedPlace else place
+                    }
+                    currentState.copy(placesOfArticelsInCamionette = updatedPlaces)
                 }
-                currentState.copy(placesOfArticelsInCamionette = updatedPlaces)
             }
-        }
-        .addOnFailureListener { e ->
-            Log.e(TAG, "Failed to update place in camionette", e)
-        }
-}
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to update place in camionette", e)
+            }
+    }
 
     suspend fun deletePlaceInCamionette(placeToDelete: PlacesOfArticelsInCamionette) {
         // Delete the place from Firebase
@@ -1292,7 +1388,8 @@ suspend fun updatePlaceInCamionette(editedPlace: PlacesOfArticelsInCamionette) {
             .addOnSuccessListener {
                 // Update local state
                 _uiState.update { currentState ->
-                    val updatedPlaces = currentState.placesOfArticelsInCamionette.filter { it.idPlace != placeToDelete.idPlace }
+                    val updatedPlaces =
+                        currentState.placesOfArticelsInCamionette.filter { it.idPlace != placeToDelete.idPlace }
                     currentState.copy(placesOfArticelsInCamionette = updatedPlaces)
                 }
             }
@@ -1300,47 +1397,49 @@ suspend fun updatePlaceInCamionette(editedPlace: PlacesOfArticelsInCamionette) {
                 Log.e(TAG, "Failed to delete place from camionette", e)
             }
     }
-fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
-    viewModelScope.launch {
-        try {
-            // Update local state
-            _uiState.update { currentState ->
-                currentState.copy(placesOfArticelsInCamionette = newOrder)
-            }
 
-            // Prepare updates for Firebase
-            val updates = mutableMapOf<String, Any>()
-            newOrder.forEachIndexed { index, place ->
-                val updatedPlace = place.copy(classement = index + 1)
-                updates[updatedPlace.idPlace.toString()] = updatedPlace
-            }
-
-            // Update Firebase
-            refPlacesOfArticelsInCamionette.updateChildren(updates)
-                .addOnSuccessListener {
-                    Log.d(TAG, "Successfully updated places order in Firebase")
-                }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "Failed to update places order in Firebase", e)
-                    // Revert local state if Firebase update fails
-                    revertLocalPlacesOrder()
+    fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
+        viewModelScope.launch {
+            try {
+                // Update local state
+                _uiState.update { currentState ->
+                    currentState.copy(placesOfArticelsInCamionette = newOrder)
                 }
 
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating places order", e)
-            // Revert local state if an exception occurs
-            revertLocalPlacesOrder()
+                // Prepare updates for Firebase
+                val updates = mutableMapOf<String, Any>()
+                newOrder.forEachIndexed { index, place ->
+                    val updatedPlace = place.copy(classement = index + 1)
+                    updates[updatedPlace.idPlace.toString()] = updatedPlace
+                }
+
+                // Update Firebase
+                refPlacesOfArticelsInCamionette.updateChildren(updates)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Successfully updated places order in Firebase")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to update places order in Firebase", e)
+                        // Revert local state if Firebase update fails
+                        revertLocalPlacesOrder()
+                    }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating places order", e)
+                // Revert local state if an exception occurs
+                revertLocalPlacesOrder()
+            }
         }
     }
-}
 
     private fun revertLocalPlacesOrder() {
         viewModelScope.launch {
             // Fetch the current order from Firebase and update local state
             refPlacesOfArticelsInCamionette.get()
                 .addOnSuccessListener { snapshot ->
-                    val currentOrder = snapshot.children.mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
-                        .sortedBy { it.classement }
+                    val currentOrder =
+                        snapshot.children.mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
+                            .sortedBy { it.classement }
                     _uiState.update { currentState ->
                         currentState.copy(placesOfArticelsInCamionette = currentOrder)
                     }
@@ -1364,11 +1463,13 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 }
                 currentState.copy(articlesAcheteModele = updatedArticles)
             }
-            refArticlesAcheteModele.child(articleToUpdate.vid.toString()).child("idArticlePlaceInCamionette").setValue(packagingId)
+            refArticlesAcheteModele.child(articleToUpdate.vid.toString())
+                .child("idArticlePlaceInCamionette").setValue(packagingId)
                 .addOnFailureListener { e ->
                     Log.e(TAG, "Failed to update article packaging", e)
                 }            // Update Firebase
-            refDBJetPackExport.child(articleToUpdate.idArticle.toString()).child("idArticlePlaceInCamionette").setValue(packagingId)
+            refDBJetPackExport.child(articleToUpdate.idArticle.toString())
+                .child("idArticlePlaceInCamionette").setValue(packagingId)
                 .addOnFailureListener { e ->
                     Log.e(TAG, "Failed to update article packaging", e)
                 }
@@ -1378,7 +1479,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun addNewPlaceInCamionette(newPlace: PlacesOfArticelsInCamionette) {
         viewModelScope.launch {
             // Generate a new ID
-            val newId = (_uiState.value.placesOfArticelsInCamionette.maxByOrNull { it.idPlace }?.idPlace ?: 0) + 1
+            val newId =
+                (_uiState.value.placesOfArticelsInCamionette.maxByOrNull { it.idPlace }?.idPlace
+                    ?: 0) + 1
             val newPlaceWithId = newPlace.copy(idPlace = newId)
 
             // Update local state
@@ -1413,7 +1516,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     return Transaction.success(mutableData)
                 }
 
-                override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    dataSnapshot: DataSnapshot?
+                ) {
                     if (error != null) {
                         // Handle error
                         println("Failed to update article category: ${error.message}")
@@ -1454,7 +1561,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 return Transaction.success(mutableData)
             }
 
-            override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+            override fun onComplete(
+                error: DatabaseError?,
+                committed: Boolean,
+                dataSnapshot: DataSnapshot?
+            ) {
                 if (error != null) {
                     println("Failed to update ClassementsArticlesTabel: ${error.message}")
                 } else {
@@ -1481,7 +1592,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
 
             // Update Firebase
-            refTabelleSuppliersSA.child(supplierId.toString()).child("supplierNameInFrenche").setValue(newName)
+            refTabelleSuppliersSA.child(supplierId.toString()).child("supplierNameInFrenche")
+                .setValue(newName)
                 .addOnSuccessListener {
                     // Handle success if needed
                 }
@@ -1509,7 +1621,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
 
             // Update Firebase
-            refTabelleSuppliersSA.child(supplierId.toString()).child("nomVocaleArabeDuSupplier").setValue(newName)
+            refTabelleSuppliersSA.child(supplierId.toString()).child("nomVocaleArabeDuSupplier")
+                .setValue(newName)
                 .addOnSuccessListener {
                     // Handle success if needed
                 }
@@ -1519,7 +1632,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 }
         }
     }
-        fun addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
+
+    fun addOrUpdatePlacesOfArticelsInEacheSupplierSrore(
         placeId: Long,
         idCombinedIdArticleIdSupplier: String,
         idArticle: Long,
@@ -1556,9 +1670,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 _uiState.update { it.copy(placesOfArticelsInEacheSupplierSrore = updatedArticles) }
 
                 // Update or add to Firebase Realtime Database
-                val articleToUpdate = updatedArticles.find { it.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier }
+                val articleToUpdate =
+                    updatedArticles.find { it.idCombinedIdArticleIdSupplier == idCombinedIdArticleIdSupplier }
                 if (articleToUpdate != null) {
-                    refPlacesOfArticelsInEacheSupplierSrore.child(idCombinedIdArticleIdSupplier).setValue(articleToUpdate)
+                    refPlacesOfArticelsInEacheSupplierSrore.child(idCombinedIdArticleIdSupplier)
+                        .setValue(articleToUpdate)
                 } else {
                     throw Exception("Article not found for updating in Firebase")
                 }
@@ -1570,14 +1686,15 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun addNewPlace(name: String, idSupplierOfFloatingButtonClicked: Long?) {
         viewModelScope.launch {
             idSupplierOfFloatingButtonClicked?.let { supplierId ->
-                val currentMaxId = _uiState.value.mapArticleInSupplierStore.maxOfOrNull { it.idPlace } ?: 0
+                val currentMaxId =
+                    _uiState.value.mapArticleInSupplierStore.maxOfOrNull { it.idPlace } ?: 0
 
                 val newPlace = MapArticleInSupplierStore(
                     idPlace = currentMaxId + 1,
                     namePlace = name,
                     idSupplierOfStore = supplierId,
-                    inRightOfPlace = false ,
-                    itClassement = (currentMaxId + 1) .toInt()
+                    inRightOfPlace = false,
+                    itClassement = (currentMaxId + 1).toInt()
                 )
 
 
@@ -1587,13 +1704,14 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 // Mettre à jour l'état local
                 _uiState.update { currentState ->
                     currentState.copy(
-                        mapArticleInSupplierStore = currentState.mapArticleInSupplierStore + listOf(newPlace)
+                        mapArticleInSupplierStore = currentState.mapArticleInSupplierStore + listOf(
+                            newPlace
+                        )
                     )
                 }
             }
         }
     }
-
 
 
     fun moveArticlesToSupplier(
@@ -1608,7 +1726,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     _uiState.update { currentState ->
                         val updatedArticles = currentState.groupeurBonCommendToSupplierTabele.map {
                             if (it.vid == article.vid) {
-                                it.copy(idSupplierTSA = toSupp.toInt(), itsInFindedAskSupplierSA = false)
+                                it.copy(
+                                    idSupplierTSA = toSupp.toInt(),
+                                    itsInFindedAskSupplierSA = false
+                                )
                             } else it
                         }
                         currentState.copy(groupeurBonCommendToSupplierTabele = updatedArticles)
@@ -1643,9 +1764,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
+
     fun reorderSuppliers(firstClickedSupplierId: Long, secondClickedSupplierId: Long) {
         val currentSuppliers = _uiState.value.tabelleSuppliersSA
-        val reorderedSuppliers = reorderSuppliers(currentSuppliers, firstClickedSupplierId, secondClickedSupplierId)
+        val reorderedSuppliers =
+            reorderSuppliers(currentSuppliers, firstClickedSupplierId, secondClickedSupplierId)
 
         // Mettre à jour le classement en fonction de la nouvelle position
         val updatedSuppliers = reorderedSuppliers.mapIndexed { index, supplier ->
@@ -1663,7 +1786,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private fun reorderSuppliers(suppliers: List<TabelleSuppliersSA>, fromSupplierId: Long, toSupplierId: Long): List<TabelleSuppliersSA> {
+    private fun reorderSuppliers(
+        suppliers: List<TabelleSuppliersSA>,
+        fromSupplierId: Long,
+        toSupplierId: Long
+    ): List<TabelleSuppliersSA> {
         val mutableList = suppliers.toMutableList()
 
         // Always move supplier with ID 10 to the beginning
@@ -1701,23 +1828,36 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
 
-
     /*1->Section Creat + Handel IMGs Articles -------------------*/
 
-    fun updateAndCalculateAuthersField(textFieldValue: String, columnToChange: String, article: DataBaseArticles) {
+    fun updateAndCalculateAuthersField(
+        textFieldValue: String,
+        columnToChange: String,
+        article: DataBaseArticles
+    ) {
         val updatedArticle = article.copy().apply {
             // Update the specific field
             when (columnToChange) {
                 "nomArticleFinale" -> nomArticleFinale = textFieldValue
                 "nmbrUnite" -> nmbrUnite = textFieldValue.toIntOrNull() ?: nmbrUnite
-                "clienPrixVentUnite" -> clienPrixVentUnite = textFieldValue.toDoubleOrNull() ?: clienPrixVentUnite
+                "clienPrixVentUnite" -> clienPrixVentUnite =
+                    textFieldValue.toDoubleOrNull() ?: clienPrixVentUnite
+
                 "monPrixVent" -> monPrixVent = textFieldValue.toDoubleOrNull() ?: monPrixVent
                 "monBenfice" -> monBenfice = textFieldValue.toDoubleOrNull() ?: monBenfice
-                "benificeClient" -> benificeClient = textFieldValue.toDoubleOrNull() ?: benificeClient
+                "benificeClient" -> benificeClient =
+                    textFieldValue.toDoubleOrNull() ?: benificeClient
+
                 "monPrixAchat" -> monPrixAchat = textFieldValue.toDoubleOrNull() ?: monPrixAchat
-                "monPrixAchatUniter" -> monPrixAchatUniter = textFieldValue.toDoubleOrNull() ?: monPrixAchatUniter
-                "monPrixVentUniter" -> monPrixVentUniter = textFieldValue.toDoubleOrNull() ?: monPrixVentUniter
-                "monBeneficeUniter" -> monBeneficeUniter = textFieldValue.toDoubleOrNull() ?: monBeneficeUniter
+                "monPrixAchatUniter" -> monPrixAchatUniter =
+                    textFieldValue.toDoubleOrNull() ?: monPrixAchatUniter
+
+                "monPrixVentUniter" -> monPrixVentUniter =
+                    textFieldValue.toDoubleOrNull() ?: monPrixVentUniter
+
+                "monBeneficeUniter" -> monBeneficeUniter =
+                    textFieldValue.toDoubleOrNull() ?: monBeneficeUniter
+
                 else -> {
                     Log.w(TAG, "Unhandled column: $columnToChange")
                 }
@@ -1738,18 +1878,21 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
                         benificeClient = prixDeVentTotaleChezClient - monPrixVent
                     }
+
                     "monBenfice" -> {
                         monPrixVent = monBenfice + monPrixAchat
                         monPrixVentUniter = monPrixVent / nmbrUnite
                         monBeneficeUniter = monBenfice / nmbrUnite
                         benificeClient = prixDeVentTotaleChezClient - monPrixVent
                     }
+
                     "benificeClient" -> {
                         monPrixVent = prixDeVentTotaleChezClient - benificeClient
                         monBenfice = monPrixVent - monPrixAchat
                         monPrixVentUniter = monPrixVent / nmbrUnite
                         monBeneficeUniter = monBenfice / nmbrUnite
                     }
+
                     "monPrixAchat" -> {
                         monPrixAchatUniter = monPrixAchat / nmbrUnite
                         monBenfice = monPrixVent - monPrixAchat
@@ -1757,6 +1900,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
                         benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
                     }
+
                     "monPrixAchatUniter" -> {
                         monPrixAchat = monPrixAchatUniter * nmbrUnite
                         monBenfice = monPrixVent - monPrixAchat
@@ -1764,12 +1908,14 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         benficeTotaleEntreMoiEtClien = prixDeVentTotaleChezClient - monPrixAchat
                         benificeTotaleEn2 = benficeTotaleEntreMoiEtClien / 2
                     }
+
                     "monPrixVentUniter" -> {
                         monPrixVent = monPrixVentUniter * nmbrUnite
                         monBenfice = monPrixVent - monPrixAchat
                         monBeneficeUniter = monPrixVentUniter - monPrixAchatUniter
                         benificeClient = prixDeVentTotaleChezClient - monPrixVent
                     }
+
                     "monBeneficeUniter" -> {
                         monBenfice = monBeneficeUniter * nmbrUnite
                         monPrixVentUniter = monPrixAchatUniter + monBeneficeUniter
@@ -1809,7 +1955,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         return Transaction.success(mutableData)
                     }
 
-                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                    override fun onComplete(
+                        error: DatabaseError?,
+                        committed: Boolean,
+                        dataSnapshot: DataSnapshot?
+                    ) {
                         if (error != null) {
                             handleError("Failed to update article in Firebase", error.toException())
                         } else {
@@ -1823,6 +1973,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
+
     fun toggleAffichageUniteState(article: DataBaseArticles) {
         val updatedArticle = article.copy(affichageUniteState = !article.affichageUniteState)
 
@@ -1849,6 +2000,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
+
     private fun updateLocalAndFireBaseArticle(updatedArticle: DataBaseArticles) {
         _uiState.update { state ->
             val updatedArticles = state.articlesBaseDonneECB.map {
@@ -1868,7 +2020,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         return Transaction.success(mutableData)
                     }
 
-                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+                    override fun onComplete(
+                        error: DatabaseError?,
+                        committed: Boolean,
+                        dataSnapshot: DataSnapshot?
+                    ) {
                         if (error != null) {
                             handleError("Failed to update article in Firebase", error.toException())
                         } else {
@@ -1882,6 +2038,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
+
     fun isFirstArticle(id: Int): Boolean {
         return _uiState.value.articlesBaseDonneECB.firstOrNull()?.idArticle == id
     }
@@ -1889,6 +2046,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun isLastArticle(id: Int): Boolean {
         return _uiState.value.articlesBaseDonneECB.lastOrNull()?.idArticle == id
     }
+
     fun updateCurrentEditedArticle(article: DataBaseArticles?) {
         _currentEditedArticle.value = article
     }
@@ -1916,7 +2074,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             val storageRef = Firebase.storage.reference.child("Images Articles Data Base/$fileName")
             //TODO fait que les operations soit enregstre don une list a chaque foit termine il se coche check termine et aller au prochen pour le converti et update le stoage
             try {
-                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
+                updateUploadProgressBarCounterAndItText(
+                    "setImagesInStorageFireBase",
+                    totalSteps,
+                    100f
+                )
 
 
                 // Convert image to WebP format
@@ -1931,22 +2093,35 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 // Upload the WebP image
                 val uploadTask = storageRef.putBytes(webpImage)
 
-                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
+                updateUploadProgressBarCounterAndItText(
+                    "setImagesInStorageFireBase",
+                    totalSteps,
+                    100f
+                )
 
 //                uploadTask.addOnProgressListener { taskSnapshot ->
 //                    val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount)
 //                    updateProgressWithDelay(progress.toFloat())
 //                }.await()
 
-                val downloadUrl = storageRef.downloadUrl.await() //TODO pk le sortie n ai pas on webp
+                val downloadUrl =
+                    storageRef.downloadUrl.await() //TODO pk le sortie n ai pas on webp
                 //HeadOfViewModels         D  Image uploaded successfully: 1066_1.jpg, URL: https://firebasestorage.googleapis.com/v0/b/abdelwahab-jemla-com.appspot.com/o/Images%20Articles%20Data%20Base%2F1066_1.jpg?alt=media&token=611f4ed5-d094-496d-ba9e-23bdd42f7388
                 Log.d(TAG, "Image uploaded successfully: $fileName, URL: $downloadUrl")
 
-                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
+                updateUploadProgressBarCounterAndItText(
+                    "setImagesInStorageFireBase",
+                    totalSteps,
+                    100f
+                )
 
             } catch (e: Exception) {
                 handleError("Failed to upload image", e)
-                updateUploadProgressBarCounterAndItText("setImagesInStorageFireBase", totalSteps, 100f)
+                updateUploadProgressBarCounterAndItText(
+                    "setImagesInStorageFireBase",
+                    totalSteps,
+                    100f
+                )
             }
         }
     }
@@ -2009,7 +2184,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Int {
         val (height: Int, width: Int) = options.run { outHeight to outWidth }
         var inSampleSize = 1
 
@@ -2029,7 +2208,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         Log.e(TAG, "$message: ${exception.message}")
         // You might want to update your UI or error state here
     }
-
 
 
     private suspend fun copyImage(sourceUri: Uri, fileName: String) {
@@ -2057,8 +2235,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
 
-
-
     suspend fun addNewParentArticle(uri: Uri, category: CategoriesTabelleECB): DataBaseArticles {
         return withContext(Dispatchers.IO) {
             try {
@@ -2080,7 +2256,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private suspend fun updateClassementsArticlesTabel(article: DataBaseArticles, category: CategoriesTabelleECB) {
+    private suspend fun updateClassementsArticlesTabel(
+        article: DataBaseArticles,
+        category: CategoriesTabelleECB
+    ) {
         try {
             val classementsArticle = ClassementsArticlesTabel(
                 idArticle = article.idArticle.toLong(),
@@ -2094,17 +2273,23 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                 diponibilityState = article.diponibilityState
             )
 
-            refClassmentsArtData.child(article.idArticle.toString()).setValue(classementsArticle).await()
-            Log.d(TAG, "ClassementsArticlesTabel updated successfully for article: ${article.idArticle}")
+            refClassmentsArtData.child(article.idArticle.toString()).setValue(classementsArticle)
+                .await()
+            Log.d(
+                TAG,
+                "ClassementsArticlesTabel updated successfully for article: ${article.idArticle}"
+            )
         } catch (e: Exception) {
             handleError("Failed to update ClassementsArticlesTabel", e)
         }
     }
+
     fun getCategoryByName(categoryName: String): CategoriesTabelleECB {
         return uiState.value.categoriesECB.find { it.nomCategorieInCategoriesTabele == categoryName }
             ?: throw IllegalArgumentException("Category not found: $categoryName")
     }
-    private  fun calculateNewClassementCate(category: CategoriesTabelleECB): Double {
+
+    private fun calculateNewClassementCate(category: CategoriesTabelleECB): Double {
         return (uiState.value.articlesBaseDonneECB
             .filter { it.nomCategorie == category.nomCategorieInCategoriesTabele }
             .minOfOrNull { it.classementCate }
@@ -2112,7 +2297,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             ?: 0.0)
     }
 
-    private fun createNewArticle(newId: Int, category: CategoriesTabelleECB, newClassementCate: Double): DataBaseArticles {
+    private fun createNewArticle(
+        newId: Int,
+        category: CategoriesTabelleECB,
+        newClassementCate: Double
+    ): DataBaseArticles {
         return DataBaseArticles(
             idArticle = newId,
             nomArticleFinale = "New Article $newId",
@@ -2166,7 +2355,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    private fun updateArticleWithNewColor(article: DataBaseArticles, colorField: String): DataBaseArticles {
+    private fun updateArticleWithNewColor(
+        article: DataBaseArticles,
+        colorField: String
+    ): DataBaseArticles {
         return article.copy(
             // Update both color name and ID based on the colorField
             couleur2 = if (colorField == "couleur2") "Couleur_2" else article.couleur2,
@@ -2191,7 +2383,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
         return (articles.maxOrNull() ?: 0) + 1
     }
-
 
 
     private suspend fun ensureNewArticlesCategoryExists() {
@@ -2233,8 +2424,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     }
 
     private fun deleteColorImage(articleId: Int, colorIndex: Int) {
-        val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
-        val uniteImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_Unite"
+        val baseImagePath =
+            "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_${colorIndex}"
+        val uniteImagePath =
+            "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${articleId}_Unite"
 
         val storageImgsRef = Firebase.storage.reference.child("Images Articles Data Base")
 
@@ -2307,7 +2500,8 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
     fun processNewImage(uri: Uri, article: DataBaseArticles, colorIndex: Int) {
         viewModelScope.launch {
             try {
-                val fileName = "${article.idArticle}_${if (colorIndex == 0) "Unite" else colorIndex}.jpg"
+                val fileName =
+                    "${article.idArticle}_${if (colorIndex == 0) "Unite" else colorIndex}.jpg"
                 copyImage(uri, fileName)
 
                 val updatedArticle = when (colorIndex) {
@@ -2367,7 +2561,10 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                     refTabelleSupplierArticlesRecived.removeValue()
 
                     refSoldArticlesTabelle.get().addOnSuccessListener { snapshot ->
-                        Log.d(TAG, "Total entries in soldArticlesTabelle: ${snapshot.childrenCount}")
+                        Log.d(
+                            TAG,
+                            "Total entries in soldArticlesTabelle: ${snapshot.childrenCount}"
+                        )
 
                         val soldArticles = snapshot.children.mapNotNull {
                             it.getValue(SoldArticlesTabelle::class.java)
@@ -2401,21 +2598,32 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
                         }
 
                         // Process with intiAuthersFieldFromAuthersModels before saving
-                        val completeGroupedArticles = intiAuthersFieldFromAuthersModels(groupedArticles)
+                        val completeGroupedArticles =
+                            intiAuthersFieldFromAuthersModels(groupedArticles)
 
                         completeGroupedArticles.forEach { articleData ->
                             refTabelleSupplierArticlesRecived
                                 .child(articleData.vid.toString())
                                 .setValue(articleData)
                                 .addOnSuccessListener {
-                                    Log.d(TAG, "Successfully saved grouped article: ${articleData.nameArticle} with VID: ${articleData.vid}")
+                                    Log.d(
+                                        TAG,
+                                        "Successfully saved grouped article: ${articleData.nameArticle} with VID: ${articleData.vid}"
+                                    )
                                 }
                                 .addOnFailureListener { e ->
-                                    Log.e(TAG, "Failed to save grouped article: ${articleData.nameArticle} with VID: ${articleData.vid}", e)
+                                    Log.e(
+                                        TAG,
+                                        "Failed to save grouped article: ${articleData.nameArticle} with VID: ${articleData.vid}",
+                                        e
+                                    )
                                 }
                         }
 
-                        Log.d(TAG, "Completed supplier command creation: ${completeGroupedArticles.size} grouped articles saved")
+                        Log.d(
+                            TAG,
+                            "Completed supplier command creation: ${completeGroupedArticles.size} grouped articles saved"
+                        )
                     }.addOnFailureListener { e ->
                         Log.e(TAG, "Failed to fetch sold articles data", e)
                     }
@@ -2428,6 +2636,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             }
         }
     }
+
     private fun intiAuthersFieldFromAuthersModels(groupedArticles: List<GroupeurBonCommendToSupplierTabele>): List<GroupeurBonCommendToSupplierTabele> {
         return groupedArticles.map { article ->
             // Find corresponding article in database
@@ -2437,19 +2646,23 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
             // Find color names from ColorsArticles
             val color1Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor1 }?.nameColore ?: ""
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor1 }?.nameColore
+                    ?: ""
             } ?: ""
 
             val color2Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor2 }?.nameColore ?: ""
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor2 }?.nameColore
+                    ?: ""
             } ?: ""
 
             val color3Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor3 }?.nameColore ?: ""
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor3 }?.nameColore
+                    ?: ""
             } ?: ""
 
             val color4Name = correspondingArticle?.let { baseArticle ->
-                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor4 }?.nameColore ?: ""
+                _uiState.value.colorsArticles.find { it.idColore == baseArticle.idcolor4 }?.nameColore
+                    ?: ""
             } ?: ""
 
             // Calculate total quantity
@@ -2472,6 +2685,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             )
         }
     }
+
     private fun generate(correspondingArticle: DataBaseArticles?): Int {
         if (correspondingArticle == null) {
             return 10 // Default value if correspondingArticle is null
@@ -2529,7 +2743,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
             val supplierArticlesRecived = fetchSupplierArticles()
             Log.d(TAG, "Fetched ${supplierArticlesRecived.size} supplier articles")
-            updateUploadProgressBarCounterAndItText("Fetched supplier articles", ++currentStep, 100f)
+            updateUploadProgressBarCounterAndItText(
+                "Fetched supplier articles",
+                ++currentStep,
+                100f
+            )
 
             val suppliersSA = fetchSuppliers()
             Log.d(TAG, "Fetched ${suppliersSA.size} suppliers")
@@ -2541,7 +2759,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
             val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
             Log.d(TAG, "Fetched ${placesOfArticelsInEacheSupplierSrore.size} supplier store places")
-            updateUploadProgressBarCounterAndItText("Fetched supplier store places", ++currentStep, 100f)
+            updateUploadProgressBarCounterAndItText(
+                "Fetched supplier store places",
+                ++currentStep,
+                100f
+            )
 
             val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
             Log.d(TAG, "Fetched ${placesOfArticelsInCamionette.size} van places")
@@ -2549,7 +2771,11 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
             val articlesAcheteModele = fetchArticlesAcheteModele()
             Log.d(TAG, "Fetched ${articlesAcheteModele.size} purchased articles")
-            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
+            updateUploadProgressBarCounterAndItText(
+                "Fetched purchased articles",
+                ++currentStep,
+                100f
+            )
 
             val soldArticlesTabelle = fetchSoldArticlesTabelle()
             Log.d(TAG, "Fetched ${soldArticlesTabelle.size} sold articles")
@@ -2697,7 +2923,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun updateUiState(
         articles: List<DataBaseArticles>,
-        categories : List<CategoriesTabelleECB>,
+        categories: List<CategoriesTabelleECB>,
         supplierArticlesRecived: List<GroupeurBonCommendToSupplierTabele>,
         suppliersSA: List<TabelleSuppliersSA>,
         mapArticleInSupplierStore: List<MapArticleInSupplierStore>,
@@ -2709,23 +2935,26 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         soldArticlesTabelle: List<SoldArticlesTabelle>,
         appSettingsSaverModel: List<AppSettingsSaverModel>,
 
-    ) {
-        _uiState.update { it.copy(
-            appSettingsSaverModel = appSettingsSaverModel,
-            articlesBaseDonneECB = articles,
-            categoriesECB = categories,
-            groupeurBonCommendToSupplierTabele = supplierArticlesRecived,
-            tabelleSuppliersSA = suppliersSA,
-            mapArticleInSupplierStore = mapArticleInSupplierStore,
-            placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
-            placesOfArticelsInCamionette=placesOfArticelsInCamionette,
-            articlesAcheteModele =articlesAcheteModele,
-            soldArticlesTabelle =soldArticlesTabelle,
-            colorsArticles =colorsArticles,
-            clientsList =clientsList  ,
-            isLoading = false
-        ) }
+        ) {
+        _uiState.update {
+            it.copy(
+                appSettingsSaverModel = appSettingsSaverModel,
+                articlesBaseDonneECB = articles,
+                categoriesECB = categories,
+                groupeurBonCommendToSupplierTabele = supplierArticlesRecived,
+                tabelleSuppliersSA = suppliersSA,
+                mapArticleInSupplierStore = mapArticleInSupplierStore,
+                placesOfArticelsInEacheSupplierSrore = placesOfArticelsInEacheSupplierSrore,
+                placesOfArticelsInCamionette = placesOfArticelsInCamionette,
+                articlesAcheteModele = articlesAcheteModele,
+                soldArticlesTabelle = soldArticlesTabelle,
+                colorsArticles = colorsArticles,
+                clientsList = clientsList,
+                isLoading = false
+            )
+        }
     }
+
     init {
         viewModelScope.launch {
             initDataFromFirebase()
