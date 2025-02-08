@@ -92,26 +92,34 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 enum class FieldsDisplayer(val fields: List<Triple<String, String, Boolean>>) {
-    TOP_ROW(listOf(
-        Triple("clienPrixVentUnite", "c.pU", true),
-        Triple("nmbrCaron", "n.c", true),
-        Triple("nmbrUnite", "n.u", true),
-    )),
-    PrixAchats(listOf(
-        Triple("monPrixAchatUniter", "U/", true),
-        Triple("monPrixAchat", "m.pA>", true)
-    )),
-    BenficesEntre(listOf(
-        Triple("benificeTotaleEn2", "b.E2", false),
-        Triple("benficeTotaleEntreMoiEtClien", "b.EN", false)
-    )),
+    TOP_ROW(
+        listOf(
+            Triple("clienPrixVentUnite", "c.pU", true),
+            Triple("nmbrCaron", "n.c", true),
+            Triple("nmbrUnite", "n.u", true),
+        )
+    ),
+    PrixAchats(
+        listOf(
+            Triple("monPrixAchatUniter", "U/", true),
+            Triple("monPrixAchat", "m.pA>", true)
+        )
+    ),
+    BenficesEntre(
+        listOf(
+            Triple("benificeTotaleEn2", "b.E2", false),
+            Triple("benficeTotaleEntreMoiEtClien", "b.EN", false)
+        )
+    ),
     Benfices(listOf(Triple("benificeClient", "b.c", false))),
-    MonPrixVent(listOf(
-        Triple("monPrixVentUniter", "u/", false),
-        Triple("monPrixVent", "M.P.V", false)
-    )) ,
+    MonPrixVent(
+        listOf(
+            Triple("monPrixVentUniter", "u/", false),
+            Triple("monPrixVent", "M.P.V", false)
+        )
+    ),
     NomArticle(listOf(Triple("nomArticleFinale", "", true))),
-    Categorie(listOf(Triple("nomCategorie", "", true) )),
+    Categorie(listOf(Triple("nomCategorie", "", true))),
 }
 
 @Composable
@@ -150,7 +158,8 @@ fun ArticleDetailWindow(
                         onReloadTrigger()
                     } catch (e: Exception) {
                         Log.e("ArticleDetailWindow", "Failed to add new article", e)
-                        Toast.makeText(context, "Failed to add new article", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Failed to add new article", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
             }
@@ -210,14 +219,15 @@ fun ArticleDetailWindow(
                                     when (fieldsGroup) {
                                         FieldsDisplayer.Categorie -> {
                                             DisplayCategoryField(
-                                                uiState=uiState,
+                                                uiState = uiState,
                                                 viewModel = viewModel,
-                                                article = article ,
+                                                article = article,
                                                 onWentToUpdateDataBaseArt = {
                                                     viewModel.updateCurrentEditedArticle(article)
                                                 }
                                             )
                                         }
+
                                         FieldsDisplayer.BenficesEntre, FieldsDisplayer.Benfices, FieldsDisplayer.MonPrixVent -> {
                                             if (!isNewArticle) {
                                                 DisplayField(
@@ -230,11 +240,14 @@ fun ArticleDetailWindow(
                                                     modifier = Modifier
                                                         .weight(1f)
                                                         .height(67.dp),
-                                                    onValueChanged = { currentChangingField = column },
+                                                    onValueChanged = {
+                                                        currentChangingField = column
+                                                    },
                                                     uiState = uiState
                                                 )
                                             }
                                         }
+
                                         else -> {
                                             DisplayField(
                                                 columnToChange = column,
@@ -283,7 +296,11 @@ fun ArticleDetailWindow(
                         onClick = {
                             if (!isFirstArticle) {
                                 val previousId = viewModel.getPreviousArticleId(article.idArticle)
-                                viewModel.updateCurrentEditedArticle(viewModel.getArticleById(previousId))
+                                viewModel.updateCurrentEditedArticle(
+                                    viewModel.getArticleById(
+                                        previousId
+                                    )
+                                )
                                 localReloadTrigger++
                                 currentChangingField = ""
                                 onReloadTrigger()
@@ -359,6 +376,7 @@ fun DisplayField(
                 uiState = uiState
             )
         }
+
         else -> {
             InfoBoxWhithVoiceInpute(
                 columnToChange = columnToChange,
@@ -370,6 +388,7 @@ fun DisplayField(
         }
     }
 }
+
 @Composable
 fun DisplayCategoryField(
     article: DataBaseArticles,
@@ -411,6 +430,7 @@ fun DisplayCategoryField(
         )
     }
 }
+
 @Composable
 fun CategorySelectionWindow(
     categories: List<CategoriesTabelleECB>,
@@ -570,7 +590,9 @@ fun InfoBoxWhithVoiceInpute(
     modifier: Modifier = Modifier
 ) {
     val displayValue = when (val columnValue = article.getColumnValue(columnToChange)) {
-        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt().toString() else String.format("%.1f", columnValue)
+        is Double -> if (columnValue % 1 == 0.0) columnValue.toInt()
+            .toString() else String.format("%.1f", columnValue)
+
         is Int -> columnValue.toString()
         else -> columnValue?.toString() ?: ""
     }
@@ -596,7 +618,6 @@ fun InfoBoxWhithVoiceInpute(
 }
 
 
-
 @Composable
 fun OutlineTextECB(
     columnToChange: String,
@@ -608,10 +629,12 @@ fun OutlineTextECB(
     onValueChanged: (String) -> Unit,
     uiState: CreatAndEditeInBaseDonnRepositeryModels
 ) {
-   val categories = uiState.categoriesECB
-    var textFieldValue by remember { mutableStateOf(
-        article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
-    ) }
+    val categories = uiState.categoriesECB
+    var textFieldValue by remember {
+        mutableStateOf(
+            article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
+        )
+    }
     val textValue = if (currentChangingField == columnToChange) textFieldValue else ""
     val labelValue = article.getColumnValue(columnToChange)?.toString()?.replace(',', '.') ?: ""
     val roundedValue = when {
@@ -661,7 +684,6 @@ fun OutlineTextECB(
 }
 
 
-
 @Composable
 private fun rememberCameraLauncher(
     viewModel: HeadOfViewModels,
@@ -692,38 +714,39 @@ fun AddArticleButton(
     viewModel: HeadOfViewModels,
     category: CategoriesTabelleECB,
     onNewArticleAdded: (DataBaseArticles) -> Unit,
-    takeFloatingButton:Boolean =false
+    takeFloatingButton: Boolean = false
 ) {
     val context = LocalContext.current
     val cameraLauncher = rememberCameraLauncher(viewModel, category, onNewArticleAdded)
-   if (takeFloatingButton) {
-       FloatingActionButton(
-           onClick = {
-               viewModel.tempImageUri = viewModel.createTempImageUri(context)
-               viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
-           },
-           modifier = Modifier.padding(end = 16.dp)
-       ) {
-           Icon(Icons.Default.Add, contentDescription = "Add Article")
-       }
-   }  else {
-       IconButton(
-           onClick = {
-               viewModel.tempImageUri = viewModel.createTempImageUri(context)
-               viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
-           },
-           modifier = Modifier.padding(end = 16.dp)
-       ) {
-           Icon(Icons.Default.Add, contentDescription = "Add Article")
-       }
-   }
+    if (takeFloatingButton) {
+        FloatingActionButton(
+            onClick = {
+                viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+            },
+            modifier = Modifier.padding(end = 16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add Article")
+        }
+    } else {
+        IconButton(
+            onClick = {
+                viewModel.tempImageUri = viewModel.createTempImageUri(context)
+                viewModel.tempImageUri?.let { cameraLauncher.launch(it) }
+            },
+            modifier = Modifier.padding(end = 16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add Article")
+        }
+    }
 }
 
 @Composable
-fun DisplayColorsCards(article: DataBaseArticles, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
-                       onDismiss: () -> Unit,
-                       onReloadTrigger: () -> Unit,
-                       relodeTigger: Int
+fun DisplayColorsCards(
+    article: DataBaseArticles, viewModel: HeadOfViewModels, modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+    onReloadTrigger: () -> Unit,
+    relodeTigger: Int
 ) {
     val context = LocalContext.current
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -802,6 +825,7 @@ fun DisplayColorsCards(article: DataBaseArticles, viewModel: HeadOfViewModels, m
         }
     }
 }
+
 @Composable
 fun ArticleToggleButton(
     article: DataBaseArticles,
@@ -823,6 +847,7 @@ fun ArticleToggleButton(
         )
     }
 }
+
 @Composable
 private fun AddColorCard(
     onClickCreatUniteImages: () -> Unit,
@@ -857,7 +882,6 @@ private fun AddColorCard(
         }
     }
 }
-
 
 
 @Composable
@@ -969,7 +993,8 @@ fun ColorCard(
                                     ecraseLeDernie = true
                                 )
                                 // Update emoji when color is selected
-                                val selectedColorData = colorsList.find { it.nameColore == selectedColor }
+                                val selectedColorData =
+                                    colorsList.find { it.nameColore == selectedColor }
                                 selectedColorData?.iconColore?.let { emojiValue = it }
                             },
                             modifier = Modifier
@@ -1037,8 +1062,10 @@ fun DisplayeImageECB(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val baseImagePath = "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${if (index == -1) "Unite" else (index + 1)}"
-    val viewModelImagePath = "${viewModel.viewModelImagesPath}/${article.idArticle}_${if (index == -1) "Unite" else (index + 1)}"
+    val baseImagePath =
+        "/storage/emulated/0/Abdelwahab_jeMla.com/IMGs/BaseDonne/${article.idArticle}_${if (index == -1) "Unite" else (index + 1)}"
+    val viewModelImagePath =
+        "${viewModel.viewModelImagesPath}/${article.idArticle}_${if (index == -1) "Unite" else (index + 1)}"
 
     val imageExist by remember(article.idArticle, reloadKey) {
         mutableStateOf(
