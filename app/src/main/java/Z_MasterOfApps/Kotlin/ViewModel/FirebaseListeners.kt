@@ -3,6 +3,7 @@ package Z_MasterOfApps.Kotlin.ViewModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
+import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import android.util.Log
 import com.google.firebase.Firebase
@@ -13,16 +14,18 @@ import com.google.firebase.database.database
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 object FirebaseListeners {
     private const val TAG = "FirebaseListeners"
     private var productsListener: ValueEventListener? = null
     private var clientsListener: ValueEventListener? = null
     private var grossistsListener: ValueEventListener? = null
-    val firebaseDatabase = Firebase.database
+    private val firebaseDatabase = Firebase.database
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private var jetPackExportListener: ValueEventListener? = null
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
+    private var colorsArticlesListener: ValueEventListener? = null
 
     fun setupRealtimeListeners(viewModel: ViewModelInitApp) {
         Log.d(TAG, "Setting up real-time listeners...")
@@ -30,7 +33,69 @@ object FirebaseListeners {
         setupClientsListener(viewModel)
         setupGrossistsListener(viewModel)
         setupJetPackExportListener() // Add this line
+        setupColorsArticlesListener(viewModel)
     }
+
+    private fun setupColorsArticlesListener(viewModel: ViewModelInitApp) {
+        colorsArticlesListener?.let { refColorsArticles.removeEventListener(it) }
+
+        colorsArticlesListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val colors = mutableListOf<D_CouleursEtGoutesProduitsInfos>()
+                        snapshot.children.forEach { colorSnap ->
+                            val colorId = colorSnap.key?.toLongOrNull() ?: return@forEach
+
+                            // Create color info object
+                            val colorInfo = D_CouleursEtGoutesProduitsInfos(
+                                id = colorId,
+                                infosDeBase = D_CouleursEtGoutesProduitsInfos.InfosDeBase(
+                                    nom = colorSnap.child("nom").getValue(String::class.java) ?: "Non Defini",
+                                    imogi = colorSnap.child("imogi").getValue(String::class.java) ?: "🎨"
+                                ),
+                                statuesMutable = D_CouleursEtGoutesProduitsInfos.StatuesMutable(
+                                    classmentDonsParentList = colorSnap.child("classmentDonsParentList")
+                                        .getValue(Long::class.java) ?: 0,
+                                    sonImageNeExistPas = colorSnap.child("sonImageNeExistPas")
+                                        .getValue(Boolean::class.java) ?: false,
+                                    caRefDonAncienDataBase = "H_ColorsArticles"
+                                )
+                            )
+                            colors.add(colorInfo)
+
+                            // Sync with D_CouleursEtGoutesProduitsInfos reference
+                            try {
+                                D_CouleursEtGoutesProduitsInfos.caReference.child(colorId.toString())
+                                    .setValue(colorInfo)
+                                    .await()
+                                Log.d(TAG, "Synced color $colorId to D_CouleursEtGoutesProduitsInfos")
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Failed to sync color $colorId to D_CouleursEtGoutesProduitsInfos", e)
+                            }
+                        }
+
+                        // Update the viewModel's color list
+                        viewModel.modelAppsFather.couleursProduitsInfos.apply {
+                            clear()
+                            addAll(colors)
+                        }
+                        Log.d(TAG, "Colors updated: ${colors.size} items")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error updating colors", e)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Colors articles listener cancelled: ${error.message}")
+            }
+        }
+
+        refColorsArticles.addValueEventListener(colorsArticlesListener!!)
+    }
+
+
 
     private fun setupJetPackExportListener() {
         jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
@@ -87,31 +152,34 @@ object FirebaseListeners {
 
         refDBJetPackExport.addValueEventListener(jetPackExportListener!!)
     }
+
     fun handleColorUpdate(
         productSnapshot: DataSnapshot,
         product: A_ProduitModel
     ): A_ProduitModel {
         // Get all potential color IDs from the snapshot
         val colorNames = listOfNotNull(
-            productSnapshot.child("couleur1").getValue(String::class.java),
-            productSnapshot.child("couleur2").getValue(String::class.java),
-            productSnapshot.child("couleur3").getValue(String::class.java),
-            productSnapshot.child("couleur4").getValue(String::class.java),
-
+            productSnapshot.child("idcolor1").getValue(Long::class.java),
+            productSnapshot.child("idcolor2").getValue(Long::class.java),
+            productSnapshot.child("idcolor3").getValue(Long::class.java),
+            productSnapshot.child("idcolor4").getValue(Long::class.java)
         )
 
         // Process each color ID
-        colorNames.forEach { color ->
+        colorNames.forEach { colorId ->
             // Check if this color already exists in the product's colors
-         //   val colorExists = product.statuesBase.coloursEtGoutsIds.any { it == color }
+            val colorExists = product.statuesBase.coloursEtGoutsIds.any { it == colorId }
 
+            // If color doesn't exist, add it to the ids
+            if (!colorExists && colorId > 0) {
+                // Create a new list with the added color since coloursEtGoutsIds is immutable
+                product.statuesBase.coloursEtGoutsIds += colorId
+            }
         }
-
-        // Update the product's status to indicate it has colors with images if any colors exist
-        product.statuesBase.ilAUneCouleurAvecImage = product.coloursEtGouts.isNotEmpty()
 
         return product
     }
+
     private fun setupProductsListener(viewModel: ViewModelInitApp) {
         productsListener?.let { _ModelAppsFather.produitsFireBaseRef.removeEventListener(it) }
 

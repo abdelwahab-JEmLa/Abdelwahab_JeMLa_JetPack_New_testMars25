@@ -169,7 +169,7 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
                         }
                     }
                 }
-
+                
                 couleursProduitsInfos.clear()
                 if (headModels != null) {
                     val node = headModels.child("D_CouleursEtGoutesProduitsInfos")
@@ -177,28 +177,21 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
                         couleursProduitsInfos.add(
                             D_CouleursEtGoutesProduitsInfos(
                                 id = 1,
-                                infosDeBase =  D_CouleursEtGoutesProduitsInfos.InfosDeBase(
-                                      //-->
-                                      //TODO(1): regle
-                                ),
-                                statuesMutable =  D_CouleursEtGoutesProduitsInfos.StatuesMutable(
-                                    //-->
-                                    //TODO(1): regle
-                                ),
                             )
                         )
                     } else {
                         node.children.forEach { snap ->
                             try {
-                                val map = snap.value as? Map<*, *> ?: return@forEach
                                 D_CouleursEtGoutesProduitsInfos(
                                     id = snap.key?.toLongOrNull() ?: return@forEach,
                                 ).apply {
                                     snap.child("infosDeBase")
-                                        .getValue(D_CouleursEtGoutesProduitsInfos.InfosDeBase::class.java)?.let {
-                                         //-->
-                                         //TODO(1): regle
-
+                                        .getValue(D_CouleursEtGoutesProduitsInfos.InfosDeBase::class.java)?.let { infosDeBase ->
+                                            this.infosDeBase = infosDeBase
+                                        }
+                                    snap.child("statuesMutable")
+                                        .getValue(D_CouleursEtGoutesProduitsInfos.StatuesMutable::class.java)?.let { statuesMutable ->
+                                            this.statuesMutable = statuesMutable
                                         }
                                     couleursProduitsInfos.add(this)
                                 }

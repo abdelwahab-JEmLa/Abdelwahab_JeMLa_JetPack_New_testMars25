@@ -54,10 +54,12 @@ open class _ModelAppsFather(
         }
 
     companion object {
-        val ref_HeadOfModels = Firebase.database
+         val firebaseDatabase = Firebase.database
+
+        val ref_HeadOfModels = firebaseDatabase
             .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
 
-        val produitsFireBaseRef = Firebase.database
+        val produitsFireBaseRef = firebaseDatabase
             .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
             .child("produits")
         val imagesProduitsFireBaseStorageRef = Firebase.storage.reference

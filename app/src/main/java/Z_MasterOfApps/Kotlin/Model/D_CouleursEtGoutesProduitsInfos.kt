@@ -1,11 +1,10 @@
 package Z_MasterOfApps.Kotlin.Model
 
+import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import android.util.Log
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.Firebase
 import com.google.firebase.database.IgnoreExtraProperties
-import com.google.firebase.database.database
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -19,6 +18,7 @@ data class D_CouleursEtGoutesProduitsInfos(
         var nom: String = "Non Defini",
         var imogi: String = "🎨",
     )
+
     @IgnoreExtraProperties
     data class StatuesMutable(
         var classmentDonsParentList: Long = 0,
@@ -27,7 +27,7 @@ data class D_CouleursEtGoutesProduitsInfos(
     )
 
     companion object {
-        private val caReference = Firebase.database
+         val caReference = firebaseDatabase
             .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
             .child("D_CouleursEtGoutesProduitsInfos")
 
