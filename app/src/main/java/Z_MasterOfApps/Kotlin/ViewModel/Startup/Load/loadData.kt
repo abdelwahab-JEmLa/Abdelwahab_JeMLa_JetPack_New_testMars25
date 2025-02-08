@@ -1,11 +1,11 @@
-package Z_MasterOfApps.Kotlin.ViewModel.Init.Init
+package Z_MasterOfApps.Kotlin.ViewModel.Startup.Load
 
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
-import Z_MasterOfApps.Kotlin.ViewModel.FirebaseListeners
+import Z_MasterOfApps.Kotlin.ViewModel.Startup.FirebaseListeners.AncienDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
@@ -45,7 +45,7 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
         } ?: false
 
         val snapshots = if (isOnline) {
-            FirebaseListeners.setupRealtimeListeners(viewModel)
+            AncienDataBase.setupRealtimeListeners(viewModel)
             refs.map { it.get().await() }
         } else {
             FirebaseDatabase.getInstance().goOffline()
