@@ -1,7 +1,6 @@
 package com.example.abdelwahabjemlajetpack
 
 import Z_MasterOfApps.Kotlin.ViewModel.Init.Init.initializeFirebase
-import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -86,7 +85,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -298,7 +296,6 @@ fun MainScreen(
 
 @Composable
 fun AppNavHost(
-    viewModelInitApp: ViewModelInitApp = viewModel(),
     navController: NavHostController,
     database: AppDatabase,
     viewModels: AppViewModels,
@@ -331,7 +328,7 @@ fun AppNavHost(
             "dialogeDisplayeDetailleChanger updated: $dialogeDisplayeDetailleChanger"
         )
     }
-    if (viewModelInitApp.isLoading) {
+    if (viewModels.headOfViewModels.viewModelInitApp.isLoading) {
         CircularProgressIndicator(
             modifier = Modifier
                 .size(48.dp),

@@ -1,5 +1,7 @@
 package a_MainAppCompnents
 
+import Z_MasterOfApps.Kotlin.ViewModel.Init.Init.loadData
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import a_MainAppCompnents.Models.AppSettingsSaverModel
 import a_MainAppCompnents.Models.DaySoldBonsModel
 import android.content.Context
@@ -11,6 +13,9 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,7 +41,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -68,6 +72,7 @@ class HeadOfViewModels(
     private val context: Context,
     private val categoriesDao: CategoriesTabelleECBDao
 ) : ViewModel() {
+    var viewModelInitApp by mutableStateOf(ViewModelInitApp())
 
     val _uiState = MutableStateFlow(CreatAndEditeInBaseDonnRepositeryModels())
     val uiState = _uiState.asStateFlow()
@@ -2449,17 +2454,9 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         }
     }
 
-    init {
-        viewModelScope.launch {
-            initDataFromFirebase()
-        }
-    }
-
-
-
     private suspend fun initDataFromFirebase() {
         try {
-            Timber.d("Starting Firebase data initialization")
+            Log.d(TAG, "Starting Firebase data initialization")
             _uiState.update { it.copy(isLoading = true) }
             currentStep = 0
             totalSteps = 10
@@ -2467,166 +2464,182 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             updateUploadProgressBarCounterAndItText("Starting data fetch", ++currentStep, 0f)
 
             val articles = fetchArticles()
-            Timber.d("Fetched ${articles.size} articles")
+            Log.d(TAG, "Fetched ${articles.size} articles")
             updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
             val categories = categoriesDao.getAllCategoriesList()
-            Timber.d("Fetched ${categories.size} categories")
-            updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
+            Log.d(TAG, "Fetched ${categories.size} categories")
+            updateUploadProgressBarCounterAndItText("Fetched categories", ++currentStep, 100f)
 
             val colorsArticles = fetchColorsArticles()
-            Timber.d("Fetched ${colorsArticles.size} color articles")
+            Log.d(TAG, "Fetched ${colorsArticles.size} color articles")
             updateUploadProgressBarCounterAndItText("Fetched colors", ++currentStep, 100f)
 
             val supplierArticlesRecived = fetchSupplierArticles()
-            Timber.d("Fetched ${supplierArticlesRecived.size} supplier articles")
+            Log.d(TAG, "Fetched ${supplierArticlesRecived.size} supplier articles")
             updateUploadProgressBarCounterAndItText("Fetched supplier articles", ++currentStep, 100f)
 
             val suppliersSA = fetchSuppliers()
-            Timber.d("Fetched ${suppliersSA.size} suppliers")
+            Log.d(TAG, "Fetched ${suppliersSA.size} suppliers")
             updateUploadProgressBarCounterAndItText("Fetched suppliers", ++currentStep, 100f)
 
             val mapArticleInSupplierStore = fetchMapArticleInSupplierStore()
-            Timber.d("Fetched ${mapArticleInSupplierStore.size} article mappings")
+            Log.d(TAG, "Fetched ${mapArticleInSupplierStore.size} article mappings")
             updateUploadProgressBarCounterAndItText("Fetched article map", ++currentStep, 100f)
 
             val placesOfArticelsInEacheSupplierSrore = fetchPlacesOfArticelsInEacheSupplierSrore()
-            Timber.d("Fetched ${placesOfArticelsInEacheSupplierSrore.size} supplier store places")
+            Log.d(TAG, "Fetched ${placesOfArticelsInEacheSupplierSrore.size} supplier store places")
             updateUploadProgressBarCounterAndItText("Fetched supplier store places", ++currentStep, 100f)
 
             val placesOfArticelsInCamionette = fetchPlacesOfArticelsInCamionette()
-            Timber.d("Fetched ${placesOfArticelsInCamionette.size} van places")
-            updateUploadProgressBarCounterAndItText("Fetched camionette places", ++currentStep, 100f)
+            Log.d(TAG, "Fetched ${placesOfArticelsInCamionette.size} van places")
+            updateUploadProgressBarCounterAndItText("Fetched van places", ++currentStep, 100f)
 
             val articlesAcheteModele = fetchArticlesAcheteModele()
-            Timber.d("Fetched ${articlesAcheteModele.size} purchased articles")
+            Log.d(TAG, "Fetched ${articlesAcheteModele.size} purchased articles")
             updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
 
             val soldArticlesTabelle = fetchSoldArticlesTabelle()
-            updateUploadProgressBarCounterAndItText("Fetched purchased articles", ++currentStep, 100f)
-
+            Log.d(TAG, "Fetched ${soldArticlesTabelle.size} sold articles")
+            updateUploadProgressBarCounterAndItText("Fetched sold articles", ++currentStep, 100f)
 
             val clientsList = fetchClientsList()
+            Log.d(TAG, "Fetched ${clientsList.size} clients")
             updateUploadProgressBarCounterAndItText("Fetched clients", ++currentStep, 100f)
 
             val appSettingsSaverModel = fetchAppSettingsSaverModel()
-
-
+            Log.d(TAG, "Fetched ${appSettingsSaverModel.size} app settings")
 
             updateUiState(
                 articles, categories, supplierArticlesRecived, suppliersSA,
                 mapArticleInSupplierStore, placesOfArticelsInEacheSupplierSrore,
-                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList,soldArticlesTabelle ,appSettingsSaverModel
+                placesOfArticelsInCamionette, articlesAcheteModele, colorsArticles, clientsList,
+                soldArticlesTabelle, appSettingsSaverModel
             )
-            Timber.d("UI state updated successfully")
+            Log.d(TAG, "UI state updated successfully")
             updateUploadProgressBarCounterAndItText("Data fetch complete", totalSteps, 100f)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to load data from Firebase: ${e.message}")
+            Log.e(TAG, "Failed to load data from Firebase", e)
             handleError("Failed to load data from Firebase", e)
         } finally {
-            Timber.d("Firebase initialization completed")
+            Log.d(TAG, "Firebase initialization completed")
             _uiState.update { it.copy(isLoading = false) }
         }
     }
-    private suspend fun fetchAppSettingsSaverModel() =try {
+
+    private suspend fun fetchAppSettingsSaverModel() = try {
+        Log.d(TAG, "Starting app settings fetch")
         refAppSettingsSaverModel.get().await().children
             .mapNotNull { it.getValue(AppSettingsSaverModel::class.java) }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} app settings") }
     } catch (e: Exception) {
+        Log.e(TAG, "Error fetching app settings", e)
         emptyList()
     }
+
     private suspend fun fetchArticles() = try {
-        Timber.d("Fetching articles from Firebase")
+        Log.d(TAG, "Starting articles fetch from Firebase")
         refDBJetPackExport.get().await().children.mapNotNull { snapshot ->
             snapshot.getValue(DataBaseArticles::class.java)?.apply {
                 idArticle = snapshot.key?.toIntOrNull() ?: 0
             }
-        }.also { Timber.d("Successfully fetched ${it.size} articles") }
+        }.also {
+            Log.d(TAG, "Successfully fetched ${it.size} articles")
+        }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching articles: ${e.message}")
+        Log.e(TAG, "Error fetching articles", e)
         emptyList()
     }
 
     private suspend fun fetchColorsArticles() = try {
-        Timber.d("Fetching color articles")
+        Log.d(TAG, "Starting color articles fetch")
         refColorsArticles.get().await().children
             .mapNotNull { it.getValue(ColorsArticles::class.java) }
-            .also { Timber.d("Successfully fetched ${it.size} color articles") }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} color articles") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching color articles: ${e.message}")
+        Log.e(TAG, "Error fetching color articles", e)
         emptyList()
     }
 
     private suspend fun fetchSuppliers() = try {
-        Timber.d("Fetching suppliers")
+        Log.d(TAG, "Starting suppliers fetch")
         refTabelleSuppliersSA.get().await().children
             .mapNotNull { it.getValue(TabelleSuppliersSA::class.java) }
-            .sortedBy{ it.classmentSupplier }
-            .also { Timber.d("Successfully fetched ${it.size} suppliers") }
+            .sortedBy { it.classmentSupplier }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} suppliers") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching suppliers: ${e.message}")
+        Log.e(TAG, "Error fetching suppliers", e)
         emptyList()
     }
 
     private suspend fun fetchMapArticleInSupplierStore() = try {
-        Timber.d("Fetching article supplier store mapping")
+        Log.d(TAG, "Starting article supplier store mapping fetch")
         refMapArticleInSupplierStore.get().await().children
             .mapNotNull { it.getValue(MapArticleInSupplierStore::class.java) }
             .sortedBy { it.itClassement }
-            .also { Timber.d("Successfully fetched ${it.size} article mappings") }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} article mappings") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching article mappings: ${e.message}")
+        Log.e(TAG, "Error fetching article mappings", e)
         emptyList()
     }
 
     private suspend fun fetchSupplierArticles() = try {
-        Timber.d("Fetching supplier articles")
+        Log.d(TAG, "Starting supplier articles fetch")
         refTabelleSupplierArticlesRecived.get().await().children
             .mapNotNull { it.getValue(GroupeurBonCommendToSupplierTabele::class.java) }
-            .also { Timber.d("Successfully fetched ${it.size} supplier articles") }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} supplier articles") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching supplier articles: ${e.message}")
+        Log.e(TAG, "Error fetching supplier articles", e)
         emptyList()
     }
 
     private suspend fun fetchPlacesOfArticelsInEacheSupplierSrore() = try {
-        Timber.d("Fetching supplier store places")
+        Log.d(TAG, "Starting supplier store places fetch")
         refPlacesOfArticelsInEacheSupplierSrore.get().await().children
             .mapNotNull { it.getValue(PlacesOfArticelsInEacheSupplierSrore::class.java) }
-            .also { Timber.d("Successfully fetched ${it.size} supplier store places") }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} supplier store places") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching supplier store places: ${e.message}")
+        Log.e(TAG, "Error fetching supplier store places", e)
         emptyList()
     }
 
     private suspend fun fetchPlacesOfArticelsInCamionette() = try {
-        Timber.d("Fetching van places")
+        Log.d(TAG, "Starting van places fetch")
         refPlacesOfArticelsInCamionette.get().await().children
             .mapNotNull { it.getValue(PlacesOfArticelsInCamionette::class.java) }
-            .also { Timber.d("Successfully fetched ${it.size} van places") }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} van places") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching van places: ${e.message}")
+        Log.e(TAG, "Error fetching van places", e)
         emptyList()
     }
 
     private suspend fun fetchArticlesAcheteModele() = try {
-        Timber.d("Fetching purchased articles")
+        Log.d(TAG, "Starting purchased articles fetch")
         refArticlesAcheteModele.get().await().children
             .mapNotNull { it.getValue(ArticlesAcheteModele::class.java) }
-            .also { Timber.d("Successfully fetched ${it.size} purchased articles") }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} purchased articles") }
     } catch (e: Exception) {
-        Timber.e(e, "Error fetching purchased articles: ${e.message}")
+        Log.e(TAG, "Error fetching purchased articles", e)
         emptyList()
     }
+
     private suspend fun fetchSoldArticlesTabelle() = try {
+        Log.d(TAG, "Starting sold articles fetch")
         refSoldArticlesTabelle.get().await().children
             .mapNotNull { it.getValue(SoldArticlesTabelle::class.java) }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} sold articles") }
     } catch (e: Exception) {
+        Log.e(TAG, "Error fetching sold articles", e)
         emptyList()
     }
+
     private suspend fun fetchClientsList() = try {
+        Log.d(TAG, "Starting clients fetch")
         refClientsList.get().await().children
             .mapNotNull { it.getValue(ClientsList::class.java) }
+            .also { Log.d(TAG, "Successfully fetched ${it.size} clients") }
     } catch (e: Exception) {
+        Log.e(TAG, "Error fetching clients", e)
         emptyList()
     }
 
@@ -2661,6 +2674,14 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             isLoading = false
         ) }
     }
+    init {
+        viewModelScope.launch {
+            initDataFromFirebase()
+            loadData(viewModelInitApp)
+
+        }
+    }
 }
+
 
 

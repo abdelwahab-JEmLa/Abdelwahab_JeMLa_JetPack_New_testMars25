@@ -104,7 +104,6 @@ dependencies {
 
     implementation (libs.compose)
     implementation( libs.gson)
-    implementation (libs.timber)
 
     // OSMDroid dependencies
     implementation(libs.osmdroid.android)

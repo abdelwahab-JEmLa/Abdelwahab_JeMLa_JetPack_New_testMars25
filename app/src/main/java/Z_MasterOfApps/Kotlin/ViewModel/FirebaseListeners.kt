@@ -35,24 +35,35 @@ object FirebaseListeners {
         jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
 
         jetPackExportListener = object : ValueEventListener {
+            private val lastKnownValues = mutableMapOf<String, Pair<Double, Double>>()
+
             override fun onDataChange(snapshot: DataSnapshot) {
                 snapshot.children.forEach { productSnapshot ->
                     val productId = productSnapshot.key ?: return@forEach
-                    val prixAchat = productSnapshot.child("monPrixAchat").getValue(Double::class.java) ?: 0.0
-                    val prixVent = productSnapshot.child("monPrixVent").getValue(Double::class.java) ?: 0.0
+                    val newPrixAchat = productSnapshot.child("monPrixAchat").getValue(Double::class.java) ?: 0.0
+                    val newPrixVent = productSnapshot.child("monPrixVent").getValue(Double::class.java) ?: 0.0
 
-                    val updates = hashMapOf<String, Any>(
-                        "statuesBase/infosCoutes/monPrixAchat" to prixAchat,
-                        "statuesBase/infosCoutes/monPrixVent" to prixVent
-                    )
+                    // Check if values have actually changed before updating
+                    val lastValues = lastKnownValues[productId]
+                    if (lastValues?.first != newPrixAchat || lastValues.second != newPrixVent) {
+                        // Update only if values have changed
+                        val updates = hashMapOf<String, Any>(
+                            "statuesBase/infosCoutes/monPrixAchat" to newPrixAchat,
+                            "statuesBase/infosCoutes/monPrixVent" to newPrixVent
+                        )
 
-                    _ModelAppsFather.produitsFireBaseRef.child(productId).updateChildren(updates)
-                        .addOnSuccessListener {
-                            Log.d(TAG, "Updated InfosCoutes for product $productId")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e(TAG, "Error updating InfosCoutes for product $productId", e)
-                        }
+                        _ModelAppsFather.produitsFireBaseRef.child(productId).updateChildren(updates)
+                            .addOnSuccessListener {
+                                Log.d(TAG, "Updated InfosCoutes for product $productId: PrixAchat=$newPrixAchat, PrixVent=$newPrixVent")
+                                // Update the last known values after successful update
+                                lastKnownValues[productId] = Pair(newPrixAchat, newPrixVent)
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Error updating InfosCoutes for product $productId", e)
+                            }
+                    } else {
+                        Log.d(TAG, "No changes detected for product $productId, skipping update")
+                    }
                 }
             }
 
