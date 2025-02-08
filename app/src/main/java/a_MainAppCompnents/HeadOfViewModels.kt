@@ -2678,7 +2678,6 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
         viewModelScope.launch {
             initDataFromFirebase()
             loadData(viewModelInitApp)
-
         }
     }
 }
