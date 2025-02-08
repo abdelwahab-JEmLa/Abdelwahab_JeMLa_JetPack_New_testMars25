@@ -47,29 +47,67 @@ object FirebaseListeners {
                         snapshot.children.forEach { colorSnap ->
                             val colorId = colorSnap.key?.toLongOrNull() ?: return@forEach
 
-                            // Create color info object
+                            // Log the raw data from H_ColorsArticles using the correct field names
+                            val rawName = colorSnap.child("nameColore").getValue(String::class.java)
+                            val rawIcon = colorSnap.child("iconColore").getValue(String::class.java)
+                            val rawClassement = colorSnap.child("classementColore").getValue(Long::class.java)
+
+                            Log.d(TAG, "Raw color data for ID $colorId: nameColore=$rawName, iconColore=$rawIcon, classement=$rawClassement")
+
+                            // Create color info object with proper field mapping
                             val colorInfo = D_CouleursEtGoutesProduitsInfos(
                                 id = colorId,
                                 infosDeBase = D_CouleursEtGoutesProduitsInfos.InfosDeBase(
-                                    nom = colorSnap.child("nom").getValue(String::class.java) ?: "Non Defini",
-                                    imogi = colorSnap.child("imogi").getValue(String::class.java) ?: "🎨"
+                                    nom = rawName?.takeIf { it.isNotBlank() } ?: run {
+                                        Log.w(TAG, "Color $colorId has empty or null nameColore, using default")
+                                        "Non Defini"
+                                    },
+                                    imogi = rawIcon?.takeIf { it.isNotBlank() } ?: run {
+                                        Log.w(TAG, "Color $colorId has empty or null iconColore, using default")
+                                        "🎨"
+                                    }
                                 ),
                                 statuesMutable = D_CouleursEtGoutesProduitsInfos.StatuesMutable(
-                                    classmentDonsParentList = colorSnap.child("classmentDonsParentList")
-                                        .getValue(Long::class.java) ?: 0,
-                                    sonImageNeExistPas = colorSnap.child("sonImageNeExistPas")
-                                        .getValue(Boolean::class.java) ?: false,
+                                    classmentDonsParentList = rawClassement ?: 0,
+                                    sonImageNeExistPas = false,
                                     caRefDonAncienDataBase = "H_ColorsArticles"
                                 )
                             )
+
+                            // Log the final color info object
+                            Log.d(TAG, "Created color info for ID $colorId: ${colorInfo.infosDeBase}")
                             colors.add(colorInfo)
 
-                            // Sync with D_CouleursEtGoutesProduitsInfos reference
+                            // Sync with D_CouleursEtGoutesProduitsInfos reference with verification
                             try {
-                                D_CouleursEtGoutesProduitsInfos.caReference.child(colorId.toString())
-                                    .setValue(colorInfo)
+                                // First check if color already exists in new location
+                                val existingColorTask = D_CouleursEtGoutesProduitsInfos.caReference
+                                    .child(colorId.toString())
+                                    .get()
                                     .await()
-                                Log.d(TAG, "Synced color $colorId to D_CouleursEtGoutesProduitsInfos")
+
+                                if (existingColorTask.exists()) {
+                                    val existingNom = existingColorTask.child("infosDeBase/nom")
+                                        .getValue(String::class.java)
+
+                                    // Only update if the existing name is "Non Defini" and we have a better name
+                                    if (existingNom == "Non Defini" && rawName?.isNotBlank() == true) {
+                                        D_CouleursEtGoutesProduitsInfos.caReference
+                                            .child(colorId.toString())
+                                            .setValue(colorInfo)
+                                            .await()
+                                        Log.d(TAG, "Updated existing color $colorId with better name: $rawName")
+                                    } else {
+                                        Log.d(TAG, "Keeping existing color $colorId with name: $existingNom")
+                                    }
+                                } else {
+                                    // If color doesn't exist in new location, create it
+                                    D_CouleursEtGoutesProduitsInfos.caReference
+                                        .child(colorId.toString())
+                                        .setValue(colorInfo)
+                                        .await()
+                                    Log.d(TAG, "Created new color $colorId in D_CouleursEtGoutesProduitsInfos")
+                                }
                             } catch (e: Exception) {
                                 Log.e(TAG, "Failed to sync color $colorId to D_CouleursEtGoutesProduitsInfos", e)
                             }
@@ -94,8 +132,6 @@ object FirebaseListeners {
 
         refColorsArticles.addValueEventListener(colorsArticlesListener!!)
     }
-
-
 
     private fun setupJetPackExportListener() {
         jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
