@@ -19,8 +19,10 @@ object FirebaseListeners {
     private var productsListener: ValueEventListener? = null
     private var clientsListener: ValueEventListener? = null
     private var grossistsListener: ValueEventListener? = null
-    private val refDBJetPackExport = Firebase.database.getReference("e_DBJetPackExport")
+    val firebaseDatabase = Firebase.database
+    private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private var jetPackExportListener: ValueEventListener? = null
+    private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
 
     fun setupRealtimeListeners(viewModel: ViewModelInitApp) {
         Log.d(TAG, "Setting up real-time listeners...")
@@ -30,7 +32,6 @@ object FirebaseListeners {
         setupJetPackExportListener() // Add this line
     }
 
-    // Add this function to setup the new listener
     private fun setupJetPackExportListener() {
         jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
 
@@ -46,20 +47,32 @@ object FirebaseListeners {
                     // Check if values have actually changed before updating
                     val lastValues = lastKnownValues[productId]
                     if (lastValues?.first != newPrixAchat || lastValues.second != newPrixVent) {
-                        // Update only if values have changed
-                        val updates = hashMapOf<String, Any>(
-                            "statuesBase/infosCoutes/monPrixAchat" to newPrixAchat,
-                            "statuesBase/infosCoutes/monPrixVent" to newPrixVent
-                        )
+                        // Find the corresponding product in the database
+                        _ModelAppsFather.produitsFireBaseRef.child(productId).get()
+                            .addOnSuccessListener { productDbSnapshot ->
+                                val product = productDbSnapshot.getValue(A_ProduitModel::class.java)
+                                if (product != null) {
+                                    // Handle color updates
+                                    val updatedProduct = handleColorUpdate(productSnapshot, product)
 
-                        _ModelAppsFather.produitsFireBaseRef.child(productId).updateChildren(updates)
-                            .addOnSuccessListener {
-                                Log.d(TAG, "Updated InfosCoutes for product $productId: PrixAchat=$newPrixAchat, PrixVent=$newPrixVent")
-                                // Update the last known values after successful update
-                                lastKnownValues[productId] = Pair(newPrixAchat, newPrixVent)
+                                    // Update prices
+                                    updatedProduct.statuesBase.infosCoutes.monPrixAchat = newPrixAchat
+                                    updatedProduct.statuesBase.infosCoutes.monPrixVent = newPrixVent
+
+                                    // Save updates to Firebase
+                                    _ModelAppsFather.produitsFireBaseRef.child(productId)
+                                        .setValue(updatedProduct)
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "Updated product $productId: PrixAchat=$newPrixAchat, PrixVent=$newPrixVent")
+                                            lastKnownValues[productId] = Pair(newPrixAchat, newPrixVent)
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e(TAG, "Error updating product $productId", e)
+                                        }
+                                }
                             }
                             .addOnFailureListener { e ->
-                                Log.e(TAG, "Error updating InfosCoutes for product $productId", e)
+                                Log.e(TAG, "Error fetching product $productId", e)
                             }
                     } else {
                         Log.d(TAG, "No changes detected for product $productId, skipping update")
@@ -74,7 +87,31 @@ object FirebaseListeners {
 
         refDBJetPackExport.addValueEventListener(jetPackExportListener!!)
     }
+    fun handleColorUpdate(
+        productSnapshot: DataSnapshot,
+        product: A_ProduitModel
+    ): A_ProduitModel {
+        // Get all potential color IDs from the snapshot
+        val colorNames = listOfNotNull(
+            productSnapshot.child("couleur1").getValue(String::class.java),
+            productSnapshot.child("couleur2").getValue(String::class.java),
+            productSnapshot.child("couleur3").getValue(String::class.java),
+            productSnapshot.child("couleur4").getValue(String::class.java),
 
+        )
+
+        // Process each color ID
+        colorNames.forEach { color ->
+            // Check if this color already exists in the product's colors
+         //   val colorExists = product.statuesBase.coloursEtGoutsIds.any { it == color }
+
+        }
+
+        // Update the product's status to indicate it has colors with images if any colors exist
+        product.statuesBase.ilAUneCouleurAvecImage = product.coloursEtGouts.isNotEmpty()
+
+        return product
+    }
     private fun setupProductsListener(viewModel: ViewModelInitApp) {
         productsListener?.let { _ModelAppsFather.produitsFireBaseRef.removeEventListener(it) }
 

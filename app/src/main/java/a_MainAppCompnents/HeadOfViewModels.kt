@@ -1168,22 +1168,39 @@ class HeadOfViewModels(
      * ------------------------------------------------*/
 
     fun updateColorName(article: DataBaseArticles, index: Int, newColorName: String, ecraseLeDernie: Boolean = false) {
+        // Find existing color to get its ID
+        val existingColor = _uiState.value.colorsArticles.find { it.nameColore == newColorName }
+        val colorId = existingColor?.idColore ?:
+        (_uiState.value.colorsArticles.maxOfOrNull { it.idColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1)
+
+        // Update both color name and ID based on index
         val updatedArticle = when (index) {
-            0 -> article.copy(couleur1 = newColorName)
-            1 -> article.copy(couleur2 = newColorName)
-            2 -> article.copy(couleur3 = newColorName)
-            3 -> article.copy(couleur4 = newColorName)
+            0 -> article.copy(
+                couleur1 = newColorName,
+                idcolor1 = colorId
+            )
+            1 -> article.copy(
+                couleur2 = newColorName,
+                idcolor2 = colorId
+            )
+            2 -> article.copy(
+                couleur3 = newColorName,
+                idcolor3 = colorId
+            )
+            3 -> article.copy(
+                couleur4 = newColorName,
+                idcolor4 = colorId
+            )
             else -> article
         }
 
         // Update the article in the database
         refDBJetPackExport.child(updatedArticle.idArticle.toString()).setValue(updatedArticle)
 
-        // Update or add the color to ColorsArticles
-        val existingColor = _uiState.value.colorsArticles.find { it.nameColore == newColorName }
+        // Update or add the color to ColorsArticles if it doesn't exist
         if (existingColor == null) {
             val newColor = ColorsArticles(
-                idColore = _uiState.value.colorsArticles.maxOfOrNull { it.idColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1,
+                idColore = colorId,
                 nameColore = newColorName,
                 classementColore = _uiState.value.colorsArticles.maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
             )
@@ -1194,10 +1211,22 @@ class HeadOfViewModels(
         _currentEditedArticle.update { currentArticle ->
             if (currentArticle?.idArticle == article.idArticle) {
                 when (index) {
-                    0 -> currentArticle.copy(couleur1 = newColorName)
-                    1 -> currentArticle.copy(couleur2 = newColorName)
-                    2 -> currentArticle.copy(couleur3 = newColorName)
-                    3 -> currentArticle.copy(couleur4 = newColorName)
+                    0 -> currentArticle.copy(
+                        couleur1 = newColorName,
+                        idcolor1 = colorId
+                    )
+                    1 -> currentArticle.copy(
+                        couleur2 = newColorName,
+                        idcolor2 = colorId
+                    )
+                    2 -> currentArticle.copy(
+                        couleur3 = newColorName,
+                        idcolor3 = colorId
+                    )
+                    3 -> currentArticle.copy(
+                        couleur4 = newColorName,
+                        idcolor4 = colorId
+                    )
                     else -> currentArticle
                 }
             } else {
@@ -1211,7 +1240,7 @@ class HeadOfViewModels(
                 colorsArticles = currentState.colorsArticles.toMutableList().apply {
                     if (existingColor == null) {
                         add(ColorsArticles(
-                            idColore = maxOfOrNull { it.idColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1,
+                            idColore = colorId,
                             nameColore = newColorName,
                             classementColore = maxOfOrNull { it.classementColore }?.plus(if (ecraseLeDernie) 0 else 1) ?: 1
                         ))
@@ -1220,7 +1249,6 @@ class HeadOfViewModels(
             )
         }
     }
-
 /** Places Dialoge[PlacesOfArticelsInCamionette]
  * "PS:To Claude Dont Delet This Comment"*/
 

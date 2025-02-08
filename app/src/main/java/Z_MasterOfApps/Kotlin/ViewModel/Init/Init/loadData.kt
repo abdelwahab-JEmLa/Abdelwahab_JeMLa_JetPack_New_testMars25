@@ -1,9 +1,10 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.Init
 
+import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
+import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.ViewModel.FirebaseListeners
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import com.google.firebase.FirebaseApp
@@ -164,6 +165,44 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
                                 }
                             } catch (e: Exception) {
                                 // Silent catch to skip invalid entries
+                            }
+                        }
+                    }
+                }
+
+                couleursProduitsInfos.clear()
+                if (headModels != null) {
+                    val node = headModels.child("D_CouleursEtGoutesProduitsInfos")
+                    if (!node.exists()) {
+                        couleursProduitsInfos.add(
+                            D_CouleursEtGoutesProduitsInfos(
+                                id = 1,
+                                infosDeBase =  D_CouleursEtGoutesProduitsInfos.InfosDeBase(
+                                      //-->
+                                      //TODO(1): regle
+                                ),
+                                statuesMutable =  D_CouleursEtGoutesProduitsInfos.StatuesMutable(
+                                    //-->
+                                    //TODO(1): regle
+                                ),
+                            )
+                        )
+                    } else {
+                        node.children.forEach { snap ->
+                            try {
+                                val map = snap.value as? Map<*, *> ?: return@forEach
+                                D_CouleursEtGoutesProduitsInfos(
+                                    id = snap.key?.toLongOrNull() ?: return@forEach,
+                                ).apply {
+                                    snap.child("infosDeBase")
+                                        .getValue(D_CouleursEtGoutesProduitsInfos.InfosDeBase::class.java)?.let {
+                                         //-->
+                                         //TODO(1): regle
+
+                                        }
+                                    couleursProduitsInfos.add(this)
+                                }
+                            } catch (_: Exception){
                             }
                         }
                     }

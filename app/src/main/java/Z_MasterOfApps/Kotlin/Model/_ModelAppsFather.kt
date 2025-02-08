@@ -24,9 +24,8 @@ open class _ModelAppsFather(
     var clientDataBase: SnapshotStateList<B_ClientsDataBase> =
         emptyList<B_ClientsDataBase>().toMutableStateList()
 
-    @get:Exclude
-    var grossistsDataBase: SnapshotStateList<C_GrossistsDataBase> =
-        emptyList<C_GrossistsDataBase>().toMutableStateList()
+    @get:Exclude var grossistsDataBase: SnapshotStateList<C_GrossistsDataBase> = emptyList<C_GrossistsDataBase>().toMutableStateList()
+    @get:Exclude var couleursProduitsInfos: SnapshotStateList<D_CouleursEtGoutesProduitsInfos> = emptyList<D_CouleursEtGoutesProduitsInfos>().toMutableStateList()
 
 
     // A_GroupedValues.kt stays the same

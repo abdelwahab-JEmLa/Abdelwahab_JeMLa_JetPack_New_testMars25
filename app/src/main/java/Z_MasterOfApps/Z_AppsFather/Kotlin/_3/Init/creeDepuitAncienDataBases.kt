@@ -55,6 +55,10 @@ fun creeDepuitAncienDataBases(
                                     sonImageNeExistPas = depuitAncienDataBase.itsTempProduit && position == 1L,
                                 )
                             )
+                           /* depuitAncienDataBase.statuesBase.coloursEtGoutsIds.add(     //->
+                                //TODO(FIXME):Fix erreur Unresolved reference: add
+                                colorId
+                            )        */
                             colorsAdded++
                         }
                     }

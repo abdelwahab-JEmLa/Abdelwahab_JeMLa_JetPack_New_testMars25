@@ -33,6 +33,8 @@ class A_ProduitModel(
     var statuesBase: StatuesBase by mutableStateOf(StatuesBase())
     @IgnoreExtraProperties
     class StatuesBase(
+        var coloursEtGoutsIds: List<Long> = emptyList(),
+
         var ilAUneCouleurAvecImage: Boolean = false,
         var characterProduit: CharacterProduit = CharacterProduit(),
         var infosCoutes: InfosCoutes = InfosCoutes(),
