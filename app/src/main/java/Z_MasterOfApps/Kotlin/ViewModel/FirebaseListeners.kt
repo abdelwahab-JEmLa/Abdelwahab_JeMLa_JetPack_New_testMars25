@@ -26,6 +26,7 @@ object FirebaseListeners {
     private var jetPackExportListener: ValueEventListener? = null
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
     private var colorsArticlesListener: ValueEventListener? = null
+    private val lastKnownColorValues = mutableMapOf<Long, D_CouleursEtGoutesProduitsInfos>()
 
     fun setupRealtimeListeners(viewModel: ViewModelInitApp) {
         Log.d(TAG, "Setting up real-time listeners...")
@@ -34,6 +35,119 @@ object FirebaseListeners {
         setupGrossistsListener(viewModel)
         setupJetPackExportListener() // Add this line
         setupColorsArticlesListener(viewModel)
+    }
+    data class ProductState(
+        val prixAchat: Double,
+        val prixVent: Double,
+        val colors: List<Long>
+    )
+    private fun setupJetPackExportListener() {
+        jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
+
+        jetPackExportListener = object : ValueEventListener {
+            private val lastKnownValues = mutableMapOf<String, ProductState>()
+
+
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach { productSnapshot ->
+                    val productId = productSnapshot.key ?: return@forEach
+
+                    // Get new values
+                    val newPrixAchat = productSnapshot.child("monPrixAchat").getValue(Double::class.java) ?: 0.0
+                    val newPrixVent = productSnapshot.child("monPrixVent").getValue(Double::class.java) ?: 0.0
+                    val newColors = listOfNotNull(
+                        productSnapshot.child("idcolor1").getValue(Long::class.java),
+                        productSnapshot.child("idcolor2").getValue(Long::class.java),
+                        productSnapshot.child("idcolor3").getValue(Long::class.java),
+                        productSnapshot.child("idcolor4").getValue(Long::class.java)
+                    )
+
+                    // Get last known state
+                    val lastState = lastKnownValues[productId]
+
+                    // Check if anything has changed
+                    val pricesChanged = lastState?.prixAchat != newPrixAchat ||
+                            lastState.prixVent != newPrixVent
+                    val colorsChanged = lastState?.colors != newColors
+
+                    if (pricesChanged || colorsChanged) {
+                        Log.d(TAG, """
+                        Changes detected for product $productId:
+                        Prices changed: $pricesChanged
+                        - Old PrixAchat: ${lastState?.prixAchat}, New: $newPrixAchat
+                        - Old PrixVent: ${lastState?.prixVent}, New: $newPrixVent
+                        Colors changed: $colorsChanged
+                        - Old colors: ${lastState?.colors}
+                        - New colors: $newColors
+                    """.trimIndent())
+
+                        // Find the corresponding product in the database
+                        _ModelAppsFather.produitsFireBaseRef.child(productId).get()
+                            .addOnSuccessListener { productDbSnapshot ->
+                                val product = productDbSnapshot.getValue(A_ProduitModel::class.java)
+                                if (product != null) {
+                                    var updated = false
+
+                                    // Handle color updates if colors changed
+                                    if (colorsChanged) {
+                                        val beforeColors = product.statuesBase.coloursEtGoutsIds.toList()
+                                        val updatedProduct = handleColorUpdate(productSnapshot, product)
+                                        val afterColors = updatedProduct.statuesBase.coloursEtGoutsIds.toList()
+
+                                        if (beforeColors != afterColors) {
+                                            Log.d(TAG, """
+                                            Color update for product $productId:
+                                            Before: $beforeColors
+                                            After: $afterColors
+                                        """.trimIndent())
+                                            updated = true
+                                        }
+                                    }
+
+                                    // Update prices if they changed
+                                    if (pricesChanged) {
+                                        product.statuesBase.infosCoutes.monPrixAchat = newPrixAchat
+                                        product.statuesBase.infosCoutes.monPrixVent = newPrixVent
+                                        updated = true
+                                    }
+
+                                    // Save updates to Firebase if anything changed
+                                    if (updated) {
+                                        _ModelAppsFather.produitsFireBaseRef.child(productId)
+                                            .setValue(product)
+                                            .addOnSuccessListener {
+                                                Log.d(TAG, "Successfully updated product $productId")
+                                                // Update last known state after successful update
+                                                lastKnownValues[productId] = ProductState(
+                                                    newPrixAchat,
+                                                    newPrixVent,
+                                                    newColors
+                                                )
+                                            }
+                                            .addOnFailureListener { e ->
+                                                Log.e(TAG, "Error updating product $productId", e)
+                                            }
+                                    } else {
+                                        Log.d(TAG, "No actual changes to save for product $productId")
+                                    }
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Error fetching product $productId", e)
+                            }
+                    } else {
+                        Log.d(TAG, "No changes detected for product $productId (prices or colors), skipping update")
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "JetPackExport listener cancelled: ${error.message}")
+            }
+        }
+
+        refDBJetPackExport.addValueEventListener(jetPackExportListener!!)
     }
 
     private fun setupColorsArticlesListener(viewModel: ViewModelInitApp) {
@@ -47,40 +161,48 @@ object FirebaseListeners {
                         snapshot.children.forEach { colorSnap ->
                             val colorId = colorSnap.key?.toLongOrNull() ?: return@forEach
 
-                            // Log the raw data from H_ColorsArticles using the correct field names
+                            // Check if we have seen this color before
+                            val lastKnownColor = lastKnownColorValues[colorId]
+
+                            // Get current values
                             val rawName = colorSnap.child("nameColore").getValue(String::class.java)
                             val rawIcon = colorSnap.child("iconColore").getValue(String::class.java)
                             val rawClassement = colorSnap.child("classementColore").getValue(Long::class.java)
 
-                            Log.d(TAG, "Raw color data for ID $colorId: nameColore=$rawName, iconColore=$rawIcon, classement=$rawClassement")
+                            // Log the comparison with last known values
+                            if (lastKnownColor != null) {
+                                Log.d(TAG, "Color $colorId comparison: " +
+                                        "Previous name=${lastKnownColor.infosDeBase.nom}, New name=$rawName, " +
+                                        "Previous icon=${lastKnownColor.infosDeBase.imogi}, New icon=$rawIcon, " +
+                                        "Previous classement=${lastKnownColor.statuesMutable.classmentDonsParentList}, New classement=$rawClassement")
+                            }
 
-                            // Create color info object with proper field mapping
+                            // Create color info object
                             val colorInfo = D_CouleursEtGoutesProduitsInfos(
                                 id = colorId,
                                 infosDeBase = D_CouleursEtGoutesProduitsInfos.InfosDeBase(
                                     nom = rawName?.takeIf { it.isNotBlank() } ?: run {
                                         Log.w(TAG, "Color $colorId has empty or null nameColore, using default")
-                                        "Non Defini"
+                                        lastKnownColor?.infosDeBase?.nom ?: "Non Defini"
                                     },
                                     imogi = rawIcon?.takeIf { it.isNotBlank() } ?: run {
                                         Log.w(TAG, "Color $colorId has empty or null iconColore, using default")
-                                        "🎨"
+                                        lastKnownColor?.infosDeBase?.imogi ?: "🎨"
                                     }
                                 ),
                                 statuesMutable = D_CouleursEtGoutesProduitsInfos.StatuesMutable(
-                                    classmentDonsParentList = rawClassement ?: 0,
+                                    classmentDonsParentList = rawClassement ?: lastKnownColor?.statuesMutable?.classmentDonsParentList ?: 0,
                                     sonImageNeExistPas = false,
                                     caRefDonAncienDataBase = "H_ColorsArticles"
                                 )
                             )
 
-                            // Log the final color info object
-                            Log.d(TAG, "Created color info for ID $colorId: ${colorInfo.infosDeBase}")
+                            // Update last known values
+                            lastKnownColorValues[colorId] = colorInfo
                             colors.add(colorInfo)
 
-                            // Sync with D_CouleursEtGoutesProduitsInfos reference with verification
+                            // Sync with D_CouleursEtGoutesProduitsInfos reference
                             try {
-                                // First check if color already exists in new location
                                 val existingColorTask = D_CouleursEtGoutesProduitsInfos.caReference
                                     .child(colorId.toString())
                                     .get()
@@ -90,7 +212,6 @@ object FirebaseListeners {
                                     val existingNom = existingColorTask.child("infosDeBase/nom")
                                         .getValue(String::class.java)
 
-                                    // Only update if the existing name is "Non Defini" and we have a better name
                                     if (existingNom == "Non Defini" && rawName?.isNotBlank() == true) {
                                         D_CouleursEtGoutesProduitsInfos.caReference
                                             .child(colorId.toString())
@@ -101,7 +222,6 @@ object FirebaseListeners {
                                         Log.d(TAG, "Keeping existing color $colorId with name: $existingNom")
                                     }
                                 } else {
-                                    // If color doesn't exist in new location, create it
                                     D_CouleursEtGoutesProduitsInfos.caReference
                                         .child(colorId.toString())
                                         .setValue(colorInfo)
@@ -113,7 +233,6 @@ object FirebaseListeners {
                             }
                         }
 
-                        // Update the viewModel's color list
                         viewModel.modelAppsFather.couleursProduitsInfos.apply {
                             clear()
                             addAll(colors)
@@ -133,85 +252,36 @@ object FirebaseListeners {
         refColorsArticles.addValueEventListener(colorsArticlesListener!!)
     }
 
-    private fun setupJetPackExportListener() {
-        jetPackExportListener?.let { refDBJetPackExport.removeEventListener(it) }
-
-        jetPackExportListener = object : ValueEventListener {
-            private val lastKnownValues = mutableMapOf<String, Pair<Double, Double>>()
-
-            override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.children.forEach { productSnapshot ->
-                    val productId = productSnapshot.key ?: return@forEach
-                    val newPrixAchat = productSnapshot.child("monPrixAchat").getValue(Double::class.java) ?: 0.0
-                    val newPrixVent = productSnapshot.child("monPrixVent").getValue(Double::class.java) ?: 0.0
-
-                    // Check if values have actually changed before updating
-                    val lastValues = lastKnownValues[productId]
-                    if (lastValues?.first != newPrixAchat || lastValues.second != newPrixVent) {
-                        // Find the corresponding product in the database
-                        _ModelAppsFather.produitsFireBaseRef.child(productId).get()
-                            .addOnSuccessListener { productDbSnapshot ->
-                                val product = productDbSnapshot.getValue(A_ProduitModel::class.java)
-                                if (product != null) {
-                                    // Handle color updates
-                                    val updatedProduct = handleColorUpdate(productSnapshot, product)
-
-                                    // Update prices
-                                    updatedProduct.statuesBase.infosCoutes.monPrixAchat = newPrixAchat
-                                    updatedProduct.statuesBase.infosCoutes.monPrixVent = newPrixVent
-
-                                    // Save updates to Firebase
-                                    _ModelAppsFather.produitsFireBaseRef.child(productId)
-                                        .setValue(updatedProduct)
-                                        .addOnSuccessListener {
-                                            Log.d(TAG, "Updated product $productId: PrixAchat=$newPrixAchat, PrixVent=$newPrixVent")
-                                            lastKnownValues[productId] = Pair(newPrixAchat, newPrixVent)
-                                        }
-                                        .addOnFailureListener { e ->
-                                            Log.e(TAG, "Error updating product $productId", e)
-                                        }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e(TAG, "Error fetching product $productId", e)
-                            }
-                    } else {
-                        Log.d(TAG, "No changes detected for product $productId, skipping update")
-                    }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "JetPackExport listener cancelled: ${error.message}")
-            }
-        }
-
-        refDBJetPackExport.addValueEventListener(jetPackExportListener!!)
-    }
-
     fun handleColorUpdate(
         productSnapshot: DataSnapshot,
         product: A_ProduitModel
     ): A_ProduitModel {
+        // Get current color IDs
+        val currentColors = product.statuesBase.coloursEtGoutsIds.toSet()
+
         // Get all potential color IDs from the snapshot
-        val colorNames = listOfNotNull(
+        val colorsId = listOfNotNull(
             productSnapshot.child("idcolor1").getValue(Long::class.java),
             productSnapshot.child("idcolor2").getValue(Long::class.java),
             productSnapshot.child("idcolor3").getValue(Long::class.java),
             productSnapshot.child("idcolor4").getValue(Long::class.java)
         )
 
-        // Process each color ID
-        colorNames.forEach { colorId ->
-            // Check if this color already exists in the product's colors
-            val colorExists = product.statuesBase.coloursEtGoutsIds.any { it == colorId }
+        // Log the color update attempt
+        Log.d(TAG, "Color update for product ${product.id}:")
+        Log.d(TAG, "Current colors: $currentColors")
+        Log.d(TAG, "New colors from snapshot: $colorsId")
 
-            // If color doesn't exist, add it to the ids
-            if (!colorExists && colorId > 0) {
-                // Create a new list with the added color since coloursEtGoutsIds is immutable
+        // Process each color ID
+        colorsId.forEach { colorId ->
+            if (colorId > 0 && !currentColors.contains(colorId)) {
+                Log.d(TAG, "Adding new color $colorId to product ${product.id}")
                 product.statuesBase.coloursEtGoutsIds += colorId
             }
         }
+
+        // Log the final state
+        Log.d(TAG, "Final colors for product ${product.id}: ${product.statuesBase.coloursEtGoutsIds}")
 
         return product
     }

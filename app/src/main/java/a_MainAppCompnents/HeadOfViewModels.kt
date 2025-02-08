@@ -2102,6 +2102,7 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
             nomCategorie = category.nomCategorieInCategoriesTabele,
             diponibilityState = "",
             couleur1 = "Couleur 1",
+            idcolor2 = 1L,
             dateCreationCategorie = System.currentTimeMillis().toString(),
             classementCate = newClassementCate,
             funChangeImagsDimention = true
@@ -2150,9 +2151,15 @@ fun updatePlacesOrder(newOrder: List<PlacesOfArticelsInCamionette>) {
 
     private fun updateArticleWithNewColor(article: DataBaseArticles, colorField: String): DataBaseArticles {
         return article.copy(
+            // Update both color name and ID based on the colorField
             couleur2 = if (colorField == "couleur2") "Couleur_2" else article.couleur2,
+            idcolor2 = if (colorField == "couleur2") 2L else article.idcolor2,
+
             couleur3 = if (colorField == "couleur3") "Couleur_3" else article.couleur3,
-            couleur4 = if (colorField == "couleur4") "Couleur_4" else article.couleur4
+            idcolor3 = if (colorField == "couleur3") 3L else article.idcolor3,
+
+            couleur4 = if (colorField == "couleur4") "Couleur_4" else article.couleur4,
+            idcolor4 = if (colorField == "couleur4") 4L else article.idcolor4
         )
     }
 
