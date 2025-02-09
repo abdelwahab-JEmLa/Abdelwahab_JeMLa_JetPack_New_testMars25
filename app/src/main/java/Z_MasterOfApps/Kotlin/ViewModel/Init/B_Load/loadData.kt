@@ -92,7 +92,7 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
             B_ClientsDataBase.refClientsDataBase
         ).onEach { it.keepSynced(true) }
 
-        var isOnline = connectivityMonitor.checkConnectivity()
+        val isOnline = connectivityMonitor.checkConnectivity()
 
         connectivityMonitor.startMonitoring { newState ->
             viewModel.viewModelScope.launch {
