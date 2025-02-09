@@ -10,12 +10,18 @@ import Z_MasterOfApps.Kotlin.ViewModel.Init.C_Compare.CompareUpdate
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 private var isInitialized = false
+private var connectivityCheckJob: Job? = null
 
 fun initializeFirebase(app: FirebaseApp) {
     if (!isInitialized) {
@@ -29,6 +35,28 @@ fun initializeFirebase(app: FirebaseApp) {
     }
 }
 
+private suspend fun checkConnectivity(): Boolean = withTimeoutOrNull(3000L) {
+    val testRef = _ModelAppsFather.produitsFireBaseRef.child("test")
+    testRef.setValue(true).await()
+    testRef.removeValue().await()
+    true
+} ?: false
+
+private fun startConnectivityCheck(scope: CoroutineScope, onConnectionChanged: suspend (Boolean) -> Unit) {
+    connectivityCheckJob?.cancel()
+    connectivityCheckJob = scope.launch {
+        while (isActive) {
+            try {
+                val isOnline = checkConnectivity()
+                onConnectionChanged(isOnline)
+                delay(3000) // Check every 3 seconds
+            } catch (e: Exception) {
+                onConnectionChanged(false)
+            }
+        }
+    }
+}
+
 suspend fun loadData(viewModel: ViewModelInitApp) {
     try {
         viewModel.loadingProgress = 0.1f
@@ -39,13 +67,21 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
             B_ClientsDataBase.refClientsDataBase
         ).onEach { it.keepSynced(true) }
 
-        val isOnline = withTimeoutOrNull(3000L) {
-            refs[1].child("test").setValue(true).await()
-            refs[1].child("test").removeValue().await()
-            true
-        } ?: false
+        var currentOnlineState = checkConnectivity()
 
-        val snapshots = if (isOnline) {
+        val scope = CoroutineScope(Dispatchers.IO + Job())
+        startConnectivityCheck(scope) { isOnline ->
+            if (currentOnlineState != isOnline) {
+                currentOnlineState = isOnline
+                if (isOnline) {
+                    FirebaseDatabase.getInstance().goOnline()
+                } else {
+                    FirebaseDatabase.getInstance().goOffline()
+                }
+            }
+        }
+
+        val snapshots = if (currentOnlineState) {
             FromAncienDataBase.setupRealtimeListeners(viewModel)
             CompareUpdate.setupeCompareUpdateAncienModels()
             refs.map { it.get().await() }
@@ -207,6 +243,9 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
         }
     } catch (e: Exception) {
         viewModel.loadingProgress = -1f
+        connectivityCheckJob?.cancel()
         throw e
+    } finally {
+        connectivityCheckJob?.cancel()
     }
 }
