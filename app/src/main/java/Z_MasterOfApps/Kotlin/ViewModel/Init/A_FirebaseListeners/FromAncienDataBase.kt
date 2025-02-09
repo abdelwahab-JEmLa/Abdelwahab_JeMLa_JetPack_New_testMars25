@@ -1,10 +1,13 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners
 
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
+import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.CurrentModels.setupCurrentModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -14,8 +17,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
-object AncienDataBase {
+object FromAncienDataBase {
     private val firebaseDatabase = Firebase.database
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
     private var jetPackExportListener: ValueEventListener? = null
@@ -27,6 +31,7 @@ object AncienDataBase {
         setupJetPackExportListener()
         setupColorsArticlesListener(viewModel)
         setupCurrentModels(viewModel)
+        setupSuppliersListener   (viewModel)
     }
 
     data class ProductState(
@@ -226,6 +231,83 @@ object AncienDataBase {
 
         return product
     }
+    private fun setupSuppliersListener(viewModel: ViewModelInitApp) {
+        val suppliersListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        snapshot.children.forEach { supplierSnap ->
+                            val supplier = supplierSnap.getValue(TabelleSuppliersSA::class.java) ?: return@forEach
+                            val supplierId = supplier.idSupplierSu
 
+                            // Convert supplier to grossist format
+                            val grossist = C_GrossistsDataBase(
+                                id = supplierId,
+                                nom = supplier.nomSupplierSu.takeIf { it.isNotBlank() }
+                                    ?: supplier.nameInFrenche.takeIf { it.isNotBlank() }
+                                    ?: "Non Defini",
+                                statueDeBase = C_GrossistsDataBase.StatueDeBase(
+                                    couleur = supplier.couleurSu,
+                                    caRefDonAncienDataBase = "F_Suppliers",
+                                    cUnClientTemporaire = !supplier.longTermCredit,
+                                    auFilterFAB = supplier.ignoreItProdects
+                                )
+                            )
+
+                            try {
+                                // Check if grossist already exists in new database
+                                val existingGrossistTask = C_GrossistsDataBase.refClientsDataBase
+                                    .child(supplierId.toString())
+                                    .get()
+                                    .await()
+
+                                if (!existingGrossistTask.exists()) {
+                                    // Only add if doesn't exist
+                                    withContext(Dispatchers.Main) {
+                                        viewModel._modelAppsFather.grossistsDataBase.add(grossist)
+                                    }
+
+                                    C_GrossistsDataBase.refClientsDataBase
+                                        .child(supplierId.toString())
+                                        .setValue(grossist)
+                                        .await()
+                                } else {
+                                    // Update only if the reference is from old database
+                                    val existingGrossist = existingGrossistTask
+                                        .getValue(C_GrossistsDataBase::class.java)
+
+                                    if (existingGrossist?.statueDeBase?.caRefDonAncienDataBase == "F_Suppliers") {
+                                        withContext(Dispatchers.Main) {
+                                            val index = viewModel._modelAppsFather.grossistsDataBase
+                                                .indexOfFirst { it.id == supplierId }
+                                            if (index != -1) {
+                                                viewModel._modelAppsFather.grossistsDataBase[index] = grossist
+                                            }
+                                        }
+
+                                        C_GrossistsDataBase.refClientsDataBase
+                                            .child(supplierId.toString())
+                                            .setValue(grossist)
+                                            .await()
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("FromAncienDataBase", "Error processing supplier $supplierId", e)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("FromAncienDataBase", "Error in suppliers listener", e)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FromAncienDataBase", "Suppliers listener cancelled", error.toException())
+            }
+        }
+
+        // Add the listener to the suppliers reference
+        C_GrossistsDataBase.sonAncienRef.addValueEventListener(suppliersListener)
+    }
 
 }

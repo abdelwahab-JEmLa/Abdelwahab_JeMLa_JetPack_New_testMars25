@@ -1,11 +1,10 @@
 package Z_MasterOfApps.Kotlin.Model
 
+import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import android.util.Log
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.Firebase
 import com.google.firebase.database.IgnoreExtraProperties
-import com.google.firebase.database.database
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -30,7 +29,9 @@ data class C_GrossistsDataBase(
 
     // B_ClientsDataBase.kt - Updated companion object
     companion object {
-        val refClientsDataBase = Firebase.database
+        val sonAncienRef = firebaseDatabase.getReference("F_Suppliers")
+
+        val refClientsDataBase = firebaseDatabase
             .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
             .child("C_GrossistsDataBase")
 

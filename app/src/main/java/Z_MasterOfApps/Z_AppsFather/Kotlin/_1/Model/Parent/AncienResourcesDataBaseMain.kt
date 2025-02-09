@@ -7,7 +7,7 @@ data class AncienResourcesDataBaseMain(
     val clients_List: List<Ancien_ClientsDataBase_Main>
 )
 
-data class ProduitsAncienDataBaseMain internal constructor(
+data class ProduitsAncienDataBaseMain  (
     var idArticle: Long = 0,
     var nomArticleFinale: String = "",
     var classementCate: Double = 0.0,

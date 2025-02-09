@@ -4,7 +4,7 @@ import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.GroupeurBonCommendToSupplierTabele
 import a_MainAppCompnents.HeadOfViewModels
-import a_MainAppCompnents.TabelleSuppliersSA
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent

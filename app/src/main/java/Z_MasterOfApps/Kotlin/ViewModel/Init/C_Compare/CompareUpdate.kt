@@ -4,7 +4,7 @@ import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.ClientsList
-import a_MainAppCompnents.DataBaseArticles
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Parent.ProduitsAncienDataBaseMain
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 
@@ -35,22 +35,22 @@ object CompareUpdate {
                 val product = snap.getValue(A_ProduitModel::class.java) ?: return@forEach
                 val colors = product.coloursEtGoutsList.sortedBy { it.position_Du_Couleur_Au_Produit }
 
-                val convertedProduct = DataBaseArticles(
-                    idArticle = product.id.toInt(),
-                    nomArticleFinale = product.nom,
-                    monPrixAchat = product.statuesBase.infosCoutes.monPrixAchat,
-                    monPrixVent = product.statuesBase.infosCoutes.monPrixVent,
-                    articleHaveUniteImages = !product.statuesBase.naAucunImage,
-                    cartonState = if (product.statuesBase.characterProduit.emballageCartone) "CARTON" else "UNITE",
-                    couleur1 = colors.getOrNull(0)?.nom,
-                    idcolor1 = colors.getOrNull(0)?.id ?: 0,
-                    couleur2 = colors.getOrNull(1)?.nom,
-                    idcolor2 = colors.getOrNull(1)?.id ?: 0,
-                    couleur3 = colors.getOrNull(2)?.nom,
-                    idcolor3 = colors.getOrNull(2)?.id ?: 0,
-                    couleur4 = colors.getOrNull(3)?.nom,
+                val convertedProduct = ProduitsAncienDataBaseMain().apply {
+                    idArticle = product.id
+                    nomArticleFinale = product.nom
+                    monPrixAchat = product.statuesBase.infosCoutes.monPrixAchat
+                    monPrixVent = product.statuesBase.infosCoutes.monPrixVent
+                    articleHaveUniteImages = !product.statuesBase.naAucunImage
+                    cartonState = if (product.statuesBase.characterProduit.emballageCartone) "CARTON" else "UNITE"
+                    couleur1 = colors.getOrNull(0)?.nom
+                    idcolor1 = colors.getOrNull(0)?.id ?: 0
+                    couleur2 = colors.getOrNull(1)?.nom
+                    idcolor2 = colors.getOrNull(1)?.id ?: 0
+                    couleur3 = colors.getOrNull(2)?.nom
+                    idcolor3 = colors.getOrNull(2)?.id ?: 0
+                    couleur4 = colors.getOrNull(3)?.nom
                     idcolor4 = colors.getOrNull(3)?.id ?: 0
-                )
+                }
 
                 refDBJetPackExport.child(productId).setValue(convertedProduct).await()
             }
@@ -60,8 +60,8 @@ object CompareUpdate {
     }
 
     private suspend fun updateClientsDatabase() {
-        val refClientsList = firebaseDatabase.getReference("G_Clients")
         val sourceClientsRef = firebaseDatabase.getReference("0_UiState_3_Host_Package_3_Prototype11Dec/B_ClientsDataBase")
+        val refClientsList = firebaseDatabase.getReference("G_Clients")
 
         try {
             // Get both database snapshots
@@ -93,6 +93,6 @@ object CompareUpdate {
         } catch (e: Exception) {
             throw e
         }
-    }
-
+    }   //-->
+    //TODO(1): ajout une aut fun pour 
 }
