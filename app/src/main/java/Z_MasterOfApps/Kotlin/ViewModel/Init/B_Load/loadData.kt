@@ -1,63 +1,68 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
-import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
-import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
-import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
-import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
+import Z_MasterOfApps.Kotlin.Model.*
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.FromAncienDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.C_Compare.CompareUpdate
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
+import com.google.android.gms.common.GoogleApiAvailability
+import android.content.Context
 
 private var isInitialized = false
 private var connectivityCheckJob: Job? = null
 
-fun initializeFirebase(app: FirebaseApp) {
+fun initializeFirebase(app: FirebaseApp, context: Context) {
     if (!isInitialized) {
         try {
+            // Check Google Play Services availability
+            val availability = GoogleApiAvailability.getInstance()
+            val resultCode = availability.isGooglePlayServicesAvailable(context)
+            if (resultCode != com.google.android.gms.common.ConnectionResult.SUCCESS) {
+                availability.makeGooglePlayServicesAvailable(context)          //->
+                //TODO(FIXME):Fix erreur Type mismatch.
+                //Required:
+                //Activity
+                //Found:
+                //Context
+                return
+            }
+
             FirebaseDatabase.getInstance(app).apply {
                 setPersistenceEnabled(true)
                 setPersistenceCacheSizeBytes(100L * 1024L * 1024L)
             }
             isInitialized = true
-        } catch (_: Exception) {}
-    }
-}
-
-private suspend fun checkConnectivity(): Boolean = withTimeoutOrNull(3000L) {
-    val testRef = _ModelAppsFather.produitsFireBaseRef.child("test")
-    testRef.setValue(true).await()
-    testRef.removeValue().await()
-    true
-} ?: false
-
-private fun startConnectivityCheck(scope: CoroutineScope, onConnectionChanged: suspend (Boolean) -> Unit) {
-    connectivityCheckJob?.cancel()
-    connectivityCheckJob = scope.launch {
-        while (isActive) {
-            try {
-                val isOnline = checkConnectivity()
-                onConnectionChanged(isOnline)
-                delay(3000) // Check every 3 seconds
-            } catch (e: Exception) {
-                onConnectionChanged(false)
-            }
+        } catch (e: Exception) {
+            // Log the error but don't crash
+            e.printStackTrace()
         }
     }
 }
 
-suspend fun loadData(viewModel: ViewModelInitApp) {
+private suspend fun checkConnectivity(context: Context): Boolean = withTimeoutOrNull(3000L) {
+    try {
+        // Verify Google Play Services first
+        val availability = GoogleApiAvailability.getInstance()
+        val resultCode = availability.isGooglePlayServicesAvailable(context)
+        if (resultCode != com.google.android.gms.common.ConnectionResult.SUCCESS) {
+            return@withTimeoutOrNull false
+        }
+
+        val testRef = _ModelAppsFather.produitsFireBaseRef.child("connectivity_test")
+        testRef.setValue(System.currentTimeMillis()).await()
+        testRef.removeValue().await()
+        true
+    } catch (e: Exception) {
+        false
+    }
+} ?: false
+
+suspend fun loadData(viewModel: ViewModelInitApp, context: Context) {
+    var errorOccurred = false
+
     try {
         viewModel.loadingProgress = 0.1f
 
@@ -65,186 +70,151 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
             _ModelAppsFather.ref_HeadOfModels,
             _ModelAppsFather.produitsFireBaseRef,
             B_ClientsDataBase.refClientsDataBase
-        ).onEach { it.keepSynced(true) }
+        )
 
-        var currentOnlineState = checkConnectivity()
+        // Initialize data structures before loading
+        viewModel.modelAppsFather.apply {
+            produitsMainDataBase.clear()
+            clientDataBase.clear()
+            grossistsDataBase.clear()
+            couleursProduitsInfos.clear()
+        }
 
-        val scope = CoroutineScope(Dispatchers.IO + Job())
-        startConnectivityCheck(scope) { isOnline ->
-            if (currentOnlineState != isOnline) {
-                currentOnlineState = isOnline
-                if (isOnline) {
-                    FirebaseDatabase.getInstance().goOnline()
-                } else {
-                    FirebaseDatabase.getInstance().goOffline()
+        // Safe reference keeping
+        withContext(Dispatchers.IO) {
+            refs.forEach { ref ->
+                try {
+                    ref.keepSynced(true)
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }
 
-        val snapshots = if (currentOnlineState) {
-            FromAncienDataBase.setupRealtimeListeners(viewModel)
-            CompareUpdate.setupeCompareUpdateAncienModels()
-            refs.map { it.get().await() }
-        } else {
-            FirebaseDatabase.getInstance().goOffline()
-            refs.map { ref ->
-                withTimeoutOrNull(5000L) {
-                    ref.get().await()
+        val isOnline = checkConnectivity(context)
+
+        val snapshots = if (isOnline) {
+            try {
+                // Setup listeners with error handling
+                withContext(Dispatchers.IO) {
+                    FromAncienDataBase.setupRealtimeListeners(viewModel)
+                    CompareUpdate.setupeCompareUpdateAncienModels()
                 }
-            }.also { FirebaseDatabase.getInstance().goOnline() }
+
+                refs.map { ref ->
+                    try {
+                        withTimeout(5000L) {
+                            ref.get().await()
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        } else {
+            try {
+                FirebaseDatabase.getInstance().goOffline()
+                refs.map { ref ->
+                    try {
+                        withTimeout(5000L) {
+                            ref.get().await()
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                }.also { FirebaseDatabase.getInstance().goOnline() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+
+        if (snapshots == null) {
+            viewModel.loadingProgress = -1f
+            return
         }
 
         val (headModels, products, clients) = snapshots
 
         withContext(Dispatchers.Main) {
             viewModel.modelAppsFather.apply {
-                produitsMainDataBase.clear()
+                // Load products safely
                 products?.children?.forEach { snap ->
-                    val map = snap.value as? Map<*, *> ?: return@forEach
-                    val prod = A_ProduitModel(
-                        id = snap.key?.toLongOrNull() ?: return@forEach,
-                        itsTempProduit = map["itsTempProduit"] as? Boolean ?: false,
-                        init_nom = map["nom"] as? String ?: "",
-                        init_besoin_To_Be_Updated = map["besoin_To_Be_Updated"] as? Boolean ?: false,
-                        initialNon_Trouve = map["non_Trouve"] as? Boolean ?: false,
-                        init_visible = map["isVisible"] as? Boolean ?: false
-                    ).apply {
-                        // Load StatuesBase
-                        snap.child("statuesBase").getValue(A_ProduitModel.StatuesBase::class.java)?.let {
-                            statuesBase = it
-                            statuesBase.imageGlidReloadTigger = 0
-                        }
-
-                        // Load ColoursEtGouts
-                        val coloursEtGoutsList = mutableListOf<A_ProduitModel.ColourEtGout_Model>()
-                        snap.child("coloursEtGoutsList").children.forEach { colorSnap ->
-                            colorSnap.getValue(A_ProduitModel.ColourEtGout_Model::class.java)?.let {
-                                coloursEtGoutsList.add(it)
-                            }
-                        }
-                        this.coloursEtGoutsList = coloursEtGoutsList
-
-                        // Load current BonCommend with MutableBasesStates
-                        snap.child("bonCommendDeCetteCota").getValue(A_ProduitModel.GrossistBonCommandes::class.java)?.let { bonCommend ->
-                            // Load MutableBasesStates
-                            snap.child("bonCommendDeCetteCota/mutableBasesStates")
-                                .getValue(A_ProduitModel.GrossistBonCommandes.MutableBasesStates::class.java)?.let {
-                                    bonCommend.mutableBasesStates = it
-                                }
-                            bonCommendDeCetteCota = bonCommend
-                        }
-
-                        // Load BonsVentDeCetteCota with proper initialization
-                        val bonsVent = mutableListOf<A_ProduitModel.ClientBonVentModel>()
-                        snap.child("bonsVentDeCetteCotaList").children.forEach { bonVentSnap ->
-                            bonVentSnap.getValue(A_ProduitModel.ClientBonVentModel::class.java)?.let {
-                                bonsVent.add(it)
-                            }
-                        }
-                        bonsVentDeCetteCotaList = bonsVent
-
-                        // Load HistoriqueBonsVents
-                        val historique = mutableListOf<A_ProduitModel.ClientBonVentModel>()
-                        snap.child("historiqueBonsVentsList").children.forEach { historySnap ->
-                            historySnap.getValue(A_ProduitModel.ClientBonVentModel::class.java)?.let {
-                                historique.add(it)
-                            }
-                        }
-                        historiqueBonsVentsList = historique
+                    try {
+                        val map = snap.value as? Map<*, *> ?: return@forEach
+                        val prod = A_ProduitModel(
+                            id = snap.key?.toLongOrNull() ?: return@forEach,
+                            itsTempProduit = map["itsTempProduit"] as? Boolean ?: false,
+                            init_nom = map["nom"] as? String ?: "",
+                            init_besoin_To_Be_Updated = map["besoin_To_Be_Updated"] as? Boolean ?: false,
+                            initialNon_Trouve = map["non_Trouve"] as? Boolean ?: false,
+                            init_visible = map["isVisible"] as? Boolean ?: false
+                        )
+                        produitsMainDataBase.add(prod)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
-                    produitsMainDataBase.add(prod)
                 }
 
-                clientDataBase.clear()
+                // Load clients safely
                 clients?.children?.forEach { snap ->
-                    val map = snap.value as? Map<*, *> ?: return@forEach
-                    B_ClientsDataBase(
-                        id = snap.key?.toLongOrNull() ?: return@forEach,
-                        nom = map["nom"] as? String ?: ""
-                    ).apply {
-                        snap.child("statueDeBase")
-                            .getValue(B_ClientsDataBase.StatueDeBase::class.java)?.let {
-                                statueDeBase = it
-                            }
-                        snap.child("gpsLocation")
-                            .getValue(B_ClientsDataBase.GpsLocation::class.java)?.let {
-                                gpsLocation = it
-                            }
-                        clientDataBase.add(this)
+                    try {
+                        val map = snap.value as? Map<*, *> ?: return@forEach
+                        val client = B_ClientsDataBase(
+                            id = snap.key?.toLongOrNull() ?: return@forEach,
+                            nom = map["nom"] as? String ?: ""
+                        )
+                        clientDataBase.add(client)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
 
-                grossistsDataBase.clear()
+                // Load grossists safely
                 if (headModels != null) {
-                    val grossistsNode = headModels.child("C_GrossistsDataBase")
-                    if (!grossistsNode.exists()) {
-                        grossistsDataBase.add(
-                            C_GrossistsDataBase(
-                            id = 1,
-                            nom = "Default Grossist",
-                            statueDeBase = C_GrossistsDataBase.StatueDeBase(
-                                cUnClientTemporaire = true
-                            )
-                        )
-                        )
-                    } else {
-                        grossistsNode.children.forEach { snap ->
-                            try {
-                                val map = snap.value as? Map<*, *> ?: return@forEach
+                    try {
+                        val grossistsNode = headModels.child("C_GrossistsDataBase")
+                        if (!grossistsNode.exists()) {
+                            grossistsDataBase.add(
                                 C_GrossistsDataBase(
-                                    id = snap.key?.toLongOrNull() ?: return@forEach,
-                                    nom = map["nom"] as? String ?: "Non Defini"
-                                ).apply {
-                                    snap.child("statueDeBase")
-                                        .getValue(C_GrossistsDataBase.StatueDeBase::class.java)?.let {
-                                            statueDeBase = it
-                                        }
-                                    grossistsDataBase.add(this)
-                                }
-                            } catch (e: Exception) {
-                                // Silent catch to skip invalid entries
-                            }
-                        }
-                    }
-                }
-                
-                couleursProduitsInfos.clear()
-                if (headModels != null) {
-                    val node = headModels.child("D_CouleursEtGoutesProduitsInfos")
-                    if (!node.exists()) {
-                        couleursProduitsInfos.add(
-                            D_CouleursEtGoutesProduitsInfos(
-                                id = 1,
+                                    id = 1,
+                                    nom = "Default Grossist",
+                                    statueDeBase = C_GrossistsDataBase.StatueDeBase(
+                                        cUnClientTemporaire = true
+                                    )
+                                )
                             )
-                        )
-                    } else {
-                        node.children.forEach { snap ->
-                            try {
-                                D_CouleursEtGoutesProduitsInfos(
-                                    id = snap.key?.toLongOrNull() ?: return@forEach,
-                                ).apply {
-                                    snap.child("infosDeBase")
-                                        .getValue(D_CouleursEtGoutesProduitsInfos.InfosDeBase::class.java)?.let { infosDeBase ->
-                                            this.infosDeBase = infosDeBase
-                                        }
-                                    snap.child("statuesMutable")
-                                        .getValue(D_CouleursEtGoutesProduitsInfos.StatuesMutable::class.java)?.let { statuesMutable ->
-                                            this.statuesMutable = statuesMutable
-                                        }
-                                    couleursProduitsInfos.add(this)
+                        } else {
+                            grossistsNode.children.forEach { snap ->
+                                try {
+                                    val map = snap.value as? Map<*, *> ?: return@forEach
+                                    val grossist = C_GrossistsDataBase(
+                                        id = snap.key?.toLongOrNull() ?: return@forEach,
+                                        nom = map["nom"] as? String ?: "Non Defini"
+                                    )
+                                    grossistsDataBase.add(grossist)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                            } catch (_: Exception){
                             }
                         }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
             }
-            viewModel.loadingProgress = 1.0f
+
+            if (!errorOccurred) {
+                viewModel.loadingProgress = 1.0f
+            }
         }
     } catch (e: Exception) {
+        errorOccurred = true
         viewModel.loadingProgress = -1f
-        connectivityCheckJob?.cancel()
-        throw e
+        e.printStackTrace()
     } finally {
         connectivityCheckJob?.cancel()
     }
