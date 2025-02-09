@@ -94,21 +94,26 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
 
         var isOnline = connectivityMonitor.checkConnectivity()
 
-        // Start monitoring connectivity changes
         connectivityMonitor.startMonitoring { newState ->
             viewModel.viewModelScope.launch {
                 if (newState) {
                     FirebaseDatabase.getInstance().goOnline()
-                    // Refresh data when coming back online
-                    loadDataFromRefs(refs, true, viewModel)
+                    loadDataFromRefs(
+                        refs = refs,
+                        isOnline = true,
+                        viewModel = viewModel
+                    )
                 } else {
                     FirebaseDatabase.getInstance().goOffline()
                 }
             }
         }
 
-        // Initial data load
-        loadDataFromRefs(refs, isOnline, viewModel)
+        loadDataFromRefs(
+            refs = refs,
+            isOnline = isOnline,
+            viewModel = viewModel
+        )
 
         viewModel.loadingProgress = 1.0f
 
@@ -121,19 +126,20 @@ suspend fun loadData(viewModel: ViewModelInitApp) {
 private suspend fun loadDataFromRefs(
     refs: List<DatabaseReference>,
     isOnline: Boolean,
-    viewModel: ViewModelInitApp
+    viewModel: ViewModelInitApp  // Added explicit viewModel parameter
 ) {
-    val snapshots = if (isOnline) {
-        FromAncienDataBase.setupRealtimeListeners(viewModel)
-        CompareUpdate.setupeCompareUpdateAncienModels()
-        refs.map { it.get().await() }
-    } else {
-        refs.map { ref ->
-            withTimeoutOrNull(5000L) {
-                ref.get().await()
+    try {
+        val snapshots = if (isOnline) {
+            FromAncienDataBase.setupRealtimeListeners(viewModel)
+            CompareUpdate.setupeCompareUpdateAncienModels()
+            refs.map { it.get().await() }
+        } else {
+            refs.map { ref ->
+                withTimeoutOrNull(5000L) {
+                    ref.get().await()
+                }
             }
         }
-    }
 
         val (headModels, products, clients) = snapshots
 
