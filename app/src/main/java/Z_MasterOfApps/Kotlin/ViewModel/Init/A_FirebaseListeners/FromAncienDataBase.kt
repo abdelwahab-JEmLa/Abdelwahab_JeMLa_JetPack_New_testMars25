@@ -231,8 +231,25 @@ object FromAncienDataBase {
         return product
     }
     private fun syncOldSuppliers(viewModel: ViewModelInitApp) {
-        C_GrossistsDataBase.sonAncienRef.addValueEventListener(object : ValueEventListener {
+        val newRef = firebaseDatabase.getReference("0_UiState_3_Host_Package_3_Prototype11Dec/C_GrossistsDataBase")
+        val oldRef = Firebase.database.getReference("F_Suppliers")
+
+        oldRef.addValueEventListener(object : ValueEventListener {
+            private var lastKnownIds = mutableSetOf<Long>()
+
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Get current supplier IDs
+                val currentIds = snapshot.children
+                    .mapNotNull { it.getValue(TabelleSuppliersSA::class.java)?.idSupplierSu }
+                    .toSet()
+
+                // Handle deletions
+                lastKnownIds.filter { it !in currentIds }.forEach { deletedId ->
+                    newRef.child(deletedId.toString()).removeValue()
+                    viewModel._modelAppsFather.grossistsDataBase.removeAll { it.id == deletedId }
+                }
+
+                // Update or add suppliers
                 snapshot.children.forEach { snap ->
                     val supplier = snap.getValue(TabelleSuppliersSA::class.java) ?: return@forEach
                     val grossist = C_GrossistsDataBase(
@@ -241,11 +258,22 @@ object FromAncienDataBase {
                         statueDeBase = C_GrossistsDataBase.StatueDeBase(couleur = supplier.couleurSu)
                     )
 
-                    viewModel._modelAppsFather.grossistsDataBase.add(grossist)
-                    C_GrossistsDataBase.refClientsDataBase.child(supplier.idSupplierSu.toString())
-                        .setValue(grossist)
+                    // Update local list
+                    val index = viewModel._modelAppsFather.grossistsDataBase.indexOfFirst { it.id == grossist.id }
+                    if (index != -1) {
+                        viewModel._modelAppsFather.grossistsDataBase[index] = grossist
+                    } else {
+                        viewModel._modelAppsFather.grossistsDataBase.add(grossist)
+                    }
+
+                    // Update Firebase
+                    newRef.child(supplier.idSupplierSu.toString()).setValue(grossist)
                 }
+
+                // Update last known IDs
+                lastKnownIds = currentIds.toMutableSet()
             }
+
             override fun onCancelled(error: DatabaseError) {
                 Log.e("Sync", error.message)
             }
