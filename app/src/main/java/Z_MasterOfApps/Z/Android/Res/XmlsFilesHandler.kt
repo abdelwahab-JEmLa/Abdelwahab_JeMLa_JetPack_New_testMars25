@@ -14,7 +14,8 @@ class XmlsFilesHandler {
         val xmlResources = listOf(
             Pair("marker_info_window", R.layout.marker_info_window),
             Pair("info_window_container", R.id.info_window_container),
-            Pair("location_arrow", R.drawable.location_arrow)
+            Pair("location_arrow", R.drawable.location_arrow),
+            Pair("location_arrow", R.raw.Artboard)
         )
     }
 }
