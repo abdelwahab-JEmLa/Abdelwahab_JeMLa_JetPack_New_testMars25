@@ -5,6 +5,7 @@ import Z_MasterOfApps.Z.Android.Main.Screen
 import Z_MasterOfApps.Z_AppsFather.Kotlin._4.Modules.GlideDisplayImageBykeyId
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -19,10 +20,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.ContentAlpha
 
@@ -45,12 +48,10 @@ fun NavigationBarWithFab(
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
         ) {
-            // Calculate middle index
             val middleIndex = items.size / 2
 
             items.forEachIndexed { index, screen ->
                 if (index == middleIndex) {
-                    // Add empty space for FAB
                     NavigationBarItem(
                         selected = false,
                         onClick = { },
@@ -60,19 +61,32 @@ fun NavigationBarWithFab(
                 }
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            imageVector = screen.icon,
-                            contentDescription = screen.titleArab,
-                            tint = if (currentRoute == screen.route) screen.color
-                            else LocalContentColor.current.copy(alpha = ContentAlpha.medium)
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = screen.icon,
+                                contentDescription = screen.titleArab,
+                                tint = if (currentRoute == screen.route) screen.color
+                                else LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+                            )
+                            // Add fragment ID text below icon
+                            Text(
+                                text = "ID: ${screen.id}",
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                color = if (currentRoute == screen.route) screen.color
+                                else LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+                            )
+                        }
                     },
                     selected = currentRoute == screen.route,
-                    onClick = { onNavigate(screen.route) }
+                    onClick = { onNavigate(screen.route) },
+                    // Disable the button when loading
+                    enabled = !viewModelInitApp.isLoading
                 )
             }
         }
 
+        // FAB remains unchanged
         Surface(
             modifier = Modifier
                 .offset(y = (-28).dp)
@@ -87,10 +101,13 @@ fun NavigationBarWithFab(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp)
-                        .clickable(onClick = {
-                            viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility =
-                                !viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility
-                        }),
+                        .clickable(
+                            enabled = !viewModelInitApp.isLoading,
+                            onClick = {
+                                viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility =
+                                    !viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility
+                            }
+                        ),
                     size = 100.dp
                 )
 

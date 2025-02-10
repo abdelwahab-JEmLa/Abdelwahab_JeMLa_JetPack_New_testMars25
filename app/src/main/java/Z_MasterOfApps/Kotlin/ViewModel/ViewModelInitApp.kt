@@ -1,6 +1,7 @@
 package Z_MasterOfApps.Kotlin.ViewModel
 
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
+import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.FromAncienDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
 import Z_MasterOfApps.Kotlin.ViewModel.Partage.Functions.FunctionsPartageEntreFragment
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_1.id4_DeplaceProduitsVerGrossist.ViewModel.Frag_4A1_ExtVM
@@ -26,6 +27,7 @@ class ViewModelInitApp : ViewModel() {
 
     val modelAppsFather: _ModelAppsFather get() = _modelAppsFather
     val produitsMainDataBase = _modelAppsFather.produitsMainDataBase
+    val viewModel = this@ViewModelInitApp
 
     val clientDataBaseSnapList = _modelAppsFather.clientDataBase
 
@@ -36,25 +38,26 @@ class ViewModelInitApp : ViewModel() {
     val extentionStartup = Startup_Extension(this@ViewModelInitApp)
 
     val frag1_A1_ExtVM = Frag2_A1_ExtVM(
-        viewModel = this@ViewModelInitApp,
+        viewModel = viewModel,
         produitsMainDataBase = produitsMainDataBase,
     )
     val frag2_A1_ExtVM = ExteVMFragmentId_2(
-        viewModelInitApp = this@ViewModelInitApp,
+        viewModelInitApp = viewModel,
         produitsMainDataBase = produitsMainDataBase,
-        viewModelScope = this@ViewModelInitApp.viewModelScope,
+        viewModelScope = viewModel.viewModelScope,
     )
 
-    val frag_3A1_ExtVM = ExtensionVMApp1FragmentId_3(this@ViewModelInitApp)
+    val frag_3A1_ExtVM = ExtensionVMApp1FragmentId_3(viewModel)
 
-    val frag_4A1_ExtVM = Frag_4A1_ExtVM(this@ViewModelInitApp)
+    val frag_4A1_ExtVM = Frag_4A1_ExtVM(viewModel)
 
 
     init {
         viewModelScope.launch {
             try {
                 isLoading = true
-                loadData( this@ViewModelInitApp)
+                loadData(viewModel)
+                FromAncienDataBase.setupRealtimeListeners(viewModel)
                 isLoading = false
             } catch (e: Exception) {
                 Log.e("ViewModelInitApp", "Init failed", e)

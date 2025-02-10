@@ -113,12 +113,15 @@ fun AppNavigationHost(
                 viewModelInitApp = viewModelInitApp,
                 currentRoute = currentRoute,
                 onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
+                    // Disable navigation when loading
+                    if (!viewModelInitApp.isLoading) {
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 modifier = Modifier.padding(bottom = 8.dp)

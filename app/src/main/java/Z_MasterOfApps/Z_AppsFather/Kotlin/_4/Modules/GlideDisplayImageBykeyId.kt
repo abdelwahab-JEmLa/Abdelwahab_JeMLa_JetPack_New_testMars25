@@ -8,20 +8,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,12 +42,12 @@ fun GlideDisplayImageBykeyId(
     mainItem: A_ProduitModel? = null,
     modifier: Modifier = Modifier,
     size: Dp? = null,
-    onLoadComplete: () -> Unit = {}
+    onLoadComplete: () -> Unit = {},
+    qualityImage: Int = 3
 ) {
     var imageFile by remember { mutableStateOf<File?>(null) }
     var forceReload by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
-    var loadProgress by remember { mutableFloatStateOf(0f) }
     var reloadSuccess by remember { mutableStateOf(false) }
 
     val keyImageId = if (mainItem == null) "null" else "${mainItem.id}_1"
@@ -138,10 +135,11 @@ fun GlideDisplayImageBykeyId(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(8.dp))
+                .blur(if (isLoading) 10.dp else 0.dp)  // Apply blur effect during loading
         ) { builder ->
             builder
                 .downsample(com.bumptech.glide.load.resource.bitmap.DownsampleStrategy.AT_MOST)
-                .encodeQuality(3)
+                .encodeQuality(qualityImage)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
                 .signature(ObjectKey("${keyImageId}_${forceReload}_${System.currentTimeMillis()}"))
@@ -154,7 +152,6 @@ fun GlideDisplayImageBykeyId(
                     ): Boolean {
                         Log.e("GlideDisplay", "Load failed for $keyImageId", e)
                         isLoading = false
-                        loadProgress = 0f
                         return false
                     }
 
@@ -167,7 +164,6 @@ fun GlideDisplayImageBykeyId(
                     ): Boolean {
                         Log.d("GlideDisplay", "Load complete for $keyImageId")
                         isLoading = false
-                        loadProgress = 1f
                         if (reloadSuccess) {
                             onLoadComplete()
                             reloadSuccess = false
@@ -175,15 +171,6 @@ fun GlideDisplayImageBykeyId(
                         return false
                     }
                 })
-        }
-
-        if (isLoading) {
-            CircularProgressIndicator(
-                progress = { loadProgress },
-                modifier = Modifier.size(48.dp),
-                color = Color.Blue,
-                trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
-            )
         }
     }
 }

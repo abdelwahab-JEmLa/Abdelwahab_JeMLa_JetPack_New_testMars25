@@ -18,6 +18,7 @@ data class B_ClientsDataBase(
 ) {
     @IgnoreExtraProperties
     data class StatueDeBase(
+        var numTelephone: String = "",
         var couleur: String = "#FFFFFF",
         var positionDonClientsList: Int = 0,
         var caRefDonAncienDataBase: String = "G_Clients",
