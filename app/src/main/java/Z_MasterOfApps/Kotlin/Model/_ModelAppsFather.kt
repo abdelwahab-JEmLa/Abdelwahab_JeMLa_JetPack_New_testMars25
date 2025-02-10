@@ -11,7 +11,6 @@ import com.google.firebase.database.database
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-private const val TAG = "ProductsDebug"
 
 open class _ModelAppsFather(
     initial_Produits_Main_DataBase: List<A_ProduitModel> = emptyList()
