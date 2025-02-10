@@ -117,13 +117,17 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.material.icons.extended)
 
+    implementation (libs.firebase.database.ktx)
+    implementation (libs.compose)
+    implementation (libs.glide.transformations)
+
     // OSMDroid dependencies
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
     implementation(libs.osmdroid.mapsforge)
 
-    implementation (libs.firebase.database.ktx)
-    implementation (libs.compose)
-    implementation (libs.glide.transformations)
+   
+    // Lottie Compose
+    implementation ("com.airbnb.android:lottie-compose:6.1.0")
 }
 apply(plugin = "com.google.gms.google-services")

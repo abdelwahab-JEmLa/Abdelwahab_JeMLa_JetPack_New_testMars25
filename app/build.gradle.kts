@@ -110,9 +110,8 @@ dependencies {
     implementation(libs.osmdroid.wms)
     implementation(libs.osmdroid.mapsforge)
 
-     //Lottie
-    implementation (libs.lottie.compose)
-
+    // Lottie Compose
+    implementation ("com.airbnb.android:lottie-compose:6.1.0")
 
 }
 
