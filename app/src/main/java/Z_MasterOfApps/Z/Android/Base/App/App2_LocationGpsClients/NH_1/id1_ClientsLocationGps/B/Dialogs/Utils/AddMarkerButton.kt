@@ -21,7 +21,13 @@ fun AddMarkerButton(
                     mapView
                 )
         },
-        icon = Icons.Default.Add,
+        icon = Icons.Default.Add, /*   //-->
+        //TODO(1):
+        j ai un json url   qui se trouve a
+
+                Copy
+                {"v":"5.7.5","fr":100,"ip":0,"op":300,"w":2000,"h":1200,"nm":"Comp 1","ddd":0,"metadata":{"backgroundColor":{"r":255,"g":255,"b":255}},"assets":[],"layers":[{"ddd":0,"ind":12345679,"ty":4,"nm":"Group Layer 8","sr":1,"ks":{"p":{"a":0,"k":[1476,1073.5409836065573,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":2},"s":{"a":0,"k":[204.91803278688522,204.91803278688522,100],"ix":2},"r":{"a":0,"k":0,"ix":2},"o":{"a":0,"k":100,"ix":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ty":"gr","it":
+                    comme utilise la Lib Compottie    */
         contentDescription = "Add marker",
         showLabels = showLabels,
         labelText = "Add",

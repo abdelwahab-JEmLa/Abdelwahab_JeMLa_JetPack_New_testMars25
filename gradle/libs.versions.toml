@@ -19,6 +19,7 @@ composeBom = "2024.10.00"
 lifecycleViewmodelCompose = "2.8.6"
 googleGmsGoogleServices = "4.4.2"
 firebaseDatabase = "21.0.0"
+lottieCompose = "6.0.0"
 roomRuntime = "2.6.1"
 runtimeLivedata = "1.7.4"
 navigationCompose = "2.8.3"
@@ -75,6 +76,7 @@ engage-core = { group = "com.google.android.engage", name = "engage-core", versi
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }

@@ -110,6 +110,10 @@ dependencies {
     implementation(libs.osmdroid.wms)
     implementation(libs.osmdroid.mapsforge)
 
+     //Lottie
+    implementation (libs.lottie.compose)
+
+
 }
 
 apply(plugin = "com.google.gms.google-services")
