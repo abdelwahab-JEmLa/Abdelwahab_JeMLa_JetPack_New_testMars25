@@ -1,4 +1,4 @@
-package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
+package c_ManageBonsClients
 
 import a_MainAppCompnents.ArticlesAcheteModele
 import android.provider.Settings.System

@@ -43,13 +43,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.generateClientColor
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
-import g_BoardStatistiques.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
 import g_BoardStatistiques.BoardStatistiquesStatViewModel
+import g_BoardStatistiques.f_2_CreditsClients.documentIdClientFireStoreClientCreditCB
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await

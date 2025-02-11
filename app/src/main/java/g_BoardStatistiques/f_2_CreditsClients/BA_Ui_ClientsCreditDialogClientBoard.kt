@@ -44,7 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import c_ManageBonsClients.imprimerDonnees
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.generateClientColor
+import c_ManageBonsClients.generateClientColor
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase

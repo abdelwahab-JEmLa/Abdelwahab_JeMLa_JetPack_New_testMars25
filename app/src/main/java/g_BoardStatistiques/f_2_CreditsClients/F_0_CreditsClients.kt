@@ -1,5 +1,6 @@
 package g_BoardStatistiques.f_2_CreditsClients
 
+import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -56,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ClientsTabelle
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -188,15 +188,15 @@ fun FragmentCreditsClients(
     }
 }
 @Composable
-fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
+fun ClientsItem(clients: B_ClientsDataBase, viewModel: CreditsClientsViewModel,
                 boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showCreditDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-    val backgroundColor = remember(clients.couleurSu) {
+    val backgroundColor = remember(clients.statueDeBase.couleur) {
         try {
-            Color(android.graphics.Color.parseColor(clients.couleurSu))
+            Color(android.graphics.Color.parseColor(clients.statueDeBase.couleur))
         } catch (e: IllegalArgumentException) {
             Color.Gray // Fallback color
         }
@@ -217,7 +217,7 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
-                onClick = { viewModel.deleteClients(clients.idClientsSu) },
+                onClick = { viewModel.deleteClients(clients.id) },
                 modifier = Modifier.weight(1f)
             ) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
@@ -229,7 +229,7 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
             ) {
 
                 Text(
-                    text = "ID: ${clients.idClientsSu}",
+                    text = "ID: ${clients.id}",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         color = Color.White,
                         fontWeight = FontWeight.Bold
@@ -237,19 +237,19 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
                     modifier = Modifier.drawTextWithOutlineClients(Color.Black)
                 )
                 Text(
-                    text = "Name: ${clients.nomClientsSu}",
+                    text = "Name: ${clients.nom}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                     modifier = Modifier.drawTextWithOutlineClients(Color.Black)
                 )
-                if (clients.bonDuClientsSu.isNotBlank()) {
+                if (clients.statueDeBase.bonDuClientsSu.isNotBlank()) {
                     Text(
-                        text = "Bon N°: ${clients.bonDuClientsSu}",
+                        text = "Bon N°: ${clients.statueDeBase.bonDuClientsSu}",
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                         modifier = Modifier.drawTextWithOutlineClients(Color.Black)
                     )
                 }
                 Text(
-                    text = "Credit Balance: ${clients.currentCreditBalance}",
+                    text = "Credit Balance: ${clients.statueDeBase.currentCreditBalance}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                     modifier = Modifier.drawTextWithOutlineClients(Color.Black)
                 )
@@ -262,7 +262,7 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
                     Icon(Icons.Default.CreditCard, contentDescription = "Credit", tint = Color.White)
                 }
                 IconButton(onClick = { showDialog = true }) {
-                    val icon = if (clients.bonDuClientsSu.isNotBlank()) {
+                    val icon = if (clients.statueDeBase.bonDuClientsSu.isNotBlank()) {
                         Icons.AutoMirrored.Filled.ReceiptLong
                     } else {
                         Icons.Default.Receipt
@@ -292,11 +292,11 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
                             for (j in i..minOf(i + 2, 15)) {
                                 Button(
                                     onClick = {
-                                        viewModel.updateClientsBon(clients.idClientsSu, j.toString())
+                                        viewModel.updateClientsBon(clients.id, j.toString())
                                         showDialog = false
                                     },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (clients.bonDuClientsSu == j.toString()) Color.Red else MaterialTheme.colorScheme.primary
+                                        containerColor = if (clients.statueDeBase.bonDuClientsSu == j.toString()) Color.Red else MaterialTheme.colorScheme.primary
                                     )
                                 ) {
                                     Text(j.toString())
@@ -319,8 +319,8 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
         ClientsCreditDialogClientsBoard(
             showDialog = true,
             onDismiss = { showCreditDialog = false },
-            clientsId = clients.idClientsSu,
-            clientsName = clients.nomClientsSu,
+            clientsId = clients.id,
+            clientsName = clients.nom,
             clientsTotal = 0.0,
             coroutineScope = rememberCoroutineScope(),
             context = context,
@@ -342,8 +342,8 @@ fun ClientsItem(clients: ClientsTabelle, viewModel: CreditsClientsViewModel,
 }
 
 @Composable
-fun EditClientsDialog(clients: ClientsTabelle, onDismiss: () -> Unit, onEditClients: (ClientsTabelle) -> Unit) {
-    var editedName by remember { mutableStateOf(clients.nomClientsSu) }
+fun EditClientsDialog(clients: B_ClientsDataBase, onDismiss: () -> Unit, onEditClients: (B_ClientsDataBase) -> Unit) {
+    var editedName by remember { mutableStateOf(clients.nom) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -361,7 +361,7 @@ fun EditClientsDialog(clients: ClientsTabelle, onDismiss: () -> Unit, onEditClie
             Button(
                 onClick = {
                     if (editedName.isNotBlank()) {
-                        onEditClients(clients.copy(nomClientsSu = editedName))
+                        onEditClients(clients.copy(nom = editedName))
                     }
                 }
             ) {
@@ -417,14 +417,14 @@ fun Modifier.drawTextWithOutlineClients(outlineColor: Color) = this.drawBehind {
     drawRect(outlineColor, style = Stroke(width = 3f))
 }
 class CreditsClientsViewModel : ViewModel() {
-    private val _clientsList = MutableStateFlow<List<ClientsTabelle>>(emptyList())
+    private val _clientsList = MutableStateFlow<List<B_ClientsDataBase>>(emptyList())
     private val _showOnlyWithCredit = MutableStateFlow(true) // Changed to true by default
     private val database = FirebaseDatabase.getInstance()
     private val clientsRef = database.getReference("G_Clients")
 
-    val clientsList: StateFlow<List<ClientsTabelle>> = combine(_clientsList, _showOnlyWithCredit) { clients, onlyWithCredit ->
+    val clientsList: StateFlow<List<B_ClientsDataBase>> = combine(_clientsList, _showOnlyWithCredit) { clients, onlyWithCredit ->
         if (onlyWithCredit) {
-            clients.filter { it.currentCreditBalance != 0.0 }
+            clients.filter { it.statueDeBase.currentCreditBalance != 0.0 }
         } else {
             clients
         }
@@ -441,10 +441,10 @@ class CreditsClientsViewModel : ViewModel() {
     private fun loadClients() {
         clientsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val newList = snapshot.children.mapNotNull { it.getValue(ClientsTabelle::class.java) }
+                val newList = snapshot.children.mapNotNull { it.getValue(B_ClientsDataBase::class.java) }
                 viewModelScope.launch {
                     newList.forEach { clients ->
-                        clients.currentCreditBalance = getCurrentCreditBalance(clients.idClientsSu)
+                        clients.statueDeBase.currentCreditBalance = getCurrentCreditBalance(clients.id)
                     }
                     _clientsList.value = newList
                 }
@@ -477,16 +477,16 @@ class CreditsClientsViewModel : ViewModel() {
     fun updateClientsList(idClient: Long, newBalenceOfCredits: Double) {
         _clientsList.update { currentStats ->
             currentStats.map { stat ->
-                if (stat.idClientsSu == idClient) {
-                    stat.copy(currentCreditBalance =newBalenceOfCredits )
+                if (stat.id == idClient) {
+                    stat.statueDeBase.copy(currentCreditBalance =newBalenceOfCredits )
                 } else {
                     stat
                 }
-            }
+            } as List<B_ClientsDataBase>
         }
     }
-    fun updateClients(updatedClients: ClientsTabelle) {
-        clientsRef.child(updatedClients.idClientsSu.toString()).setValue(updatedClients)
+    fun updateClients(updatedClients: B_ClientsDataBase) {
+        clientsRef.child(updatedClients.id.toString()).setValue(updatedClients)
     }
 
     fun updateClientsBon(clientsId: Long, bonNumber: String) {
@@ -494,15 +494,15 @@ class CreditsClientsViewModel : ViewModel() {
     }
 
     fun addClients(name: String) {
-        val maxId = _clientsList.value.maxOfOrNull { it.idClientsSu } ?: 0
-        val newClients = ClientsTabelle(
-            vidSu = System.currentTimeMillis(),
-            idClientsSu = maxId + 1,
-            nomClientsSu = name,
-            bonDuClientsSu = "",
-            couleurSu = generateRandomTropicalColor()
-        )
-        clientsRef.child(newClients.idClientsSu.toString()).setValue(newClients)
+        val maxId = _clientsList.value.maxOfOrNull { it.id } ?: 0
+        val newClients = B_ClientsDataBase(
+            id = maxId + 1,
+            nom = name,
+        ) .apply {      
+            statueDeBase. bonDuClientsSu = ""
+            statueDeBase.couleur = generateRandomTropicalColor()
+        }
+        clientsRef.child(newClients.id.toString()).setValue(newClients)
     }
 
     private fun generateRandomTropicalColor(): String {
@@ -518,7 +518,7 @@ class CreditsClientsViewModel : ViewModel() {
 
     fun clearAllBonDuClientsSu() {
         _clientsList.value.forEach { clients ->
-            clientsRef.child(clients.idClientsSu.toString()).child("bonDuClientsSu").setValue("")
+            clientsRef.child(clients.id.toString()).child("bonDuClientsSu").setValue("")
         }
     }
 

@@ -20,6 +20,8 @@ data class B_ClientsDataBase(
     data class StatueDeBase(
         var numTelephone: String = "",
         var couleur: String = "#FFFFFF",
+        var bonDuClientsSu: String = "",
+        var currentCreditBalance: Double = 0.0, // New field for current credit balance
         var positionDonClientsList: Int = 0,
         var caRefDonAncienDataBase: String = "G_Clients",
         var cUnClientTemporaire: Boolean = true,
@@ -115,3 +117,4 @@ data class B_ClientsDataBase(
         return result
     }
 }
+

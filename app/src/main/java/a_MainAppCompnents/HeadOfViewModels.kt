@@ -1,8 +1,8 @@
 package a_MainAppCompnents
 
+import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.ClientsList
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
 import a_MainAppCompnents.Models.AppSettingsSaverModel
 import a_MainAppCompnents.Models.DaySoldBonsModel
@@ -64,7 +64,7 @@ data class CreatAndEditeInBaseDonnRepositeryModels(
     val mapArticleInSupplierStore: List<MapArticleInSupplierStore> = emptyList(),
     val placesOfArticelsInEacheSupplierSrore: List<PlacesOfArticelsInEacheSupplierSrore> = emptyList(),
     val placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette> = emptyList(),
-    val clientsList: List<ClientsList> = emptyList(),
+    val clientsList: List<B_ClientsDataBase> = emptyList(),
     val showOnlyWithFilter: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
@@ -125,7 +125,7 @@ class HeadOfViewModels(
         firebaseDatabase.getReference("M_PlacesOfArticelsInEacheSupplierSrore")
     private val refPlacesOfArticelsInCamionette =
         firebaseDatabase.getReference("N_PlacesOfArticelsInCamionette")
-    private val refClientsList = firebaseDatabase.getReference("G_Clients")
+    private val refClientsList = B_ClientsDataBase.refClientsDataBase
     private val refDaySoldBons = firebaseDatabase.getReference("1_DaySoldBons")
     private val refAppSettingsSaverModel = firebaseDatabase.getReference("2_AppSettingsSaverNew")
 
@@ -232,7 +232,7 @@ class HeadOfViewModels(
                     }
 
                     val nomClient = _uiState.value.clientsList
-                        .find { it.idClientsSu == soldArticle.clientSoldToItId }?.nomClientsSu
+                        .find { it.id == soldArticle.clientSoldToItId }?.nom
                     val baseArticle = _uiState.value.articlesBaseDonneECB
                         .find { it.idArticle.toLong() == soldArticle.idArticle }
 
@@ -2582,7 +2582,7 @@ class HeadOfViewModels(
                             val clientIdsString = clientIdsList.joinToString(",")
                             val clientNamesString = clientIdsList
                                 .mapNotNull { clientId ->
-                                    _uiState.value.clientsList.find { it.idClientsSu == clientId }?.nomClientsSu
+                                    _uiState.value.clientsList.find { it.id == clientId }?.nom
                                 }
                                 .joinToString(",")
 
@@ -2916,7 +2916,7 @@ class HeadOfViewModels(
     private suspend fun fetchClientsList() = try {
         Log.d(TAG, "Starting clients fetch")
         refClientsList.get().await().children
-            .mapNotNull { it.getValue(ClientsList::class.java) }
+            .mapNotNull { it.getValue(B_ClientsDataBase::class.java) }
             .also { Log.d(TAG, "Successfully fetched ${it.size} clients") }
     } catch (e: Exception) {
         Log.e(TAG, "Error fetching clients", e)
@@ -2933,7 +2933,7 @@ class HeadOfViewModels(
         placesOfArticelsInCamionette: List<PlacesOfArticelsInCamionette>,
         articlesAcheteModele: List<ArticlesAcheteModele>,
         colorsArticles: List<ColorsArticles>,
-        clientsList: List<ClientsList>,
+        clientsList: List<B_ClientsDataBase>,
         soldArticlesTabelle: List<SoldArticlesTabelle>,
         appSettingsSaverModel: List<AppSettingsSaverModel>,
 

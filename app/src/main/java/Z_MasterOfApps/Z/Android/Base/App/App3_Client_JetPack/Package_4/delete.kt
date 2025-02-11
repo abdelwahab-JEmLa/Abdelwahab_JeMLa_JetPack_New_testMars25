@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Packages._3.C_Serveur.App.Client_JetPack.Package_4
+package Z_MasterOfApps.Z.Android.Base.App.App3_Client_JetPack.Package_4
 
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.updateProduit

@@ -1,4 +1,4 @@
-package com.example.Z_AppsFather.Kotlin._1.Model.Parent
+package Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Parent
 
 import Z_MasterOfApps.Z_AppsFather.Kotlin._2.ViewModel.Parent.ViewModelMaps
 import androidx.compose.runtime.mutableStateListOf

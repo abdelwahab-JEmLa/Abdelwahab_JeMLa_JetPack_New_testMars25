@@ -1,5 +1,6 @@
 package c_ManageBonsClients
 
+import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import a_MainAppCompnents.ArticlesAcheteModele
 import a_MainAppCompnents.HeadOfViewModels
 import android.annotation.SuppressLint
@@ -45,11 +46,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.ClientsTabelle
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.addNewClient
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.calculateClientProfit
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.createEmptyArticle
-import com.example.abdelwahabjemlajetpack.c_ManageBonsClients.generateClientColor
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -122,8 +118,8 @@ fun ClientAndEmballageHeader(
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
-                        val clientData = snapshot.children.first().getValue(ClientsTabelle::class.java)
-                        clientId = clientData?.idClientsSu
+                        val clientData = snapshot.children.first().getValue(B_ClientsDataBase::class.java)
+                        clientId = clientData?.id
                         fetchAncienCredits(clientId) { credits ->
                             ancienCredits = credits
                         }

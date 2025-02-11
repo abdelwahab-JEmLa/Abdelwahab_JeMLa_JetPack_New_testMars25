@@ -1,5 +1,6 @@
-package com.example.abdelwahabjemlajetpack.c_ManageBonsClients
+package c_ManageBonsClients
 
+import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import a_MainAppCompnents.ArticlesAcheteModele
 import a_MainAppCompnents.HeadOfViewModels
 import android.util.Log
@@ -39,13 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
-import c_ManageBonsClients.ArticleBoardCard
-import c_ManageBonsClients.ClientAndEmballageHeader
-import c_ManageBonsClients.ClientSelectionDialog
-import c_ManageBonsClients.DisplayDetailleArticle
-import c_ManageBonsClients.updateNonTrouveState
-import c_ManageBonsClients.updateTotalProfitInFirestore
-import c_ManageBonsClients.updateVerifieState
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -62,7 +56,7 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
                               headOfViewModels: HeadOfViewModels,
 ) {
     var articles by remember { mutableStateOf<List<ArticlesAcheteModele>>(emptyList()) }
-    var clientsData by remember { mutableStateOf<List<ClientsTabelle>>(emptyList()) }
+    var clientsData by remember { mutableStateOf<List<B_ClientsDataBase>>(emptyList()) }
 
     var selectedArticleId by remember { mutableStateOf<Long?>(null) }
     var showClientDialog by remember { mutableStateOf(false) }
@@ -76,10 +70,10 @@ fun FragmentManageBonsClients(boardStatistiquesStatViewModel: BoardStatistiquesS
     var lastFocusedColumn by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        // Fetch ClientsTabelle data
+        // Fetch B_ClientsDataBase data
         clientsTableRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                clientsData = dataSnapshot.children.mapNotNull { it.getValue(ClientsTabelle::class.java) }
+                clientsData = dataSnapshot.children.mapNotNull { it.getValue(B_ClientsDataBase::class.java) }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -324,17 +318,17 @@ fun addNewClient(name: String, onComplete: (Long) -> Unit) {
     clientsTableRef.orderByChild("idClientsSu").limitToLast(1).addListenerForSingleValueEvent(object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             val maxId = if (snapshot.exists()) {
-                snapshot.children.first().getValue(ClientsTabelle::class.java)?.idClientsSu ?: 0
+                snapshot.children.first().getValue(B_ClientsDataBase::class.java)?.id ?: 0
             } else {
                 0
             }
-            val newClients = ClientsTabelle(
-                vidSu = System.currentTimeMillis(),
-                idClientsSu = maxId + 1,
-                nomClientsSu = name,
-                bonDuClientsSu = "",
-                couleurSu = generateRandomTropicalColor()  ,
-            )
+            val newClients = B_ClientsDataBase(
+                id = maxId + 1,
+                nom = name,
+            ) .apply {
+                statueDeBase.bonDuClientsSu = ""
+                statueDeBase.couleur = generateRandomTropicalColor()
+            }
             clientsTableRef.child((maxId + 1).toString()).setValue(newClients)
                 .addOnSuccessListener {
                     onComplete(maxId + 1)
@@ -355,16 +349,5 @@ private fun generateRandomTropicalColor(): String {
     val saturation = 0.7f + Random.nextFloat() * 0.3f  // 70-100% saturation
     val value = 0.5f + Random.nextFloat() * 0.3f  // 50-80% value (darker colors)
     return "#%06X".format(0xFFFFFF and android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
-}
-
-data class ClientsTabelle(
-    val vidSu: Long = 0,
-    var idClientsSu: Long = 0,
-    var nomClientsSu: String = "",
-    var bonDuClientsSu: String = "",
-    val couleurSu: String = "#FFFFFF", // Default color
-    var currentCreditBalance: Double = 0.0, // New field for current credit balance
-) {
-    constructor() : this(0)
 }
 
