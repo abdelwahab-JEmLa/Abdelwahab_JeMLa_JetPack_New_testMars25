@@ -1,7 +1,7 @@
 package a_RoomDB
 
 import a_MainAppCompnents.ArticlesAcheteModele
-import a_MainAppCompnents.CategoriesTabelleECB
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CategoriesTabelleECBDao
 import android.content.Context
 import androidx.room.Database

@@ -3,6 +3,7 @@ package a_MainAppCompnents
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
 import a_MainAppCompnents.Models.AppSettingsSaverModel
 import a_MainAppCompnents.Models.DaySoldBonsModel
@@ -552,7 +553,7 @@ class HeadOfViewModels(
         return colors.find { it.nameColore.trim() == cleanName.trim() }?.idColore ?: 0
     }
 
-
+       //
     fun addNewCategory(categoryName: String) {
         viewModelScope.launch {
             try {

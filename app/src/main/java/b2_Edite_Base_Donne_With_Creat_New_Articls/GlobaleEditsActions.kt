@@ -1,6 +1,6 @@
 package b2_Edite_Base_Donne_With_Creat_New_Articls
 
-import a_MainAppCompnents.CategoriesTabelleECB
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Arrangement

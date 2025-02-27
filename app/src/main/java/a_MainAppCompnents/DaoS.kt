@@ -1,5 +1,6 @@
 package a_MainAppCompnents
 
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy

@@ -277,14 +277,4 @@ data class MapArticleInSupplierStore(
     val itClassement: Int = 0,
     )
 
-@Entity(tableName = "CategoriesTabelleECB")
-data class CategoriesTabelleECB(
-    @PrimaryKey(autoGenerate = true)
-    val idCategorieInCategoriesTabele: Long = 0,
-    val nomCategorieInCategoriesTabele: String = "",
-    var idClassementCategorieInCategoriesTabele: Int = 0
-) {
-    constructor() : this(0, "", 0)
-}
-
 
