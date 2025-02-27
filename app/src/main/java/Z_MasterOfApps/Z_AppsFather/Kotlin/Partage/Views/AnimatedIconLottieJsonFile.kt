@@ -1,17 +1,14 @@
-package Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils
+package Z_MasterOfApps.Z_AppsFather.Kotlin.Partage.Views
 
-import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.ViewModelExtension_App2_F1
-import Z_MasterOfApps.Z.Android.Main.Utils.XmlsFilesHandler.Companion.fixXmlResources
+import Z_MasterOfApps.Z.Android.Main.Utils.LottieJsonGetterR_Raw_Icons
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -20,44 +17,34 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
-import org.osmdroid.views.MapView
 
 @Composable
-fun AddMarkerButton(
-    extensionVM: ViewModelExtension_App2_F1,
-    showLabels: Boolean,
-    mapView: MapView,
+fun AnimatedIconLottieJsonFile(
+    ressourceXml: LottieJsonGetterR_Raw_Icons,
+    onClick: () -> Unit ={}
 ) {
-    var isPlaying by remember { mutableStateOf(false) }
+    val isPlaying by remember { mutableStateOf(true) }
 
     val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(fixXmlResources("reacticonanimatedjsonurl"))
+        LottieCompositionSpec.RawRes(ressourceXml.resourceId)
     )
 
     val progress by animateLottieCompositionAsState(
         composition = composition,
         isPlaying = isPlaying,
-        iterations = 1,
+        iterations = LottieConstants.IterateForever,
         speed = 1.5f
     )
 
-    LaunchedEffect(progress) {
-        if (progress == 1f) {
-            isPlaying = false
-        }
-    }
-
     IconButton(
-        onClick = {
-            isPlaying = true
-            extensionVM.onClickAddMarkerButton(mapView)
-        },
+        onClick = onClick,
         modifier = Modifier
             .size(40.dp)
             .semantics {
-                contentDescription = "Add marker to map"
+                contentDescription = "tout les produit clear"
             }
     ) {
         Box(
@@ -69,7 +56,7 @@ fun AddMarkerButton(
                 progress = { progress },
                 modifier = Modifier
                     .size(70.dp)
-                    .offset(x = (-2).dp, y = 0.dp),  // Ajustement pour centrer l'animation
+                    .offset(x = (-2).dp, y = 0.dp),
                 contentScale = ContentScale.FillBounds
             )
         }

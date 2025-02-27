@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -55,6 +56,7 @@ fun MarkerStatusDialog(
     selectedMarker: Marker?,
     onDismiss: () -> Unit,
     onUpdateLongAppSetting: () -> Unit = {},
+    onClickToEditeMarquerPosition: (Long) -> Unit,
     onRemoveMark: (Marker?) -> Unit
 ) {
     val context = LocalContext.current
@@ -63,6 +65,7 @@ fun MarkerStatusDialog(
     var editedName by remember { mutableStateOf("") }
     var editedPhone by remember { mutableStateOf("") }
     var showPhoneDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
 
     if (selectedMarker == null) return
 
@@ -103,33 +106,33 @@ fun MarkerStatusDialog(
                             )
                         }
                     }
+
                     Row {
+                        // GPS position editing button
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Edit location",
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .clickable {
+                                    onClickToEditeMarquerPosition(selectedMarker.id.toLong())
+                                    onDismiss()
+                                }
+                        )
+
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit client"
                         )
+
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Delete client",
                             modifier = Modifier
                                 .padding(start = 8.dp)
                                 .clickable {
-                                    coroutineScope.launch {
-                                        val clientToDelete = viewModel._modelAppsFather.clientDataBase.find {
-                                            it.id.toString() == selectedMarker.id
-                                        }
-
-                                        clientToDelete?.let { client ->
-                                            B_ClientsDataBase.refClientsDataBase
-                                                .child(client.id.toString())
-                                                .removeValue()
-                                                .await()
-
-                                            viewModel._modelAppsFather.clientDataBase.remove(client)
-                                            onRemoveMark(selectedMarker)
-                                            onDismiss()
-                                        }
-                                    }
+                                    // Show confirmation dialog instead of deleting immediately
+                                    showDeleteConfirmationDialog = true
                                 }
                         )
                     }
@@ -144,6 +147,17 @@ fun MarkerStatusDialog(
                         coroutineScope.launch {
                             extensionVM.updateLongAppSetting(selectedMarker.id.toLong())
                             onUpdateLongAppSetting()
+                            onDismiss()
+                        }
+                    }
+                )
+                StatusButton(
+                    text = "Client Cible",
+                    icon = Icons.Default.Person,
+                    color = Color(ContextCompat.getColor(context, B_ClientsDataBase.GpsLocation.DernierEtatAAffiche.Cible.color)),
+                    onClick = {
+                        coroutineScope.launch {
+                            extensionVM.updateStatueClient(selectedMarker, B_ClientsDataBase.GpsLocation.DernierEtatAAffiche.Cible)
                             onDismiss()
                         }
                     }
@@ -279,6 +293,47 @@ fun MarkerStatusDialog(
             confirmButton = {
                 TextButton(onClick = { showPhoneDialog = false }) {
                     Text("OK")
+                }
+            }
+        )
+    }
+
+    // New delete confirmation dialog
+    if (showDeleteConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmationDialog = false },
+            title = { Text("Confirmer la suppression") },
+            text = {
+                Text("Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val clientToDelete = viewModel._modelAppsFather.clientDataBase.find {
+                                it.id.toString() == selectedMarker.id
+                            }
+
+                            clientToDelete?.let { client ->
+                                B_ClientsDataBase.refClientsDataBase
+                                    .child(client.id.toString())
+                                    .removeValue()
+                                    .await()
+
+                                viewModel._modelAppsFather.clientDataBase.remove(client)
+                                onRemoveMark(selectedMarker)
+                                onDismiss()
+                            }
+                            showDeleteConfirmationDialog = false
+                        }
+                    }
+                ) {
+                    Text("Supprimer", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmationDialog = false }) {
+                    Text("Annuler")
                 }
             }
         )

@@ -25,8 +25,15 @@ data class B_ClientsDataBase(
         var positionDonClientsList: Int = 0,
         var caRefDonAncienDataBase: String = "G_Clients",
         var cUnClientTemporaire: Boolean = true,
-        var auFilterFAB: Boolean = false
-    )
+        var auFilterFAB: Boolean = false ,
+        var typeDeSonMagasine: TypeDeSonMagasine? = TypeDeSonMagasine.ATAYAT_MOUKASSARAT
+    )  {
+        @IgnoreExtraProperties
+        enum class TypeDeSonMagasine(val color: Int, val nomArabe: String) {
+            ATAYAT_MOUKASSARAT(android.R.color.holo_green_light, ""),
+            AlIMENTATION_GENERALE(android.R.color.holo_purple, ""),
+        }
+    }
 
     @IgnoreExtraProperties
     data class GpsLocation(
@@ -34,7 +41,7 @@ data class B_ClientsDataBase(
         var longitude: Double = 0.0,
         var title: String = "",
         var snippet: String = "",
-        var actuelleEtat: DernierEtatAAffiche? = null
+        var actuelleEtat: DernierEtatAAffiche? = null ,
     ) {
         @IgnoreExtraProperties
         enum class DernierEtatAAffiche(val color: Int, val nomArabe: String) {
@@ -117,4 +124,3 @@ data class B_ClientsDataBase(
         return result
     }
 }
-

@@ -1,106 +1,78 @@
 package Z_MasterOfApps.Z.Android.Main.Utils
 
 import android.Manifest
-import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.example.abdelwahabjemlajetpack.MainActivity
+import com.example.abdelwahabjemlajetpack.R
 
-class PermissionHandler(private val activity: ComponentActivity) {
-    // Constantes pour les versions d'API
+
+/*
+import com.example.c_serveur.MainActivity
+import com.example.c_serveur.R
+
+import com.example.clientjetpack.MainActivity
+import com.example.clientjetpack.R
+
+import com.example.abdelwahabjemlajetpack.MainActivity
+import com.example.abdelwahabjemlajetpack.R
+
+ */
+
+class PermissionHandler(private val activity: MainActivity) {
     companion object {
-        private const val TAG = "PermissionHandlerDEV"
-        private const val ANDROID_12 = Build.VERSION_CODES.S           // API 31
-        private const val ANDROID_11 = Build.VERSION_CODES.R          // API 30
-        private const val ANDROID_10 = Build.VERSION_CODES.Q          // API 29
+        private const val PREFS_NAME = "PermissionPrefs"
+        private const val PERMISSIONS_GRANTED_KEY = "PermissionsGranted"
     }
 
-    // Permissions de localisation requises pour toutes les versions
-    private val locationPermissions = arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    )
+    private val prefs: SharedPreferences = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private var showDialog by mutableStateOf(false)
+    private var permissionCallback: PermissionCallback? = null
 
-    // Permissions WiFi selon la version d'Android
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val wifiPermissions = when {
-        Build.VERSION.SDK_INT >= ANDROID_12 -> arrayOf(
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE,
-            Manifest.permission.NEARBY_WIFI_DEVICES
-        )
-
-        Build.VERSION.SDK_INT >= ANDROID_11 -> arrayOf(
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE
-        )
-
-        Build.VERSION.SDK_INT >= ANDROID_10 -> arrayOf(
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE
-        )
-
-        else -> arrayOf( // Pour Android 9 (API 28) et versions antérieures
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE
-        )
-    }
-
-    // Permissions Bluetooth selon la version
-    private val nearbyPermissions = when {
-        Build.VERSION.SDK_INT >= ANDROID_12 -> arrayOf(
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.BLUETOOTH_ADVERTISE,
-            Manifest.permission.BLUETOOTH_CONNECT
-        )
-
-        Build.VERSION.SDK_INT >= ANDROID_10 -> arrayOf(
-            Manifest.permission.BLUETOOTH,
-            Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
-
-        else -> arrayOf(
-            Manifest.permission.BLUETOOTH,
-            Manifest.permission.BLUETOOTH_ADMIN
-        )
-    }
-
-    // Permissions de stockage selon la version
-    private val storagePermissions = when {
+    private val requiredPermissions = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CHANGE_WIFI_STATE,
+            Manifest.permission.NEARBY_WIFI_DEVICES,
             Manifest.permission.READ_MEDIA_IMAGES,
             Manifest.permission.READ_MEDIA_VIDEO
         )
-
-        Build.VERSION.SDK_INT >= ANDROID_10 -> arrayOf(
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CHANGE_WIFI_STATE
+        )
+        else -> arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CHANGE_WIFI_STATE,
             Manifest.permission.READ_EXTERNAL_STORAGE
         )
-
-        else -> arrayOf(
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
     }
-
-    // Toutes les permissions nécessaires
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val allPermissions =
-        (locationPermissions + wifiPermissions + nearbyPermissions + storagePermissions).distinct()
-            .toTypedArray()
 
     interface PermissionCallback {
         fun onPermissionsGranted()
@@ -108,91 +80,50 @@ class PermissionHandler(private val activity: ComponentActivity) {
         fun onPermissionRationale(permissions: Array<String>)
     }
 
-    private var permissionCallback: PermissionCallback? = null
-    private var loadingDialog: AlertDialog? = null
-
     private val requestPermissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        handlePermissionResult(permissions)
-    }
-
-    private fun handlePermissionResult(permissions: Map<String, Boolean>) {
-        val deniedPermissions = permissions.filterValues { !it }.keys.toTypedArray()
-
-        when {
-            deniedPermissions.isEmpty() -> {
-                permissionCallback?.onPermissionsGranted()
-            }
-
-            deniedPermissions.any { shouldShowRequestPermissionRationale(it) } -> {
-                permissionCallback?.onPermissionRationale(deniedPermissions)
-                handlePermissionDenial()
-            }
-
-            else -> {
-                permissionCallback?.onPermissionsDenied()
-                handlePermissionDenial()
-            }
+        if (permissions.all { it.value }) {
+            savePermissionsGranted()
+            permissionCallback?.onPermissionsGranted()
+            showDialog = false
+        } else {
+            permissionCallback?.onPermissionsDenied()
         }
     }
 
-    private fun shouldShowRequestPermissionRationale(permission: String): Boolean {
-        return activity.shouldShowRequestPermissionRationale(permission)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun arePermissionsAlreadyGranted(): Boolean {
+        return prefs.getBoolean(PERMISSIONS_GRANTED_KEY, false) &&
+                requiredPermissions.all {
+                    ContextCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
+                }
+    }
+
+    private fun savePermissionsGranted() {
+        prefs.edit().putBoolean(PERMISSIONS_GRANTED_KEY, true).apply()
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun checkAndRequestPermissions(callback: PermissionCallback) {
         this.permissionCallback = callback
 
-        val permissionsToRequest = allPermissions.filter { permission ->
-            ContextCompat.checkSelfPermission(
-                activity,
-                permission
-            ) != PackageManager.PERMISSION_GRANTED
+        if (arePermissionsAlreadyGranted()) {
+            callback.onPermissionsGranted()
+            return
+        }
+
+        val permissionsToRequest = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
         }.toTypedArray()
 
         when {
             permissionsToRequest.isEmpty() -> {
+                savePermissionsGranted()
                 callback.onPermissionsGranted()
             }
-
-            permissionsToRequest.any { shouldShowRequestPermissionRationale(it) } -> {
-                callback.onPermissionRationale(permissionsToRequest)
-                requestPermissionLauncher.launch(permissionsToRequest)
-            }
-
             else -> {
                 requestPermissionLauncher.launch(permissionsToRequest)
-            }
-        }
-    }
-
-    private fun handlePermissionDenial() {
-        MaterialAlertDialogBuilder(activity).apply {
-            setTitle("Permissions Requises")
-            setMessage(getPermissionMessage())
-            setPositiveButton("Paramètres") { _, _ -> openAppSettings() }
-            setNegativeButton("Annuler", null)
-            show()
-        }
-    }
-
-    private fun getPermissionMessage(): String {
-        return when {
-            Build.VERSION.SDK_INT >= ANDROID_12 -> {
-                "Cette application nécessite l'accès au WiFi, aux appareils à proximité et au stockage. " +
-                        "Veuillez accorder ces permissions dans les Paramètres."
-            }
-
-            Build.VERSION.SDK_INT >= ANDROID_11 -> {
-                "Cette application nécessite l'accès à la localisation pour le WiFi et le Bluetooth, " +
-                        "ainsi que l'accès au stockage. Veuillez accorder ces permissions dans les Paramètres."
-            }
-
-            else -> {
-                "Cette application nécessite l'accès à la localisation, au WiFi, au Bluetooth et au stockage. " +
-                        "Veuillez accorder ces permissions dans les Paramètres."
             }
         }
     }
@@ -204,3 +135,29 @@ class PermissionHandler(private val activity: ComponentActivity) {
         }
     }
 }
+enum class LottieJsonGetterR_Raw_Icons(val resourceId: Int) {
+    reacticonanimatedjsonurl(R.raw.reacticonanimatedjsonurl),
+    afficheFenetre(R.raw.stats_lottie_json) ,
+    alimentation(R.raw.alimentation)   ,
+    atay(R.raw.atay)
+}
+
+class XmlsFilesHandler {
+
+    companion object {
+        val xmlResources = listOf(
+            Pair("marker_info_window", R.layout.marker_info_window),
+            Pair("info_window_container", R.id.info_window_container),
+            Pair("location_arrow", R.drawable.location_arrow),
+            Pair("reacticonanimatedjsonurl", R.raw.reacticonanimatedjsonurl),
+        )
+
+        fun fixXmlResources(name: String): Int {
+            return xmlResources.find { it.first == name }?.second
+                ?: throw IllegalStateException("Resource '$name' not found")  // Better error message
+        }
+    }
+}
+
+
+

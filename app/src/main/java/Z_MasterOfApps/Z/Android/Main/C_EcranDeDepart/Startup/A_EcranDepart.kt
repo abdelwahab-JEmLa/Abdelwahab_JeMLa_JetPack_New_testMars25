@@ -2,7 +2,7 @@ package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup
 
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsControlsButtons
-import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.ViewModel.Startup_Extension
+import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog.A_OptionsDialog
 import Z_MasterOfApps.Z.Android.Main.NavigationItems
 import Z_MasterOfApps.Z.Android.Main.Screen
 import androidx.compose.foundation.clickable
@@ -123,10 +123,15 @@ internal fun A_StartupScreen(
 
         if (viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility) {
             A_OptionsControlsButtons(
-                extensionVM = Startup_Extension(viewModelInitApp),
+                extensionVM = viewModelInitApp.extentionStartup, // Utilisez l'instance existante
                 viewModelInitApp = viewModelInitApp,
-                paddingValues = PaddingValues()
+                paddingValues = PaddingValues()  ,
             )
         }
+
+        A_OptionsDialog(
+            viewModelInitApp = viewModelInitApp,
+            onDismiss = { viewModelInitApp.extentionStartup.dialogeOptions = false }
+        )
     }
 }

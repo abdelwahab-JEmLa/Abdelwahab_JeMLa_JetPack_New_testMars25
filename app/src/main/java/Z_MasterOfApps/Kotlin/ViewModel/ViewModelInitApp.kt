@@ -56,6 +56,7 @@ class ViewModelInitApp : ViewModel() {
         viewModelScope.launch {
             try {
                 isLoading = true
+
                 loadData(viewModel)
                 FromAncienDataBase.setupRealtimeListeners(viewModel)
                 isLoading = false

@@ -1,21 +1,24 @@
-package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs
-
-// A_OptionsControlsButtons.kt
+package Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.A
 
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils.LabelsButton
-import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils.MenuButton
-import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.ViewModel.Startup_Extension
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.A_ChangeIdColor
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.AddMarkerButton
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.ClearHistoryButton
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.LabelsButton
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.LocationTrackingButton
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.MenuButton
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.rememberLocationTracker
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.ViewModelExtension_App2_F1
+import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.VisbleClientsNow
 import Z_MasterOfApps.Z.Android.Main.Utils.LottieJsonGetterR_Raw_Icons
+import Z_MasterOfApps.Z.Android.Main.Utils.XmlsFilesHandler.Companion.xmlResources
 import Z_MasterOfApps.Z_AppsFather.Kotlin.Partage.Views.AnimatedIconLottieJsonFile
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -38,19 +41,33 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import kotlin.math.roundToInt
 
-const val TAG = "ControlButton"
-
 @Composable
-fun A_OptionsControlsButtons(
+fun A_GlobalOptionsControlsFloatingActionButtons_FragId1(
+    extensionVM: ViewModelExtension_App2_F1,
+    mapView: MapView,
     viewModelInitApp: ViewModelInitApp,
-    paddingValues: PaddingValues,
-    extensionVM: Startup_Extension,
-) {
-    var showMenu by remember { mutableStateOf(true) }
-    var showLabels by remember { mutableStateOf(true) }
+    onClear: () -> Unit,
+    onFilterMarkers: () -> Unit,
+    currentFilterMode: VisbleClientsNow,
+    ) {
+    var showMenu by remember { mutableStateOf(false) }
+    var showLabels by remember { mutableStateOf(false) }
+    val proximiteMeter = 50.0
+    val context = mapView.context
+    val packageName = context.packageName
 
+    // Create LocationTracker
+    val locationTracker = rememberLocationTracker(
+        mapView = mapView,
+        proxim = proximiteMeter,
+        xmlResources = xmlResources
+    )
+
+    // États pour le drag
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
@@ -72,34 +89,57 @@ fun A_OptionsControlsButtons(
         ) {
             Column(
                 modifier = Modifier.align(Alignment.BottomStart),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 if (showMenu) {
-
-                    B_3_ImplimentClientsParProduits(viewModelInitApp ,showLabels)
-
-                    B_1_SwitchGerantOuAfficheurPhone(
+                    LocationTrackingButton(
                         showLabels = showLabels,
-                        viewModelInitApp = viewModelInitApp
+                        mapView = mapView,
+                        proximiteMeter = proximiteMeter,
+                        xmlResources = xmlResources
                     )
-                    B_2_ClearAchatsEtCommendsEtSauvgardHistoriques(
+
+                    But1_NearbyMarkersButton(
+                        showLabels = showLabels,
+                        viewModelInitApp = viewModelInitApp,
+                        markers = mapView.overlays.filterIsInstance<Marker>().toMutableList(),
+                        locationTracker = locationTracker,
+                        proximiteMeter = proximiteMeter,
+                        mapView = mapView
+                    )
+
+                    AddMarkerButton(
+                        extensionVM = extensionVM,
+                        showLabels = showLabels,
+                        mapView = mapView,
+                    )
+
+                    FragId1But_3(
+                        showLabels = showLabels,
                         extensionVM=extensionVM,
-                        showLabels = showLabels,
-                        viewModelInitApp = viewModelInitApp
-                    )
-                    B_4_creeDepuitAncienDataBases(
-                        showLabels = showLabels,
-                        viewModel = viewModelInitApp
-                    )
-                    B_5(
-                        showLabels = showLabels,
-                        viewModel = viewModelInitApp
                     )
 
-                    B_6(
-                        showLabels = showLabels,
-                        viewModel = viewModelInitApp ,
-                    )
+                    if (!packageName.contains("clientje") ) {
+                        But_2(
+                            currentFilterMode=currentFilterMode,
+
+                            extensionVM = extensionVM,
+                            viewModel = viewModelInitApp,
+                            showLabels = showLabels,
+                            onClick = onFilterMarkers
+                        )
+
+                        A_ChangeIdColor(
+                            viewModelInitApp = viewModelInitApp,
+                            showLabels = showLabels,
+                        )
+
+                        ClearHistoryButton(
+                            viewModelInitApp = viewModelInitApp,
+                            showLabels = showLabels,
+                            onClear,
+                        )
+                    }
                 }
 
                 LabelsButton(
@@ -127,7 +167,6 @@ fun ControlButton(
     containerColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Log.d(TAG, "ControlButton called with icon type: ${icon.javaClass.simpleName}")
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -135,10 +174,8 @@ fun ControlButton(
     ) {
         when (icon) {
             is ImageVector -> {
-                Log.d(TAG, "Rendering ImageVector icon")
                 FloatingActionButton(
                     onClick = {
-                        Log.d(TAG, "ImageVector FAB clicked")
                         onClick()
                     },
                     modifier = modifier.size(40.dp),
@@ -148,12 +185,10 @@ fun ControlButton(
                 }
             }
             is LottieJsonGetterR_Raw_Icons -> {
-                Log.d(TAG, "Rendering LottieJsonGetterR_Raw_Icons")
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clickable {
-                            Log.d(TAG, "LottieJson Box clicked")
                             onClick()
                         }
                         .background(
@@ -161,7 +196,6 @@ fun ControlButton(
                             shape = CircleShape
                         )
                         .also {
-                            Log.d(TAG, "Box modifiers applied successfully")
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -172,7 +206,6 @@ fun ControlButton(
                 }
             }
             else -> {
-                Log.e(TAG, "Unsupported icon type: ${icon.javaClass.simpleName}")
                 throw IllegalArgumentException("Unsupported icon type")
             }
         }
@@ -188,4 +221,3 @@ fun ControlButton(
         }
     }
 }
-

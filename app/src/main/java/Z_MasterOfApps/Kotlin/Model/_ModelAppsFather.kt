@@ -11,10 +11,16 @@ import com.google.firebase.database.database
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
 open class _ModelAppsFather(
     initial_Produits_Main_DataBase: List<A_ProduitModel> = emptyList()
 ) {
+    @get:Exclude
+    var applicationEstInstalleDonTelephone: SnapshotStateList<E_AppsOptionsStates.ApplicationEstInstalleDonTelephone> =
+        emptyList<E_AppsOptionsStates.ApplicationEstInstalleDonTelephone>().toMutableStateList()
+    @get:Exclude
+    var f_PrototypseDeProgramationInfos: SnapshotStateList<E_AppsOptionsStates.F_PrototypseDeProgramationInfos> =
+        emptyList<E_AppsOptionsStates.F_PrototypseDeProgramationInfos>().toMutableStateList()
+
     @get:Exclude
     var produitsMainDataBase: SnapshotStateList<A_ProduitModel> =
         initial_Produits_Main_DataBase.toMutableStateList()
@@ -23,21 +29,29 @@ open class _ModelAppsFather(
     var clientDataBase: SnapshotStateList<B_ClientsDataBase> =
         emptyList<B_ClientsDataBase>().toMutableStateList()
 
-    @get:Exclude var grossistsDataBase: SnapshotStateList<C_GrossistsDataBase> = emptyList<C_GrossistsDataBase>().toMutableStateList()
-    @get:Exclude var couleursProduitsInfos: SnapshotStateList<D_CouleursEtGoutesProduitsInfos> = emptyList<D_CouleursEtGoutesProduitsInfos>().toMutableStateList()
+    @get:Exclude
+    var grossistsDataBase: SnapshotStateList<C_GrossistsDataBase> =
+        emptyList<C_GrossistsDataBase>().toMutableStateList()
+    @get:Exclude
+    var couleursProduitsInfos: SnapshotStateList<D_CouleursEtGoutesProduitsInfos> =
+        emptyList<D_CouleursEtGoutesProduitsInfos>().toMutableStateList()
 
-
-    // A_GroupedValues.kt stays the same
     val groupedProductsParGrossist: List<Map.Entry<C_GrossistsDataBase, List<A_ProduitModel>>>
         get() = grossistsDataBase.map { grossist ->
             val matchingProducts = produitsMainDataBase.filter { product ->
-                product.bonCommendDeCetteCota?.idGrossistChoisi == grossist.id
+                product.bonCommendDeCetteCota?.idGrossistChoisi == grossist.id &&
+                        product.bonsVentDeCetteCota.any { bonVent ->
+                            bonVent.colours_Achete.any { color ->
+                                color.quantity_Achete > 0
+                            }
+                        }
             }
 
             java.util.AbstractMap.SimpleEntry(grossist, matchingProducts)
         }.sortedBy { entry ->
             entry.key.statueDeBase.itIndexInParentList
         }
+
 
     val groupedProductsParClients: List<Map.Entry<B_ClientsDataBase, List<A_ProduitModel>>>
         get() = clientDataBase.map { client ->
@@ -53,7 +67,7 @@ open class _ModelAppsFather(
         }
 
     companion object {
-         val firebaseDatabase = Firebase.database
+        val firebaseDatabase = Firebase.database
 
         val ref_HeadOfModels = firebaseDatabase
             .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
@@ -105,7 +119,8 @@ open class _ModelAppsFather(
             viewModelProduits.viewModelScope.launch {
                 try {
                     // Créer une nouvelle liste temporaire
-                    val updatedList = viewModelProduits._modelAppsFather.produitsMainDataBase.toMutableList()
+                    val updatedList =
+                        viewModelProduits._modelAppsFather.produitsMainDataBase.toMutableList()
                     val index = updatedList.indexOfFirst { it.id == product.id }
                     if (index != -1) {
                         updatedList[index] = product
@@ -121,4 +136,5 @@ open class _ModelAppsFather(
             }
         }
     }
+
 }

@@ -4,6 +4,7 @@ import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
+import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import android.util.Log
@@ -31,6 +32,7 @@ object CurrentModels {
         setupClientsListener(viewModel)
         setupGrossistsListener(viewModel)
         setupCouleursListener(viewModel)
+        setupApplicationEstInstalleListener(viewModel)
     }
 
     fun cleanup() {
@@ -41,6 +43,7 @@ object CurrentModels {
                 "clients" -> B_ClientsDataBase.refClientsDataBase.removeEventListener(info.listener)
                 "grossists" -> _ModelAppsFather.ref_HeadOfModels.removeEventListener(info.listener)
                 "couleurs" -> D_CouleursEtGoutesProduitsInfos.caReference.removeEventListener(info.listener)
+                "appInstalle" -> E_AppsOptionsStates.caReference.removeEventListener(info.listener)
             }
         }
         listeners.clear()
@@ -310,5 +313,50 @@ object CurrentModels {
 
         listeners.add(ListenerInfo(listener, "couleurs"))
         D_CouleursEtGoutesProduitsInfos.caReference.addValueEventListener(listener)
+    }
+    private fun setupApplicationEstInstalleListener(viewModel: ViewModelInitApp) {
+        Log.d(TAG, "Setting up application installation status listener")
+
+        E_AppsOptionsStates.caReference.keepSynced(true)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val appInstallations = mutableListOf<E_AppsOptionsStates.ApplicationEstInstalleDonTelephone>()
+
+                        snapshot.children.forEach { snap ->
+                            try {
+                                val appInstall = E_AppsOptionsStates.ApplicationEstInstalleDonTelephone().apply {
+                                    id = snap.key?.toIntOrNull() ?: 0
+                                    nom = snap.child("nom").getValue(String::class.java) ?: ""
+                                    widthScreen = snap.child("widthScreen").getValue(Int::class.java)
+                                        ?: E_AppsOptionsStates.ApplicationEstInstalleDonTelephone.metricsWidthPixels
+                                }
+                                appInstallations.add(appInstall)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error processing application installation ${snap.key}", e)
+                            }
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            viewModel.modelAppsFather.applicationEstInstalleDonTelephone.apply {
+                                clear()
+                                addAll(appInstallations)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in application installation listener", e)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Application installation listener cancelled", error.toException())
+            }
+        }
+
+        listeners.add(ListenerInfo(listener, "appInstalle"))
+        E_AppsOptionsStates.caReference.addValueEventListener(listener)
     }
 }

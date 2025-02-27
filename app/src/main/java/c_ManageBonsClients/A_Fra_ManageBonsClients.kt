@@ -326,7 +326,6 @@ fun addNewClient(name: String, onComplete: (Long) -> Unit) {
                 id = maxId + 1,
                 nom = name,
             ) .apply {
-                statueDeBase.bonDuClientsSu = ""
                 statueDeBase.couleur = generateRandomTropicalColor()
             }
             clientsTableRef.child((maxId + 1).toString()).setValue(newClients)

@@ -56,55 +56,91 @@ object FromAncienDataBase {
                         productSnapshot.child("idcolor2").getValue(Long::class.java),
                         productSnapshot.child("idcolor3").getValue(Long::class.java),
                         productSnapshot.child("idcolor4").getValue(Long::class.java)
-                    )
+                    ).filter { it > 0 } // Filter out invalid color IDs
 
                     val lastState = lastKnownValues[productId]
                     val pricesChanged = lastState?.prixAchat != newPrixAchat ||
-                            lastState.prixVent != newPrixVent
+                            lastState?.prixVent != newPrixVent
                     val colorsChanged = lastState?.colors != newColors
 
-                    if (pricesChanged || colorsChanged) {
-                        _ModelAppsFather.produitsFireBaseRef.child(productId).get()
-                            .addOnSuccessListener { productDbSnapshot ->
-                                val product = productDbSnapshot.getValue(A_ProduitModel::class.java)
-                                if (product != null) {
-                                    var updated = false
+                    _ModelAppsFather.produitsFireBaseRef.child(productId).get()
+                        .addOnSuccessListener { productDbSnapshot ->
+                            val product = productDbSnapshot.getValue(A_ProduitModel::class.java)
 
-                                    if (colorsChanged) {
-                                        val beforeColors = product.statuesBase.coloursEtGoutsIds.toList()
-                                        val updatedProduct = handleColorUpdate(productSnapshot, product)
-                                        val afterColors = updatedProduct.statuesBase.coloursEtGoutsIds.toList()
+                            if (product != null) {
+                                // Existing product update logic
+                                var updated = false
 
-                                        if (beforeColors != afterColors) {
-                                            updated = true
-                                        }
-                                    }
+                                if (colorsChanged) {
+                                    val beforeColors = product.statuesBase.coloursEtGoutsIds.toList()
+                                    val updatedProduct = handleColorUpdate(productSnapshot, product)
+                                    val afterColors = updatedProduct.statuesBase.coloursEtGoutsIds.toList()
 
-                                    if (pricesChanged) {
-                                        product.statuesBase.infosCoutes.monPrixAchat = newPrixAchat
-                                        product.statuesBase.infosCoutes.monPrixVent = newPrixVent
+                                    if (beforeColors != afterColors) {
                                         updated = true
                                     }
-
-                                    if (updated) {
-                                        _ModelAppsFather.produitsFireBaseRef.child(productId)
-                                            .setValue(product)
-                                            .addOnSuccessListener {
-                                                lastKnownValues[productId] = ProductState(
-                                                    newPrixAchat,
-                                                    newPrixVent,
-                                                    newColors
-                                                )
-                                            }
-                                    }
                                 }
+
+                                if (pricesChanged) {
+                                    product.statuesBase.infosCoutes.monPrixAchat = newPrixAchat
+                                    product.statuesBase.infosCoutes.monPrixVent = newPrixVent
+                                    updated = true
+                                }
+
+                                if (updated) {
+                                    _ModelAppsFather.produitsFireBaseRef.child(productId)
+                                        .setValue(product)
+                                        .addOnSuccessListener {
+                                            lastKnownValues[productId] = ProductState(
+                                                newPrixAchat,
+                                                newPrixVent,
+                                                newColors
+                                            )
+                                        }
+                                }
+                            } else {
+                                // Implementation of TODO(1): Create a new product if it doesn't exist
+                                val newProductId = productId.toLongOrNull() ?: return@addOnSuccessListener
+
+                                val newProduct = A_ProduitModel(
+                                    id = newProductId,
+                                    init_nom = productSnapshot.child("nomArticle").getValue(String::class.java) ?: "Imported Product"
+                                ).apply {
+                                    // Set prices from old database
+                                    statuesBase.infosCoutes.monPrixAchat = newPrixAchat
+                                    statuesBase.infosCoutes.monPrixVent = newPrixVent
+
+                                    // Set colors from old database
+                                    statuesBase.coloursEtGoutsIds = newColors
+
+                                    // Mark as needing update for any potential missing fields
+                                    besoinToBeUpdated = true
+                                }
+
+                                // Save the new product to Firebase
+                                _ModelAppsFather.produitsFireBaseRef.child(productId)
+                                    .setValue(newProduct)
+                                    .addOnSuccessListener {
+                                        Log.d("Import", "Successfully imported product $productId from old database")
+                                        lastKnownValues[productId] = ProductState(
+                                            newPrixAchat,
+                                            newPrixVent,
+                                            newColors
+                                        )
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.e("Import", "Failed to import product $productId", e)
+                                    }
                             }
-                    }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firebase", "Error checking product $productId", e)
+                        }
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error if needed
+                Log.e("Firebase", "Database error: ${error.message}")
             }
         }
 

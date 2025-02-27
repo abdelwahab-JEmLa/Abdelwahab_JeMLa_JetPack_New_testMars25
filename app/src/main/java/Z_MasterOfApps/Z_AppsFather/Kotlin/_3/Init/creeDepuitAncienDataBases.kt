@@ -23,7 +23,7 @@ fun creeDepuitAncienDataBases(
                     Log.d("creeDepuitAncienDataBases", "Processing product with ID 83: cartonState = ${ancien.cartonState}")
                 }
 
-                // Skip products with ID > 2000
+                // Skip products with ID  2000
                 if (ancien.idArticle <= 2000) {
                     val depuitAncienDataBase = A_ProduitModel(
                         id = ancien.idArticle,

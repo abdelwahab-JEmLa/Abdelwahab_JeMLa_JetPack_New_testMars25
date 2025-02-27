@@ -3,6 +3,7 @@ package Z_MasterOfApps.Kotlin.Model
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -28,11 +29,13 @@ class A_ProduitModel(
     var besoinToBeUpdated: Boolean by mutableStateOf(init_besoin_To_Be_Updated)
     var non_Trouve: Boolean by mutableStateOf(initialNon_Trouve)
     var isVisible: Boolean by mutableStateOf(init_visible)
+    var parentCategoryId by mutableLongStateOf(0L)
 
 
     var statuesBase: StatuesBase by mutableStateOf(StatuesBase())
     @IgnoreExtraProperties
     class StatuesBase(
+
         coloursEtGoutsIds: List<Long> = emptyList(), // Changed parameter name to avoid shadowing
         var ilAUneCouleurAvecImage: Boolean = false,
         var characterProduit: CharacterProduit = CharacterProduit(),

@@ -32,6 +32,7 @@ data class ArticlesBasesStatsTable(
     var monPrixVent: Double = 0.0,
     var neaon2: String = "",
     var idCategorie: Double = 0.0,
+    var catalogeParentID: Long = 0,
     var funChangeImagsDimention: Boolean = false, //imgStatIsSmall
     var nomCategorie: String = "",
     var neaon1: Double = 0.0,

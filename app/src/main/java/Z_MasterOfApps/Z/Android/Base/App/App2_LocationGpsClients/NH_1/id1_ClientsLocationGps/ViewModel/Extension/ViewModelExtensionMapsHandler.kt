@@ -1,9 +1,14 @@
 package Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension
 
+import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase.Companion.updateClientsDataBase
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
+import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase.StatueDeBase.TypeDeSonMagasine
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.Main.Utils.LottieJsonGetterR_Raw_Icons
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import kotlinx.coroutines.CoroutineScope
 import org.osmdroid.views.MapView
@@ -15,6 +20,9 @@ class ViewModelExtension_App2_F1(
     private val clientDataBaseSnapList: SnapshotStateList<B_ClientsDataBase>,
     val viewModel: ViewModelInitApp,
 ) {
+    var auClickeCaUpdateClientPar by mutableStateOf(TypeDeSonMagasine.ATAYAT_MOUKASSARAT)
+    // Add this property to ViewModelInitApp
+
     fun onClickAddMarkerButton(
         mapView: MapView,
     ) {
@@ -33,7 +41,10 @@ class ViewModelExtension_App2_F1(
                 id = newID,
                 nom = newnom
             ).apply {
-                statueDeBase.cUnClientTemporaire = true
+                statueDeBase.apply {
+                    cUnClientTemporaire = true
+                    typeDeSonMagasine = auClickeCaUpdateClientPar
+                }
                 gpsLocation.apply {
                     latitude = center.latitude
                     longitude = center.longitude
@@ -62,10 +73,16 @@ class ViewModelExtension_App2_F1(
                         actuelleEtat = statueVente
                     )
                 )
-                updatedClient.updateClientsDataBase( viewModel)
+                updatedClient.updateClientsDataBase(viewModel)
             }
         }
     }
 }
 
-
+enum class VisbleClientsNow(val icon: LottieJsonGetterR_Raw_Icons) {
+    showNonAbsentClientsOnly(LottieJsonGetterR_Raw_Icons.reacticonanimatedjsonurl),
+    showCibleClientsOnly(LottieJsonGetterR_Raw_Icons.afficheFenetre),
+    showAtayClients(LottieJsonGetterR_Raw_Icons.atay),
+    showAlimentionlients(LottieJsonGetterR_Raw_Icons.alimentation),
+    showAll(LottieJsonGetterR_Raw_Icons.reacticonanimatedjsonurl);
+}

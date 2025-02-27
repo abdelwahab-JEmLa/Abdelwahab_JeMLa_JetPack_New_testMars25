@@ -83,6 +83,7 @@ data class Ancien_SoldArticlesTabelle_Main internal constructor(
     val color4SoldQuantity: Int = 0,
     val confimed: Boolean = false,
 )
+
 data class Ancien_ColorArticle_Main(
     val idColore: Long = 0,
     val nameColore: String = "",

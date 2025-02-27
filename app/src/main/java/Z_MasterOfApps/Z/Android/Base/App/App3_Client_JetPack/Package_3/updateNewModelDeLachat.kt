@@ -1,10 +1,10 @@
 package Z_MasterOfApps.Z.Android.Base.App.App3_Client_JetPack.Package_3
 
-import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
-import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel.ClientBonVentModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel.GrossistBonCommandes
+import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
+import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.Base.App.App3_Client_JetPack.Models.ColorsArticlesTabelle
 import Z_MasterOfApps.Z.Android.Base.App.App3_Client_JetPack.Models.SoldArticlesTabelle
@@ -29,7 +29,7 @@ fun updateNewModelDeLachat(
 
         // Find product or create new one if it doesn't exist
         var productIndex = viewModelInitApp._modelAppsFather.produitsMainDataBase
-            .indexOfFirst { it.nom == currentSale.nameArticle }
+            .indexOfFirst { it.id == currentSale.idArticle }
 
         val product = if (productIndex != -1) {
             viewModelInitApp._modelAppsFather.produitsMainDataBase[productIndex]
