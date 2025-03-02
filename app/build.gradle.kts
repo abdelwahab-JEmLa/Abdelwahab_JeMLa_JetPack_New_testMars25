@@ -113,6 +113,9 @@ dependencies {
     // Lottie Compose
     implementation ("com.airbnb.android:lottie-compose:6.1.0")
 
+    // Koin pour Android
+    implementation ("io.insert-koin:koin-android:3.5.0")
+    implementation ("io.insert-koin:koin-androidx-compose:3.5.0")
 }
 
 apply(plugin = "com.google.gms.google-services")

@@ -4,16 +4,16 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-02-16T10:58:20.300519800Z">
+        <DropdownSelection timestamp="2025-03-02T06:54:00.216745900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=fee5ca0c" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Abou Mohamed\.android\avd\New_Device_API_31.avd" />
             </handle>
           </Target>
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="MainScreenPreview">
+      <SelectionState runConfigName="CategorieProduitsManagerScreenContentPreview">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
