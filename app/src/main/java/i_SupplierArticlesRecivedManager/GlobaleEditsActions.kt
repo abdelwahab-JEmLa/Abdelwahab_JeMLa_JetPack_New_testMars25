@@ -35,7 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.AddArticleButton
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.AddArticleButton
 
 @Composable
 fun GlobaleControlsFloatingButtonsSA(

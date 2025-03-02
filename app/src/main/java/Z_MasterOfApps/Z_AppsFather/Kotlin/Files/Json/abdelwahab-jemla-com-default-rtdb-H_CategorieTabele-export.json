@@ -1,0 +1,771 @@
+[
+  {
+    "idCategorieInCategoriesTabele": 0,
+    "idClassementCategorieInCategoriesTabele": 3,
+    "nomCategorieInCategoriesTabele": "New Articles"
+  },
+  {
+    "idCategorieInCategoriesTabele": 149,
+    "idClassementCategorieInCategoriesTabele": 61,
+    "nomCategorieInCategoriesTabele": "Pasti"
+  },
+  {
+    "idCategorieInCategoriesTabele": 150,
+    "idClassementCategorieInCategoriesTabele": 117,
+    "nomCategorieInCategoriesTabele": ""
+  },
+  {
+    "idCategorieInCategoriesTabele": 151,
+    "idClassementCategorieInCategoriesTabele": 62,
+    "nomCategorieInCategoriesTabele": "refraicheur"
+  },
+  {
+    "idCategorieInCategoriesTabele": 4,
+    "idClassementCategorieInCategoriesTabele": 63,
+    "nomCategorieInCategoriesTabele": "Lamps"
+  },
+  {
+    "idCategorieInCategoriesTabele": 5,
+    "idClassementCategorieInCategoriesTabele": 64,
+    "nomCategorieInCategoriesTabele": "Briké"
+  },
+  {
+    "idCategorieInCategoriesTabele": 6,
+    "idClassementCategorieInCategoriesTabele": 65,
+    "nomCategorieInCategoriesTabele": "بريكي"
+  },
+  {
+    "idCategorieInCategoriesTabele": 7,
+    "idClassementCategorieInCategoriesTabele": 66,
+    "nomCategorieInCategoriesTabele": "pils chauff bain"
+  },
+  {
+    "idCategorieInCategoriesTabele": 8,
+    "idClassementCategorieInCategoriesTabele": 68,
+    "nomCategorieInCategoriesTabele": "Pils"
+  },
+  {
+    "idCategorieInCategoriesTabele": 9,
+    "idClassementCategorieInCategoriesTabele": 69,
+    "nomCategorieInCategoriesTabele": "Patex"
+  },
+  {
+    "idCategorieInCategoriesTabele": 10,
+    "idClassementCategorieInCategoriesTabele": 70,
+    "nomCategorieInCategoriesTabele": "nabola et balons"
+  },
+  {
+    "idCategorieInCategoriesTabele": 11,
+    "idClassementCategorieInCategoriesTabele": 71,
+    "nomCategorieInCategoriesTabele": "hajiya nesswiya"
+  },
+  {
+    "idCategorieInCategoriesTabele": 12,
+    "idClassementCategorieInCategoriesTabele": 72,
+    "nomCategorieInCategoriesTabele": "huile"
+  },
+  {
+    "idCategorieInCategoriesTabele": 13,
+    "idClassementCategorieInCategoriesTabele": 73,
+    "nomCategorieInCategoriesTabele": "cream deployent"
+  },
+  {
+    "idCategorieInCategoriesTabele": 14,
+    "idClassementCategorieInCategoriesTabele": 74,
+    "nomCategorieInCategoriesTabele": "stick"
+  },
+  {
+    "idCategorieInCategoriesTabele": 15,
+    "idClassementCategorieInCategoriesTabele": 75,
+    "nomCategorieInCategoriesTabele": "bross a dente"
+  },
+  {
+    "idCategorieInCategoriesTabele": 16,
+    "idClassementCategorieInCategoriesTabele": 76,
+    "nomCategorieInCategoriesTabele": "فرشاة اسنان"
+  },
+  {
+    "idCategorieInCategoriesTabele": 17,
+    "idClassementCategorieInCategoriesTabele": 78,
+    "nomCategorieInCategoriesTabele": "معجون اسنان"
+  },
+  {
+    "idCategorieInCategoriesTabele": 18,
+    "idClassementCategorieInCategoriesTabele": 79,
+    "nomCategorieInCategoriesTabele": "desodorisent"
+  },
+  {
+    "idCategorieInCategoriesTabele": 19,
+    "idClassementCategorieInCategoriesTabele": 80,
+    "nomCategorieInCategoriesTabele": "Injets"
+  },
+  {
+    "idCategorieInCategoriesTabele": 20,
+    "idClassementCategorieInCategoriesTabele": 81,
+    "nomCategorieInCategoriesTabele": "صابون"
+  },
+  {
+    "idCategorieInCategoriesTabele": 21,
+    "idClassementCategorieInCategoriesTabele": 82,
+    "nomCategorieInCategoriesTabele": "savon"
+  },
+  {
+    "idCategorieInCategoriesTabele": 22,
+    "idClassementCategorieInCategoriesTabele": 83,
+    "nomCategorieInCategoriesTabele": "Champoins"
+  },
+  {
+    "idCategorieInCategoriesTabele": 23,
+    "idClassementCategorieInCategoriesTabele": 84,
+    "nomCategorieInCategoriesTabele": "Gel Douche"
+  },
+  {
+    "idCategorieInCategoriesTabele": 24,
+    "idClassementCategorieInCategoriesTabele": 85,
+    "nomCategorieInCategoriesTabele": "Apré Champoins"
+  },
+  {
+    "idCategorieInCategoriesTabele": 25,
+    "idClassementCategorieInCategoriesTabele": 86,
+    "nomCategorieInCategoriesTabele": "Papiés Mouchoire"
+  },
+  {
+    "idCategorieInCategoriesTabele": 26,
+    "idClassementCategorieInCategoriesTabele": 88,
+    "nomCategorieInCategoriesTabele": "Coton Tige"
+  },
+  {
+    "idCategorieInCategoriesTabele": 27,
+    "idClassementCategorieInCategoriesTabele": 89,
+    "nomCategorieInCategoriesTabele": "outils"
+  },
+  {
+    "idCategorieInCategoriesTabele": 28,
+    "idClassementCategorieInCategoriesTabele": 90,
+    "nomCategorieInCategoriesTabele": "سيالات"
+  },
+  {
+    "idCategorieInCategoriesTabele": 29,
+    "idClassementCategorieInCategoriesTabele": 91,
+    "nomCategorieInCategoriesTabele": "Scotches"
+  },
+  {
+    "idCategorieInCategoriesTabele": 30,
+    "idClassementCategorieInCategoriesTabele": 92,
+    "nomCategorieInCategoriesTabele": "Fasseurs"
+  },
+  {
+    "idCategorieInCategoriesTabele": 31,
+    "idClassementCategorieInCategoriesTabele": 93,
+    "nomCategorieInCategoriesTabele": "Fetre"
+  },
+  {
+    "idCategorieInCategoriesTabele": 32,
+    "idClassementCategorieInCategoriesTabele": 2,
+    "nomCategorieInCategoriesTabele": "حلاقم"
+  },
+  {
+    "idCategorieInCategoriesTabele": 33,
+    "idClassementCategorieInCategoriesTabele": 1,
+    "nomCategorieInCategoriesTabele": "HALKOUMA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 34,
+    "idClassementCategorieInCategoriesTabele": 6,
+    "nomCategorieInCategoriesTabele": "حلاقم كوجاك"
+  },
+  {
+    "idCategorieInCategoriesTabele": 35,
+    "idClassementCategorieInCategoriesTabele": 8,
+    "nomCategorieInCategoriesTabele": "حلوى ماكلة"
+  },
+  {
+    "idCategorieInCategoriesTabele": 36,
+    "idClassementCategorieInCategoriesTabele": 14,
+    "nomCategorieInCategoriesTabele": "roches"
+  },
+  {
+    "idCategorieInCategoriesTabele": 37,
+    "idClassementCategorieInCategoriesTabele": 13,
+    "nomCategorieInCategoriesTabele": "شيبس"
+  },
+  {
+    "idCategorieInCategoriesTabele": 38,
+    "idClassementCategorieInCategoriesTabele": 7,
+    "nomCategorieInCategoriesTabele": "Corné"
+  },
+  {
+    "idCategorieInCategoriesTabele": 39,
+    "idClassementCategorieInCategoriesTabele": 4,
+    "nomCategorieInCategoriesTabele": "بيض Surprise"
+  },
+  {
+    "idCategorieInCategoriesTabele": 40,
+    "idClassementCategorieInCategoriesTabele": 15,
+    "nomCategorieInCategoriesTabele": "Fun Candys"
+  },
+  {
+    "idCategorieInCategoriesTabele": 41,
+    "idClassementCategorieInCategoriesTabele": 16,
+    "nomCategorieInCategoriesTabele": "Marchmellows"
+  },
+  {
+    "idCategorieInCategoriesTabele": 42,
+    "idClassementCategorieInCategoriesTabele": 17,
+    "nomCategorieInCategoriesTabele": "Smarties"
+  },
+  {
+    "idCategorieInCategoriesTabele": 43,
+    "idClassementCategorieInCategoriesTabele": 18,
+    "nomCategorieInCategoriesTabele": "Chocolattes Tartié Emballé"
+  },
+  {
+    "idCategorieInCategoriesTabele": 44,
+    "idClassementCategorieInCategoriesTabele": 10,
+    "nomCategorieInCategoriesTabele": "Nougat"
+  },
+  {
+    "idCategorieInCategoriesTabele": 45,
+    "idClassementCategorieInCategoriesTabele": 19,
+    "nomCategorieInCategoriesTabele": "Chwingums Stick"
+  },
+  {
+    "idCategorieInCategoriesTabele": 46,
+    "idClassementCategorieInCategoriesTabele": 20,
+    "nomCategorieInCategoriesTabele": "Chwingums Importaion"
+  },
+  {
+    "idCategorieInCategoriesTabele": 47,
+    "idClassementCategorieInCategoriesTabele": 21,
+    "nomCategorieInCategoriesTabele": "Chwingums 5 Da"
+  },
+  {
+    "idCategorieInCategoriesTabele": 48,
+    "idClassementCategorieInCategoriesTabele": 22,
+    "nomCategorieInCategoriesTabele": "halwa  5da"
+  },
+  {
+    "idCategorieInCategoriesTabele": 49,
+    "idClassementCategorieInCategoriesTabele": 23,
+    "nomCategorieInCategoriesTabele": "حلوى طرية 5 دج"
+  },
+  {
+    "idCategorieInCategoriesTabele": 50,
+    "idClassementCategorieInCategoriesTabele": 24,
+    "nomCategorieInCategoriesTabele": "ساشيات حلوى"
+  },
+  {
+    "idCategorieInCategoriesTabele": 51,
+    "idClassementCategorieInCategoriesTabele": 25,
+    "nomCategorieInCategoriesTabele": "ساشيات Chwingums"
+  },
+  {
+    "idCategorieInCategoriesTabele": 52,
+    "idClassementCategorieInCategoriesTabele": 26,
+    "nomCategorieInCategoriesTabele": "كوجاك مشكلة"
+  },
+  {
+    "idCategorieInCategoriesTabele": 53,
+    "idClassementCategorieInCategoriesTabele": 27,
+    "nomCategorieInCategoriesTabele": "كوجاك 10 دج"
+  },
+  {
+    "idCategorieInCategoriesTabele": 54,
+    "idClassementCategorieInCategoriesTabele": 28,
+    "nomCategorieInCategoriesTabele": "كوجاك  5 دج"
+  },
+  {
+    "idCategorieInCategoriesTabele": 55,
+    "idClassementCategorieInCategoriesTabele": 29,
+    "nomCategorieInCategoriesTabele": "Bars Luxe Importaion"
+  },
+  {
+    "idCategorieInCategoriesTabele": 56,
+    "idClassementCategorieInCategoriesTabele": 30,
+    "nomCategorieInCategoriesTabele": "Bars Luxe"
+  },
+  {
+    "idCategorieInCategoriesTabele": 57,
+    "idClassementCategorieInCategoriesTabele": 31,
+    "nomCategorieInCategoriesTabele": "Bars 10 Da"
+  },
+  {
+    "idCategorieInCategoriesTabele": 58,
+    "idClassementCategorieInCategoriesTabele": 33,
+    "nomCategorieInCategoriesTabele": "Chocolattes فوق 5 دج"
+  },
+  {
+    "idCategorieInCategoriesTabele": 59,
+    "idClassementCategorieInCategoriesTabele": 34,
+    "nomCategorieInCategoriesTabele": "Chocolattes 5 Da"
+  },
+  {
+    "idCategorieInCategoriesTabele": 60,
+    "idClassementCategorieInCategoriesTabele": 36,
+    "nomCategorieInCategoriesTabele": "Tablettes"
+  },
+  {
+    "idCategorieInCategoriesTabele": 61,
+    "idClassementCategorieInCategoriesTabele": 38,
+    "nomCategorieInCategoriesTabele": "كاوكاو Emballé"
+  },
+  {
+    "idCategorieInCategoriesTabele": 62,
+    "idClassementCategorieInCategoriesTabele": 39,
+    "nomCategorieInCategoriesTabele": "مكسرات Emballé"
+  },
+  {
+    "idCategorieInCategoriesTabele": 63,
+    "idClassementCategorieInCategoriesTabele": 40,
+    "nomCategorieInCategoriesTabele": "زريعات"
+  },
+  {
+    "idCategorieInCategoriesTabele": 64,
+    "idClassementCategorieInCategoriesTabele": 42,
+    "nomCategorieInCategoriesTabele": "زريعة"
+  },
+  {
+    "idCategorieInCategoriesTabele": 65,
+    "idClassementCategorieInCategoriesTabele": 41,
+    "nomCategorieInCategoriesTabele": "sigar"
+  },
+  {
+    "idCategorieInCategoriesTabele": 66,
+    "idClassementCategorieInCategoriesTabele": 43,
+    "nomCategorieInCategoriesTabele": "familial gateaux\neponge"
+  },
+  {
+    "idCategorieInCategoriesTabele": 67,
+    "idClassementCategorieInCategoriesTabele": 44,
+    "nomCategorieInCategoriesTabele": "familial cookies"
+  },
+  {
+    "idCategorieInCategoriesTabele": 68,
+    "idClassementCategorieInCategoriesTabele": 45,
+    "nomCategorieInCategoriesTabele": "familial gateaux"
+  },
+  {
+    "idCategorieInCategoriesTabele": 69,
+    "idClassementCategorieInCategoriesTabele": 46,
+    "nomCategorieInCategoriesTabele": "gateau kbir"
+  },
+  {
+    "idCategorieInCategoriesTabele": 70,
+    "idClassementCategorieInCategoriesTabele": 47,
+    "nomCategorieInCategoriesTabele": "boudoire"
+  },
+  {
+    "idCategorieInCategoriesTabele": 71,
+    "idClassementCategorieInCategoriesTabele": 48,
+    "nomCategorieInCategoriesTabele": "croissant"
+  },
+  {
+    "idCategorieInCategoriesTabele": 72,
+    "idClassementCategorieInCategoriesTabele": 49,
+    "nomCategorieInCategoriesTabele": "madlen"
+  },
+  {
+    "idCategorieInCategoriesTabele": 73,
+    "idClassementCategorieInCategoriesTabele": 50,
+    "nomCategorieInCategoriesTabele": "roulette"
+  },
+  {
+    "idCategorieInCategoriesTabele": 74,
+    "idClassementCategorieInCategoriesTabele": 51,
+    "nomCategorieInCategoriesTabele": "cookies serir"
+  },
+  {
+    "idCategorieInCategoriesTabele": 75,
+    "idClassementCategorieInCategoriesTabele": 52,
+    "nomCategorieInCategoriesTabele": "gateaux\nepongé serir"
+  },
+  {
+    "idCategorieInCategoriesTabele": 76,
+    "idClassementCategorieInCategoriesTabele": 53,
+    "nomCategorieInCategoriesTabele": "gateaux\nchocolat serir"
+  },
+  {
+    "idCategorieInCategoriesTabele": 77,
+    "idClassementCategorieInCategoriesTabele": 54,
+    "nomCategorieInCategoriesTabele": "gateaux serir"
+  },
+  {
+    "idCategorieInCategoriesTabele": 78,
+    "idClassementCategorieInCategoriesTabele": 55,
+    "nomCategorieInCategoriesTabele": "gateaux\nserir"
+  },
+  {
+    "idCategorieInCategoriesTabele": 79,
+    "idClassementCategorieInCategoriesTabele": 56,
+    "nomCategorieInCategoriesTabele": "gauffret kebire"
+  },
+  {
+    "idCategorieInCategoriesTabele": 80,
+    "idClassementCategorieInCategoriesTabele": 58,
+    "nomCategorieInCategoriesTabele": "Gauffrettes"
+  },
+  {
+    "idCategorieInCategoriesTabele": 81,
+    "idClassementCategorieInCategoriesTabele": 59,
+    "nomCategorieInCategoriesTabele": "gauffret chocolat serire"
+  },
+  {
+    "idCategorieInCategoriesTabele": 82,
+    "idClassementCategorieInCategoriesTabele": 95,
+    "nomCategorieInCategoriesTabele": "tartiné chocolat"
+  },
+  {
+    "idCategorieInCategoriesTabele": 83,
+    "idClassementCategorieInCategoriesTabele": 97,
+    "nomCategorieInCategoriesTabele": "glaçage chocolat"
+  },
+  {
+    "idCategorieInCategoriesTabele": 84,
+    "idClassementCategorieInCategoriesTabele": 98,
+    "nomCategorieInCategoriesTabele": "lawazim gateaux"
+  },
+  {
+    "idCategorieInCategoriesTabele": 85,
+    "idClassementCategorieInCategoriesTabele": 99,
+    "nomCategorieInCategoriesTabele": "lawazim halawiyat"
+  },
+  {
+    "idCategorieInCategoriesTabele": 86,
+    "idClassementCategorieInCategoriesTabele": 100,
+    "nomCategorieInCategoriesTabele": "halwat turk"
+  },
+  {
+    "idCategorieInCategoriesTabele": 87,
+    "idClassementCategorieInCategoriesTabele": 101,
+    "nomCategorieInCategoriesTabele": "tebnaj"
+  },
+  {
+    "idCategorieInCategoriesTabele": 88,
+    "idClassementCategorieInCategoriesTabele": 102,
+    "nomCategorieInCategoriesTabele": "caps"
+  },
+  {
+    "idCategorieInCategoriesTabele": 89,
+    "idClassementCategorieInCategoriesTabele": 104,
+    "nomCategorieInCategoriesTabele": "ataye emballé"
+  },
+  {
+    "idCategorieInCategoriesTabele": 90,
+    "idClassementCategorieInCategoriesTabele": 105,
+    "nomCategorieInCategoriesTabele": "ataye cha3ra"
+  },
+  {
+    "idCategorieInCategoriesTabele": 91,
+    "idClassementCategorieInCategoriesTabele": 107,
+    "nomCategorieInCategoriesTabele": "fawakih moujafafa"
+  },
+  {
+    "idCategorieInCategoriesTabele": 92,
+    "idClassementCategorieInCategoriesTabele": 108,
+    "nomCategorieInCategoriesTabele": "moukassarat lawazim halawiyat"
+  },
+  {
+    "idCategorieInCategoriesTabele": 93,
+    "idClassementCategorieInCategoriesTabele": 109,
+    "nomCategorieInCategoriesTabele": "Smarties mizan"
+  },
+  {
+    "idCategorieInCategoriesTabele": 94,
+    "idClassementCategorieInCategoriesTabele": 110,
+    "nomCategorieInCategoriesTabele": "mayiss"
+  },
+  {
+    "idCategorieInCategoriesTabele": 95,
+    "idClassementCategorieInCategoriesTabele": 111,
+    "nomCategorieInCategoriesTabele": "moukassarat"
+  },
+  {
+    "idCategorieInCategoriesTabele": 96,
+    "idClassementCategorieInCategoriesTabele": 112,
+    "nomCategorieInCategoriesTabele": "kawkaw"
+  },
+  {
+    "idCategorieInCategoriesTabele": 97,
+    "idClassementCategorieInCategoriesTabele": 113,
+    "nomCategorieInCategoriesTabele": "moukassarat mizan"
+  },
+  {
+    "idCategorieInCategoriesTabele": 98,
+    "idClassementCategorieInCategoriesTabele": 114,
+    "nomCategorieInCategoriesTabele": "chips"
+  },
+  {
+    "idCategorieInCategoriesTabele": 99,
+    "idClassementCategorieInCategoriesTabele": 60,
+    "nomCategorieInCategoriesTabele": "Consmitiques"
+  },
+  {
+    "idCategorieInCategoriesTabele": 100,
+    "idClassementCategorieInCategoriesTabele": 115,
+    "nomCategorieInCategoriesTabele": "Confiseries"
+  },
+  {
+    "idCategorieInCategoriesTabele": 101,
+    "idClassementCategorieInCategoriesTabele": 94,
+    "nomCategorieInCategoriesTabele": "TeBnages"
+  },
+  {
+    "idCategorieInCategoriesTabele": 102,
+    "idClassementCategorieInCategoriesTabele": 12,
+    "nomCategorieInCategoriesTabele": "test"
+  },
+  {
+    "idCategorieInCategoriesTabele": 103,
+    "idClassementCategorieInCategoriesTabele": 9,
+    "nomCategorieInCategoriesTabele": "test2"
+  },
+  {
+    "idCategorieInCategoriesTabele": 104,
+    "idClassementCategorieInCategoriesTabele": 11,
+    "nomCategorieInCategoriesTabele": "test3"
+  },
+  {
+    "idCategorieInCategoriesTabele": 105,
+    "idClassementCategorieInCategoriesTabele": 118,
+    "nomCategorieInCategoriesTabele": "te"
+  },
+  {
+    "idCategorieInCategoriesTabele": 106,
+    "idClassementCategorieInCategoriesTabele": 132,
+    "nomCategorieInCategoriesTabele": "كوجاك شكلاطة"
+  },
+  {
+    "idCategorieInCategoriesTabele": 107,
+    "idClassementCategorieInCategoriesTabele": 131,
+    "nomCategorieInCategoriesTabele": "حلوى زجاج معلبة"
+  },
+  {
+    "idCategorieInCategoriesTabele": 108,
+    "idClassementCategorieInCategoriesTabele": 130,
+    "nomCategorieInCategoriesTabele": "Halwa #TEREYA Boite"
+  },
+  {
+    "idCategorieInCategoriesTabele": 109,
+    "idClassementCategorieInCategoriesTabele": 129,
+    "nomCategorieInCategoriesTabele": "#HALWA ZEJAJ Boitie"
+  },
+  {
+    "idCategorieInCategoriesTabele": 110,
+    "idClassementCategorieInCategoriesTabele": 128,
+    "nomCategorieInCategoriesTabele": "#HALWA MAKLA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 111,
+    "idClassementCategorieInCategoriesTabele": 127,
+    "nomCategorieInCategoriesTabele": "Chocolat Cojak"
+  },
+  {
+    "idCategorieInCategoriesTabele": 112,
+    "idClassementCategorieInCategoriesTabele": 126,
+    "nomCategorieInCategoriesTabele": "#HALWA TERIYA 5 DA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 113,
+    "idClassementCategorieInCategoriesTabele": 124,
+    "nomCategorieInCategoriesTabele": "Bars #FOUK 10 DA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 114,
+    "idClassementCategorieInCategoriesTabele": 123,
+    "nomCategorieInCategoriesTabele": "Markeur"
+  },
+  {
+    "idCategorieInCategoriesTabele": 115,
+    "idClassementCategorieInCategoriesTabele": 122,
+    "nomCategorieInCategoriesTabele": "Calculatrice"
+  },
+  {
+    "idCategorieInCategoriesTabele": 116,
+    "idClassementCategorieInCategoriesTabele": 121,
+    "nomCategorieInCategoriesTabele": "Cartouche Marqueur"
+  },
+  {
+    "idCategorieInCategoriesTabele": 117,
+    "idClassementCategorieInCategoriesTabele": 120,
+    "nomCategorieInCategoriesTabele": "Scotche Amballage"
+  },
+  {
+    "idCategorieInCategoriesTabele": 118,
+    "idClassementCategorieInCategoriesTabele": 119,
+    "nomCategorieInCategoriesTabele": "Registre"
+  },
+  {
+    "idCategorieInCategoriesTabele": 119,
+    "idClassementCategorieInCategoriesTabele": 106,
+    "nomCategorieInCategoriesTabele": "injet"
+  },
+  {
+    "idCategorieInCategoriesTabele": 120,
+    "idClassementCategorieInCategoriesTabele": 125,
+    "nomCategorieInCategoriesTabele": "lamp"
+  },
+  {
+    "idCategorieInCategoriesTabele": 121,
+    "idClassementCategorieInCategoriesTabele": 32,
+    "nomCategorieInCategoriesTabele": "kiteur"
+  },
+  {
+    "idCategorieInCategoriesTabele": 122,
+    "idClassementCategorieInCategoriesTabele": 96,
+    "nomCategorieInCategoriesTabele": "#ZERI3A 10 DA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 123,
+    "idClassementCategorieInCategoriesTabele": 77,
+    "nomCategorieInCategoriesTabele": "#KAWKAW Emballe"
+  },
+  {
+    "idCategorieInCategoriesTabele": 124,
+    "idClassementCategorieInCategoriesTabele": 37,
+    "nomCategorieInCategoriesTabele": "#SAKAKER importaion"
+  },
+  {
+    "idCategorieInCategoriesTabele": 125,
+    "idClassementCategorieInCategoriesTabele": 57,
+    "nomCategorieInCategoriesTabele": "#HALWA# importation"
+  },
+  {
+    "idCategorieInCategoriesTabele": 126,
+    "idClassementCategorieInCategoriesTabele": 67,
+    "nomCategorieInCategoriesTabele": "#TEBNAJ ATAYAT#"
+  },
+  {
+    "idCategorieInCategoriesTabele": 127,
+    "idClassementCategorieInCategoriesTabele": 87,
+    "nomCategorieInCategoriesTabele": "Boisson Energique"
+  },
+  {
+    "idCategorieInCategoriesTabele": 128,
+    "idClassementCategorieInCategoriesTabele": 116,
+    "nomCategorieInCategoriesTabele": "#MESSASSA#"
+  },
+  {
+    "idCategorieInCategoriesTabele": 129,
+    "idClassementCategorieInCategoriesTabele": 35,
+    "nomCategorieInCategoriesTabele": "Cojak 5DA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 130,
+    "idClassementCategorieInCategoriesTabele": 114,
+    "nomCategorieInCategoriesTabele": "champion BEBE "
+  },
+  {
+    "idCategorieInCategoriesTabele": 131,
+    "idClassementCategorieInCategoriesTabele": 5,
+    "nomCategorieInCategoriesTabele": "kiteur"
+  },
+  {
+    "idCategorieInCategoriesTabele": 132,
+    "idClassementCategorieInCategoriesTabele": 133,
+    "nomCategorieInCategoriesTabele": "kiteur2"
+  },
+  {
+    "idCategorieInCategoriesTabele": 133,
+    "idClassementCategorieInCategoriesTabele": 82,
+    "nomCategorieInCategoriesTabele": "cojak 5 Da"
+  },
+  {
+    "idCategorieInCategoriesTabele": 134,
+    "idClassementCategorieInCategoriesTabele": 87,
+    "nomCategorieInCategoriesTabele": "HALWA# ZEJAJ# Boitie"
+  },
+  {
+    "idCategorieInCategoriesTabele": 135,
+    "idClassementCategorieInCategoriesTabele": 10,
+    "nomCategorieInCategoriesTabele": "shh"
+  },
+  {
+    "idCategorieInCategoriesTabele": 136,
+    "idClassementCategorieInCategoriesTabele": 9,
+    "nomCategorieInCategoriesTabele": "#MOKASSARAT MIZAN "
+  },
+  {
+    "idCategorieInCategoriesTabele": 137,
+    "idClassementCategorieInCategoriesTabele": 8,
+    "nomCategorieInCategoriesTabele": "#SMARTIZ"
+  },
+  {
+    "idCategorieInCategoriesTabele": 138,
+    "idClassementCategorieInCategoriesTabele": 7,
+    "nomCategorieInCategoriesTabele": "#MOKASARAT HALWA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 139,
+    "idClassementCategorieInCategoriesTabele": 6,
+    "nomCategorieInCategoriesTabele": "mouk"
+  },
+  {
+    "idCategorieInCategoriesTabele": 140,
+    "idClassementCategorieInCategoriesTabele": 31,
+    "nomCategorieInCategoriesTabele": "#HALWA TURK"
+  },
+  {
+    "idCategorieInCategoriesTabele": 141,
+    "idClassementCategorieInCategoriesTabele": 38,
+    "nomCategorieInCategoriesTabele": "#CHIPS MIZAN"
+  },
+  {
+    "idCategorieInCategoriesTabele": 142,
+    "idClassementCategorieInCategoriesTabele": 44,
+    "nomCategorieInCategoriesTabele": "#LAWAZIM HALAWYAT"
+  },
+  {
+    "idCategorieInCategoriesTabele": 143,
+    "idClassementCategorieInCategoriesTabele": 1,
+    "nomCategorieInCategoriesTabele": "#ASSILA "
+  },
+  {
+    "idCategorieInCategoriesTabele": 144,
+    "idClassementCategorieInCategoriesTabele": 40,
+    "nomCategorieInCategoriesTabele": "#Tizana"
+  },
+  {
+    "idCategorieInCategoriesTabele": 145,
+    "idClassementCategorieInCategoriesTabele": 35,
+    "nomCategorieInCategoriesTabele": "#THÈ"
+  },
+  {
+    "idCategorieInCategoriesTabele": 146,
+    "idClassementCategorieInCategoriesTabele": 6,
+    "nomCategorieInCategoriesTabele": "#CHIKOLA DAYBA"
+  },
+  {
+    "idCategorieInCategoriesTabele": 147,
+    "idClassementCategorieInCategoriesTabele": 4,
+    "nomCategorieInCategoriesTabele": "#MAYIS"
+  },
+  {
+    "idCategorieInCategoriesTabele": 148,
+    "idClassementCategorieInCategoriesTabele": 2,
+    "nomCategorieInCategoriesTabele": "#HALWA TURK"
+  },
+  {
+    "catalogueParentID": 0,
+    "idCategorieInCategoriesTabele": 149,
+    "idClassementCategorieInCategoriesTabele": 78,
+    "nomCategorieInCategoriesTabele": "Pasti"
+  },
+  {
+    "catalogueParentID": 0,
+    "idCategorieInCategoriesTabele": 150,
+    "idClassementCategorieInCategoriesTabele": 136,
+    "nomCategorieInCategoriesTabele": ""
+  },
+  {
+    "catalogueParentID": 0,
+    "idCategorieInCategoriesTabele": 151,
+    "idClassementCategorieInCategoriesTabele": 79,
+    "nomCategorieInCategoriesTabele": "refraicheur"
+  },
+  {
+    "catalogueParentID": 0,
+    "idCategorieInCategoriesTabele": 152,
+    "idClassementCategorieInCategoriesTabele": 0,
+    "nomCategorieInCategoriesTabele": "Catalogue ATAYE Magasine MileStone"
+  }
+]

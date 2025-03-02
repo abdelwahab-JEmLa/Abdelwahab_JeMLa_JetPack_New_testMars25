@@ -1,9 +1,9 @@
-package W.Ui.A.MainScreens
+package W.Ui.A_ModulisationUIs.MainScreens
 
-import W.Ui.A_MainLists.CategoryGridFragID_1
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.BottomActions
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.SearchField
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.handleCategoryClick
+import W.Ui.A_ModulisationUIs.A_MainLists.CategoryGridFragID_1
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.BottomActions
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.SearchField
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.handleCategoryClick
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels

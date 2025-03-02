@@ -1,4 +1,4 @@
-package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls
+package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien
 
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.HeadOfViewModels
