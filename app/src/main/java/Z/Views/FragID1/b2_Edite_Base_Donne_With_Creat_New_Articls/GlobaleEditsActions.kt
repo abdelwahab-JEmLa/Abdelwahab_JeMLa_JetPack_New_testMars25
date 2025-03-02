@@ -1,5 +1,6 @@
 package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import W.Ui.A.MainScreens.FragID_1_DialogeCategoryReorderAndSelectionWindow
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
@@ -177,7 +178,7 @@ fun FloatingActionButtons(
     }
 
     if (showCategorySelection) {
-        CategoryReorderAndSelectionWindow(
+        FragID_1_DialogeCategoryReorderAndSelectionWindow(
             uiState = uiState,
             viewModel = viewModel,
             onDismiss = { showCategorySelection = false },

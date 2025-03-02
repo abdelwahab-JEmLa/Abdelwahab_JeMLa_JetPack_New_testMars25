@@ -30,7 +30,7 @@ fun CategoryGridFragID_1(
     onCategoryClick: (CategoriesTabelleECB) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val addNewCategory = CategoriesTabelleECB(
+    val addNewCategoryItem = CategoriesTabelleECB(
         idCategorieInCategoriesTabele = (categories.maxOfOrNull { it.idCategorieInCategoriesTabele }
             ?: 0) + 1,
         nomCategorieInCategoriesTabele = "Add New Category",
@@ -42,7 +42,7 @@ fun CategoryGridFragID_1(
         contentPadding = PaddingValues(8.dp),
         modifier = modifier
     ) {
-        items(listOf(addNewCategory) + categories) { category ->
+        items(listOf(addNewCategoryItem) + categories) { category ->
             CategoryItemFragID_1(
                 category = category,
                 isSelected = category in selectedCategories,
