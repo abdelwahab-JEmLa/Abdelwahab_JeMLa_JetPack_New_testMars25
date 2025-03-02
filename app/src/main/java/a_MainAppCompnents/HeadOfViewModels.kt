@@ -880,7 +880,7 @@ class HeadOfViewModels(
             }
         }
     }
-
+                            //
     fun updateArticleDisponibility(articleId: Long, newDisponibilityState: String) {
         viewModelScope.launch {
             try {
