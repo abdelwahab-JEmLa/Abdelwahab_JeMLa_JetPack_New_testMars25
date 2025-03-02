@@ -1,4 +1,4 @@
-package A.Views.A_ModulisationUIs.B_MainItems
+package W.Ui.B_MainItems
 
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import androidx.compose.foundation.BorderStroke
