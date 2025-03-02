@@ -1,4 +1,4 @@
-package b2_Edite_Base_Donne_With_Creat_New_Articls
+package A.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls
 
 import android.content.Context
 import androidx.compose.foundation.layout.Box

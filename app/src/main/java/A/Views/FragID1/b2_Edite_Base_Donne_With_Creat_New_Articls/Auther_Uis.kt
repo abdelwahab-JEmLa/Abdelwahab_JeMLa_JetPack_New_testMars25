@@ -1,29 +1,19 @@
-package b2_Edite_Base_Donne_With_Creat_New_Articls
+package A.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls
 
+import A.Views.A_ModulisationUIs.A_ListsDiplayers.CategoryGridFragID_1
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
@@ -42,10 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -93,7 +80,7 @@ fun CategoryReorderAndSelectionWindow(
 
                 // Category grid
                 Box(modifier = Modifier.weight(1f)) {
-                    CategoryGrid(
+                    CategoryGridFragID_1(
                         categories = filteredCategories,
                         selectedCategories = selectedCategories,
                         movingCategory = movingCategory,
@@ -319,118 +306,3 @@ private fun handleCategoryClick(
     }
 }
 
-@Composable
-private fun CategoryGrid(
-    categories: List<CategoriesTabelleECB>,
-    selectedCategories: List<CategoriesTabelleECB>,
-    movingCategory: CategoriesTabelleECB?,
-    heldCategory: CategoriesTabelleECB?,
-    reorderMode: Boolean,
-    onCategoryClick: (CategoriesTabelleECB) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val addNewCategory = CategoriesTabelleECB(
-        idCategorieInCategoriesTabele = (categories.maxOfOrNull { it.idCategorieInCategoriesTabele } ?: 0) + 1,
-        nomCategorieInCategoriesTabele = "Add New Category",
-        idClassementCategorieInCategoriesTabele = 0
-    )
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        contentPadding = PaddingValues(8.dp),
-        modifier = modifier
-    ) {
-        items(listOf(addNewCategory) + categories) { category ->
-            CategoryItem(
-                category = category,
-                isSelected = category in selectedCategories,
-                isMoving = category == movingCategory,
-                isHeld = category == heldCategory,
-                isReorderTarget = reorderMode && category !in selectedCategories,
-                selectionOrder = selectedCategories.indexOf(category) + 1,
-                onClick = { onCategoryClick(category) }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-private fun CategoryItem(
-    category: CategoriesTabelleECB,
-    isSelected: Boolean,
-    isMoving: Boolean,
-    isHeld: Boolean,
-    isReorderTarget: Boolean,
-    selectionOrder: Int,
-    onClick: () -> Unit
-) {
-    val backgroundColor = when {
-        isHeld -> MaterialTheme.colorScheme.primaryContainer
-        isSelected -> MaterialTheme.colorScheme.secondaryContainer
-        isMoving -> MaterialTheme.colorScheme.tertiaryContainer
-        isReorderTarget -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-        category.nomCategorieInCategoriesTabele == "Add New Category" -> MaterialTheme.colorScheme.surfaceVariant
-        else -> MaterialTheme.colorScheme.surface
-    }
-
-    Surface(
-        modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable(onClick = onClick)
-            .border(
-                BorderStroke(
-                    width = if (isSelected || isHeld || isMoving) 2.dp else 1.dp,
-                    color = when {
-                        isHeld -> MaterialTheme.colorScheme.primary
-                        isSelected -> MaterialTheme.colorScheme.secondary
-                        isMoving -> MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.outline
-                    }
-                ),
-                shape = MaterialTheme.shapes.medium
-            ),
-        shape = MaterialTheme.shapes.medium,
-        color = backgroundColor
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            if (selectionOrder > 0) {
-                Text(
-                    text = selectionOrder.toString(),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .background(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.shapes.small
-                        )
-                        .padding(4.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-
-            Text(
-                text = category.nomCategorieInCategoriesTabele,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            if (category.nomCategorieInCategoriesTabele == "Add New Category") {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
-            }
-        }
-    }
-}
