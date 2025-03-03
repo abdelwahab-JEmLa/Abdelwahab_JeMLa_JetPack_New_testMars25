@@ -46,6 +46,9 @@ class H_GroupesCategories(
                             }
                         }
 
+                        // Sort categories by position (classmentDonsParentList)
+                        categories.sortBy { it.statuesMutable.classmentDonsParentList }
+
                         // Update only our local StateFlow - removed viewModel update
                         _categoriesList.value = categories
                     } catch (e: Exception) {
@@ -63,6 +66,33 @@ class H_GroupesCategories(
             caReference.addValueEventListener(listener)
 
             return categoriesList
+        }
+
+        // Function to update category position
+        fun updateCategoryPosition(category: H_GroupesCategories, newPosition: Long) {
+            // Update in Firebase
+            caReference.child(category.id.toString()).child("statuesMutable")
+                .child("classmentDonsParentList").setValue(newPosition)
+        }
+
+        // Function to reorder all categories after moving one to top
+        fun reorderCategoriesAfterPromotion(promotedCategory: H_GroupesCategories) {
+            val currentCategories = _categoriesList.value.toMutableList()
+
+            // Remove the promoted category
+            currentCategories.removeIf { it.id == promotedCategory.id }
+
+            // Update positions of all categories
+            currentCategories.forEachIndexed { index, category ->
+                // Add 1 to index because position 0 is reserved for promoted category
+                val newPosition = index + 1L
+                if (category.statuesMutable.classmentDonsParentList != newPosition) {
+                    updateCategoryPosition(category, newPosition)
+                }
+            }
+
+            // Update the promoted category to position 0
+            updateCategoryPosition(promotedCategory, 0)
         }
     }
 }
