@@ -2,9 +2,8 @@ package Z_MasterOfApps.Kotlin.Model
 
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -15,7 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class H_GroupesCategories(
+class I_CategoriesProduits(
     var id: Long = 0,
     var infosDeBase: InfosDeBase = InfosDeBase(),
     var statuesMutable: StatuesMutable = StatuesMutable(),
@@ -28,39 +27,52 @@ class H_GroupesCategories(
     @IgnoreExtraProperties
     class StatuesMutable(
         var classmentDonsParentList: Long = 0,
-    ) {
-        var premierCategorieDeCetteGroupe by mutableLongStateOf(0L)
-    }
+    )
 
     companion object {
-        val caReference = firebaseDatabase
+        private val caReference = firebaseDatabase
             .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
-            .child("F_CataloguesCategories")
+            .child("I_CategoriesProduits")
+
+        // Private property to store categories for each _ModelAppsFather instance
+        private val modelAppsCategoriesMap = mutableMapOf<_ModelAppsFather, SnapshotStateList<I_CategoriesProduits>>()
 
         // Public state flow to maintain list of categories
-        private val _categoriesList = MutableStateFlow<List<H_GroupesCategories>>(emptyList())
-        private val categoriesList: StateFlow<List<H_GroupesCategories>> = _categoriesList
+        private val _categoriesList = MutableStateFlow<List<I_CategoriesProduits>>(emptyList())
+        private val categoriesList: StateFlow<List<I_CategoriesProduits>> = _categoriesList
 
-        fun implimentVMH_GroupesCategories(viewModelInitApp: ViewModelInitApp) {
+        fun implimentSelfInViewModel(viewModelInitApp: ViewModelInitApp) {
             viewModelInitApp.viewModelScope.launch {
                 val categoriesFlow = onDataBaseChangeListnerAndLoad()
                 categoriesFlow.collectLatest { categories ->
                     // Convert List to SnapshotStateList and update the property
-                    viewModelInitApp.modelAppsFather.h_GroupesCategories.clear()
-                    viewModelInitApp.modelAppsFather.h_GroupesCategories.addAll(categories)
+                    getCategoriesList(viewModelInitApp._modelAppsFather.i_CategoriesProduits).clear()   //->
+                    //TODO(FIXME):Fix erreur Type mismatch.
+                    //Required:
+                    //_ModelAppsFather
+                    //Found:
+                    //SnapshotStateList<I_CategoriesProduits>
+                    getCategoriesList(viewModelInitApp._modelAppsFather.i_CategoriesProduits).addAll(categories)
                 }
             }
         }
 
-        fun onDataBaseChangeListnerAndLoad(
-        ): StateFlow<List<H_GroupesCategories>> {
+        // Get or create categories list for a specific _ModelAppsFather instance
+        fun getCategoriesList(modelAppsFather: _ModelAppsFather): SnapshotStateList<I_CategoriesProduits> {
+            return modelAppsCategoriesMap.getOrPut(modelAppsFather) {
+                emptyList<I_CategoriesProduits>().toMutableStateList()
+            }
+        }
+
+        private fun onDataBaseChangeListnerAndLoad(
+        ): StateFlow<List<I_CategoriesProduits>> {
             val listener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     try {
-                        val categories = mutableListOf<H_GroupesCategories>()
+                        val categories = mutableListOf<I_CategoriesProduits>()
 
                         for (dataSnapshot in snapshot.children) {
-                            val category = dataSnapshot.getValue(H_GroupesCategories::class.java)
+                            val category = dataSnapshot.getValue(I_CategoriesProduits::class.java)
                             category?.let {
                                 categories.add(it)
                             }
@@ -89,3 +101,4 @@ class H_GroupesCategories(
         }
     }
 }
+

@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-
 @Composable
 fun FragID_1_DialogeCategoryReorderAndSelectionWindow(
     onDismiss: () -> Unit,

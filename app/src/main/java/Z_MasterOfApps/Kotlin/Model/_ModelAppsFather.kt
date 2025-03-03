@@ -26,6 +26,10 @@ open class _ModelAppsFather(
         emptyList<H_GroupesCategories>().toMutableStateList()
 
     @get:Exclude
+    var i_CategoriesProduits: SnapshotStateList<I_CategoriesProduits> =
+        emptyList<I_CategoriesProduits>().toMutableStateList()
+
+    @get:Exclude
     var produitsMainDataBase: SnapshotStateList<A_ProduitModel> =
         initial_Produits_Main_DataBase.toMutableStateList()
 

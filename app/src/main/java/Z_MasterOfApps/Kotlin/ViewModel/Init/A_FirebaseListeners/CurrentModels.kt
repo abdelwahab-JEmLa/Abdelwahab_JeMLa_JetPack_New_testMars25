@@ -1,10 +1,13 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners
 
+
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates
+import Z_MasterOfApps.Kotlin.Model.H_GroupesCategories
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import android.util.Log
@@ -33,6 +36,9 @@ object CurrentModels {
         setupGrossistsListener(viewModel)
         setupCouleursListener(viewModel)
         setupApplicationEstInstalleListener(viewModel)
+        // Fixed: Pass viewModel parameter to functions
+        H_GroupesCategories.implimentVMH_GroupesCategories(viewModel)
+        I_CategoriesProduits.implimentSelfInViewModel(viewModel)
     }
 
     fun cleanup() {

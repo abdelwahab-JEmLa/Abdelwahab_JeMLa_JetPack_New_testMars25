@@ -72,7 +72,8 @@ fun A_MainList(
                     ) + fadeOut()
                 ) {
                     MainItem(
-                        category = category,
+                        extensionvmA4fragid1=extensionvmA4fragid1,
+                        groupeCategory = category,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             if (category.statuesMutable.classmentDonsParentList != 0L) {
@@ -80,7 +81,7 @@ fun A_MainList(
                                 movingItemId = category.id
 
                                 // Update positions in Firebase
-                                extensionvmA4fragid1?.reorderCategoriesAfterPromotion(category)
+                                extensionvmA4fragid1.reorderCategoriesAfterPromotion(category)
                             }
                         }
                     )

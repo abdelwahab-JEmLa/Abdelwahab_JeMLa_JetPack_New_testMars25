@@ -2736,8 +2736,10 @@ class HeadOfViewModels(
             Log.d(TAG, "Fetched ${articles.size} articles")
             updateUploadProgressBarCounterAndItText("Fetched articles", ++currentStep, 100f)
 
-            val categories = categoriesDao.getAllCategoriesList()
-            Log.d(TAG, "Fetched ${categories.size} categories")
+            val categories = categoriesDao.getAllCategoriesList()//-->
+            //TODO(1): fait que ici cherche dons onDataBaseChangeListnerAndLoad list 
+            
+            
             updateUploadProgressBarCounterAndItText("Fetched categories", ++currentStep, 100f)
 
             val colorsArticles = fetchColorsArticles()
