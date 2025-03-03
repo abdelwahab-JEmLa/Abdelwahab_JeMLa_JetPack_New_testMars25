@@ -14,7 +14,7 @@ import org.koin.core.context.GlobalContext
 import org.koin.core.parameter.parametersOf
 
 // ============== UI STATES ==============
-             //
+//
 data class MainState(
     val products: List<Product> = emptyList(),
     val isLoading: Boolean = false,
@@ -29,8 +29,8 @@ data class DetailState(
 
 // ============== VIEWMODELS ==============
 
-class MainViewModel(private val repository: ProductRepository) : ViewModel() {   //-->
-//TODO(1): utilise koinViewModel
+class MainViewModel(private val repository: ProductRepository) : ViewModel() {
+
     private val _state = MutableStateFlow(MainState())
     val state: StateFlow<MainState> = _state.asStateFlow()
 
