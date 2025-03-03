@@ -2,8 +2,6 @@ package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditePr
 
 interface Navigator {
     fun navigate(route: String)
-
-    // Optional: Add a default implementation for backward compatibility
     fun goBack() {}
 }
 

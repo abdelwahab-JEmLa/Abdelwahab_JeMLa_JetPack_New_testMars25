@@ -3,8 +3,8 @@ package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditePr
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.Navigator
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.View.DetailScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.View.MainScreen
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.DetailCoordinator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.MainCoordinator
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.DetailCoordinator
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -79,7 +79,7 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
     NavHost(navController = navController, startDestination = "main") {
         composable("main") {
             // Inject the coordinator with the navigator
-            val coordinator = org.koin.androidx.compose.get<MainCoordinator> {
+            val coordinator = org.koin.androidx.compose.get<Coordinator> {
                 parametersOf(navigator)
             }
 
@@ -110,7 +110,7 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainRouteWithBackNavigation(
-    coordinator: MainCoordinator,
+    coordinator: Coordinator,
     onBackToMainApp: () -> Unit
 ) {
     val state by coordinator.stateFlow.collectAsStateWithLifecycle()
@@ -151,7 +151,7 @@ fun MainRouteWithBackNavigation(
 
 // Route principale
 @Composable
-fun MainRoute(coordinator: MainCoordinator) {
+fun MainRoute(coordinator: Coordinator) {
     val state by coordinator.stateFlow.collectAsStateWithLifecycle()
 
     MainScreen(
