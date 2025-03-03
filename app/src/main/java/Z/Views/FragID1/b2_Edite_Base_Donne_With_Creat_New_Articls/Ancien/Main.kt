@@ -1,5 +1,6 @@
 package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien
 
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -54,7 +55,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
     viewModel: HeadOfViewModels,
     onToggleNavBar: () -> Unit,
     onClickToOpenWinInfoDataBase: (DataBaseArticles) -> Unit,
-    reloadTrigger: Int,
+    reloadTrigger: Int, viewModelInitApp: ViewModelInitApp,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -206,6 +207,11 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                 onToggleOutlineFilter = { outlineFilter = !outlineFilter },
                 showOnlyWithFilter = uiState.showOnlyWithFilter,
                 viewModel = viewModel,
+                onChangeGridColumns = { gridColumns = it },
+                onToggleModeClickDispo = {
+                    clickChangeDispoMode = !clickChangeDispoMode
+                    showFloatingButtons = false
+                },
                 onCategorySelected = { selectedCategory ->
                     coroutineScope.launch {
                         val index = uiState.categoriesECB.indexOfFirst {
@@ -221,11 +227,7 @@ fun MainFragmentEditDatabaseWithCreateNewArticles(
                         }
                     }
                 },
-                onChangeGridColumns = { gridColumns = it },
-                onToggleModeClickDispo = {
-                    clickChangeDispoMode = !clickChangeDispoMode
-                    showFloatingButtons = false
-                }
+                viewModelInitApp
             )
         }
     }

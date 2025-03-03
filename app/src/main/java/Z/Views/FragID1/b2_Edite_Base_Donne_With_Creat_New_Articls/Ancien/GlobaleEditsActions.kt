@@ -52,7 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 data class ButtonInfo(
     val icon: ImageVector,
@@ -75,7 +74,7 @@ fun FloatingActionButtons(
     onChangeGridColumns: (Int) -> Unit,
     onToggleModeClickDispo: () -> Unit,
     onCategorySelected: (CategoriesTabelleECB) -> Unit,
-    viewModelInitApp: ViewModelInitApp = viewModel()
+    viewModelInitApp: ViewModelInitApp
 ) {
     val extensionvmA4fragid1 = viewModelInitApp.extensionVM_A4FragID_1
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }

@@ -1,6 +1,9 @@
 package com.example.abdelwahabjemlajetpack
 
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.ArticleDetailWindow
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.MainFragmentEditDatabaseWithCreateNewArticles
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.initializeFirebase
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -91,8 +94,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material.ContentAlpha
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.ArticleDetailWindow
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.MainFragmentEditDatabaseWithCreateNewArticles
 import b_Edite_Base_Donne.ArticleDao
 import b_Edite_Base_Donne.EditeBaseDonneViewModel
 import c_ManageBonsClients.FragmentManageBonsClients
@@ -130,7 +131,9 @@ data class AppViewModels(
     val creditsViewModel: CreditsViewModel,
     val creditsClientsViewModel: CreditsClientsViewModel,
     val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
-    val classementsArticlesViewModel: ClassementsArticlesViewModel
+    val classementsArticlesViewModel: ClassementsArticlesViewModel  ,
+    val viewModelInitApp: ViewModelInitApp
+
 )
 
 // Updated MainActivity
@@ -147,6 +150,9 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(HeadOfViewModels::class.java) -> {
                         HeadOfViewModels(this@MainActivity, database.categoriesTabelleECBDao()) as T
                     }
+                    modelClass.isAssignableFrom(ViewModelInitApp::class.java) -> {
+                        ViewModelInitApp() as T
+                    }
 
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
@@ -160,6 +166,7 @@ class MainActivity : ComponentActivity() {
     private val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel by viewModels()
     private val classementsArticlesViewModel: ClassementsArticlesViewModel by viewModels()
     private val headOfViewModels: HeadOfViewModels by viewModels { viewModelFactory }
+    private val viewModelInitApp: ViewModelInitApp by viewModels { viewModelFactory }
 
     private val appViewModels by lazy {
         AppViewModels(
@@ -168,7 +175,7 @@ class MainActivity : ComponentActivity() {
             creditsViewModel = creditsViewModel,
             creditsClientsViewModel = creditsClientsViewModel,
             boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
-            classementsArticlesViewModel = classementsArticlesViewModel
+            classementsArticlesViewModel = classementsArticlesViewModel ,viewModelInitApp
         )
     }
 
@@ -234,6 +241,7 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             database = database,
                             viewModels = appViewModels,
+                            viewModelInitApp=appViewModels.viewModelInitApp,
                             onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
                             headOfViewModels = headOfViewModels,
                             showSupplierPopup = showSupplierPopup,
@@ -304,6 +312,7 @@ fun AppNavHost(
     showSupplierPopup: Boolean,
     onShowSupplierPopupChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    viewModelInitApp: ViewModelInitApp,
 ) {
     val uiState by headOfViewModels.uiState.collectAsState()
     val uploadProgress by viewModels.headOfViewModels.uploadProgress.collectAsState()
@@ -434,7 +443,7 @@ fun AppNavHost(
                         viewModel = viewModels.headOfViewModels,
                         onToggleNavBar = onToggleNavBar,
                         onClickToOpenWinInfoDataBase = { dialogeDisplayeDetailleChanger = it },
-                        reloadTrigger = reloadTrigger
+                        reloadTrigger = reloadTrigger, viewModelInitApp = viewModelInitApp
                     )
                     if (uploadProgress > 0f && uploadProgress < 100f) {
                         CircularProgressIndicator(
