@@ -60,7 +60,6 @@ data class ButtonInfo(
     val onClick: () -> Unit
 )
 
-
 @Composable
 fun FloatingActionButtons(
     uiState: CreatAndEditeInBaseDonnRepositeryModels,
