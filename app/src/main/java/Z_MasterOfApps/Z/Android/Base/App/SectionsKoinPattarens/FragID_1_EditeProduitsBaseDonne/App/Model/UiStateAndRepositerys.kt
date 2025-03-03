@@ -1,5 +1,7 @@
 package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model
 
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.Product
+
 data class UiState(
     val products: List<Product> = emptyList(),
     val isLoading: Boolean = false,

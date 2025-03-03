@@ -1,8 +1,8 @@
 package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Modules
 
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.A.View.A_MainScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.DetailCoordinator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.View.DetailScreen
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.View.MainScreen
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.DetailScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -138,8 +138,8 @@ fun MainRouteWithBackNavigation(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Original MainScreen content
-            MainScreen(
+            // Original A_MainScreen content
+            A_MainScreen(
                 state = state,
                 onProductClick = coordinator::onProductClick,
                 onRetry = coordinator::onRetry
@@ -153,7 +153,7 @@ fun MainRouteWithBackNavigation(
 fun MainRoute(coordinator: Coordinator) {
     val state by coordinator.stateFlow.collectAsStateWithLifecycle()
 
-    MainScreen(
+    A_MainScreen(
         state = state,
         onProductClick = coordinator::onProductClick,
         onRetry = coordinator::onRetry
