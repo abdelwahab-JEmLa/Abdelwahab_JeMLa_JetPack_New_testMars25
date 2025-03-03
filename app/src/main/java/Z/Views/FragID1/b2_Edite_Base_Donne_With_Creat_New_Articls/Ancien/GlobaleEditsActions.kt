@@ -1,6 +1,8 @@
 package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien
 
 import W.Ui.A_ModulisationUIs.MainScreens.FragID_1_DialogeCategoryReorderAndSelectionWindow
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Screen.ID1_CataloguesCategories
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 data class ButtonInfo(
     val icon: ImageVector,
@@ -56,6 +59,7 @@ data class ButtonInfo(
     val color: Color,
     val onClick: () -> Unit
 )
+
 
 @Composable
 fun FloatingActionButtons(
@@ -69,8 +73,10 @@ fun FloatingActionButtons(
     viewModel: HeadOfViewModels,
     onChangeGridColumns: (Int) -> Unit,
     onToggleModeClickDispo: () -> Unit,
-    onCategorySelected: (CategoriesTabelleECB) -> Unit
+    onCategorySelected: (CategoriesTabelleECB) -> Unit,
+    viewModelInitApp: ViewModelInitApp = viewModel()
 ) {
+    val extensionvmA4fragid1 = viewModelInitApp.extensionVM_A4FragID_1
     var showDialogeDataBaseEditer by remember { mutableStateOf(false) }
     var currentGridColumns by remember { mutableIntStateOf(2) }
     var showContentDescription by remember { mutableStateOf(false) }
@@ -194,6 +200,21 @@ fun FloatingActionButtons(
             onDismiss = { showWindosFunctions = false },
             viewModel = viewModel,
         )
+    }
+
+    // Fixed section - replaced duplicated showCategorySelection dialog with proper implementation
+    if (extensionvmA4fragid1.afficheDialoge) {
+        Dialog(
+            onDismissRequest = { extensionvmA4fragid1.afficheDialoge = false },  // Fixed: proper onDismiss reference
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape = MaterialTheme.shapes.large
+            ) {
+                ID1_CataloguesCategories(extensionvmA4fragid1)
+            }
+        }
     }
 }
 

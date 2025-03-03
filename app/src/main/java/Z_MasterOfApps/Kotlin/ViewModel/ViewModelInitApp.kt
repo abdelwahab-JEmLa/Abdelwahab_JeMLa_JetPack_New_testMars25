@@ -1,5 +1,6 @@
 package Z_MasterOfApps.Kotlin.ViewModel
 
+import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.ViewModel.ExtensionVM_A4FragID_1
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.FromAncienDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
@@ -50,6 +51,8 @@ class ViewModelInitApp : ViewModel() {
     val frag_3A1_ExtVM = ExtensionVMApp1FragmentId_3(viewModel)
 
     val frag_4A1_ExtVM = Frag_4A1_ExtVM(viewModel)
+
+    val extensionVM_A4FragID_1 = ExtensionVM_A4FragID_1(viewModel)
 
 
     init {
