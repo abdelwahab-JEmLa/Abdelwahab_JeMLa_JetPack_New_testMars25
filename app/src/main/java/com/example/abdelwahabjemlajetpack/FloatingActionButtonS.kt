@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -25,7 +26,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
+fun MainActionsFab(
+    headOfViewModels: HeadOfViewModels,
+    onClickToSwitchToKoinPrototypeNav: () -> Unit,
+) {
     val coroutineScope = rememberCoroutineScope()
     val isTimerActive by headOfViewModels.isTimerActive.collectAsState()
 
@@ -43,6 +47,24 @@ fun MainActionsFab(headOfViewModels: HeadOfViewModels) {
             Icon(
                 imageVector = Icons.Default.ThumbUp,
                 contentDescription = "Update Colors",
+                tint = Color.White
+            )
+        }
+
+        // In FloatingActionButtonS.kt after the Colors update FAB
+        FloatingActionButton(
+            onClick = {
+                coroutineScope.launch {
+                    // Switch to KoinPrototype navigation
+                    onClickToSwitchToKoinPrototypeNav()
+                }
+            },
+            containerColor = Color.Red,
+            modifier = Modifier.size(56.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Transform, // Or another appropriate icon
+                contentDescription = "Switch to Koin Navigation",
                 tint = Color.White
             )
         }

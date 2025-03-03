@@ -45,14 +45,13 @@ class I_CategoriesProduits(
             viewModelInitApp.viewModelScope.launch {
                 val categoriesFlow = onDataBaseChangeListnerAndLoad()
                 categoriesFlow.collectLatest { categories ->
-                    // Convert List to SnapshotStateList and update the property
-                    getCategoriesList(viewModelInitApp._modelAppsFather.i_CategoriesProduits).clear()   //->
-                    //TODO(FIXME):Fix erreur Type mismatch.
-                    //Required:
-                    //_ModelAppsFather
-                    //Found:
-                    //SnapshotStateList<I_CategoriesProduits>
-                    getCategoriesList(viewModelInitApp._modelAppsFather.i_CategoriesProduits).addAll(categories)
+                    // Fix: Get the correct reference to the SnapshotStateList
+                    val categoriesList = viewModelInitApp._modelAppsFather.i_CategoriesProduits
+                    categoriesList.clear()
+                    categoriesList.addAll(categories)
+
+                    // Update the map with the latest reference
+                    modelAppsCategoriesMap[viewModelInitApp._modelAppsFather] = categoriesList
                 }
             }
         }
@@ -101,4 +100,3 @@ class I_CategoriesProduits(
         }
     }
 }
-

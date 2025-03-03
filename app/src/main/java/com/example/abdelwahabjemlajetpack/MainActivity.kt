@@ -4,6 +4,8 @@ import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.Article
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.MainFragmentEditDatabaseWithCreateNewArticles
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.initializeFirebase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Modules.AppNavigationKoin
+import Z_MasterOfApps.Z.Android.Main.A_KoinProto.appModule
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -112,14 +114,27 @@ import i2_FragmentMapArticleInSupplierStore.FragmentMapArticleInSupplierStore
 import i_SupplierArticlesRecivedManager.Fragment_SupplierArticlesRecivedManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.compose.KoinAndroidContext
+import org.koin.core.context.GlobalContext.startKoin
 import java.io.File
 import kotlin.random.Random
 
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize Firebase
         FirebaseApp.initializeApp(this)?.let { firebaseApp ->
             initializeFirebase(firebaseApp)
+        }
+
+        // Initialize Koin
+        startKoin {
+            androidLogger()
+            androidContext(this@MyApplication)
+            modules(appModule)
         }
     }
 }
@@ -136,7 +151,6 @@ data class AppViewModels(
 
 )
 
-// Updated MainActivity
 class MainActivity : ComponentActivity() {
     private lateinit var permissionHandler: PermissionHandler
     private val database by lazy { AppDatabase.getInstance(this) }
@@ -175,7 +189,7 @@ class MainActivity : ComponentActivity() {
             creditsViewModel = creditsViewModel,
             creditsClientsViewModel = creditsClientsViewModel,
             boardStatistiquesStatViewModel = boardStatistiquesStatViewModel,
-            classementsArticlesViewModel = classementsArticlesViewModel ,viewModelInitApp
+            classementsArticlesViewModel = classementsArticlesViewModel, viewModelInitApp
         )
     }
 
@@ -186,74 +200,96 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                val navController = rememberNavController()
-                val items = NavigationItems.getItems()
-                var isNavBarVisible by remember { mutableStateOf(true) }
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
-                val indicateurDeNeedUpdateFireBase by headOfViewModels.indicateurDeNeedUpdateFireBase.collectAsState()
-                val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
-                val textProgress by headOfViewModels.textProgress.collectAsState()
-                var showSupplierPopup by remember { mutableStateOf(false) }
+                var useKoinNavigation by remember { mutableStateOf(false) }
 
-                Scaffold(
-                    bottomBar = {
-                        if (isNavBarVisible) {
-                            Column {
-                                ProgressBarWithAnimation(uploadProgress, textProgress)
-                                CustomNavigationBar(
-                                    items = items,
-                                    currentRoute = currentRoute,
-                                    onNavigate = { route ->
-                                        navController.navigate(route) {
-                                            popUpTo(navController.graph.startDestinationId)
-                                            launchSingleTop = true
-                                        }
-                                    },
-                                    showPopup = { show -> showSupplierPopup = show },
-                                    indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase,
-                                    headOfViewModels = headOfViewModels
+                if (useKoinNavigation) {
+                    // Koin Navigation
+                    MaterialTheme {
+                        KoinAndroidContext {
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.background
+                            ) {
+                                AppNavigationKoin(
+                                    onBackToMainApp = { useKoinNavigation = false }
                                 )
                             }
                         }
-                    },
-                    floatingActionButton = {
-                        if (currentRoute == Screen.MainScreen.route) {
-                            Column {
-                                ToggleNavBarButton(isNavBarVisible) {
-                                    isNavBarVisible = !isNavBarVisible
+                    }
+                } else {
+                    // Original Navigation
+                    val navController = rememberNavController()
+                    val items = NavigationItems.getItems()
+                    var isNavBarVisible by remember { mutableStateOf(true) }
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = navBackStackEntry?.destination?.route
+                    val indicateurDeNeedUpdateFireBase by headOfViewModels.indicateurDeNeedUpdateFireBase.collectAsState()
+                    val uploadProgress by headOfViewModels.uploadProgress.collectAsState()
+                    val textProgress by headOfViewModels.textProgress.collectAsState()
+                    var showSupplierPopup by remember { mutableStateOf(false) }
+
+                    Scaffold(
+                        bottomBar = {
+                            if (isNavBarVisible) {
+                                Column {
+                                    ProgressBarWithAnimation(uploadProgress, textProgress)
+                                    CustomNavigationBar(
+                                        items = items,
+                                        currentRoute = currentRoute,
+                                        onNavigate = { route ->
+                                            navController.navigate(route) {
+                                                popUpTo(navController.graph.startDestinationId)
+                                                launchSingleTop = true
+                                            }
+                                        },
+                                        showPopup = { show -> showSupplierPopup = show },
+                                        indicateurDeNeedUpdateFireBase = indicateurDeNeedUpdateFireBase,
+                                        headOfViewModels = headOfViewModels
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
-                                MainActionsFab(
-                                    headOfViewModels = headOfViewModels,
-                                )
                             }
+                        },
+                        floatingActionButton = {
+                            if (currentRoute == Screen.MainScreen.route) {
+                                Column {
+                                    ToggleNavBarButton(isNavBarVisible) {
+                                        isNavBarVisible = !isNavBarVisible
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    MainActionsFab(
+                                        headOfViewModels = headOfViewModels,
+                                        onClickToSwitchToKoinPrototypeNav = {
+                                            // Switch to Koin Navigation
+                                            useKoinNavigation = true
+                                        }
+                                    )
+                                }
+                            }
+                        },
+                        floatingActionButtonPosition = FabPosition.End
+                    ) { innerPadding ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                        ) {
+                            AppNavHost(
+                                navController = navController,
+                                database = database,
+                                viewModels = appViewModels,
+                                viewModelInitApp = appViewModels.viewModelInitApp,
+                                onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
+                                headOfViewModels = headOfViewModels,
+                                showSupplierPopup = showSupplierPopup,
+                                onShowSupplierPopupChange = { showSupplierPopup = it }
+                            )
                         }
-                    },
-                    floatingActionButtonPosition = FabPosition.End
-                ) { innerPadding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        AppNavHost(
-                            navController = navController,
-                            database = database,
-                            viewModels = appViewModels,
-                            viewModelInitApp=appViewModels.viewModelInitApp,
-                            onToggleNavBar = { isNavBarVisible = !isNavBarVisible },
-                            headOfViewModels = headOfViewModels,
-                            showSupplierPopup = showSupplierPopup,
-                            onShowSupplierPopupChange = { showSupplierPopup = it }
-                        )
                     }
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun MainScreen(
@@ -276,6 +312,9 @@ fun MainScreen(
         floatingActionButton = {
             MainActionsFab(
                 headOfViewModels = headOfViewModels,
+                onClickToSwitchToKoinPrototypeNav = {
+
+                }
             )
         },
         floatingActionButtonPosition = FabPosition.End
@@ -290,12 +329,7 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                //-->
-                //Hi Claud,what i went from u to do is to
-                //Find All TODOs and Fix Them 
 
-                //TODO:
-                // ajoute un elevated card contien un text 
                 CardBoardStatistiques(boardStatistiquesStatViewModel)
             }
         }
