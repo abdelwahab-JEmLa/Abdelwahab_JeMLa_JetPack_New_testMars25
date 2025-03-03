@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Details
@@ -123,6 +124,11 @@ fun FloatingActionButtons(
                                     description = "Category Selection",
                                     color = Color(0xFF9C27B0)
                                 ) { showCategorySelection = true },
+                                ButtonInfo(
+                                    icon = Icons.Default.Cable,
+                                    description = "H_GroupesCategories Edite",
+                                    color = Color(0xFF9C27B0)
+                                ) { extensionvmA4fragid1.afficheDialoge = true },
                                 ButtonInfo(
                                     icon = Icons.Default.EditCalendar,
                                     description = "Outline Filter",

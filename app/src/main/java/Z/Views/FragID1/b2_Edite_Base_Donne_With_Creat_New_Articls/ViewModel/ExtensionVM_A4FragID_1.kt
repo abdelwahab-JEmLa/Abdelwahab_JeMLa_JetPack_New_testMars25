@@ -6,13 +6,28 @@ import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class ExtensionVM_A4FragID_1(
     val viewModelInitApp: ViewModelInitApp,
 ) {
-    val h_GroupesCategories =viewModelInitApp._modelAppsFather.h_GroupesCategories
+    var h_GroupesCategories = viewModelInitApp._modelAppsFather.h_GroupesCategories
 
     var afficheDialoge by mutableStateOf(false)
+
+    init {
+        // Use collectLatest to convert StateFlow to SnapshotStateList
+        viewModelInitApp.viewModelScope.launch {
+            val categoriesFlow = H_GroupesCategories.onDataBaseChangeListnerAndLoad()
+            categoriesFlow.collectLatest { categories ->
+                // Convert List to SnapshotStateList and update the property
+                viewModelInitApp._modelAppsFather.h_GroupesCategories.clear()
+                viewModelInitApp._modelAppsFather.h_GroupesCategories.addAll(categories)
+            }
+        }
+    }
 
     // Function to reorder all categories after moving one to top
     fun reorderCategoriesAfterPromotion(promotedCategory: H_GroupesCategories) {
