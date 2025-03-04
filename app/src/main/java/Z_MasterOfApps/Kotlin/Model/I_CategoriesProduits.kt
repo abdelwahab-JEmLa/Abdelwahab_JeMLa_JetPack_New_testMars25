@@ -1,9 +1,8 @@
 package Z_MasterOfApps.Kotlin.Model
 
-import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
+import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -30,8 +29,7 @@ class I_CategoriesProduits(
     )
 
     companion object {
-        private val caReference = firebaseDatabase
-            .getReference("0_UiState_3_Host_Package_3_Prototype11Dec")
+        private val caReference = ref_HeadOfModels
             .child("I_CategoriesProduits")
 
         // Private property to store categories for each _ModelAppsFather instance
@@ -53,13 +51,6 @@ class I_CategoriesProduits(
                     // Update the map with the latest reference
                     modelAppsCategoriesMap[viewModelInitApp._modelAppsFather] = categoriesList
                 }
-            }
-        }
-
-        // Get or create categories list for a specific _ModelAppsFather instance
-        fun getCategoriesList(modelAppsFather: _ModelAppsFather): SnapshotStateList<I_CategoriesProduits> {
-            return modelAppsCategoriesMap.getOrPut(modelAppsFather) {
-                emptyList<I_CategoriesProduits>().toMutableStateList()
             }
         }
 
