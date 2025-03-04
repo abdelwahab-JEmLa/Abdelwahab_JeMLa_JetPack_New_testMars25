@@ -28,7 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.ContentAlpha
-
+//-->
+//TODO(1): CHANGE LA STRUCTURE DU CODE POUR UTILISE KOIN INJECT DEPEND ICI COMME DONS Navigation.KT
 @Composable
 fun NavigationBarWithFab(
     items: List<Screen>,

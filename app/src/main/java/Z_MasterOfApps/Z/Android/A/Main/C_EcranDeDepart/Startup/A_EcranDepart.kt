@@ -35,7 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-
+//-->
+//TODO(1): CHANGE LA STRUCTURE DU CODE POUR UTILISE KOIN INJECT DEPEND ICI COMME DONS Navigation.KT
 @Composable
 internal fun A_StartupScreen(
     viewModelInitApp: ViewModelInitApp = viewModel(),

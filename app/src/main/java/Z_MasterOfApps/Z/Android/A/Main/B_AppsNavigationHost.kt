@@ -1,14 +1,14 @@
 package Z_MasterOfApps.Z.Android.A.Main
 
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_2.id1_GerantDefinirePosition.A_id1_GerantDefinirePosition
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.A_StartupScreen
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.NavigationBarWithFab
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_1.id4_DeplaceProduitsVerGrossist.A_id4_DeplaceProduitsVerGrossist
+import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_2.id1_GerantDefinirePosition.A_id1_GerantDefinirePosition
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_3.id5_VerificationProduitAcGrossist.A_ID5_VerificationProduitAcGrossist
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_4.id2_TravaillieurListProduitAchercheChezLeGrossist.A_Id2_TravaillieurListProduitAchercheChezLeGrossist
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_5.id3_AfficheurDesProduitsPourLeColecteur.A_id3_AfficheurDesProduitsPourLeColecteur
 import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.A_id1_ClientsLocationGps
-import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.A_StartupScreen
-import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.NavigationBarWithFab
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +39,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 
+//-->
+     //TODO(1): CHANGE LA STRUCTURE DU CODE POUR UTILISE KOIN INJECT DEPEND ICI COMME DONS Navigation.KT 
 @Composable
 fun AppNavigationHost(
     viewModelInitApp: ViewModelInitApp,
