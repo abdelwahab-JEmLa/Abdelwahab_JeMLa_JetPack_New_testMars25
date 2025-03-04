@@ -31,6 +31,11 @@ import androidx.navigation.navArgument
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
+interface Navigator {
+    fun navigate(route: String)
+    fun goBack() {}
+}
+
 @Composable
 fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
     val navController = rememberNavController()
@@ -106,6 +111,7 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
     }
 }
 
+
 // Add a wrapper composable with an additional back button
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,7 +151,6 @@ fun MainRouteWithBackNavigation(
     }
 }
 
-
 @Composable
 fun DetailRoute(coordinator: DetailCoordinator) {
     val state by coordinator.stateFlow.collectAsStateWithLifecycle()
@@ -155,9 +160,4 @@ fun DetailRoute(coordinator: DetailCoordinator) {
         onBackClick = coordinator::onBackClick,
         onRetry = coordinator::onRetry
     )
-}
-
-interface Navigator {
-    fun navigate(route: String)
-    fun goBack() {}
 }
