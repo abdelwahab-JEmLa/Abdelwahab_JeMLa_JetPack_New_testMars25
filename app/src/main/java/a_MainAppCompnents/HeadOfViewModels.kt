@@ -3,6 +3,7 @@ package a_MainAppCompnents
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
 import a_MainAppCompnents.Models.AppSettingsSaverModel
@@ -111,6 +112,7 @@ class HeadOfViewModels(
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
 
     private val refCategorieTabelee = firebaseDatabase.getReference("H_CategorieTabele")
+
     private val refColorsArticles = firebaseDatabase.getReference("H_ColorsArticles")
     private val refArticlesAcheteModele =
         firebaseDatabase.getReference("ArticlesAcheteModeleAdapted")

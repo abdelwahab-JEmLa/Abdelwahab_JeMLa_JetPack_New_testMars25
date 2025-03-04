@@ -3,11 +3,14 @@ package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.A_MainScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,9 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,6 +43,23 @@ interface Navigator {
 @Composable
 fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
     val navController = rememberNavController()
+
+    // Create a shared loading state at the navigation level
+    val loadingState = remember { mutableStateOf(false) }
+    val progressState = remember { mutableStateOf(0f) }
+
+    // Create a loading context that can be passed down to child composables
+    val loadingContext = remember {
+        object {
+            fun setLoading(isLoading: Boolean) {
+                loadingState.value = isLoading
+            }
+
+            fun updateProgress(progress: Float) {
+                progressState.value = progress
+            }
+        }
+    }
 
     // Create a custom navigator with back handling
     val navigator = remember {
@@ -77,25 +102,51 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
         }
     }
 
-    NavHost(navController = navController, startDestination = "main") {
-        composable("main") {
-            // Inject the coordinator with the navigator using koinInject instead of get
-            val coordinator = koinInject<Coordinator> {
-                parametersOf(navigator)
-            }
+    // Wrap the NavHost with a Box to allow overlay of loading indicator
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(navController = navController, startDestination = "main") {
+            composable("main") {
+                // Inject the coordinator with the navigator using koinInject instead of get
+                val coordinator = koinInject<Coordinator> {
+                    parametersOf(navigator)
+                }
 
-            // Create a wrapper for MainRoute that adds our own back button
-            MainRouteWithBackNavigation(
-                coordinator = coordinator,
-                onBackToMainApp = onBackToMainApp
-            )
+                // Observe coordinator state to update loading state
+                val state by coordinator.stateFlow.collectAsStateWithLifecycle()
+
+                // Update loading states based on coordinator state
+                LaunchedEffect(state.isLoading, state.progress) {
+                    loadingContext.setLoading(state.isLoading || state.progress < 1.0f)
+                    loadingContext.updateProgress(state.progress)
+                }
+
+                // Create a wrapper for MainRoute that adds our own back button
+                MainRouteWithBackNavigation(
+                    coordinator = coordinator,
+                    onBackToMainApp = onBackToMainApp
+                )
+            }
         }
 
+        // Loading overlay - displayed on top of everything when loading
+        if (loadingState.value) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    progress = { progressState.value },
+                    modifier = Modifier.size(64.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            }
+        }
     }
 }
 
-
-// Add a wrapper composable with an additional back button
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainRouteWithBackNavigation(
@@ -130,7 +181,7 @@ fun MainRouteWithBackNavigation(
         ) {
             // Original A_MainScreen content
             A_MainScreen(state, coordinator)
+
         }
     }
 }
-

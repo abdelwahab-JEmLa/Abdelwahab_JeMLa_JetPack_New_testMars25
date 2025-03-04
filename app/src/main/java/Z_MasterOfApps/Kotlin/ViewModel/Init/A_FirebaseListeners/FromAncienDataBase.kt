@@ -6,6 +6,9 @@ import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.CurrentModels.setupCurrentModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.I_CategoriesProduits
+import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
 import android.util.Log
 import com.google.firebase.Firebase
@@ -31,6 +34,8 @@ object FromAncienDataBase {
         setupColorsArticlesListener(viewModel)
         setupCurrentModels(viewModel)
         syncOldSuppliers(viewModel)
+        syncOldCategories(viewModel) // Add this line to sync old categories
+
     }
 
     data class ProductState(
@@ -315,4 +320,60 @@ object FromAncienDataBase {
             }
         })
     }
+
+    // Add this function to sync categories from the old database to the new database
+    private fun syncOldCategories(viewModel: ViewModelInitApp) {
+        val oldCategoriesRef = CategoriesRepository.ancienBaseDonneRef
+        val newCategoriesRef = CategoriesRepository.caReference
+
+        oldCategoriesRef.addValueEventListener(object : ValueEventListener {
+            private var lastKnownIds = mutableSetOf<Long>()
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Get current category IDs
+                val currentIds = snapshot.children
+                    .mapNotNull { it.getValue(CategoriesTabelleECB::class.java)?.idCategorieInCategoriesTabele }
+                    .toSet()
+
+                // Handle deletions
+                lastKnownIds.filter { it !in currentIds }.forEach { deletedId ->
+                    newCategoriesRef.child(deletedId.toString()).removeValue()
+                    viewModel._modelAppsFather.i_CategoriesProduits.removeAll { it.id == deletedId }
+                }
+
+                // Update or add categories
+                snapshot.children.forEach { snap ->
+                    val oldCategory = snap.getValue(CategoriesTabelleECB::class.java) ?: return@forEach
+                    val newCategory = I_CategoriesProduits(
+                        id = oldCategory.idCategorieInCategoriesTabele,
+                        infosDeBase = I_CategoriesProduits.InfosDeBase(
+                            nom = oldCategory.nomCategorieInCategoriesTabele
+                        ),
+                        statuesMutable = I_CategoriesProduits.StatuesMutable(
+                            classmentDonsParentList = oldCategory.idClassementCategorieInCategoriesTabele.toLong()
+                        )
+                    )
+
+                    // Update local list
+                    val index = viewModel._modelAppsFather.i_CategoriesProduits.indexOfFirst { it.id == newCategory.id }
+                    if (index != -1) {
+                        viewModel._modelAppsFather.i_CategoriesProduits[index] = newCategory
+                    } else {
+                        viewModel._modelAppsFather.i_CategoriesProduits.add(newCategory)
+                    }
+
+                    // Update Firebase
+                    newCategoriesRef.child(oldCategory.idCategorieInCategoriesTabele.toString()).setValue(newCategory)
+                }
+
+                // Update last known IDs
+                lastKnownIds = currentIds.toMutableSet()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("Sync", error.message)
+            }
+        })
+    }
+
 }

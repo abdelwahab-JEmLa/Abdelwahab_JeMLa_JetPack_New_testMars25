@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -25,6 +26,7 @@ class Coordinator(
 data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
     val isLoading: Boolean = false,
+    val progress: Float = 0f,
     val error: String? = null
 )
 
@@ -38,12 +40,21 @@ class FragmentViewModel(private val categoriesRepository: CategoriesRepository) 
 
     private fun lenceCollecte() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, progress = 0f) }
             try {
-                val categories = categoriesRepository.onDataBaseChangeListnerAndLoad()
+                val (categories, progressFlow) = categoriesRepository.onDataBaseChangeListnerAndLoad()
+
+                // Launch a separate coroutine to collect progress updates
+                viewModelScope.launch {
+                    progressFlow.collectLatest { progress ->
+                        _state.update { it.copy(progress = progress) }
+                    }
+                }
+
+                // Update state with categories and keep isLoading until progress reaches 100%
                 _state.update { it.copy(categories = categories, isLoading = false) }
             } catch (e: Exception) {
-                _state.update { it.copy(error = e.message, isLoading = false) }
+                _state.update { it.copy(error = e.message, isLoading = false, progress = 0f) }
             }
         }
     }
