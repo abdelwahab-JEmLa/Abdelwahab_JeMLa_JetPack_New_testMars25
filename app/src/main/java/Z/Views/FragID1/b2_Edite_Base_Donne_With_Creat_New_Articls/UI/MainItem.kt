@@ -1,7 +1,7 @@
 package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.UI
 
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.ViewModel.ExtensionVM_A4FragID_1
-import Z_MasterOfApps.Kotlin.Model.H_GroupesCategories
+import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun MainItem(
     modifier: Modifier = Modifier,
-    groupeCategory: H_GroupesCategories,
+    groupeCategory: H_GroupeCategories,
     onClick: () -> Unit = {},
     extensionvmA4fragid1: ExtensionVM_A4FragID_1
 ) {

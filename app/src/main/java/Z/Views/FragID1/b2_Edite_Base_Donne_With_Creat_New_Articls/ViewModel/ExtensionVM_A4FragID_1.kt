@@ -1,7 +1,7 @@
 package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.ViewModel
 
-import Z_MasterOfApps.Kotlin.Model.H_GroupesCategories
-import Z_MasterOfApps.Kotlin.Model.H_GroupesCategories.Companion.caReference
+import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
+import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories.Companion.caReference
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +15,7 @@ class ExtensionVM_A4FragID_1(
     var afficheDialoge by mutableStateOf(false)
 
     // Function to reorder all categories after moving one to top
-    fun reorderCategoriesAfterPromotion(promotedCategory: H_GroupesCategories) {
+    fun reorderCategoriesAfterPromotion(promotedCategory: H_GroupeCategories) {
         val currentCategories = h_GroupesCategories
 
         // Remove the promoted category
@@ -35,7 +35,7 @@ class ExtensionVM_A4FragID_1(
     }
 
     // Function to update category position
-    private fun updateCategoryPosition(category: H_GroupesCategories, newPosition: Long) {
+    private fun updateCategoryPosition(category: H_GroupeCategories, newPosition: Long) {
         // Update in Firebase
         caReference.child(category.id.toString()).child("statuesMutable")
             .child("classmentDonsParentList").setValue(newPosition)

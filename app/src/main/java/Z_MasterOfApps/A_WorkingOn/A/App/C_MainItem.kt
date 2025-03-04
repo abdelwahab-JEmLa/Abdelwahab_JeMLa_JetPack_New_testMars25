@@ -1,7 +1,8 @@
 package Z_MasterOfApps.A_WorkingOn.A.App
 
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.UiState
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,13 +23,16 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun C_MainItem(
     categorie: I_CategoriesProduits,
-    coordinator: Coordinator
+    coordinator: Coordinator,
+    state: UiState
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                coordinator.onCategorieClick(categorie.id)
+                //-->
+                //TODO(1): fait au click d ouvrire dialoge won contien state.groupeCategories list
+                //au choi un buton ca ce ferm et lance   onCategorieChoisi
             }),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

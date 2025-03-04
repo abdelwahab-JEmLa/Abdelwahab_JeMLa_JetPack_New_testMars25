@@ -21,6 +21,7 @@ fun B_MainList(
     ) {
         items(state.categories) { categorie ->
             C_MainItem(
+                state=state,
                 categorie = categorie,
                 coordinator =coordinator,
             )

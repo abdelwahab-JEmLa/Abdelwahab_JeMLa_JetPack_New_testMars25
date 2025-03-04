@@ -1,8 +1,10 @@
 package Z_MasterOfApps.A_WorkingOn.A.App.ViewModel
 
-import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.GroupesCategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
+import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +20,7 @@ class Coordinator(
 ) {
     val stateFlow = viewModel.state
 
-    fun onCategorieClick(categorieId: Long) {
+    fun onCategorieChoisi(categorieId: Long) {
         //-->
         //TODO(1): fai que au click de
     }
@@ -26,12 +28,16 @@ class Coordinator(
 
 data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
+    val groupeCategories: List<H_GroupeCategories> = emptyList(),
     val isLoading: Boolean = false,
     val progress: Float = 0f,
     val error: String? = null
 )
 
-class FragmentViewModel(private val categoriesRepository: CategoriesRepository) : ViewModel() {
+class FragmentViewModel(
+    private val categoriesRepository: CategoriesRepository,
+    private val groupesCategoriesRepository: GroupesCategoriesRepository
+) : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
@@ -53,12 +59,13 @@ class FragmentViewModel(private val categoriesRepository: CategoriesRepository) 
                 }
 
                 // Update state with categories and keep isLoading until progress reaches 100%
-                _state.update { it.copy(categories = categories, isLoading = false) }
+                _state.update { it.copy(categories = categories, isLoading = false) }     //-->
+                //TODO(1): ajou un load  H_GroupeCategories
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.message, isLoading = false, progress = 0f) }
             }
         }
     }
     //-->
-    //TODO(1): cree une fun au click i
+    //TODO(1): cree une fun au click update idPremierCategorieDeCetteGroupe par l id categorie click
 }

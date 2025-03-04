@@ -124,7 +124,7 @@ fun FloatingActionButtons(
                                 ) { showCategorySelection = true },
                                 ButtonInfo(
                                     icon = Icons.Default.Cable,
-                                    description = "H_GroupesCategories Edite",
+                                    description = "H_GroupeCategories Edite",
                                     color = Color(0xFF9C27B0)
                                 ) { extensionvmA4fragid1.afficheDialoge = true },
                                 ButtonInfo(

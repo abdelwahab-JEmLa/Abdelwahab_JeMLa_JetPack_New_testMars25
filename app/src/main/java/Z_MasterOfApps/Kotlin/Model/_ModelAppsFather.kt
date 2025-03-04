@@ -22,8 +22,8 @@ open class _ModelAppsFather(
         emptyList<E_AppsOptionsStates.F_PrototypseDeProgramationInfos>().toMutableStateList()
 
     @get:Exclude
-    var h_GroupesCategories: SnapshotStateList<H_GroupesCategories> =
-        emptyList<H_GroupesCategories>().toMutableStateList()
+    var h_GroupesCategories: SnapshotStateList<H_GroupeCategories> =
+        emptyList<H_GroupeCategories>().toMutableStateList()
 
     @get:Exclude
     var i_CategoriesProduits: SnapshotStateList<I_CategoriesProduits> =
