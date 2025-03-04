@@ -1,6 +1,6 @@
-package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Z.Learn
+package Z_MasterOfApps.Z_AppsFather.Kotlin.Learn
 
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Modules.Navigator
+import Z_MasterOfApps.Z.Android.Main.A_KoinProto.Modules.Navigator
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.ProductRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

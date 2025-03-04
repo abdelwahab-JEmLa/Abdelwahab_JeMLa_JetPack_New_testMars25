@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Z.Learn
+package Z_MasterOfApps.Z_AppsFather.Kotlin.Learn
 
 data class Product(
     val id: String,
