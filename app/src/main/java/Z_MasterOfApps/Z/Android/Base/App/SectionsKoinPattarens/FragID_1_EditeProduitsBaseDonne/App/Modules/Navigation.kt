@@ -28,6 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 @Composable
@@ -77,8 +78,8 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
 
     NavHost(navController = navController, startDestination = "main") {
         composable("main") {
-            // Inject the coordinator with the navigator
-            val coordinator = org.koin.androidx.compose.get<Coordinator> {
+            // Inject the coordinator with the navigator using koinInject instead of get
+            val coordinator = koinInject<Coordinator> {
                 parametersOf(navigator)
             }
 
@@ -95,8 +96,8 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
         ) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId") ?: ""
 
-            // Inject the coordinator with the productId and navigator
-            val coordinator = org.koin.androidx.compose.get<DetailCoordinator> {
+            // Inject the coordinator with the productId and navigator using koinInject
+            val coordinator = koinInject<DetailCoordinator> {
                 parametersOf(productId, navigator)
             }
 
@@ -139,7 +140,7 @@ fun MainRouteWithBackNavigation(
                 .padding(paddingValues)
         ) {
             // Original A_MainScreen content
-            A_MainScreen(state,coordinator)
+            A_MainScreen(state, coordinator)
         }
     }
 }
