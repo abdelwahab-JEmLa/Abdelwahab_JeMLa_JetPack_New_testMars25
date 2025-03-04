@@ -4,7 +4,6 @@ import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -25,7 +24,6 @@ class CategoriesRepositoryImpl : CategoriesRepository {
         return null
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun onDataBaseChangeListnerAndLoad(): List<I_CategoriesProduits> {
         return suspendCancellableCoroutine { continuation ->
             val listener = object : ValueEventListener {
@@ -56,7 +54,7 @@ class CategoriesRepositoryImpl : CategoriesRepository {
             }
 
             // Attach the listener to the reference
-            val ref = caReference.addValueEventListener(listener)
+            caReference.addValueEventListener(listener)
 
             // Ensure we remove the listener when the coroutine is cancelled
             continuation.invokeOnCancellation {

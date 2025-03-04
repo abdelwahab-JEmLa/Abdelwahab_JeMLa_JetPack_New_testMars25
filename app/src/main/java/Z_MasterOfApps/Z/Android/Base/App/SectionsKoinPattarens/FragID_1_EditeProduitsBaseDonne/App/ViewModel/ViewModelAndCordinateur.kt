@@ -17,7 +17,7 @@ class Coordinator(
 ) {
     val stateFlow = viewModel.state
 
-    fun onProductClick(categorieId: String) {
+    fun onCategorieClick(categorieId: String) {
         navigator.navigate("detail/$categorieId")
     }
 }

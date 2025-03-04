@@ -2,8 +2,6 @@ package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules
 
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.A_MainScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
-import Z_MasterOfApps.Z_AppsFather.Kotlin.Learn.DetailCoordinator
-import Z_MasterOfApps.Z_AppsFather.Kotlin.Learn.DetailRoute
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
@@ -95,19 +91,6 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
             )
         }
 
-        composable(
-            route = "detail/{productId}",
-            arguments = listOf(navArgument("productId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val productId = backStackEntry.arguments?.getString("productId") ?: ""
-
-            // Inject the coordinator with the productId and navigator using koinInject
-            val coordinator = koinInject<DetailCoordinator> {
-                parametersOf(productId, navigator)
-            }
-
-            DetailRoute(coordinator)
-        }
     }
 }
 
