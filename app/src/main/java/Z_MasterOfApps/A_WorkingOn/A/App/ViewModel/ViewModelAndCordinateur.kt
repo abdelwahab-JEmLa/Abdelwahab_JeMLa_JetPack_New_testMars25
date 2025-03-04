@@ -1,7 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.A.App.ViewModel
 
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
-import Z_MasterOfApps.Kotlin.Model.GroupesCategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
@@ -39,7 +39,7 @@ data class UiState(
 
 class FragmentViewModel(
     private val categoriesRepository: CategoriesRepository,
-    private val groupesCategoriesRepository: GroupesCategoriesRepository
+    private val groupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()

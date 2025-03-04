@@ -34,12 +34,12 @@ class H_GroupeCategories(
     }
 
     companion object {
-        val caReference =GroupesCategoriesRepository.caReference
+        val caReference =H_GroupesCategoriesRepository.caReference
     }
 }
 
 
-interface GroupesCategoriesRepository {
+interface H_GroupesCategoriesRepository {
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<H_GroupeCategories>, Flow<Float>>
     suspend fun updateDatas(datas: SnapshotStateList<H_GroupeCategories>)
     companion object {
@@ -47,7 +47,7 @@ interface GroupesCategoriesRepository {
     }
 }
 
-class GroupesCategoriesRepositoryImpl : GroupesCategoriesRepository {
+class H_GroupesCategoriesRepositoryImpl : H_GroupesCategoriesRepository {
     var groupesCategories: SnapshotStateList<H_GroupeCategories> = emptyList<H_GroupeCategories>().toMutableStateList()
 
     override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<H_GroupeCategories>, Flow<Float>> {
@@ -93,11 +93,11 @@ class GroupesCategoriesRepositoryImpl : GroupesCategoriesRepository {
             }
 
             // Attach the listener to the reference
-            CategoriesRepository.caReference.addValueEventListener(listener)
+            H_GroupesCategoriesRepository.caReference.addValueEventListener(listener)
 
             // Ensure we remove the listener when the coroutine is cancelled
             continuation.invokeOnCancellation {
-                CategoriesRepository.caReference.removeEventListener(listener)
+                H_GroupesCategoriesRepository.caReference.removeEventListener(listener)
             }
         }
 

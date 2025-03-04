@@ -4,8 +4,8 @@ import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
-import Z_MasterOfApps.Kotlin.Model.GroupesCategoriesRepository
-import Z_MasterOfApps.Kotlin.Model.GroupesCategoriesRepositoryImpl
+import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepositoryImpl
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -14,7 +14,7 @@ import org.koin.dsl.module
 val repositoryModule = module {
     // Singleton: une seule instance pour toute l'application
     single<CategoriesRepository> { CategoriesRepositoryImpl() }
-    single<GroupesCategoriesRepository> { GroupesCategoriesRepositoryImpl() }
+    single<H_GroupesCategoriesRepository> { H_GroupesCategoriesRepositoryImpl() }
 }
 
 // Module pour les ViewModels
