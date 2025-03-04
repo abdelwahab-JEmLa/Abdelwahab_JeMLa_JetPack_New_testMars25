@@ -1,6 +1,7 @@
 package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App
 
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.UiState
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,7 +12,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun B_MainList(
     state: UiState,
-    onProductClick: (String) -> Unit
+    coordinator: Coordinator,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -20,7 +21,7 @@ fun B_MainList(
         items(state.products) { product ->
             C_MainItem(
                 product = product,
-                onClick = { onProductClick(product.id) }
+                coordinator=coordinator,
             )
         }
     }

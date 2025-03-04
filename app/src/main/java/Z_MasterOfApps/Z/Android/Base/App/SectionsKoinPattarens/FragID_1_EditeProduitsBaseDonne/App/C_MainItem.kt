@@ -1,6 +1,7 @@
 package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App
 
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.Product
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Z.Learn.Product
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +31,7 @@ import java.util.Locale
 @Composable
 fun C_MainItem(
     product: Product,
-    onClick: () -> Unit
+    coordinator: Coordinator
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault()).apply {
         currency = Currency.getInstance("EUR")
@@ -39,7 +40,9 @@ fun C_MainItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = {
+                coordinator.onProductClick(product.id)
+            }),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

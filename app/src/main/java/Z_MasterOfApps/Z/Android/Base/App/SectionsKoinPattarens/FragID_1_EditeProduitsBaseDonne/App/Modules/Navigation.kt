@@ -1,9 +1,9 @@
 package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Modules
 
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.A_MainScreen
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.DetailCoordinator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Learn.DetailScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Z.Learn.DetailCoordinator
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Z.Learn.DetailScreen
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -139,28 +139,12 @@ fun MainRouteWithBackNavigation(
                 .padding(paddingValues)
         ) {
             // Original A_MainScreen content
-            A_MainScreen(
-                state = state,
-                onProductClick = coordinator::onProductClick,
-                onRetry = coordinator::onRetry
-            )
+            A_MainScreen(state,coordinator)
         }
     }
 }
 
-// Route principale
-@Composable
-fun MainRoute(coordinator: Coordinator) {
-    val state by coordinator.stateFlow.collectAsStateWithLifecycle()
 
-    A_MainScreen(
-        state = state,
-        onProductClick = coordinator::onProductClick,
-        onRetry = coordinator::onRetry
-    )
-}
-
-// Route détail
 @Composable
 fun DetailRoute(coordinator: DetailCoordinator) {
     val state by coordinator.stateFlow.collectAsStateWithLifecycle()
