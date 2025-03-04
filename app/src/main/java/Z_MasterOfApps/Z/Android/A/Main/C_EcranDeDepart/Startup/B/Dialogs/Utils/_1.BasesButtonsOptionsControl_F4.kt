@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils
+package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess

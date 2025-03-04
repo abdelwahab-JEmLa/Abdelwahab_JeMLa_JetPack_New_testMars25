@@ -2,7 +2,7 @@ package Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_Clien
 
 import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase.StatueDeBase.TypeDeSonMagasine
 import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.ViewModelExtension_App2_F1
-import Z_MasterOfApps.Z.Android.Main.Utils.LottieJsonGetterR_Raw_Icons
+import Z_MasterOfApps.Z.Android.A.Main.Utils.LottieJsonGetterR_Raw_Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 

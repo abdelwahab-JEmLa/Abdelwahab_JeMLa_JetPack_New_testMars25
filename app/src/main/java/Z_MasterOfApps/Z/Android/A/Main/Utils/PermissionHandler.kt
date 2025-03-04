@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Main.Utils
+package Z_MasterOfApps.Z.Android.A.Main.Utils
 
 import android.Manifest
 import android.content.Context

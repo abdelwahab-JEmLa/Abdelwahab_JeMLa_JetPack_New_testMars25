@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils
 
 import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.ViewModelExtension_App2_F1
-import Z_MasterOfApps.Z.Android.Main.Utils.XmlsFilesHandler.Companion.fixXmlResources
+import Z_MasterOfApps.Z.Android.A.Main.Utils.XmlsFilesHandler.Companion.fixXmlResources
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size

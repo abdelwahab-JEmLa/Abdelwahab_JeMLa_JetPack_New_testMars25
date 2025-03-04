@@ -10,7 +10,7 @@ import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_Client
 import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.B.Dialogs.Utils.getCurrentLocation
 import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.ViewModelExtension_App2_F1
 import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_ClientsLocationGps.ViewModel.Extension.VisbleClientsNow
-import Z_MasterOfApps.Z.Android.Main.Utils.XmlsFilesHandler.Companion.xmlResources
+import Z_MasterOfApps.Z.Android.A.Main.Utils.XmlsFilesHandler.Companion.xmlResources
 import android.content.Context
 import android.widget.LinearLayout
 import androidx.compose.foundation.background

@@ -1,24 +1,26 @@
-package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs
+package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs
 
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreTime
+import androidx.compose.material.icons.filled.Phonelink
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun B_3_ImplimentClientsParProduits(
+fun B_1_SwitchGerantOuAfficheurPhone(
     viewModelInitApp: ViewModelInitApp,
     showLabels: Boolean
 ) {
     ControlButton(
         onClick = {
-            viewModelInitApp.extentionStartup.implimentClientsParProduits()
+            viewModelInitApp
+                ._paramatersAppsViewModelModel
+                .cLeTelephoneDuGerant = true
         },
-        icon = Icons.Default.MoreTime,
+        icon = Icons.Default.Phonelink,
         contentDescription = "",
         showLabels = showLabels,
         labelText =  "",
-        containerColor =  Color(0xFF9C27B0)
+        containerColor =  Color(0xFF2196F3)
     )
 }

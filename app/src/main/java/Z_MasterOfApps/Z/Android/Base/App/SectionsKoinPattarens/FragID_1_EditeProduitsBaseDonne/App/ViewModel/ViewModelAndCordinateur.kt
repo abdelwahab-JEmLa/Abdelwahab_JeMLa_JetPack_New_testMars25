@@ -2,7 +2,7 @@ package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditePr
 
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.ProductRepository
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.UiState
-import Z_MasterOfApps.Z.Android.Main.A_KoinProto.Modules.Navigator
+import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow

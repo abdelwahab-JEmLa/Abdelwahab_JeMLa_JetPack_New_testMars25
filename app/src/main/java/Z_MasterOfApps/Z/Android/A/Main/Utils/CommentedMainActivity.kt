@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Main.Utils
+package Z_MasterOfApps.Z.Android.A.Main.Utils
     /*
 import Z_MasterOfApps.Kotlin.ViewModel.Init.Init.initializeFirebase
 import Z_MasterOfApps.Z.Android.Main.A_MainScreen

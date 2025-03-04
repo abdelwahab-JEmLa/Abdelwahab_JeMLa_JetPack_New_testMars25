@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.ViewModel
+package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.ViewModel
 
 import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates
 import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates.ApplicationEstInstalleDonTelephone.Companion.metricsWidthPixels

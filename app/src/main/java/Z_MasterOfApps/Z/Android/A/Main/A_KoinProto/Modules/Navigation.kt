@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Main.A_KoinProto.Modules
+package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules
 
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.A_MainScreen
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator

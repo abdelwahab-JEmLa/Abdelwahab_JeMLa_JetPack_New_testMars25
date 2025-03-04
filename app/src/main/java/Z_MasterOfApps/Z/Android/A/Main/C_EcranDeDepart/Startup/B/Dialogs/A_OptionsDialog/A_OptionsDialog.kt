@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog
+package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog
 
 import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp

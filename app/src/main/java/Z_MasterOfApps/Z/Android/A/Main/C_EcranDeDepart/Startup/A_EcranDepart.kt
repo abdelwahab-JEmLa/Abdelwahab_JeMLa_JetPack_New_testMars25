@@ -1,10 +1,10 @@
-package Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup
+package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup
 
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsControlsButtons
-import Z_MasterOfApps.Z.Android.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog.A_OptionsDialog
-import Z_MasterOfApps.Z.Android.Main.NavigationItems
-import Z_MasterOfApps.Z.Android.Main.Screen
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsControlsButtons
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog.A_OptionsDialog
+import Z_MasterOfApps.Z.Android.A.Main.NavigationItems
+import Z_MasterOfApps.Z.Android.A.Main.Screen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
