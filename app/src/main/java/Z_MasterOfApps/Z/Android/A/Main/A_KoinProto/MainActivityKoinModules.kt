@@ -15,17 +15,13 @@ val repositoryModule = module {
     // Singleton: une seule instance pour toute l'application
     single<CategoriesRepository> { CategoriesRepositoryImpl() }
     single<GroupesCategoriesRepository> { GroupesCategoriesRepositoryImpl() }
-
-    // Factory: nouvelle instance à chaque fois
 }
 
 // Module pour les ViewModels
 val viewModelModule = module {
-    viewModel { FragmentViewModel(get()) }   //->
-    //TODO(FIXME):Fix erreur No value passed for parameter 'groupesCategoriesRepository'
-    //-->
-    //TODO(1): pk  GroupesCategoriesRepository ne s inject pas normalement koin inject le 
+    viewModel { FragmentViewModel(get(), get()) }  // Inject both repositories
 }
+
 val coordinatorModule = module {
     factory { (navigator: Navigator) -> Coordinator(get(), navigator) }
 }

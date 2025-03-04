@@ -5,6 +5,8 @@ import Z_MasterOfApps.Kotlin.Model.GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,15 +22,16 @@ class Coordinator(
 ) {
     val stateFlow = viewModel.state
 
-    fun onCategorieChoisi(categorieId: Long) {
-        //-->
-        //TODO(1): fai que au click de
+    fun onCategorieChoisi(groupe: Long, categorieChoisiId: Long) {
+        // Update the first category ID of the group in the ViewModel
+        viewModel.updateFirstCategoryId(groupe,categorieChoisiId)
     }
 }
 
 data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
-    val groupeCategories: List<H_GroupeCategories> = emptyList(),
+    var groupesCategories: SnapshotStateList<H_GroupeCategories> =
+        emptyList<H_GroupeCategories>().toMutableStateList(),
     val isLoading: Boolean = false,
     val progress: Float = 0f,
     val error: String? = null
@@ -50,6 +53,7 @@ class FragmentViewModel(
             _state.update { it.copy(isLoading = true, progress = 0f) }
             try {
                 val (categories, progressFlow) = categoriesRepository.onDataBaseChangeListnerAndLoad()
+                val (groupesCategories, groupesProgressFlow) = groupesCategoriesRepository.onDataBaseChangeListnerAndLoad()
 
                 // Launch a separate coroutine to collect progress updates
                 viewModelScope.launch {
@@ -58,14 +62,38 @@ class FragmentViewModel(
                     }
                 }
 
-                // Update state with categories and keep isLoading until progress reaches 100%
-                _state.update { it.copy(categories = categories, isLoading = false) }     //-->
-                //TODO(1): ajou un load  H_GroupeCategories
+                // Collect groupesCategories updates
+                viewModelScope.launch {
+                    groupesProgressFlow.collectLatest { progress ->
+                        _state.update { it.copy(progress = progress) }
+                    }
+                }
+
+                // Update state with categories and groupesCategories
+                _state.update {
+                    it.copy(
+                        categories = categories,
+                        groupesCategories = groupesCategories.toMutableStateList(),
+                        isLoading = false
+                    )
+                }
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.message, isLoading = false, progress = 0f) }
             }
         }
     }
-    //-->
-    //TODO(1): cree une fun au click update idPremierCategorieDeCetteGroupe par l id categorie click
+
+    // Function to update the first category ID of the group when a category is clicked
+    fun updateFirstCategoryId(groupId: Long, categoryId: Long) {
+        viewModelScope.launch {
+            val updatedGroups = state.value.groupesCategories.map { group ->
+                if (group.id == groupId) {
+                    group.statuesMutable.idPremierCategorieDeCetteGroupe = categoryId
+                }
+                group
+            }
+
+            groupesCategoriesRepository.updateDatas(updatedGroups.toMutableStateList())
+        }
+    }
 }

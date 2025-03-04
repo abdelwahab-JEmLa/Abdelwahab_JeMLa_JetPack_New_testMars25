@@ -4,6 +4,8 @@ import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.IgnoreExtraProperties
@@ -39,13 +41,14 @@ class H_GroupeCategories(
 
 interface GroupesCategoriesRepository {
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<H_GroupeCategories>, Flow<Float>>
-
+    suspend fun updateDatas(datas: SnapshotStateList<H_GroupeCategories>)
     companion object {
         val caReference = ref_HeadOfModels.child("F_CataloguesCategories")
     }
 }
 
 class GroupesCategoriesRepositoryImpl : GroupesCategoriesRepository {
+    var groupesCategories: SnapshotStateList<H_GroupeCategories> = emptyList<H_GroupeCategories>().toMutableStateList()
 
     override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<H_GroupeCategories>, Flow<Float>> {
         val progressFlow = MutableStateFlow(0f)
@@ -63,8 +66,9 @@ class GroupesCategoriesRepositoryImpl : GroupesCategoriesRepository {
 
                         for (dataSnapshot in snapshot.children) {
                             val category = dataSnapshot.getValue(H_GroupeCategories::class.java)
-                            category?.let {
-                                datas.add(it)
+                            category?.let { cat ->
+                                datas.add(cat)
+                                groupesCategories.add(cat) // Add the category to the groupesCategories list
                             }
 
                             // Update progress
@@ -73,7 +77,6 @@ class GroupesCategoriesRepositoryImpl : GroupesCategoriesRepository {
                         }
 
                         datas.sortBy { it.statuesMutable.classmentDonsParentList }
-
                         // Set progress to complete
                         progressFlow.value = 1.0f
 
@@ -100,5 +103,14 @@ class GroupesCategoriesRepositoryImpl : GroupesCategoriesRepository {
 
         return Pair(groupescategories, progressFlow)
     }
-}
 
+    override suspend fun updateDatas(datas: SnapshotStateList<H_GroupeCategories>) {
+        groupesCategories = datas
+
+        // Update Firebase with the new data
+        datas.forEach { group ->
+            H_GroupeCategories.caReference.child(group.id.toString()).setValue(group)
+        }
+    }
+
+}
