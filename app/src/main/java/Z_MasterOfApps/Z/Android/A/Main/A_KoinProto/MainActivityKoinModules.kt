@@ -1,8 +1,8 @@
 package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
 
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.ProductRepository
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.ProductRepositoryImpl
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepositoryImpl
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
 import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Z_AppsFather.Kotlin.Learn.DetailCoordinator
@@ -15,7 +15,7 @@ import org.koin.dsl.module
 // Module pour les repositories
 val repositoryModule = module {
     // Singleton: une seule instance pour toute l'application
-    single<ProductRepository> { ProductRepositoryImpl() }
+    single<CategoriesRepository> { CategoriesRepositoryImpl() }
     // Factory: nouvelle instance à chaque fois
     factory<UserRepository> { UserRepositoryImpl(get()) }
 }

@@ -1,8 +1,8 @@
 package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel
 
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.ProductRepository
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.UiState
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.I_CategoriesProduits
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,30 +17,34 @@ class Coordinator(
 ) {
     val stateFlow = viewModel.state
 
-    fun onProductClick(productId: String) {
-        navigator.navigate("detail/$productId")
+    fun onProductClick(categorieId: String) {
+        navigator.navigate("detail/$categorieId")
     }
 }
 
-class FragmentViewModel(private val repository: ProductRepository) : ViewModel() {
+data class UiState(
+    val categories: List<I_CategoriesProduits> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+class FragmentViewModel(private val categoriesRepository: CategoriesRepository) : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
-        loadProducts()
+        lenceCollecte()
     }
 
-    private fun loadProducts() {
+    private fun lenceCollecte() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                val products = repository.getProducts()
-                _state.update { it.copy(products = products, isLoading = false) }
+                val categories = categoriesRepository.onDataBaseChangeListnerAndLoad()
+                _state.update { it.copy(categories = categories, isLoading = false) }
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.message, isLoading = false) }
             }
         }
     }
 }
-
-

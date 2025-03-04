@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z_AppsFather.Kotlin.Learn
 
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.ProductRepository
+import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,7 @@ import org.koin.core.parameter.parametersOf
 
 class DetailViewModel(
     private val productId: String,
-    private val repository: ProductRepository
+    private val repository: CategoriesRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(DetailState())
     val state: StateFlow<DetailState> = _state.asStateFlow()
@@ -27,7 +27,7 @@ class DetailViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                val product = repository.getProductById(productId)
+                val product = repository.getCategoriesById(productId)
                 _state.update { it.copy(product = product, isLoading = false) }
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.message, isLoading = false) }
@@ -44,7 +44,7 @@ interface UserRepository {
     fun getCurrentUser(): User?
 }
 
-class UserRepositoryImpl(private val productRepository: ProductRepository) : UserRepository {
+class UserRepositoryImpl(private val productRepository: CategoriesRepository) : UserRepository {
     override fun getCurrentUser(): User = User("1", "John Doe")
 }
 

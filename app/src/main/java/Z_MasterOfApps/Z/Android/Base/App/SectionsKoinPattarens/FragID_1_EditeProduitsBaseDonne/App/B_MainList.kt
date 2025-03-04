@@ -18,7 +18,7 @@ fun B_MainList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(state.products) { product ->
+        items(state.categories) { product ->
             C_MainItem(
                 product = product,
                 coordinator=coordinator,
