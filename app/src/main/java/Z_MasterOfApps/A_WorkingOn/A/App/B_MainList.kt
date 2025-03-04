@@ -14,6 +14,7 @@ fun B_MainList(
     state: UiState,
     coordinator: Coordinator,
 ) {
+
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
