@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules
 
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.A_MainScreen
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.A.App.A_MainScreen
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

@@ -1,15 +1,32 @@
-package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model
+package Z_MasterOfApps.Kotlin.Model
 
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.IgnoreExtraProperties
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+
+class I_CategoriesProduits(
+    var id: Long = 0,
+    var infosDeBase: InfosDeBase = InfosDeBase(),
+    var statuesMutable: StatuesMutable = StatuesMutable(),
+) {
+    @IgnoreExtraProperties
+    class InfosDeBase(
+        var nom: String = "Non Defini",
+    )
+
+    @IgnoreExtraProperties
+    class StatuesMutable(
+        var classmentDonsParentList: Long = 0,
+    )
+}
 
 interface CategoriesRepository {
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<I_CategoriesProduits>, Flow<Float>>
@@ -83,3 +100,4 @@ class CategoriesRepositoryImpl : CategoriesRepository {
         return Pair(categories, progressFlow)
     }
 }
+

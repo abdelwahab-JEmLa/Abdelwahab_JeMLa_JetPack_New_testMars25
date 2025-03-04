@@ -1,10 +1,10 @@
 package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
 
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepositoryImpl
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.FragmentViewModel
+import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.FragmentViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 

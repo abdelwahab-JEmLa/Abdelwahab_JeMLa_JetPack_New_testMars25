@@ -1,7 +1,7 @@
-package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App
+package Z_MasterOfApps.A_WorkingOn.A.App
 
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.I_CategoriesProduits
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel.Coordinator
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +28,7 @@ fun C_MainItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                coordinator.onCategorieClick(categorie.id.toString())
+                coordinator.onCategorieClick(categorie.id)
             }),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

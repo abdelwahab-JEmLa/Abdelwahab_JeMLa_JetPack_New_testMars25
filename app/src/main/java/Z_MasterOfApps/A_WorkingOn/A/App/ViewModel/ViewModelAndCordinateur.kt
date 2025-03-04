@@ -1,8 +1,8 @@
-package Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.ViewModel
+package Z_MasterOfApps.A_WorkingOn.A.App.ViewModel
 
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.CategoriesRepository
-import Z_MasterOfApps.Z.Android.Base.App.SectionsKoinPattarens.FragID_1_EditeProduitsBaseDonne.App.Model.I_CategoriesProduits
+import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,8 +18,9 @@ class Coordinator(
 ) {
     val stateFlow = viewModel.state
 
-    fun onCategorieClick(categorieId: String) {
-        navigator.navigate("detail/$categorieId")
+    fun onCategorieClick(categorieId: Long) {
+        //-->
+        //TODO(1): fai que au click de
     }
 }
 
@@ -58,4 +59,6 @@ class FragmentViewModel(private val categoriesRepository: CategoriesRepository) 
             }
         }
     }
+    //-->
+    //TODO(1): cree une fun au click i
 }
