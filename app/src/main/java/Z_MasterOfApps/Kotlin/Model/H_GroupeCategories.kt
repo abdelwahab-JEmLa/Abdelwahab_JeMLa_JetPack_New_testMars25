@@ -68,7 +68,7 @@ class H_GroupesCategoriesRepositoryImpl : H_GroupesCategoriesRepository {
                             val category = dataSnapshot.getValue(H_GroupeCategories::class.java)
                             category?.let { cat ->
                                 datas.add(cat)
-                                groupesCategories.add(cat) // Add the category to the groupesCategories list
+                                groupesCategories.add(cat)
                             }
 
                             // Update progress
