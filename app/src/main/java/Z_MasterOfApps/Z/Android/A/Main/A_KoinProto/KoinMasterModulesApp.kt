@@ -6,7 +6,6 @@ import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepositoryImpl
-import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 

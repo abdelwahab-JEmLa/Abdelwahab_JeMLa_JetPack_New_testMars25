@@ -1,7 +1,7 @@
-package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules
+package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.A_MainScreen_FragDepart
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
