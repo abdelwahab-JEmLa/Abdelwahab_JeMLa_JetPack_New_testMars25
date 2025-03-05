@@ -4,7 +4,7 @@ import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepositoryImpl
-import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepositoryImpl
@@ -16,7 +16,7 @@ val repositoryModule = module {
     // Singleton: une seule instance pour toute l'application
     single<A_ProduitModelRepository> { A_ProduitModelRepositoryImpl() }
 
-    single<CategoriesRepository> { CategoriesRepositoryImpl() }
+    single<I_CategoriesRepository> { CategoriesRepositoryImpl() }
     single<H_GroupesCategoriesRepository> { H_GroupesCategoriesRepositoryImpl() }
 }
 

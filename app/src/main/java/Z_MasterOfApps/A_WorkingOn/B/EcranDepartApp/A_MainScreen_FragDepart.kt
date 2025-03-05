@@ -29,6 +29,7 @@ fun A_MainScreen_FragDepart(
     coordinator: Coordinator,
     onBackToMainApp: () -> Unit
 ) {
+    val viewModel = coordinator.viewModel
     val state by coordinator.stateFlow.collectAsStateWithLifecycle()
     var fabsVisibility by remember { mutableStateOf(false) }
 
@@ -64,7 +65,7 @@ fun A_MainScreen_FragDepart(
                         .padding(paddingValues)
                 ) {
                     //PS Cava etre change
-                    B_MainList(state, coordinator)
+                    B_MainList(state, coordinator,viewModel)
                 }
             }
 

@@ -2,7 +2,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
-import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import a_MainAppCompnents.DataBaseArticles
 import android.annotation.SuppressLint
@@ -19,12 +19,16 @@ import kotlin.coroutines.resumeWithException
 class InitDataBasesGenerateur(
     private val a_ProduitModelRepository: A_ProduitModelRepository,
     private val fragmentViewModel: FragmentViewModel,
-    private val categoriesRepository: CategoriesRepository
+    private val categoriesRepository: I_CategoriesRepository
 ) {
     @SuppressLint("SimpleDateFormat")
     suspend fun verifierAndBakupModels() = suspendCancellableCoroutine { continuation ->
         val currentDate = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date())
         val refBakup = ref_HeadOfModels.child("Z_BakupksModel").child(currentDate)
+
+        if (false) {
+            ref_HeadOfModels.child("Z_BakupksModel").removeValue()
+        }
 
         refBakup.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {

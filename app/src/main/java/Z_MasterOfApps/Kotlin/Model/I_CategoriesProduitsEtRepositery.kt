@@ -31,7 +31,7 @@ class I_CategoriesProduits(
     )
 }
 
-interface CategoriesRepository {
+interface I_CategoriesRepository {
     var modelDatas: SnapshotStateList<I_CategoriesProduits>
     val progressRepo: MutableStateFlow<Float>  // Initialize progressRepo
         get() = MutableStateFlow(0f)
@@ -46,7 +46,7 @@ interface CategoriesRepository {
     }
 }
 
-class CategoriesRepositoryImpl : CategoriesRepository {
+class CategoriesRepositoryImpl : I_CategoriesRepository {
     override var modelDatas: SnapshotStateList<I_CategoriesProduits> = mutableStateListOf()
     override val progressRepo: MutableStateFlow<Float> = MutableStateFlow(0f) // Added progressRepo
 
@@ -98,24 +98,29 @@ class CategoriesRepositoryImpl : CategoriesRepository {
 
         // Attach the listener to the Firebase reference
         listener?.let {
-            CategoriesRepository.caReference.addValueEventListener(it)
+            I_CategoriesRepository.caReference.addValueEventListener(it)
         }
     }
 
     override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<I_CategoriesProduits>, Flow<Float>> {
         val progressFlow = MutableStateFlow(0f)
 
-        val categories = suspendCancellableCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             val listener = object : ValueEventListener {
+                private var isResumed = false
+
                 override fun onDataChange(snapshot: DataSnapshot) {
                     try {
+                        // Prevent multiple resumptions
+                        if (isResumed) return
+
                         val categories = mutableListOf<I_CategoriesProduits>()
                         val totalItems = snapshot.childrenCount.toInt()
                         var processedItems = 0
 
                         modelDatas.clear()
                         progressFlow.value = 0f
-                        progressRepo.value = 0f // Also update progressRepo
+                        progressRepo.value = 0f
 
                         for (dataSnapshot in snapshot.children) {
                             val category = dataSnapshot.getValue(I_CategoriesProduits::class.java)
@@ -129,33 +134,53 @@ class CategoriesRepositoryImpl : CategoriesRepository {
                             progressRepo.value = processedItems.toFloat() / totalItems.toFloat()
                         }
 
-                        // Sort categories by position (classmentDonsParentList)
+                        // Sort categories by position
                         categories.sortBy { it.statuesMutable.indexDonsParentList }
                         modelDatas.sortBy { it.statuesMutable.indexDonsParentList }
 
                         progressFlow.value = 1.0f
-                        progressRepo.value = 1.0f // Complete progress
+                        progressRepo.value = 1.0f
 
-                        continuation.resume(categories)
+                        // Ensure resumption happens only once
+                        if (!isResumed) {
+                            isResumed = true
+                            continuation.resume(Pair(categories, progressFlow))
+
+                            // Remove the listener after successful data retrieval
+                            I_CategoriesRepository.caReference.removeEventListener(this)
+                        }
                     } catch (e: Exception) {
-                        continuation.resumeWithException(e)
-                        progressRepo.value = 0f // Reset progress on error
+                        if (!isResumed) {
+                            isResumed = true
+                            continuation.resumeWithException(e)
+                            progressRepo.value = 0f
+
+                            // Remove the listener in case of error
+                            I_CategoriesRepository.caReference.removeEventListener(this)
+                        }
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    continuation.resumeWithException(Exception("Database error: ${error.message}"))
-                    progressRepo.value = 0f // Reset progress on cancellation
+                    if (!isResumed) {
+                        isResumed = true
+                        continuation.resumeWithException(Exception("Database error: ${error.message}"))
+                        progressRepo.value = 0f
+
+                        // Remove the listener in case of cancellation
+                        I_CategoriesRepository.caReference.removeEventListener(this)
+                    }
                 }
             }
 
-            CategoriesRepository.caReference.addValueEventListener(listener)
+            // Attach the listener
+            I_CategoriesRepository.caReference.addValueEventListener(listener)
+
+            // Ensure listener is removed if coroutine is cancelled
             continuation.invokeOnCancellation {
-                CategoriesRepository.caReference.removeEventListener(listener)
+                I_CategoriesRepository.caReference.removeEventListener(listener)
             }
         }
-
-        return Pair(categories, progressFlow)
     }
 
     override suspend fun getCategoriesById(id: String): I_CategoriesProduits? {
@@ -170,7 +195,7 @@ class CategoriesRepositoryImpl : CategoriesRepository {
 
         // Update Firebase with the new data
         datas.forEach { category ->
-            CategoriesRepository.caReference.child(category.id.toString()).setValue(category)
+            I_CategoriesRepository.caReference.child(category.id.toString()).setValue(category)
         }
     }
 }

@@ -2,10 +2,10 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init.InitDataBasesGenerateur
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
-import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Navigator
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
@@ -41,7 +41,7 @@ data class UiState(
 
 class FragmentViewModel(
     private val a_ProduitModelRepository: A_ProduitModelRepository,
-    private val categoriesRepository: CategoriesRepository,
+    val i_CategoriesRepository: I_CategoriesRepository,
     private val groupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
      val _state = MutableStateFlow(UiState())
@@ -51,7 +51,7 @@ class FragmentViewModel(
         viewModelScope.launch {
             val initDataBasesGenerateur = InitDataBasesGenerateur(
                 a_ProduitModelRepository,
-                this@FragmentViewModel,categoriesRepository,
+                this@FragmentViewModel,i_CategoriesRepository,
             )
             try {
                 // Execute initialization sequentially
@@ -69,7 +69,7 @@ class FragmentViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, progress = 0f) }
             try {
-                val (categories, progressFlow) = categoriesRepository.onDataBaseChangeListnerAndLoad()
+                val (categories, progressFlow) = i_CategoriesRepository.onDataBaseChangeListnerAndLoad()
                 val (groupesCategories, groupesProgressFlow) = groupesCategoriesRepository.onDataBaseChangeListnerAndLoad()
 
                 // Launch a separate coroutine to collect progress updates
@@ -132,7 +132,7 @@ class FragmentViewModel(
     private fun indexCategorieEtUpdateIndexDeTouTLaListCategorie(
         currentCategoryId: Long,
         newCategoryId: Long
-    ): Unit {
+    ) {
         // Update the index for moved category and adjust other category indices
         val updatedCategories = state.value.categories.toMutableList()
 
@@ -153,7 +153,7 @@ class FragmentViewModel(
 
             // Update the repository with new list
             viewModelScope.launch {
-                categoriesRepository.updateDatas(updatedCategories.toMutableStateList())
+                i_CategoriesRepository.updateDatas(updatedCategories.toMutableStateList())
             }
 
             _state.value.holdedCategoryID = 0

@@ -1,6 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import androidx.compose.foundation.clickable
@@ -32,7 +33,8 @@ import androidx.compose.ui.unit.dp
 fun C_MainItem(
     categorie: I_CategoriesProduits,
     coordinator: Coordinator,
-    state: UiState
+    state: UiState,
+    viewModel: FragmentViewModel
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -41,7 +43,7 @@ fun C_MainItem(
             groupeCategories = state.groupesCategories,
             onCategorieChoisi = {
                 // Trigger the coordinator function when a group is clicked
-                coordinator.onCategorieChoisi(it, categorie.id)
+                viewModel.updateFirstCategoryId(it, categorie.id)
                 showDialog = false
             },
             onDismiss = { showDialog = false }
@@ -55,7 +57,7 @@ fun C_MainItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                coordinator.viewModel.updateHoldedCategoryID(categorie.id)
+                viewModel.updateHoldedCategoryID(categorie.id)
             },
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),

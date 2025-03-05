@@ -6,7 +6,7 @@ import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.CurrentModels.setupCurrentModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
@@ -323,8 +323,8 @@ object FromAncienDataBase {
 
     // Add this function to sync categories from the old database to the new database
     private fun syncOldCategories(viewModel: ViewModelInitApp) {
-        val oldCategoriesRef = CategoriesRepository.ancienBaseDonneRef
-        val newCategoriesRef = CategoriesRepository.caReference
+        val oldCategoriesRef = I_CategoriesRepository.ancienBaseDonneRef
+        val newCategoriesRef = I_CategoriesRepository.caReference
 
         oldCategoriesRef.addValueEventListener(object : ValueEventListener {
             private var lastKnownIds = mutableSetOf<Long>()
