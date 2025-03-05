@@ -1,7 +1,9 @@
 package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.FragmentViewModel
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator_Frag_Depart
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.ViewModel_Frag_Depart
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
@@ -19,11 +21,13 @@ val repositoryModule = module {
 
 // Module pour les ViewModels
 val viewModelModule = module {
-    viewModel { FragmentViewModel(get(), get()) }  // Inject both repositories
+    viewModel { FragmentViewModel(get(), get()) }
+    viewModel { ViewModel_Frag_Depart() }
 }
 
 val coordinatorModule = module {
     factory { (navigator: Navigator) -> Coordinator(get(), navigator) }
+    factory { (navigator: Navigator) -> Coordinator_Frag_Depart(get(), navigator) }
 }
 
 // Module principal qui regroupe tous les autres modules
