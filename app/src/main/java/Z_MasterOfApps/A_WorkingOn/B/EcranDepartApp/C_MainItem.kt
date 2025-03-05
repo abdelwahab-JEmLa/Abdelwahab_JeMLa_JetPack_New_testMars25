@@ -57,7 +57,7 @@ fun C_MainItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                viewModel.CLICkHandel(categorie.id)
+                viewModel.updateHoldedCategoryID(categorie.id)
             },
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
