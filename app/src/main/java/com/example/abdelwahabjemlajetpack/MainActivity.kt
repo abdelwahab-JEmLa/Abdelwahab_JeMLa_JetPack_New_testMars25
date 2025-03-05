@@ -117,6 +117,7 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.compose.KoinAndroidContext
+import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.GlobalContext.startKoin
 import java.io.File
 import kotlin.random.Random
@@ -135,6 +136,7 @@ class MyApplication : Application() {
             androidLogger()
             androidContext(this@MyApplication)
             modules(appModule)
+
         }
     }
 }
@@ -193,6 +195,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    @OptIn(KoinExperimentalAPI::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         permissionHandler = PermissionHandler(this)
@@ -200,7 +203,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                var useKoinNavigation by remember { mutableStateOf(false) }
+                var useKoinNavigation by remember { mutableStateOf(true) }
 
                 if (useKoinNavigation) {
                     // Koin Navigation

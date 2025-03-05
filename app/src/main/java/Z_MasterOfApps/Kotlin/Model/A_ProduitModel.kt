@@ -3,6 +3,7 @@ package Z_MasterOfApps.Kotlin.Model
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -16,10 +17,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Exclude
 import com.google.firebase.database.IgnoreExtraProperties
 import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -221,10 +220,10 @@ class A_ProduitModel(
 
 interface A_ProduitModelRepository {
     var modelDatas: SnapshotStateList<A_ProduitModel>
-    val coroutineScope: CoroutineScope // Ajoutez cette ligne
+    val progressRepo: MutableStateFlow<Float> // Changed to MutableStateFlow to track progress
 
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<A_ProduitModel>, Flow<Float>>
-     fun updateModelDatas(datas: SnapshotStateList<A_ProduitModel>)
+    fun updateModelDatas(datas: SnapshotStateList<A_ProduitModel>)
 
     companion object {
         val ancienFireBaseRef = firebaseDatabase.getReference("e_DBJetPackExport")
@@ -232,11 +231,56 @@ interface A_ProduitModelRepository {
     }
 }
 
-class A_ProduitModelRepositoryImpl(
-    override val coroutineScope: CoroutineScope // Injectez le CoroutineScope ici
-) : A_ProduitModelRepository {
-
+class A_ProduitModelRepositoryImpl : A_ProduitModelRepository {
     override var modelDatas: SnapshotStateList<A_ProduitModel> = mutableStateListOf()
+    override val progressRepo: MutableStateFlow<Float> = MutableStateFlow(0f) // Initialize progressRepo
+
+    private var listener: ValueEventListener? = null
+
+    init {
+        // Initialize the listener when the repository is created
+        startDatabaseListener()
+    }
+
+    private fun startDatabaseListener() {
+        listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                try {
+                    val datas = mutableListOf<A_ProduitModel>()
+                    val totalItems = snapshot.childrenCount.toInt()
+                    var processedItems = 0
+
+                    modelDatas.clear()
+                    progressRepo.value = 0f
+
+                    for (dataSnapshot in snapshot.children) {
+                        val data = dataSnapshot.getValue(A_ProduitModel::class.java)
+                        data?.let { cat ->
+                            datas.add(cat)
+                            modelDatas.add(cat)
+                        }
+
+                        processedItems++
+                        progressRepo.value = processedItems.toFloat() / totalItems.toFloat()
+                    }
+
+                    progressRepo.value = 1.0f
+                } catch (e: Exception) {
+                    // Handle the exception
+                    Log.e("A_ProduitModelRepositoryImpl", "Error loading data: ${e.message}")
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("A_ProduitModelRepositoryImpl", "Database error: ${error.message}")
+            }
+        }
+
+        // Attach the listener to the Firebase reference
+        listener?.let {
+            A_ProduitModelRepository.caReference.addValueEventListener(it)
+        }
+    }
 
     override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<A_ProduitModel>, Flow<Float>> {
         val progressFlow = MutableStateFlow(0f)
@@ -287,10 +331,15 @@ class A_ProduitModelRepositoryImpl(
     override fun updateModelDatas(datas: SnapshotStateList<A_ProduitModel>) {
         modelDatas = datas
 
-        coroutineScope.launch { // Utilisez le CoroutineScope injecté ici
-            datas.forEach {
-                A_ProduitModelRepository.caReference.child(it.id.toString()).setValue(it)
-            }
+        datas.forEach {
+            A_ProduitModelRepository.caReference.child(it.id.toString()).setValue(it)
+        }
+    }
+
+    fun cleanup() {
+        // Remove the listener when the repository is no longer needed
+        listener?.let {
+            A_ProduitModelRepository.caReference.removeEventListener(it)
         }
     }
 }

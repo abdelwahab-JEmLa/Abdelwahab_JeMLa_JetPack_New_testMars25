@@ -48,8 +48,21 @@ class FragmentViewModel(
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
-        lenceCollecte()
-        InitDataBasesGenerateur(a_ProduitModelRepository, this@FragmentViewModel)
+        viewModelScope.launch {
+            val initDataBasesGenerateur = InitDataBasesGenerateur(
+                a_ProduitModelRepository,
+                this@FragmentViewModel
+            )
+            try {
+                // Execute initialization sequentially
+                initDataBasesGenerateur.verifierAndBakupModels()
+                initDataBasesGenerateur.checkAndUpdateImportedProduct()
+                // Launch data collection AFTER initializations complete
+                lenceCollecte()
+            } catch (e: Exception) {
+                _state.update { it.copy(error = e.message, isLoading = false, progress = 0f) }
+            }
+        }
     }
 
     private fun lenceCollecte() {
