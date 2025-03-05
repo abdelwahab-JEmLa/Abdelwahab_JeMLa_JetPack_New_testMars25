@@ -203,7 +203,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AbdelwahabJeMLaJetPackTheme {
-                var useKoinNavigation by remember { mutableStateOf(true) }
+                var useKoinNavigation by remember { mutableStateOf(false) }
 
                 if (useKoinNavigation) {
                     // Koin Navigation
