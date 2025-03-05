@@ -1,5 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel
 
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init.InitDataBasesGenerateur
+import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
@@ -24,7 +26,7 @@ class Coordinator(
 
     fun onCategorieChoisi(groupe: Long, categorieChoisiId: Long) {
         // Update the first category ID of the group in the ViewModel
-        viewModel.updateFirstCategoryId(groupe,categorieChoisiId)
+        viewModel.updateFirstCategoryId(groupe, categorieChoisiId)
     }
 }
 
@@ -38,6 +40,7 @@ data class UiState(
 )
 
 class FragmentViewModel(
+    private val a_ProduitModelRepository: A_ProduitModelRepository,
     private val categoriesRepository: CategoriesRepository,
     private val groupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
@@ -46,6 +49,7 @@ class FragmentViewModel(
 
     init {
         lenceCollecte()
+        InitDataBasesGenerateur(a_ProduitModelRepository, this@FragmentViewModel)
     }
 
     private fun lenceCollecte() {

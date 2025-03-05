@@ -1,15 +1,28 @@
 package Z_MasterOfApps.Kotlin.Model
 
+import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
+import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Exclude
 import com.google.firebase.database.IgnoreExtraProperties
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 @IgnoreExtraProperties
 class A_ProduitModel(
@@ -31,11 +44,9 @@ class A_ProduitModel(
     var isVisible: Boolean by mutableStateOf(init_visible)
     var parentCategoryId by mutableLongStateOf(0L)
 
-
     var statuesBase: StatuesBase by mutableStateOf(StatuesBase())
     @IgnoreExtraProperties
     class StatuesBase(
-
         coloursEtGoutsIds: List<Long> = emptyList(), // Changed parameter name to avoid shadowing
         var ilAUneCouleurAvecImage: Boolean = false,
         var characterProduit: CharacterProduit = CharacterProduit(),
@@ -70,10 +81,9 @@ class A_ProduitModel(
 
         @IgnoreExtraProperties
         data class CharacterProduit(
-         var emballageCartone: Boolean = false,
+            var emballageCartone: Boolean = false,
         )
     }
-
 
     @get:Exclude
     var coloursEtGouts: SnapshotStateList<ColourEtGout_Model> =
@@ -93,7 +103,6 @@ class A_ProduitModel(
         var sonImageNeExistPas: Boolean = false,
         var position_Du_Couleur_Au_Produit: Long = 0,
     )
-
 
     var bonCommendDeCetteCota by mutableStateOf<GrossistBonCommandes?>(
         init_bonCommendDeCetteCota
@@ -151,7 +160,6 @@ class A_ProduitModel(
         set(value) {
             bonsVentDeCetteCota.clear()
             bonsVentDeCetteCota.addAll(value)
-
         }
     @get:Exclude
     var historiqueBonsVents: SnapshotStateList<ClientBonVentModel> =
@@ -209,4 +217,80 @@ class A_ProduitModel(
     }
 
     constructor() : this(0)
+}
+
+interface A_ProduitModelRepository {
+    var modelDatas: SnapshotStateList<A_ProduitModel>
+    val coroutineScope: CoroutineScope // Ajoutez cette ligne
+
+    suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<A_ProduitModel>, Flow<Float>>
+     fun updateModelDatas(datas: SnapshotStateList<A_ProduitModel>)
+
+    companion object {
+        val ancienFireBaseRef = firebaseDatabase.getReference("e_DBJetPackExport")
+        val caReference = ref_HeadOfModels.child("produits")
+    }
+}
+
+class A_ProduitModelRepositoryImpl(
+    override val coroutineScope: CoroutineScope // Injectez le CoroutineScope ici
+) : A_ProduitModelRepository {
+
+    override var modelDatas: SnapshotStateList<A_ProduitModel> = mutableStateListOf()
+
+    override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<A_ProduitModel>, Flow<Float>> {
+        val progressFlow = MutableStateFlow(0f)
+
+        val datasLisning = suspendCancellableCoroutine<List<A_ProduitModel>> { continuation ->
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    try {
+                        val datas = mutableListOf<A_ProduitModel>()
+                        val totalItems = snapshot.childrenCount.toInt()
+                        var processedItems = 0
+
+                        modelDatas.clear()
+                        progressFlow.value = 0f
+
+                        for (dataSnapshot in snapshot.children) {
+                            val data = dataSnapshot.getValue(A_ProduitModel::class.java)
+                            data?.let { cat ->
+                                datas.add(cat)
+                                modelDatas.add(cat)
+                            }
+
+                            processedItems++
+                            progressFlow.value = processedItems.toFloat() / totalItems.toFloat()
+                        }
+
+                        progressFlow.value = 1.0f
+                        continuation.resume(datas)
+                    } catch (e: Exception) {
+                        continuation.resumeWithException(e)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    continuation.resumeWithException(Exception("Database error: ${error.message}"))
+                }
+            }
+
+            A_ProduitModelRepository.caReference.addValueEventListener(listener)
+            continuation.invokeOnCancellation {
+                A_ProduitModelRepository.caReference.removeEventListener(listener)
+            }
+        }
+
+        return Pair(datasLisning, progressFlow)
+    }
+
+    override fun updateModelDatas(datas: SnapshotStateList<A_ProduitModel>) {
+        modelDatas = datas
+
+        coroutineScope.launch { // Utilisez le CoroutineScope injecté ici
+            datas.forEach {
+                A_ProduitModelRepository.caReference.child(it.id.toString()).setValue(it)
+            }
+        }
+    }
 }
