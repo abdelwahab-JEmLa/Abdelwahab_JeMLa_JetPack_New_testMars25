@@ -141,7 +141,6 @@ class MyApplication : Application() {
     }
 }
 
-
 data class AppViewModels(
     val headOfViewModels: HeadOfViewModels,
     val editeBaseDonneViewModel: EditeBaseDonneViewModel,
@@ -150,7 +149,6 @@ data class AppViewModels(
     val boardStatistiquesStatViewModel: BoardStatistiquesStatViewModel,
     val classementsArticlesViewModel: ClassementsArticlesViewModel  ,
     val viewModelInitApp: ViewModelInitApp
-
 )
 
 class MainActivity : ComponentActivity() {

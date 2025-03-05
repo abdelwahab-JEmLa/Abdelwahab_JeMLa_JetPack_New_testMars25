@@ -28,38 +28,63 @@ class InitDataBasesGenerateur(
 
         refBakup.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.exists()) {
-                    val backupData = a_ProduitModelRepository.modelDatas.toList()
-                    if (backupData.isEmpty()) {
-                        continuation.resume(Unit)
-                        return
-                    }
+                val backupData = a_ProduitModelRepository.modelDatas.toList()
+                val backupCategories = categoriesRepository.modelDatas.toList()
 
-                    val totalTasks = backupData.size
-                    var completedTasks = 0
+                // Total number of all backup tasks
+                val totalTasks = backupData.size + backupCategories.size
+                var completedTasks = 0
 
-                    backupData.forEach { product ->
-                        refBakup.child(product.id.toString()).setValue(product)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    Log.d(
-                                        "InitDataBasesGenerateur",
-                                        "Backup created for product ID: ${product.id}"
-                                    )
-                                } else {
-                                    Log.e(
-                                        "InitDataBasesGenerateur",
-                                        "Backup failed for product ID: ${product.id}",
-                                        task.exception
-                                    )
-                                }
-                                completedTasks++
-                                if (completedTasks == totalTasks) {
-                                    continuation.resume(Unit)
-                                }
+                // Backup Products
+                val productsRef = refBakup.child("A_ProduitModel")
+                backupData.forEach { product ->
+                    productsRef.child(product.id.toString()).setValue(product)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Log.d(
+                                    "InitDataBasesGenerateur",
+                                    "Backup created for product ID: ${product.id}"
+                                )
+                            } else {
+                                Log.e(
+                                    "InitDataBasesGenerateur",
+                                    "Backup failed for product ID: ${product.id}",
+                                    task.exception
+                                )
                             }
-                    }
-                } else {
+                            completedTasks++
+                            if (completedTasks == totalTasks) {
+                                continuation.resume(Unit)
+                            }
+                        }
+                }
+
+                // Backup Categories
+                val categoriesRef = refBakup.child("I_CategoriesProduits")
+                backupCategories.forEach { category ->
+                    categoriesRef.child(category.id.toString()).setValue(category)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Log.d(
+                                    "InitDataBasesGenerateur",
+                                    "Backup created for category ID: ${category.id}"
+                                )
+                            } else {
+                                Log.e(
+                                    "InitDataBasesGenerateur",
+                                    "Backup failed for category ID: ${category.id}",
+                                    task.exception
+                                )
+                            }
+                            completedTasks++
+                            if (completedTasks == totalTasks) {
+                                continuation.resume(Unit)
+                            }
+                        }
+                }
+
+                // If no items to backup, resume continuation
+                if (totalTasks == 0) {
                     continuation.resume(Unit)
                 }
             }

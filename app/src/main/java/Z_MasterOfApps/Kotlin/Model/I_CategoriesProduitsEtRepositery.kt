@@ -38,6 +38,7 @@ interface CategoriesRepository {
 
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<I_CategoriesProduits>, Flow<Float>>
     suspend fun getCategoriesById(id: String): I_CategoriesProduits?
+    suspend fun updateDatas(datas: SnapshotStateList<I_CategoriesProduits>)
 
     companion object {
         val ancienBaseDonneRef = firebaseDatabase.getReference("H_CategorieTabele")
@@ -161,10 +162,15 @@ class CategoriesRepositoryImpl : CategoriesRepository {
         return modelDatas.find { it.id.toString() == id }
     }
 
-    fun cleanup() {
-        // Remove the listener when the repository is no longer needed
-        listener?.let {
-            CategoriesRepository.caReference.removeEventListener(it)
+
+    override suspend fun updateDatas(datas: SnapshotStateList<I_CategoriesProduits>) {
+        // Update local modelDatas with the new data
+        modelDatas.clear()
+        modelDatas.addAll(datas)
+
+        // Update Firebase with the new data
+        datas.forEach { category ->
+            CategoriesRepository.caReference.child(category.id.toString()).setValue(category)
         }
     }
 }

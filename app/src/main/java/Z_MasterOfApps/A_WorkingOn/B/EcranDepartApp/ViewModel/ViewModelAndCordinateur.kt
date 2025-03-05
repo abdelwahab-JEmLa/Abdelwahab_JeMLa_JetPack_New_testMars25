@@ -25,7 +25,6 @@ class Coordinator(
     val stateFlow = viewModel.state
 
     fun onCategorieChoisi(groupe: Long, categorieChoisiId: Long) {
-        // Update the first category ID of the group in the ViewModel
         viewModel.updateFirstCategoryId(groupe, categorieChoisiId)
     }
 }
@@ -34,6 +33,7 @@ data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
     var groupesCategories: SnapshotStateList<H_GroupeCategories> =
         emptyList<H_GroupeCategories>().toMutableStateList(),
+    var holdedCategoryID: Long = 0, // Add this line
     val isLoading: Boolean = false,
     val progress: Float = 0f,
     val error: String? = null
@@ -44,7 +44,7 @@ class FragmentViewModel(
     private val categoriesRepository: CategoriesRepository,
     private val groupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
-    private val _state = MutableStateFlow(UiState())
+     val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
@@ -111,6 +111,52 @@ class FragmentViewModel(
             }
 
             groupesCategoriesRepository.updateDatas(updatedGroups.toMutableStateList())
+        }
+    }
+
+    fun updateHoldedCategoryID(categoryId: Long) {
+        viewModelScope.launch {
+            _state.update {
+                if (it.holdedCategoryID == 0L) {
+                    // First selection of category
+                    it.copy(holdedCategoryID = categoryId)
+                } else {
+                    // Trigger index change and update of all categories
+                    indexCategorieEtUpdateIndexDeTouTLaListCategorie(it.holdedCategoryID, categoryId)
+                    it.copy(holdedCategoryID = 0L) // Reset holded category
+                }
+            }
+        }
+    }
+
+    private fun indexCategorieEtUpdateIndexDeTouTLaListCategorie(
+        currentCategoryId: Long,
+        newCategoryId: Long
+    ): Unit {
+        // Update the index for moved category and adjust other category indices
+        val updatedCategories = state.value.categories.toMutableList()
+
+        val currentIndex = updatedCategories.indexOfFirst { it.id == currentCategoryId }
+        val newIndex = updatedCategories.indexOfFirst { it.id == newCategoryId }
+
+        if (currentIndex != -1 && newIndex != -1) {
+            // Swap indices in the list
+            val currentCategory = updatedCategories[currentIndex]
+            val newCategory = updatedCategories[newIndex]
+
+            val tempIndex = currentCategory.statuesMutable.indexDonsParentList
+            currentCategory.statuesMutable.indexDonsParentList = newCategory.statuesMutable.indexDonsParentList
+            newCategory.statuesMutable.indexDonsParentList = tempIndex
+
+            // Sort the list based on the new indices
+            updatedCategories.sortBy { it.statuesMutable.indexDonsParentList }
+
+            // Update the repository with new list
+            viewModelScope.launch {
+                categoriesRepository.updateDatas(updatedCategories.toMutableStateList())
+            }
+
+            _state.value.holdedCategoryID = 0
         }
     }
 }
