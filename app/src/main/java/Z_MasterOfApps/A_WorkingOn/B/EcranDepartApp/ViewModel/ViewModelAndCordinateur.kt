@@ -29,11 +29,19 @@ data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
     var groupesCategories: SnapshotStateList<H_GroupeCategories> =
         emptyList<H_GroupeCategories>().toMutableStateList(),
+
     var holdedCategoryID: Long = 0, // Add this line
+    var holdedGroupeCategorysID: List<Long> = emptyList(),
+    val modeAuClickButton: ModeAuClickButton ,
     val isLoading: Boolean = false,
     val progress: Float = 0f,
     val error: String? = null
 )
+enum class ModeAuClickButton(val color: Int) {
+    NO_HOLDED(android.R.color.holo_green_light),
+    HOLDED_GROUPE(android.R.color.holo_purple),
+    ITS_ONE_CATE_IN_HOLD
+}
 
 class FragmentViewModel(
     private val a_ProduitModelRepository: A_ProduitModelRepository,
@@ -110,7 +118,8 @@ class FragmentViewModel(
         }
     }
 
-    fun updateHoldedCategoryID(categoryId: Long) {
+    fun CLICkHandel(categoryId: Long) {        //-->
+    //TODO(1): regel pour que ca suit si le button est active le click mete au holded groupe
         viewModelScope.launch {
             _state.update {
                 if (it.holdedCategoryID == 0L) {

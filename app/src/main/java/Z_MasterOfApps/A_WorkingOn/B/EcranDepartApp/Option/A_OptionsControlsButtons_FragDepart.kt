@@ -2,6 +2,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.Option
 
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils.LabelsButton
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils.MenuButton
@@ -41,7 +42,11 @@ import kotlin.math.roundToInt
 const val TAG = "ControlButton"
 
 @Composable
-fun A_OptionsControlsButtons_FragDepart(state: UiState, coordinator: Coordinator) {
+fun A_OptionsControlsButtons_FragDepart(
+    viewModel: FragmentViewModel,
+    state: UiState,
+    coordinator: Coordinator
+) {
     var showMenu by remember { mutableStateOf(true) }
     var showLabels by remember { mutableStateOf(true) }
 
@@ -69,7 +74,7 @@ fun A_OptionsControlsButtons_FragDepart(state: UiState, coordinator: Coordinator
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (showMenu) {
-                    FragDepart_B_1(showLabels)
+                    FragDepart_B_1(viewModel,showLabels)
                 }
 
                 LabelsButton(

@@ -2,6 +2,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.Option.A_OptionsControlsButtons_FragDepart
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,9 +36,16 @@ fun A_MainScreen_FragDepart(
 
     Scaffold(
         topBar = {
-            TopAppBar(     //-->
-            //TODO(1): fait que au click au tab de change fabsVisibility
-                title = { Text("Catalogue de Produits (Koin)") },
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Catalogue de Produits (Koin)",
+                        modifier = Modifier.clickable {
+                            // Toggle FAB visibility when the title is clicked
+                            fabsVisibility = !fabsVisibility
+                        }
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackToMainApp) {
                         Icon(
@@ -64,13 +72,12 @@ fun A_MainScreen_FragDepart(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    //PS Cava etre change
-                    B_MainList(state, coordinator,viewModel)
+                    B_MainList(state, coordinator, viewModel)
                 }
             }
 
             if (fabsVisibility) {
-                A_OptionsControlsButtons_FragDepart(state, coordinator)
+                A_OptionsControlsButtons_FragDepart(viewModel = viewModel, state, coordinator)
             }
         }
     }
