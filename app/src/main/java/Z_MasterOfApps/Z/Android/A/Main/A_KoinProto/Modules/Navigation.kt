@@ -1,24 +1,14 @@
 package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules
 
-import Z_MasterOfApps.A_WorkingOn.A.App.A_MainScreen
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.A_MainScreen_FragDepart
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -110,7 +100,7 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
                     loadingContext.updateProgress(state.progress)
                 }
 
-                MainRouteWithBackNavigation(
+                A_MainScreen_FragDepart(
                     coordinator = coordinator,
                     onBackToMainApp = onBackToMainApp
                 )
@@ -135,41 +125,3 @@ fun AppNavigationKoin(onBackToMainApp: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainRouteWithBackNavigation(
-    coordinator: Coordinator,
-    onBackToMainApp: () -> Unit
-) {
-    val state by coordinator.stateFlow.collectAsStateWithLifecycle()
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Catalogue de Produits (Koin)") },
-                navigationIcon = {
-                    IconButton(onClick = onBackToMainApp) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Retour à l'app principale"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Original A_MainScreen content
-            A_MainScreen(state, coordinator)
-
-        }
-    }
-}

@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
 
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.FragmentViewModel
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository

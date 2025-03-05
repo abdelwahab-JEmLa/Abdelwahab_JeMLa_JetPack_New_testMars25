@@ -1,7 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.A.App
 
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.UiState
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import androidx.compose.foundation.clickable

@@ -1,8 +1,10 @@
 package Z_MasterOfApps.A_WorkingOn.A.App.ViewModel
 
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
-import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
+import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
 import androidx.compose.runtime.snapshots.SnapshotStateList

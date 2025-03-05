@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z.Android.A.Main.Utils
     /*
 import Z_MasterOfApps.Kotlin.ViewModel.Init.Init.initializeFirebase
-import Z_MasterOfApps.Z.Android.Main.A_MainScreen
+import Z_MasterOfApps.Z.Android.Main.A_MainScreen_FragDepart
 import android.app.Application
 import android.os.Build
 import android.os.Bundle
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             B_ServeurTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    A_MainScreen(
+                    A_MainScreen_FragDepart(
                         modifier = Modifier.padding(innerPadding),
                         permissionsGranted = permissionsGranted.value,
                     )

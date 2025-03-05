@@ -1,7 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.A.App
 
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.UiState
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
