@@ -2,6 +2,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
+import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import a_MainAppCompnents.DataBaseArticles
 import android.annotation.SuppressLint
@@ -17,7 +18,8 @@ import kotlin.coroutines.resumeWithException
 
 class InitDataBasesGenerateur(
     private val a_ProduitModelRepository: A_ProduitModelRepository,
-    private val fragmentViewModel: FragmentViewModel
+    private val fragmentViewModel: FragmentViewModel,
+    private val categoriesRepository: CategoriesRepository
 ) {
     @SuppressLint("SimpleDateFormat")
     suspend fun verifierAndBakupModels() = suspendCancellableCoroutine { continuation ->
@@ -40,9 +42,16 @@ class InitDataBasesGenerateur(
                         refBakup.child(product.id.toString()).setValue(product)
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
-                                    Log.d("InitDataBasesGenerateur", "Backup created for product ID: ${product.id}")
+                                    Log.d(
+                                        "InitDataBasesGenerateur",
+                                        "Backup created for product ID: ${product.id}"
+                                    )
                                 } else {
-                                    Log.e("InitDataBasesGenerateur", "Backup failed for product ID: ${product.id}", task.exception)
+                                    Log.e(
+                                        "InitDataBasesGenerateur",
+                                        "Backup failed for product ID: ${product.id}",
+                                        task.exception
+                                    )
                                 }
                                 completedTasks++
                                 if (completedTasks == totalTasks) {
@@ -63,39 +72,48 @@ class InitDataBasesGenerateur(
 
     suspend fun checkAndUpdateImportedProduct() = suspendCancellableCoroutine { continuation ->
         fragmentViewModel.viewModelScope.launch {
-            val importedProducts = a_ProduitModelRepository.modelDatas.filter { it.nom == "Imported Product" }
+            val importedProducts =
+                a_ProduitModelRepository.modelDatas.filter { it.nom == "Imported Product" || it.parentCategoryId == 0L }
+
             if (importedProducts.isEmpty()) {
                 continuation.resume(Unit)
                 return@launch
             }
 
             // Retrieve the ancienFireBaseRefDatas
-            val ancienFireBaseRefDatas = suspendCancellableCoroutine<List<DataBaseArticles>> { cont ->
-                A_ProduitModelRepository.ancienFireBaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val datas = mutableListOf<DataBaseArticles>()
-                        for (dataSnapshot in snapshot.children) {
-                            val databaseArticle = dataSnapshot.getValue(DataBaseArticles::class.java)
-                            databaseArticle?.let {
-                                datas.add(it)
+            val ancienFireBaseRefDatas =
+                suspendCancellableCoroutine<List<DataBaseArticles>> { cont ->
+                    A_ProduitModelRepository.ancienFireBaseRef.addListenerForSingleValueEvent(object :
+                        ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val datas = mutableListOf<DataBaseArticles>()
+                            for (dataSnapshot in snapshot.children) {
+                                val databaseArticle =
+                                    dataSnapshot.getValue(DataBaseArticles::class.java)
+                                databaseArticle?.let {
+                                    datas.add(it)
+                                }
                             }
+                            cont.resume(datas)
                         }
-                        cont.resume(datas)
-                    }
 
-                    override fun onCancelled(error: DatabaseError) {
-                        cont.resumeWithException(Exception("Failed to fetch ancienFireBaseRefDatas: ${error.message}"))
-                    }
-                })
-            }
+                        override fun onCancelled(error: DatabaseError) {
+                            cont.resumeWithException(Exception("Failed to fetch ancienFireBaseRefDatas: ${error.message}"))
+                        }
+                    })
+                }
 
             val totalProducts = importedProducts.size
             var processedProducts = 0
 
             importedProducts.forEach { product ->
-                val matchingArticle = ancienFireBaseRefDatas.find { it.idArticle.toLong() == product.id }
+                val matchingArticle =
+                    ancienFireBaseRefDatas.find { it.idArticle.toLong() == product.id }
                 matchingArticle?.let {
                     product.nom = it.nomArticleFinale
+                    product.parentCategoryId = categoriesRepository.modelDatas.find { cate ->
+                        cate.infosDeBase.nom == it.nomCategorie
+                    }?.id ?: 0
                 }
 
                 processedProducts++

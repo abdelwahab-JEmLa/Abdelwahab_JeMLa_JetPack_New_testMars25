@@ -220,7 +220,7 @@ class A_ProduitModel(
 
 interface A_ProduitModelRepository {
     var modelDatas: SnapshotStateList<A_ProduitModel>
-    val progressRepo: MutableStateFlow<Float> // Changed to MutableStateFlow to track progress
+    val progressRepo: MutableStateFlow<Float> //
 
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<A_ProduitModel>, Flow<Float>>
     fun updateModelDatas(datas: SnapshotStateList<A_ProduitModel>)

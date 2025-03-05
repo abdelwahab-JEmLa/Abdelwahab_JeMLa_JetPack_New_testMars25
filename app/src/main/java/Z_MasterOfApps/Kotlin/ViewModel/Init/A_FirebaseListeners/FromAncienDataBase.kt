@@ -350,7 +350,7 @@ object FromAncienDataBase {
                             nom = oldCategory.nomCategorieInCategoriesTabele
                         ),
                         statuesMutable = I_CategoriesProduits.StatuesMutable(
-                            classmentDonsParentList = oldCategory.idClassementCategorieInCategoriesTabele.toLong()
+                            indexDonsParentList = oldCategory.idClassementCategorieInCategoriesTabele.toLong()
                         )
                     )
 

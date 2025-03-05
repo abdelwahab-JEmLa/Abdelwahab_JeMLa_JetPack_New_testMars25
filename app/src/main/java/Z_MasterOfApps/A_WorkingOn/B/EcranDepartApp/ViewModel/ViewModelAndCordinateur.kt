@@ -51,7 +51,7 @@ class FragmentViewModel(
         viewModelScope.launch {
             val initDataBasesGenerateur = InitDataBasesGenerateur(
                 a_ProduitModelRepository,
-                this@FragmentViewModel
+                this@FragmentViewModel,categoriesRepository,
             )
             try {
                 // Execute initialization sequentially
