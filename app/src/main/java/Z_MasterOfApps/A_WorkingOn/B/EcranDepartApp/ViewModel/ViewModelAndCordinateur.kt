@@ -1,31 +1,99 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel
 
+import Z_MasterOfApps.Kotlin.Model.CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
+import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Modules.Navigator
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class Coordinator_Frag_Depart(
-    val viewModel: ViewModel_Frag_Depart,
+class Coordinator(
+    val viewModel: FragmentViewModel,
     private val navigator: Navigator
 ) {
     val stateFlow = viewModel.state
 
+    fun onCategorieChoisi(groupe: Long, categorieChoisiId: Long) {
+        // Update the first category ID of the group in the ViewModel
+        viewModel.updateFirstCategoryId(groupe,categorieChoisiId)
+    }
 }
 
-data class UiState_Frag_Depart(
+data class UiState(
+    val categories: List<I_CategoriesProduits> = emptyList(),
+    var groupesCategories: SnapshotStateList<H_GroupeCategories> =
+        emptyList<H_GroupeCategories>().toMutableStateList(),
+    val isLoading: Boolean = false,
+    val progress: Float = 0f,
     val error: String? = null
 )
 
-class ViewModel_Frag_Depart(
+class FragmentViewModel(
+    private val categoriesRepository: CategoriesRepository,
+    private val groupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
-    private val _state = MutableStateFlow(UiState_Frag_Depart())
-    val state: StateFlow<UiState_Frag_Depart> = _state.asStateFlow()
+    private val _state = MutableStateFlow(UiState())
+    val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
-
+        lenceCollecte()
     }
 
+    private fun lenceCollecte() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, progress = 0f) }
+            try {
+                val (categories, progressFlow) = categoriesRepository.onDataBaseChangeListnerAndLoad()
+                val (groupesCategories, groupesProgressFlow) = groupesCategoriesRepository.onDataBaseChangeListnerAndLoad()
 
+                // Launch a separate coroutine to collect progress updates
+                viewModelScope.launch {
+                    progressFlow.collectLatest { progress ->
+                        _state.update { it.copy(progress = progress) }
+                    }
+                }
+
+                // Collect groupesCategories updates
+                viewModelScope.launch {
+                    groupesProgressFlow.collectLatest { progress ->
+                        _state.update { it.copy(progress = progress) }
+                    }
+                }
+
+                // Update state with categories and groupesCategories
+                _state.update {
+                    it.copy(
+                        categories = categories,
+                        groupesCategories = groupesCategories.toMutableStateList(),
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = e.message, isLoading = false, progress = 0f) }
+            }
+        }
+    }
+
+    // Function to update the first category ID of the group when a category is clicked
+    fun updateFirstCategoryId(groupId: Long, categoryId: Long) {
+        viewModelScope.launch {
+            val updatedGroups = state.value.groupesCategories.map { group ->
+                if (group.id == groupId) {
+                    group.statuesMutable.idPremierCategorieDeCetteGroupe = categoryId
+                }
+                group
+            }
+
+            groupesCategoriesRepository.updateDatas(updatedGroups.toMutableStateList())
+        }
+    }
 }

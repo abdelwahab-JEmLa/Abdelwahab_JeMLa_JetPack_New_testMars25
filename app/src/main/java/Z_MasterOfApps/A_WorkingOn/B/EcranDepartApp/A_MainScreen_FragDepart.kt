@@ -1,8 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
 
-import Z_MasterOfApps.A_WorkingOn.A.App.A_MainScreen
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.Option.A_OptionsControlsButtons_FragDepart
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -58,7 +57,17 @@ fun A_MainScreen_FragDepart(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            A_MainScreen(state, coordinator)
+            Scaffold { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    //PS Cava etre change
+                    B_MainList(state, coordinator)
+                }
+            }
+
             if (fabsVisibility) {
                 A_OptionsControlsButtons_FragDepart(state, coordinator)
             }

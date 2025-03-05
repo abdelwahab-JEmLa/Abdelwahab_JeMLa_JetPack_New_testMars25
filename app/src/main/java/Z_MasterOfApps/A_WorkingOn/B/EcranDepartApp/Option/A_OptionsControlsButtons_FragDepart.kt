@@ -1,8 +1,8 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.Option
 
 
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.Coordinator
-import Z_MasterOfApps.A_WorkingOn.A.App.ViewModel.UiState
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils.LabelsButton
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.Utils.MenuButton
 import Z_MasterOfApps.Z.Android.A.Main.Utils.LottieJsonGetterR_Raw_Icons

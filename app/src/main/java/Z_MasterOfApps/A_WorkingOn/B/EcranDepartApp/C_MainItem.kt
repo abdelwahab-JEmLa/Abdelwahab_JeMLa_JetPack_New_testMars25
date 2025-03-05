@@ -1,4 +1,4 @@
-package Z_MasterOfApps.A_WorkingOn.A.App
+package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
