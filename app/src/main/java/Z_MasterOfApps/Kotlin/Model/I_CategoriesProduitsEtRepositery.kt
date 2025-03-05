@@ -25,6 +25,7 @@ class I_CategoriesProduits(
     @IgnoreExtraProperties
     class StatuesMutable(
         var classmentDonsParentList: Long = 0,
+        var indexDonsParentList: Int = 0,
     )
 }
 
