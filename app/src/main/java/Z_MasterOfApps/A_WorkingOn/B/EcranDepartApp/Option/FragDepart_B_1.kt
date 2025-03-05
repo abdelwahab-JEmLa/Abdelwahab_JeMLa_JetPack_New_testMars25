@@ -19,7 +19,9 @@ fun FragDepart_B_1(
     ControlButton(
         onClick = {
                 //-->
-                //TODO(1): fait que au click de chan
+                //TODO(1): fait que si le button active de change
+            //-->
+            //TODO(1): viewModel.
         },
         icon = if ( activeButton) {
             LottieJsonGetterR_Raw_Icons.atay
