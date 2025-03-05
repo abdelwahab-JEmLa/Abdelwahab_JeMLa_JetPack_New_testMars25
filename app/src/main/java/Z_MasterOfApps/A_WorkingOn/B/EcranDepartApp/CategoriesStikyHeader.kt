@@ -30,7 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun C_MainItem(
+fun CategoriesStikyHeader(
     categorie: I_CategoriesProduits,
     coordinator: Coordinator,
     state: UiState,

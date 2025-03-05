@@ -37,7 +37,7 @@ data class UiState(
 
 
 class FragmentViewModel(
-    private val a_ProduitModelRepository: A_ProduitModelRepository,
+    val a_ProduitModelRepository: A_ProduitModelRepository,
     val i_CategoriesRepository: I_CategoriesRepository,
     private val groupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
