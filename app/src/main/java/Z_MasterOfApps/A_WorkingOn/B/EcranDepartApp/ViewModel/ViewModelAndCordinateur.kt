@@ -23,10 +23,6 @@ class Coordinator(
     private val navigator: Navigator
 ) {
     val stateFlow = viewModel.state
-
-    fun onCategorieChoisi(groupe: Long, categorieChoisiId: Long) {
-        viewModel.updateFirstCategoryId(groupe, categorieChoisiId)
-    }
 }
 
 data class UiState(
