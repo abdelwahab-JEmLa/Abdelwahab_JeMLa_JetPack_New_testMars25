@@ -6,9 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -47,11 +47,12 @@ fun C_MainItem_A4FragID_1(
         else -> MaterialTheme.colorScheme.surface
     }
 
+    val height = 50.dp
     Surface(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .aspectRatio(1f)
+            .height(height)  // Keep only height, removed aspectRatio
             .clickable(onClick = onClick)
             .border(
                 BorderStroke(
@@ -70,7 +71,6 @@ fun C_MainItem_A4FragID_1(
     ) {
         Box(
             modifier = Modifier
-                .padding(8.dp)
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
@@ -92,7 +92,7 @@ fun C_MainItem_A4FragID_1(
             Text(
                 text = category.infosDeBase.nom,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
+                maxLines = 1,  // Changed from 2 to 1 to fit in the smaller height
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (isSpecialCategory) Color.White else MaterialTheme.colorScheme.onSurface

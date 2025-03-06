@@ -26,7 +26,7 @@ class Startup_Extension(
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
 
     var dialogeOptions by mutableStateOf(false)
-    var showCategorySelection by mutableStateOf(false)
+    var showCategorySelection by mutableStateOf(true)
 
 
     init {

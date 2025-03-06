@@ -2,9 +2,7 @@ package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelection
 
 import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -29,7 +27,7 @@ fun B_MainList_A4FragID_1(
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(8.dp),
+        contentPadding = PaddingValues(2.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         items(listOf(addNewCategoryItem) + categories) { category ->
@@ -42,7 +40,6 @@ fun B_MainList_A4FragID_1(
                 selectionOrder = selectedCategories.indexOf(category) + 1,
                 onClick = { onCategoryClick(category) }
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

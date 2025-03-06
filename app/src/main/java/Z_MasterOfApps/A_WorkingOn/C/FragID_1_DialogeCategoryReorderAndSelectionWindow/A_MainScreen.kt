@@ -78,7 +78,7 @@ fun A_MainScreen_SectionID4_FragmentID1(
             modifier = Modifier.fillMaxSize(),
             shape = MaterialTheme.shapes.large
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(4.dp)) {
                 SearchField_A4F1(
                     filterText = filterText,
                     onFilterTextChange = { filterText = it }
