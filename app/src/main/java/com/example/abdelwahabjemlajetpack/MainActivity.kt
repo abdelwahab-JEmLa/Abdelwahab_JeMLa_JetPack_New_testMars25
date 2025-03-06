@@ -6,6 +6,7 @@ import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.initializeFirebase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.AppNavigationKoin
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.appModule
+import Z_MasterOfApps.Z.Android.A.Main.MainScreen_NewComputerPatterns
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.DataBaseArticles
 import a_MainAppCompnents.HeadOfViewModels
@@ -211,9 +212,7 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxSize(),
                                 color = MaterialTheme.colorScheme.background
                             ) {
-                                AppNavigationKoin(
-                                    onBackToMainApp = { useKoinNavigation = false }
-                                )
+                                MainScreen_NewComputerPatterns()
                             }
                         }
                     }

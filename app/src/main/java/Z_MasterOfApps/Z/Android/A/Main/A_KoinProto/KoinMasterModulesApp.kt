@@ -4,10 +4,11 @@ import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepositoryImpl
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.CategoriesRepositoryImpl
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepositoryImpl
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -23,6 +24,7 @@ val repositoryModule = module {
 // Module pour les ViewModels
 val viewModelModule = module {
     viewModel { FragmentViewModel(get(), get(), get()) }
+    viewModel { ViewModelInitApp(get()) }  // Injection de A_ProduitModelRepository
 }
 
 val coordinatorModule = module {

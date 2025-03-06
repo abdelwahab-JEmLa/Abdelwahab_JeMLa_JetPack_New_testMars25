@@ -1,5 +1,7 @@
-package Z_MasterOfApps.A_WorkingOn.A.App.FragID_1_DialogeCategoryReorderAndSelectionWindow
+package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
+import W.Ui.FragID_1_DialogeCategoryReorderAndSelectionWindow.B_MainListFragID_1
+import W.Ui.FragID_1_DialogeCategoryReorderAndSelectionWindow.CategoryItemFragID_1
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -20,7 +22,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 @Composable
-fun B_MainListFragID_1(
+fun B_MainList_A4FragID_1(
     categories: List<CategoriesTabelleECB>,
     selectedCategories: List<CategoriesTabelleECB>,
     movingCategory: CategoriesTabelleECB?,

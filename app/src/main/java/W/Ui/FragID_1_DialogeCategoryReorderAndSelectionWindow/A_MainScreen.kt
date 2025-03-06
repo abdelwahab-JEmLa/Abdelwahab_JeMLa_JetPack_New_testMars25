@@ -1,4 +1,4 @@
-package Z_MasterOfApps.A_WorkingOn.A.App.FragID_1_DialogeCategoryReorderAndSelectionWindow
+package W.Ui.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.BottomActions
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.SearchField
@@ -68,7 +68,7 @@ fun FragID_1_DialogeCategoryReorderAndSelectionWindow(
 
                 // Category grid
                 Box(modifier = Modifier.weight(1f)) {
-                    B_MainListFragID_1(
+                    Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.B_MainListFragID_1(
                         categories = filteredCategories,
                         selectedCategories = selectedCategories,
                         movingCategory = movingCategory,

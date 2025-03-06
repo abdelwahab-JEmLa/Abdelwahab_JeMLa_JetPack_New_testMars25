@@ -12,9 +12,13 @@ import Z_MasterOfApps.Z.Android.Base.App.App2_LocationGpsClients.NH_1.id1_Client
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.Groups
@@ -23,10 +27,16 @@ import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,14 +48,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import org.koin.androidx.compose.koinViewModel
 
-//-->
-     //TODO(1): CHANGE LA STRUCTURE DU CODE POUR UTILISE KOIN INJECT DEPEND ICI COMME DONS Navigation.KT 
 @Composable
 fun AppNavigationHost(
-    viewModelInitApp: ViewModelInitApp,
     modifier: Modifier,
 ) {
+    val viewModelInitApp: ViewModelInitApp = koinViewModel()
+
     val navController = rememberNavController()
     val isManagerPhone = viewModelInitApp._paramatersAppsViewModelModel.cLeTelephoneDuGerant ?: false
     val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone) }
@@ -53,6 +63,11 @@ fun AppNavigationHost(
     val startDestination = StartupIcon_Start.route
     val currentRoute = navController.currentBackStackEntryAsState()
         .value?.destination?.route
+
+    // State to track if we're already on the StartupIcon_Start route
+    var isOnStartupRoute by remember { mutableStateOf(false) }
+    // State to control dialog visibility
+    var showDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -90,6 +105,7 @@ fun AppNavigationHost(
                                 A_id1_ClientsLocationGps(viewModel = viewModelInitApp)
                             }
                             composable(StartupIcon_Start.route) {
+                                isOnStartupRoute = true
                                 A_StartupScreen(viewModelInitApp, { route ->
                                     navController.navigate(route) {
                                         popUpTo(navController.graph.startDestinationId) {
@@ -106,6 +122,44 @@ fun AppNavigationHost(
             }
         }
 
+        // Show the dialog if requested
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("SEction Gere->") },
+                text = { Text("Choisissez une option:") },
+                confirmButton = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                // Handle "Achats" action
+                                showDialog = false
+                                // Navigate or perform action for Achats
+                            }
+                        ) {
+                            Text("Achats")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                // Handle "BaseDone" action
+                                showDialog = false
+                                // Navigate or perform action for BaseDone
+                            }
+                        ) {
+                            Text("BaseDone")
+                        }
+                    }
+                },
+                dismissButton = {}
+            )
+        }
+
         AnimatedVisibility(
             visible = true,
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -114,15 +168,22 @@ fun AppNavigationHost(
                 items = items,
                 viewModelInitApp = viewModelInitApp,
                 currentRoute = currentRoute,
-                onNavigate = { route ->
+                onClickNavigate = { route ->
                     // Disable navigation when loading
                     if (!viewModelInitApp.isLoading) {
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
+                        // Check if the user clicked on StartupIcon_Start while already on that route
+                        if (route == StartupIcon_Start.route && currentRoute == StartupIcon_Start.route) {
+                            // If already on the startup route and clicked again, show the dialog
+                            showDialog = true
+                        } else {
+                            // Normal navigation for other routes or first click on startup
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },

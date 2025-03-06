@@ -1,5 +1,6 @@
 package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup
 
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.FragID_1_DialogeCategoryReorderAndSelectionWindow
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsControlsButtons
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog.A_OptionsDialog
@@ -27,7 +28,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,14 +39,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-//-->
-//TODO(1): CHANGE LA STRUCTURE DU CODE POUR UTILISE KOIN INJECT DEPEND ICI COMME DONS Navigation.KT
+
 @Composable
 internal fun A_StartupScreen(
     viewModelInitApp: ViewModelInitApp = viewModel(),
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showCategorySelection by remember { mutableStateOf(false) }
+
     val isManagerPhone = viewModelInitApp._paramatersAppsViewModelModel.cLeTelephoneDuGerant ?: false
     val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone) }
 
@@ -134,5 +139,16 @@ internal fun A_StartupScreen(
             viewModelInitApp = viewModelInitApp,
             onDismiss = { viewModelInitApp.extentionStartup.dialogeOptions = false }
         )
+        if (showCategorySelection) {
+            FragID_1_DialogeCategoryReorderAndSelectionWindow(
+                uiState = uiState,
+                viewModel = viewModel,
+                onDismiss = { showCategorySelection = false },
+                onCategorySelected = { category ->
+                    onCategorySelected(category)
+                    showCategorySelection = false
+                }
+            )
+        }
     }
 }
