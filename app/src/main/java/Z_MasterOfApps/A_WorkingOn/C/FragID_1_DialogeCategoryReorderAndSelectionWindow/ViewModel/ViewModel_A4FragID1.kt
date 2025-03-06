@@ -3,6 +3,7 @@ package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelection
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,10 @@ class ViewModel_A4FragID1(
     private val i_CategoriesRepository: I_CategoriesRepository,
     val h_GroupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "ViewModel_A4FragID1"
+    }
 
     // Initialize product model data with safer access
     private val a_ProduitModel by lazy {
@@ -182,36 +187,52 @@ class ViewModel_A4FragID1(
     fun movePlusieurCategories(selectedCategories: List<I_CategoriesProduits>) {
         viewModelScope.launch {
             try {
-                if (selectedCategories.isEmpty()) return@launch
+                Log.d(TAG, "movePlusieurCategories called with ${selectedCategories.size} categories")
+
+                if (selectedCategories.isEmpty()) {
+                    Log.d(TAG, "No categories selected, returning early")
+                    return@launch
+                }
 
                 // Get all categories
                 val allCategories = i_CategoriesProduits.toMutableList()
+                Log.d(TAG, "Total categories before reordering: ${allCategories.size}")
 
                 // Sort selected categories by their current position to maintain relative order
                 val sortedSelectedCategories = selectedCategories.sortedBy {
                     allCategories.indexOfFirst { cat -> cat.id == it.id }
                 }
 
+                Log.d(TAG, "Selected categories sorted by position: ${sortedSelectedCategories.map { it.infosDeBase.nom }}")
+
                 // Create a new list without the selected categories
                 val remainingCategories = allCategories.filter { category ->
                     !selectedCategories.any { it.id == category.id }
                 }.toMutableList()
 
+                Log.d(TAG, "Remaining categories after filtering: ${remainingCategories.size}")
+
                 // Find the insertion point - if not specified, add at the end
                 val targetIndex = remainingCategories.size
+                Log.d(TAG, "Target insertion index: $targetIndex")
 
                 // Insert all selected categories at the target point
                 remainingCategories.addAll(targetIndex, sortedSelectedCategories)
 
+                Log.d(TAG, "Final category order after insertion: ${remainingCategories.map { it.infosDeBase.nom }}")
+
                 // Update indices for all categories
                 remainingCategories.forEachIndexed { index, category ->
+                    Log.d(TAG, "Setting category '${category.infosDeBase.nom}' to position ${index + 1}")
                     category.statuesMutable.indexDonsParentList = (index + 1).toLong()
                 }
 
                 // Update the repository with the new order
                 i_CategoriesRepository.updateDatas(remainingCategories.toMutableStateList())
+                Log.d(TAG, "Repository updated with ${remainingCategories.size} categories")
+
             } catch (e: Exception) {
-                // Silent exception handling
+                Log.e(TAG, "Error in movePlusieurCategories: ${e.message}", e)
             }
         }
     }
