@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun C_MainItem_A4FragID_1(
+fun CategoriesStikyHeaderF1(
     category: I_CategoriesProduits,
     isSelected: Boolean,
     isMoving: Boolean,

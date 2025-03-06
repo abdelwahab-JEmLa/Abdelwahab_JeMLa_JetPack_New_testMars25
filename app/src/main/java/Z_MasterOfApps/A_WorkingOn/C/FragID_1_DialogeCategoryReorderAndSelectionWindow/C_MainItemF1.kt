@@ -1,4 +1,4 @@
-package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
+package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Z_AppsFather.Kotlin._4.Modules.GlideDisplayImageBykeyId
@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun D_MainItem_F5(
+fun C_MainItemF1(
     mainItem: A_ProduitModel,
     modifier: Modifier = Modifier,
     onClickOnMain: () -> Unit = {},

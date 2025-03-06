@@ -3,6 +3,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.C_MainItemF1
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,7 +41,7 @@ fun B_MainList(
                     viewModel.a_ProduitModelRepository.modelDatas
                         .filter { it.parentCategoryId == categorie.id }
                 ) { index, produit ->
-                    D_MainItem_F5(
+                    C_MainItemF1(
                         mainItem = produit,
                         position = index + 1,
                         onClickOnMain = {}

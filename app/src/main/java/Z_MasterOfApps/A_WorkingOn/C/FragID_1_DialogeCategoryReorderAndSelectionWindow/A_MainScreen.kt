@@ -99,6 +99,7 @@ fun A_MainScreen_SectionID4_FragmentID1(
 
                 Box(modifier = Modifier.weight(1f)) {
                     B_MainList_A4FragID_1(
+                        viewModel=viewModel,
                         categories = filteredCategories,
                         selectedCategories = selectedCategories,
                         movingCategory = movingCategory,
@@ -121,7 +122,7 @@ fun A_MainScreen_SectionID4_FragmentID1(
                                 onMovingCategoryChange = { movingCategory = it },
                                 onReorderModeChange = { reorderMode = it },
                                 onCategorySelected = {},
-                                onDismiss = onDismiss
+                                onDismiss = {}
                             )
                         }
                     )

@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("MutableCollectionMutableState")
 class ViewModel_A4FragID1(
-    private val a_ProduitModelRepository: A_ProduitModelRepository,
+    val a_ProduitModelRepository: A_ProduitModelRepository,
     private val i_CategoriesRepository: I_CategoriesRepository,
     val h_GroupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
