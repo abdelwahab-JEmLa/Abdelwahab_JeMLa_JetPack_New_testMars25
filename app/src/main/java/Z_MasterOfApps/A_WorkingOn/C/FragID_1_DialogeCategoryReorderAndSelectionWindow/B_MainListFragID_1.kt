@@ -62,7 +62,7 @@ fun B_MainList_A4FragID_1(
             )
 
             val categoryProducts =
-                if (viewModel.fitelProduits) {
+                if (viewModel.filterProduits) {
                     productsByCategory[category.id]
                         ?.filter { it.etatesMutable.diponibilityEtate }
                         ?: emptyList()

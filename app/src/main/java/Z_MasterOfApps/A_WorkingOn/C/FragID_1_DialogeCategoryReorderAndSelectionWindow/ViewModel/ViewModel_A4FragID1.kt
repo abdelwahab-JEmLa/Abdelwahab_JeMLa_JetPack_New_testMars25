@@ -20,7 +20,7 @@ class ViewModel_A4FragID1(
     val h_GroupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
 
-    var fitelProduits by mutableStateOf(false)
+    var filterProduits by mutableStateOf(false)
 
     val initDataBasesGenerateur = InitDataBasesGenerateur(
         a_ProduitModelRepository,

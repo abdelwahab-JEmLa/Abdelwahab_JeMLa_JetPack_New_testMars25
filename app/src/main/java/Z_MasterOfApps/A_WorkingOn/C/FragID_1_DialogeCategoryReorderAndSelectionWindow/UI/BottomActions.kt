@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FileDownloadOff
-import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -55,7 +54,7 @@ fun BottonsActions(
             Text(if (multiSelectionMode) "Cancel" else "Select")
         }
 
-        OutlinedButton(
+      /*  OutlinedButton(
             onClick = { onRenameOrFusionModeChange(!renameOrFusionMode) },
             enabled = !multiSelectionMode && movingCategory == null
         ) {
@@ -66,16 +65,16 @@ fun BottonsActions(
             Spacer(Modifier.width(8.dp))
             Text(if (renameOrFusionMode) "Cancel" else "Merge")
         }
-
+            */
         OutlinedButton(
-            onClick = { viewModel.fitelProduits= !viewModel.fitelProduits},
+            onClick = { viewModel.filterProduits = !viewModel.filterProduits},
         ) {
             Icon(
                 imageVector = Icons.Default.FileDownloadOff,
                 contentDescription = null
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (renameOrFusionMode) "Cancel" else "Merge")
+            Text(if (renameOrFusionMode) "Cancel" else "filterProduits")
         }
 
         if (selectedCategories.size >= 2 && !reorderMode) {
