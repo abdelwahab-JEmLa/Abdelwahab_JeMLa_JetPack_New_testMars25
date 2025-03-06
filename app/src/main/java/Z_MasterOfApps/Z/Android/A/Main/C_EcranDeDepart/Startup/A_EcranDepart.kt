@@ -28,10 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,10 +43,10 @@ internal fun A_StartupScreen(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showCategorySelection by remember { mutableStateOf(false) }
+    val extentionStartup = viewModelInitApp.extentionStartup
 
     val isManagerPhone = viewModelInitApp._paramatersAppsViewModelModel.cLeTelephoneDuGerant ?: false
-    val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone) }
+    val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone,) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
@@ -129,7 +126,7 @@ internal fun A_StartupScreen(
 
         if (viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility) {
             A_OptionsControlsButtons(
-                extensionVM = viewModelInitApp.extentionStartup, // Utilisez l'instance existante
+                extensionVM = extentionStartup, // Utilisez l'instance existante
                 viewModelInitApp = viewModelInitApp,
                 paddingValues = PaddingValues()  ,
             )
@@ -137,11 +134,11 @@ internal fun A_StartupScreen(
 
         A_OptionsDialog(
             viewModelInitApp = viewModelInitApp,
-            onDismiss = { viewModelInitApp.extentionStartup.dialogeOptions = false }
+            onDismiss = { extentionStartup.dialogeOptions = false }
         )
 
-        if (showCategorySelection) {
-            A_MainScreen_SectionID4_FragmentID1() { showCategorySelection = false}
+        if (extentionStartup.showCategorySelection) {
+            A_MainScreen_SectionID4_FragmentID1() { extentionStartup.showCategorySelection = false}
         }
     }
 }

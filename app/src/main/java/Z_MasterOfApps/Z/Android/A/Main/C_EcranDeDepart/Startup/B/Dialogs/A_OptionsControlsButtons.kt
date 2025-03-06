@@ -75,6 +75,7 @@ fun A_OptionsControlsButtons(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (showMenu) {
+                    B_7(viewModelInitApp ,showLabels)
 
                     B_3_ImplimentClientsParProduits(viewModelInitApp ,showLabels)
 

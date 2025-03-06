@@ -48,6 +48,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import org.koin.androidx.compose.koinViewModel
 
+enum class SectionsAPP{
+    BASE_DONNE,
+    MANAGE_ACHATS
+}
 @Composable
 fun AppNavigationHost(
     modifier: Modifier,
@@ -56,7 +60,10 @@ fun AppNavigationHost(
 
     val navController = rememberNavController()
     val isManagerPhone = viewModelInitApp._paramatersAppsViewModelModel.cLeTelephoneDuGerant ?: false
-    val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone) }
+    var sectionDesFragmentAppAfficheMNT by remember { mutableStateOf(SectionsAPP.MANAGE_ACHATS) }
+
+
+    val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone,sectionDesFragmentAppAfficheMNT) }
 
     val startDestination = StartupIcon_Start.route
     val currentRoute = navController.currentBackStackEntryAsState()
@@ -137,20 +144,18 @@ fun AppNavigationHost(
                             onClick = {
                                 // Handle "Achats" action
                                 showDialog = false
-                                // Navigate or perform action for Achats
-                            }
+                                sectionDesFragmentAppAfficheMNT=SectionsAPP.MANAGE_ACHATS                            }
                         ) {
-                            Text("Achats")
+                            Text(SectionsAPP.MANAGE_ACHATS.toString())
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
                                 // Handle "BaseDone" action
                                 showDialog = false
-                                // Navigate or perform action for BaseDone
-                            }
+                                sectionDesFragmentAppAfficheMNT=SectionsAPP.BASE_DONNE                            }
                         ) {
-                            Text("BaseDone")
+                            Text(SectionsAPP.BASE_DONNE.toString())
                         }
                     }
                 },
@@ -192,23 +197,26 @@ fun AppNavigationHost(
 }
 
 object NavigationItems {
-    fun getItems(isManagerPhone: Boolean) = buildList {
+    fun getItems(isManagerPhone: Boolean, sectoionDesFragmentAppAfficheMNT: SectionsAPP? =null) = buildList {
         add(StartupIcon_Start)
 
-        //Manageur_Fragments
-        if (isManagerPhone) {
-            add(InfosDatas_FramgmentId4)
-        }
-        add(InfosDatas_FragmentId1)
-        add(InfosDatas_FramgmentId5)
+        if (sectoionDesFragmentAppAfficheMNT==SectionsAPP.MANAGE_ACHATS) {
+            //Manageur_Fragments
+            if (isManagerPhone) {
+                add(InfosDatas_FramgmentId4)
+            }
+            add(InfosDatas_FragmentId1)
+            add(InfosDatas_FramgmentId5)
 
-        //Clients_Fragments
-        add(InfosDatas_FramgmentId2)
-        add(InfosDatas_FramgmentId3)
+            //Clients_Fragments
+            add(InfosDatas_FramgmentId2)
+            add(InfosDatas_FramgmentId3)
 
-        //MapApp_Fragments
-        if (isManagerPhone) {
-            add(InfosDatas_FramgmentId6)
+            //MapApp_Fragments
+            if (isManagerPhone) {
+                add(InfosDatas_FramgmentId6)
+
+            }
         }
     }
 }
@@ -255,7 +263,7 @@ data object InfosDatas_FramgmentId6 : Screen(
     color = Color(0xFFFF9800)
 
 )
-data object InfosDatas_App4FramgmentId1 : Screen(
+data object InfosDatas_App4FramgmentId  : Screen(
     keyID = "A4F1",
     id =8,
     icon = Icons.Default.PinDrop,
