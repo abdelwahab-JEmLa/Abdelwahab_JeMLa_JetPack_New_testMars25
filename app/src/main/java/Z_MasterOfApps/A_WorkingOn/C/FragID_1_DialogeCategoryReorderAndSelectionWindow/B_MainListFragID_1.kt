@@ -62,7 +62,9 @@ fun B_MainList_A4FragID_1(
             )
 
             // Access pre-computed products for this category
-            val categoryProducts = productsByCategory[category.id] ?: emptyList()
+            val categoryProducts = productsByCategory[category.id]
+                ?.filter { it.etatesMutable.diponibilityEtate}
+                ?: emptyList()
 
             // LazyRow of products in this category
             LazyRow(

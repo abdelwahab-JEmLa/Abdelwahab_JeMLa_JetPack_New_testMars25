@@ -42,6 +42,7 @@ class A_ProduitModel(
     var non_Trouve: Boolean by mutableStateOf(initialNon_Trouve)
     var isVisible: Boolean by mutableStateOf(init_visible)
 
+
     var parentCategoryId by mutableLongStateOf(0L)
     var indexInParentCategorie by mutableIntStateOf(0)
 
@@ -86,6 +87,13 @@ class A_ProduitModel(
         )
     }
 
+    var etatesMutable by mutableStateOf(EtatesMutable())
+
+    @IgnoreExtraProperties
+    class EtatesMutable{
+        var diponibilityEtate: Boolean by mutableStateOf(false)
+    }
+
     @get:Exclude
     var coloursEtGouts: SnapshotStateList<ColourEtGout_Model> =
         init_colours_Et_Gouts.toMutableStateList()
@@ -96,6 +104,7 @@ class A_ProduitModel(
             coloursEtGouts.clear()
             coloursEtGouts.addAll(value)
         }
+
     @IgnoreExtraProperties
     class ColourEtGout_Model(
         val id: Long = 1,

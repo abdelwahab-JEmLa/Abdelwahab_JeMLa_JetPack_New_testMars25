@@ -1,8 +1,8 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
+import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import a_MainAppCompnents.DataBaseArticles
 import android.annotation.SuppressLint
@@ -18,7 +18,7 @@ import kotlin.coroutines.resumeWithException
 
 class InitDataBasesGenerateur(
     private val a_ProduitModelRepository: A_ProduitModelRepository,
-    private val fragmentViewModel: FragmentViewModel,
+    private val fragmentViewModel: ViewModel_A4FragID1,
     private val categoriesRepository: I_CategoriesRepository
 ) {
     @SuppressLint("SimpleDateFormat")
@@ -101,15 +101,18 @@ class InitDataBasesGenerateur(
 
     suspend fun checkAndUpdateImportedProduct() = suspendCancellableCoroutine { continuation ->
         fragmentViewModel.viewModelScope.launch {
-            val importedProducts =
-                a_ProduitModelRepository.modelDatas.filter { it.nom == "Imported Product" || it.parentCategoryId == 0L }
+            val declencherDeTout = false
 
+            val importedProducts =
+                a_ProduitModelRepository.modelDatas.filter {
+                    it.nom == "Imported Product"
+                            || it.parentCategoryId == 0L
+                }
             if (importedProducts.isEmpty()) {
                 continuation.resume(Unit)
                 return@launch
             }
 
-            // Retrieve the ancienFireBaseRefDatas
             val ancienFireBaseRefDatas =
                 suspendCancellableCoroutine<List<DataBaseArticles>> { cont ->
                     A_ProduitModelRepository.ancienFireBaseRef.addListenerForSingleValueEvent(object :
@@ -138,11 +141,12 @@ class InitDataBasesGenerateur(
             importedProducts.forEach { product ->
                 val matchingArticle =
                     ancienFireBaseRefDatas.find { it.idArticle.toLong() == product.id }
-                matchingArticle?.let {
-                    product.nom = it.nomArticleFinale
+                matchingArticle?.let { ancienDataBase ->
+                    product.nom = ancienDataBase.nomArticleFinale
                     product.parentCategoryId = categoriesRepository.modelDatas.find { cate ->
-                        cate.infosDeBase.nom == it.nomCategorie
+                        cate.infosDeBase.nom == ancienDataBase.nomCategorie
                     }?.id ?: 0
+                    product.etatesMutable.diponibilityEtate = ancienDataBase.diponibilityState == ""
                 }
 
                 processedProducts++

@@ -36,6 +36,7 @@ class Startup_Extension(
 
         // Verify and add the phone
         verifyAndAddPhone(phoneName, metricsWidthPixels)
+
     }
 
     fun verifyAndAddPhone(phoneName: String, screenWidth: Int) {

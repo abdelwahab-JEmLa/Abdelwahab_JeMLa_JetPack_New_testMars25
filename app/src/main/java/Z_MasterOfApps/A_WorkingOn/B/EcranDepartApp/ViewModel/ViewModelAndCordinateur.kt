@@ -1,11 +1,10 @@
 package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init.InitDataBasesGenerateur
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Navigator
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
@@ -51,21 +50,7 @@ class FragmentViewModel(
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            val initDataBasesGenerateur = InitDataBasesGenerateur(
-                a_ProduitModelRepository,
-                this@FragmentViewModel,i_CategoriesRepository,
-            )
-            try {
-                // Execute initialization sequentially
-                initDataBasesGenerateur.verifierAndBakupModels()
-                initDataBasesGenerateur.checkAndUpdateImportedProduct()
-                // Launch data collection AFTER initializations complete
-                lenceCollecte()
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.message, isLoading = false, progress = 0f) }
-            }
-        }
+
     }
 
     private fun lenceCollecte() {

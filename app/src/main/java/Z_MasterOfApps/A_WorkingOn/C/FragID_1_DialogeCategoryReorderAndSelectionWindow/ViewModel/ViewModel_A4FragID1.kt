@@ -1,5 +1,6 @@
 package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel
 
+import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init.InitDataBasesGenerateur
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import android.annotation.SuppressLint
@@ -15,6 +16,21 @@ class ViewModel_A4FragID1(
     private val i_CategoriesRepository: I_CategoriesRepository,
     val h_GroupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
+
+    val initDataBasesGenerateur = InitDataBasesGenerateur(
+        a_ProduitModelRepository,
+        this@ViewModel_A4FragID1, i_CategoriesRepository,
+    )
+
+    init {
+        viewModelScope.launch {
+            // Execute initialization sequentially
+            initDataBasesGenerateur.verifierAndBakupModels()
+            initDataBasesGenerateur.checkAndUpdateImportedProduct()
+            // Launch data collection AFTER initializations complete
+
+        }
+    }
 
     companion object {
         private const val TAG = "ViewModel_A4FragID1"
@@ -190,7 +206,10 @@ class ViewModel_A4FragID1(
     ) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "movePlusieurCategories called with ${selectedCategories.size} categories")
+                Log.d(
+                    TAG,
+                    "movePlusieurCategories called with ${selectedCategories.size} categories"
+                )
 
                 if (selectedCategories.isEmpty()) {
                     Log.d(TAG, "No categories selected, returning early")
@@ -206,7 +225,10 @@ class ViewModel_A4FragID1(
                     allCategories.indexOfFirst { cat -> cat.id == it.id }
                 }
 
-                Log.d(TAG, "Selected categories sorted by position: ${sortedSelectedCategories.map { it.infosDeBase.nom }}")
+                Log.d(
+                    TAG,
+                    "Selected categories sorted by position: ${sortedSelectedCategories.map { it.infosDeBase.nom }}"
+                )
 
                 // Create a new list without the selected categories
                 val remainingCategories = allCategories.filter { category ->
@@ -228,11 +250,17 @@ class ViewModel_A4FragID1(
                 // Insert all selected categories at the target point
                 remainingCategories.addAll(targetIndex, sortedSelectedCategories)
 
-                Log.d(TAG, "Final category order after insertion: ${remainingCategories.map { it.infosDeBase.nom }}")
+                Log.d(
+                    TAG,
+                    "Final category order after insertion: ${remainingCategories.map { it.infosDeBase.nom }}"
+                )
 
                 // Update indices for all categories
                 remainingCategories.forEachIndexed { index, category ->
-                    Log.d(TAG, "Setting category '${category.infosDeBase.nom}' to position ${index + 1}")
+                    Log.d(
+                        TAG,
+                        "Setting category '${category.infosDeBase.nom}' to position ${index + 1}"
+                    )
                     category.statuesMutable.indexDonsParentList = (index + 1).toLong()
                 }
 
