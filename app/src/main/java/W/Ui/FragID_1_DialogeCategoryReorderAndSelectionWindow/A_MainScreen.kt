@@ -68,7 +68,7 @@ fun FragID_1_DialogeCategoryReorderAndSelectionWindow(
 
                 // Category grid
                 Box(modifier = Modifier.weight(1f)) {
-                    Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.B_MainListFragID_1(
+                    B_MainListFragID_1(
                         categories = filteredCategories,
                         selectedCategories = selectedCategories,
                         movingCategory = movingCategory,

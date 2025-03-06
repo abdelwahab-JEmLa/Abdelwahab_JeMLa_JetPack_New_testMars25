@@ -1,6 +1,6 @@
 package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup
 
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.FragID_1_DialogeCategoryReorderAndSelectionWindow
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.A_MainScreen_SectionID4_FragmentID1
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsControlsButtons
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog.A_OptionsDialog
@@ -140,15 +140,7 @@ internal fun A_StartupScreen(
             onDismiss = { viewModelInitApp.extentionStartup.dialogeOptions = false }
         )
         if (showCategorySelection) {
-            FragID_1_DialogeCategoryReorderAndSelectionWindow(
-                uiState = uiState,
-                viewModel = viewModel,
-                onDismiss = { showCategorySelection = false },
-                onCategorySelected = { category ->
-                    onCategorySelected(category)
-                    showCategorySelection = false
-                }
-            )
+            A_MainScreen_SectionID4_FragmentID1() { showCategorySelection = false}
         }
     }
 }

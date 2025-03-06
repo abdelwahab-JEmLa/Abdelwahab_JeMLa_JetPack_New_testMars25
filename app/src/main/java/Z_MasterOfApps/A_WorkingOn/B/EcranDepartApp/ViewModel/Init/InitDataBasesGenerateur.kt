@@ -2,7 +2,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
 import a_MainAppCompnents.DataBaseArticles
 import android.annotation.SuppressLint

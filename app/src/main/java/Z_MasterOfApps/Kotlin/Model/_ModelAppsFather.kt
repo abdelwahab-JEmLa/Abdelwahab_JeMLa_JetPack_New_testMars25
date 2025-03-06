@@ -1,5 +1,6 @@
 package Z_MasterOfApps.Kotlin.Model
 
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList

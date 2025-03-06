@@ -4,6 +4,7 @@ import W.Ui.FragID_1_DialogeCategoryReorderAndSelectionWindow.B_MainListFragID_1
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.BottomActions
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.SearchField
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.handleCategoryClick
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
 import a_MainAppCompnents.HeadOfViewModels
@@ -22,13 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun A_MainScreen_SectionID4_FragmentID1(
+    viewModel: ViewModel_A4FragID1 = viewModel(),
     onDismiss: () -> Unit,
-    viewModel: HeadOfViewModels,
-    onCategorySelected: (CategoriesTabelleECB) -> Unit,
-    uiState: CreatAndEditeInBaseDonnRepositeryModels,
 ) {
     var multiSelectionMode by remember { mutableStateOf(false) }
     var renameOrFusionMode by remember { mutableStateOf(false) }
@@ -69,7 +69,7 @@ fun A_MainScreen_SectionID4_FragmentID1(
 
                 // Category grid
                 Box(modifier = Modifier.weight(1f)) {
-                    B_MainListFragID_1(
+                    B_MainList_A4FragID_1(
                         categories = filteredCategories,
                         selectedCategories = selectedCategories,
                         movingCategory = movingCategory,
