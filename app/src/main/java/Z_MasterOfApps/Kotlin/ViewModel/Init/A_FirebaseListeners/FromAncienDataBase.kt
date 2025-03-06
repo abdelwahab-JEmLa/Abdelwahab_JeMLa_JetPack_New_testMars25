@@ -1,13 +1,13 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners
 
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.CurrentModels.setupCurrentModels
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.TabelleSuppliersSA
 import android.util.Log
@@ -34,7 +34,7 @@ object FromAncienDataBase {
         setupColorsArticlesListener(viewModel)
         setupCurrentModels(viewModel)
         syncOldSuppliers(viewModel)
-        syncOldCategories(viewModel) // Add this line to sync old categories
+   //     syncOldCategories(viewModel) // Add this line to sync old categories
 
     }
 
