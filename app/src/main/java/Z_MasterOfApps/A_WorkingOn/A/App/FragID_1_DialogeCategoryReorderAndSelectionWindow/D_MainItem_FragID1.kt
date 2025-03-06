@@ -1,4 +1,4 @@
-package W.Ui.A_ModulisationUIs.B_MainItems
+package Z_MasterOfApps.A_WorkingOn.A.App.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import androidx.compose.foundation.BorderStroke

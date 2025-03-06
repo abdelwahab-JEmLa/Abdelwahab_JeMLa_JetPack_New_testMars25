@@ -57,7 +57,7 @@ fun CategoriesStikyHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                viewModel.updateHoldedCategoryID(categorie.id)
+                viewModel.handelClick(categorie.id)
             },
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),

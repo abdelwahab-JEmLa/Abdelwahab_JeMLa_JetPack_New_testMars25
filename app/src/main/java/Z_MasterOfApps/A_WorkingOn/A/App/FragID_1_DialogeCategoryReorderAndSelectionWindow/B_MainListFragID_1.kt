@@ -1,6 +1,5 @@
-package W.Ui.A_ModulisationUIs.A_MainLists
+package Z_MasterOfApps.A_WorkingOn.A.App.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
-import W.Ui.A_ModulisationUIs.B_MainItems.CategoryItemFragID_1
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -21,7 +20,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 @Composable
-fun CategoryGridFragID_1(
+fun B_MainListFragID_1(
     categories: List<CategoriesTabelleECB>,
     selectedCategories: List<CategoriesTabelleECB>,
     movingCategory: CategoriesTabelleECB?,
@@ -95,7 +94,7 @@ fun CategoryGridPreview() {
         }
     }
 
-    CategoryGridFragID_1(
+    B_MainListFragID_1(
         categories = categories,
         selectedCategories = emptyList(),
         movingCategory = null,

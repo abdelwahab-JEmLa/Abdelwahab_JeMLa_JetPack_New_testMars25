@@ -29,12 +29,18 @@ data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
     var groupesCategories: SnapshotStateList<H_GroupeCategories> =
         emptyList<H_GroupeCategories>().toMutableStateList(),
+    var ModeAuClickButton: ModeAuClickButton = Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.ModeAuClickButton.ITS_ONE_CATE_IN_HOLD, // Add this line
     var holdedCategoryID: Long = 0, // Add this line
     val isLoading: Boolean = false,
     val progress: Float = 0f,
     val error: String? = null
 )
 
+enum class ModeAuClickButton(val holdedCategorysID: List<Long> ? =emptyList()) {
+    NO_HOLDED,
+    MULTI_CATEGORYS,
+    ITS_ONE_CATE_IN_HOLD
+}
 
 class FragmentViewModel(
     val a_ProduitModelRepository: A_ProduitModelRepository,
@@ -111,7 +117,7 @@ class FragmentViewModel(
         }
     }
 
-    fun updateHoldedCategoryID(categoryId: Long) {
+    fun handelClick(categoryId: Long) {
         viewModelScope.launch {
             _state.update {
                 if (it.holdedCategoryID == 0L) {
