@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,10 +34,8 @@ fun C_MainItem_A4FragID_1(
     onClick: () -> Unit
 ) {
     val itsAddNewCatItem = category.infosDeBase.nom == "Add New Category"
-    val isSpecialCategory = category.statuesMutable.indexDonsParentList in 1..3
 
     val backgroundColor = when {
-        isSpecialCategory -> Color.Red
         isHeld -> MaterialTheme.colorScheme.primaryContainer
         isSelected -> MaterialTheme.colorScheme.secondaryContainer
         isMoving -> MaterialTheme.colorScheme.tertiaryContainer
@@ -95,7 +92,7 @@ fun C_MainItem_A4FragID_1(
                 maxLines = 1,  // Changed from 2 to 1 to fit in the smaller height
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isSpecialCategory) Color.White else MaterialTheme.colorScheme.onSurface
+                color =MaterialTheme.colorScheme.onSurface
             )
 
             if (itsAddNewCatItem) {

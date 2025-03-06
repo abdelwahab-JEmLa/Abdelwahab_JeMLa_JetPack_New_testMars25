@@ -28,13 +28,8 @@ fun handleCategoryClick_F1(
            }
        }
        reorderMode -> {
-           // Déplace toutes les catégories sélectionnées après la catégorie cliquée
-           selectedCategories.forEach { selectedCategory ->
-               viewModel.handleCategoryMove(
-                   holdedIdCate = selectedCategory.statuesMutable.indexDonsParentList,
-                   clickedCategoryId = category.statuesMutable.indexDonsParentList
-               ) {}
-           }
+           viewModel.movePlusieurCategories(selectedCategories)
+
            // Réinitialise le mode de réorganisation
            onReorderModeChange(false)
            onSelectedCategoriesChange(emptyList())

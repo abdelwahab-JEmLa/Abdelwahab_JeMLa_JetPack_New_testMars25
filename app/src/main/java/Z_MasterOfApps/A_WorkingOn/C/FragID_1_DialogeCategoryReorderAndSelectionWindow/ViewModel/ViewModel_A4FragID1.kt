@@ -2,27 +2,24 @@ package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelection
 
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
-import android.util.Log
+import android.annotation.SuppressLint
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
+@SuppressLint("MutableCollectionMutableState")
 class ViewModel_A4FragID1(
     private val a_ProduitModelRepository: A_ProduitModelRepository,
     private val i_CategoriesRepository: I_CategoriesRepository,
     val h_GroupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
-    companion object {
-        private const val TAG = "ViewModel_A4FragID1"
-    }
 
     // Initialize product model data with safer access
     private val a_ProduitModel by lazy {
         try {
             a_ProduitModelRepository.modelDatas
         } catch (e: Exception) {
-            Log.e(TAG, "Error accessing product data: ${e.message}", e)
             mutableListOf()
         }
     }
@@ -31,19 +28,7 @@ class ViewModel_A4FragID1(
         try {
             i_CategoriesRepository.modelDatas
         } catch (e: Exception) {
-            Log.e(TAG, "Error accessing categories data: ${e.message}", e)
             mutableListOf()
-        }
-    }
-
-    // Log initialization for debugging
-    init {
-        try {
-            Log.d(TAG, "ViewModel_A4FragID1 initializing...")
-            Log.d(TAG, "Repositories initialized successfully")
-            Log.d(TAG, "ViewModel_A4FragID1 initialized with ${i_CategoriesProduits.size} categories")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during ViewModel initialization: ${e.message}", e)
         }
     }
 
@@ -57,9 +42,8 @@ class ViewModel_A4FragID1(
                 val updatedCategories = updateExistingCategoriesPositions()
                 // Update UI state
                 i_CategoriesRepository.updateDatas((listOf(newCategory) + updatedCategories).toMutableStateList())
-                Log.d(TAG, "New category added: $categoryName")
             } catch (e: Exception) {
-                Log.e(TAG, "Error adding new category: ${e.message}", e)
+                // Silent exception handling
             }
         }
     }
@@ -98,8 +82,6 @@ class ViewModel_A4FragID1(
     ) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Moving articles from category $fromCategoryId to $toCategoryId")
-
                 // Find maximum classification ID in destination category
                 val maxClassificationId = a_ProduitModel
                     .filter { it.parentCategoryId == toCategoryId }
@@ -118,12 +100,11 @@ class ViewModel_A4FragID1(
                 }
 
                 a_ProduitModelRepository.updateModelDatas(updatedArticles.toMutableStateList())
-                Log.d(TAG, "Articles moved successfully")
 
                 deleteCategorie(fromCategoryId)
 
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to move articles between categories: ${e.message}", e)
+                // Silent exception handling
             }
         }
     }
@@ -134,10 +115,9 @@ class ViewModel_A4FragID1(
                 val updatedCategories = i_CategoriesProduits
                     .filter { it.statuesMutable.indexDonsParentList != fromCategoryId }
 
-                Log.d(TAG, "Deleting category $fromCategoryId, remaining categories: ${updatedCategories.size}")
                 updateClassmentsCategories(updatedCategories)
             } catch (e: Exception) {
-                Log.e(TAG, "Error deleting category $fromCategoryId: ${e.message}", e)
+                // Silent exception handling
             }
         }
     }
@@ -160,9 +140,8 @@ class ViewModel_A4FragID1(
                 }
 
                 i_CategoriesRepository.updateDatas(updatedClassmentCategories.toMutableStateList())
-                Log.d(TAG, "Categories reordered successfully")
             } catch (e: Exception) {
-                Log.e(TAG, "Error updating category positions: ${e.message}", e)
+                // Silent exception handling
             }
         }
     }
@@ -174,7 +153,6 @@ class ViewModel_A4FragID1(
     ) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Handling category move from $holdedIdCate to $clickedCategoryId")
                 val categories = i_CategoriesProduits.toMutableList()
 
                 val fromIndex = categories.indexOfFirst { it.id == holdedIdCate }
@@ -187,20 +165,53 @@ class ViewModel_A4FragID1(
                     categories.removeAt(fromIndex)
                     categories.add(toIndex, movedCategory)
 
-                    i_CategoriesRepository.updateDatas(categories.toMutableStateList())
-
                     // Update positions in database
                     categories.forEachIndexed { index, category ->
                         category.statuesMutable.indexDonsParentList = (index + 1).toLong()
                     }
 
-                    Log.d(TAG, "Category moved successfully")
+                    i_CategoriesRepository.updateDatas(categories.toMutableStateList())
                     onComplete()
-                } else {
-                    Log.w(TAG, "Category move failed: fromIndex=$fromIndex, toIndex=$toIndex")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error during category move: ${e.message}", e)
+                // Silent exception handling
+            }
+        }
+    }
+
+    fun movePlusieurCategories(selectedCategories: List<I_CategoriesProduits>) {
+        viewModelScope.launch {
+            try {
+                if (selectedCategories.isEmpty()) return@launch
+
+                // Get all categories
+                val allCategories = i_CategoriesProduits.toMutableList()
+
+                // Sort selected categories by their current position to maintain relative order
+                val sortedSelectedCategories = selectedCategories.sortedBy {
+                    allCategories.indexOfFirst { cat -> cat.id == it.id }
+                }
+
+                // Create a new list without the selected categories
+                val remainingCategories = allCategories.filter { category ->
+                    !selectedCategories.any { it.id == category.id }
+                }.toMutableList()
+
+                // Find the insertion point - if not specified, add at the end
+                val targetIndex = remainingCategories.size
+
+                // Insert all selected categories at the target point
+                remainingCategories.addAll(targetIndex, sortedSelectedCategories)
+
+                // Update indices for all categories
+                remainingCategories.forEachIndexed { index, category ->
+                    category.statuesMutable.indexDonsParentList = (index + 1).toLong()
+                }
+
+                // Update the repository with the new order
+                i_CategoriesRepository.updateDatas(remainingCategories.toMutableStateList())
+            } catch (e: Exception) {
+                // Silent exception handling
             }
         }
     }

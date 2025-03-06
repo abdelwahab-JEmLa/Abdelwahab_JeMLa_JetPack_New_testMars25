@@ -20,7 +20,7 @@ class Startup_Extension(
     val viewModelInitApp: ViewModelInitApp,
 ) {
     val produitsMainDataBase = viewModelInitApp.produitsMainDataBase
-    val applicationEstInstalleDonTelephone =
+    private val applicationEstInstalleDonTelephone =
         viewModelInitApp._modelAppsFather.applicationEstInstalleDonTelephone
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val refDBJetPackExport = firebaseDatabase.getReference("e_DBJetPackExport")
