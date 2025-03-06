@@ -40,6 +40,7 @@ interface I_CategoriesRepository {
     suspend fun getCategoriesById(id: String): I_CategoriesProduits?
     suspend fun updateDatas(datas: SnapshotStateList<I_CategoriesProduits>)
 
+
     companion object {
         val ancienBaseDonneRef = firebaseDatabase.getReference("H_CategorieTabele")
         val caReference = ref_HeadOfModels.child("I_CategoriesProduits")
