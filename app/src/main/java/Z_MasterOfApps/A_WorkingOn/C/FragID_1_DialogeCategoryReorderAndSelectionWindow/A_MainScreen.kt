@@ -20,11 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun A_MainScreen_SectionID4_FragmentID1(
-    viewModel: ViewModel_A4FragID1 = viewModel(),
+    viewModel: ViewModel_A4FragID1 = koinViewModel(),
     onDismiss: () -> Unit,
 ) {
     val i_Categories = viewModel.i_CategoriesProduits
@@ -37,6 +37,39 @@ fun A_MainScreen_SectionID4_FragmentID1(
     var filterText by remember { mutableStateOf("") }
     var reorderMode by remember { mutableStateOf(false) }
 
+    val onMultiSelectionModeChange: (Boolean) -> Unit = { newMode ->
+        multiSelectionMode = newMode
+        if (!newMode) {
+            selectedCategories = emptyList()
+            movingCategory = null
+            renameOrFusionMode = false
+            heldCategory = null
+            reorderMode = false
+        }
+    }
+
+    val onRenameOrFusionModeChange: (Boolean) -> Unit = { newMode ->
+        renameOrFusionMode = newMode
+        if (!newMode) {
+            heldCategory = null
+            multiSelectionMode = false
+            selectedCategories = emptyList()
+            movingCategory = null
+            reorderMode = false
+        }
+    }
+
+    val onReorderModeActivate: () -> Unit = {
+        reorderMode = true
+    }
+
+    val onCancelMove: () -> Unit = {
+        movingCategory = null
+        heldCategory = null
+        renameOrFusionMode = false
+        reorderMode = false
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -46,13 +79,11 @@ fun A_MainScreen_SectionID4_FragmentID1(
             shape = MaterialTheme.shapes.large
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Search field
                 SearchField_A4F1(
                     filterText = filterText,
                     onFilterTextChange = { filterText = it }
                 )
 
-                // Filter categories based on search text
                 val filteredCategories = remember(i_Categories, filterText) {
                     if (filterText.isBlank()) {
                         i_Categories
@@ -66,7 +97,6 @@ fun A_MainScreen_SectionID4_FragmentID1(
                     }
                 }
 
-                // Category grid
                 Box(modifier = Modifier.weight(1f)) {
                     B_MainList_A4FragID_1(
                         categories = filteredCategories,
@@ -103,35 +133,10 @@ fun A_MainScreen_SectionID4_FragmentID1(
                     selectedCategories = selectedCategories,
                     movingCategory = movingCategory,
                     reorderMode = reorderMode,
-                    onMultiSelectionModeChange = { newMode ->
-                        multiSelectionMode = newMode
-                        if (!newMode) {
-                            selectedCategories = emptyList()
-                            movingCategory = null
-                            renameOrFusionMode = false
-                            heldCategory = null
-                            reorderMode = false
-                        }
-                    },
-                    onRenameOrFusionModeChange = { newMode ->
-                        renameOrFusionMode = newMode
-                        if (!newMode) {
-                            heldCategory = null
-                            multiSelectionMode = false
-                            selectedCategories = emptyList()
-                            movingCategory = null
-                            reorderMode = false
-                        }
-                    },
-                    onReorderModeActivate = {
-                        reorderMode = true
-                    },
-                    onCancelMove = {
-                        movingCategory = null
-                        heldCategory = null
-                        renameOrFusionMode = false
-                        reorderMode = false
-                    }
+                    onMultiSelectionModeChange = onMultiSelectionModeChange,
+                    onRenameOrFusionModeChange = onRenameOrFusionModeChange,
+                    onReorderModeActivate = onReorderModeActivate,
+                    onCancelMove = onCancelMove
                 )
             }
         }

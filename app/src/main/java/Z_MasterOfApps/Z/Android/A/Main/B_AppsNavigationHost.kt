@@ -197,7 +197,7 @@ fun AppNavigationHost(
 }
 
 object NavigationItems {
-    fun getItems(isManagerPhone: Boolean, sectoionDesFragmentAppAfficheMNT: SectionsAPP? =null) = buildList {
+    fun getItems(isManagerPhone: Boolean, sectoionDesFragmentAppAfficheMNT: SectionsAPP? =SectionsAPP.MANAGE_ACHATS) = buildList {
         add(StartupIcon_Start)
 
         if (sectoionDesFragmentAppAfficheMNT==SectionsAPP.MANAGE_ACHATS) {
@@ -215,7 +215,6 @@ object NavigationItems {
             //MapApp_Fragments
             if (isManagerPhone) {
                 add(InfosDatas_FramgmentId6)
-
             }
         }
     }

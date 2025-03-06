@@ -21,15 +21,20 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 
+// Fix for AnimatedIconLottieJsonFile.kt
 @Composable
 fun AnimatedIconLottieJsonFile(
-    ressourceXml: LottieJsonGetterR_Raw_Icons,
-    onClick: () -> Unit ={}
+    ressourceXml: LottieJsonGetterR_Raw_Icons? = null,
+    resourceId: Int? = null,
+    onClick: () -> Unit = {}
 ) {
     val isPlaying by remember { mutableStateOf(true) }
 
+    // Get the resource ID either from LottieJsonGetterR_Raw_Icons or direct Int reference
+    val lottieResourceId = ressourceXml?.resourceId ?: resourceId ?: throw IllegalArgumentException("Either ressourceXml or resourceId must be provided")
+
     val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(ressourceXml.resourceId)
+        LottieCompositionSpec.RawRes(lottieResourceId)
     )
 
     val progress by animateLottieCompositionAsState(
@@ -61,4 +66,13 @@ fun AnimatedIconLottieJsonFile(
             )
         }
     }
+}
+
+// An overloaded version for backward compatibility
+@Composable
+fun AnimatedIconLottieJsonFile(
+    ressourceXml: LottieJsonGetterR_Raw_Icons,
+    onClick: () -> Unit = {}
+) {
+    AnimatedIconLottieJsonFile(ressourceXml = ressourceXml, resourceId = null, onClick = onClick)
 }

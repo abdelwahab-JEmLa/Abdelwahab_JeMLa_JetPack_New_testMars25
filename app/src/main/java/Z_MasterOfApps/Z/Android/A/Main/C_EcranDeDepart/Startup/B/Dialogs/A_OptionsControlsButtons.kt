@@ -118,6 +118,7 @@ fun A_OptionsControlsButtons(
     }
 }
 
+// Fix for A_OptionsControlsButtons.kt
 @Composable
 fun ControlButton(
     onClick: () -> Unit,
@@ -172,6 +173,28 @@ fun ControlButton(
                     )
                 }
             }
+            is Int -> {
+                // Support for direct resource IDs like R.raw.categ
+                Log.d(TAG, "Rendering direct resource ID: $icon")
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable {
+                            Log.d(TAG, "Resource ID Box clicked")
+                            onClick()
+                        }
+                        .background(
+                            color = containerColor,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AnimatedIconLottieJsonFile(
+                        resourceId = icon,
+                        onClick = onClick
+                    )
+                }
+            }
             else -> {
                 Log.e(TAG, "Unsupported icon type: ${icon.javaClass.simpleName}")
                 throw IllegalArgumentException("Unsupported icon type")
@@ -189,4 +212,3 @@ fun ControlButton(
         }
     }
 }
-
