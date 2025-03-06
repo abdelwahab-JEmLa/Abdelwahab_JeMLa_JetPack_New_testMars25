@@ -184,7 +184,10 @@ class ViewModel_A4FragID1(
         }
     }
 
-    fun movePlusieurCategories(selectedCategories: List<I_CategoriesProduits>) {
+    fun movePlusieurCategories(
+        selectedCategories: List<I_CategoriesProduits>,
+        targetCategory: I_CategoriesProduits? = null
+    ) {
         viewModelScope.launch {
             try {
                 Log.d(TAG, "movePlusieurCategories called with ${selectedCategories.size} categories")
@@ -212,8 +215,14 @@ class ViewModel_A4FragID1(
 
                 Log.d(TAG, "Remaining categories after filtering: ${remainingCategories.size}")
 
-                // Find the insertion point - if not specified, add at the end
-                val targetIndex = remainingCategories.size
+                // Find the insertion point - default to the beginning if no target
+                val targetIndex = if (targetCategory != null) {
+                    val index = remainingCategories.indexOfFirst { it.id == targetCategory.id }
+                    if (index != -1) index else 0
+                } else {
+                    0 // Default to beginning if no target specified
+                }
+
                 Log.d(TAG, "Target insertion index: $targetIndex")
 
                 // Insert all selected categories at the target point

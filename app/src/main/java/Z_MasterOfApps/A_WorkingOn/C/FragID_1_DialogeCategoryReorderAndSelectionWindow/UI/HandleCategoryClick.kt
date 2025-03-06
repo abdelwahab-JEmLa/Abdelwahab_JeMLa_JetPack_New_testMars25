@@ -21,51 +21,54 @@ fun handleCategoryClick_F1(
     onCategorySelected: (I_CategoriesProduits) -> Unit,
     onDismiss: () -> Unit
 ) {
-   when {
-       category.infosDeBase.nom == "Add New Category" -> {
-           if (filterText.isNotBlank()) {
-               viewModel.addNewCategory(filterText)
-           }
-       }
-       reorderMode -> {
-           viewModel.movePlusieurCategories(selectedCategories)
+    when {
+        category.infosDeBase.nom == "Add New Category" -> {
+            if (filterText.isNotBlank()) {
+                viewModel.addNewCategory(filterText)
+            }
+        }
+        reorderMode -> {
+            // Pass the clicked category as the target position for the selected categories
+            viewModel.movePlusieurCategories(selectedCategories, category)
 
-           // Réinitialise le mode de réorganisation
-           onReorderModeChange(false)
-           onSelectedCategoriesChange(emptyList())
-       }
-       renameOrFusionMode -> {
-           if (heldCategory == null) {
-               onHeldCategoryChange(category)
-           } else if (heldCategory != category) {
-               viewModel.moveArticlesBetweenCategories(
-                   fromCategoryId = heldCategory.statuesMutable.indexDonsParentList,
-                   toCategoryId = category.statuesMutable.indexDonsParentList
-               )
-               onHeldCategoryChange(null)
-               onRenameOrFusionModeChange(false)
-           }
-       }
-       multiSelectionMode -> {
-           onSelectedCategoriesChange(
-               if (category in selectedCategories) {
-                   selectedCategories.filterNot { it == category }
-               } else {
-                   selectedCategories + category
-               }
-           )
-       }
-       movingCategory != null -> {
-           viewModel.handleCategoryMove(
-               holdedIdCate = movingCategory.statuesMutable.indexDonsParentList,
-               clickedCategoryId = category.statuesMutable.indexDonsParentList
-           ) {
-               onMovingCategoryChange(null)
-           }
-       }
-       else -> {
-           onCategorySelected(category)
-           onDismiss()
-       }
-   }
+            // No need for individual moves anymore since we're handling it in one operation
+
+            // Reset reorder mode
+            onReorderModeChange(false)
+            onSelectedCategoriesChange(emptyList())
+        }
+        renameOrFusionMode -> {
+            if (heldCategory == null) {
+                onHeldCategoryChange(category)
+            } else if (heldCategory != category) {
+                viewModel.moveArticlesBetweenCategories(
+                    fromCategoryId = heldCategory.statuesMutable.indexDonsParentList,
+                    toCategoryId = category.statuesMutable.indexDonsParentList
+                )
+                onHeldCategoryChange(null)
+                onRenameOrFusionModeChange(false)
+            }
+        }
+        multiSelectionMode -> {
+            onSelectedCategoriesChange(
+                if (category in selectedCategories) {
+                    selectedCategories.filterNot { it == category }
+                } else {
+                    selectedCategories + category
+                }
+            )
+        }
+        movingCategory != null -> {
+            viewModel.handleCategoryMove(
+                holdedIdCate = movingCategory.statuesMutable.indexDonsParentList,
+                clickedCategoryId = category.statuesMutable.indexDonsParentList
+            ) {
+                onMovingCategoryChange(null)
+            }
+        }
+        else -> {
+            onCategorySelected(category)
+            onDismiss()
+        }
+    }
 }
