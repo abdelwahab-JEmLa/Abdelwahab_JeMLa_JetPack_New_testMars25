@@ -129,6 +129,7 @@ fun A_MainScreen_SectionID4_FragmentID1(
                 }
 
                 BottonsActions(
+                    viewModel=viewModel,
                     multiSelectionMode = multiSelectionMode,
                     renameOrFusionMode = renameOrFusionMode,
                     selectedCategories = selectedCategories,

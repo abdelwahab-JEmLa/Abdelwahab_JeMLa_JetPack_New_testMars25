@@ -1,6 +1,7 @@
 package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI
 
 import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FileDownloadOff
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
@@ -32,7 +34,8 @@ fun BottonsActions(
     onRenameOrFusionModeChange: (Boolean) -> Unit,
     onReorderModeActivate: () -> Unit,
     onCancelMove: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ViewModel_A4FragID1
 ) {
     Row(
         modifier = modifier
@@ -58,6 +61,17 @@ fun BottonsActions(
         ) {
             Icon(
                 imageVector = if (renameOrFusionMode) Icons.Default.Clear else Icons.Default.Merge,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(if (renameOrFusionMode) "Cancel" else "Merge")
+        }
+
+        OutlinedButton(
+            onClick = { viewModel.fitelProduits= !viewModel.fitelProduits},
+        ) {
+            Icon(
+                imageVector = Icons.Default.FileDownloadOff,
                 contentDescription = null
             )
             Spacer(Modifier.width(8.dp))

@@ -5,6 +5,9 @@ import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,6 +19,8 @@ class ViewModel_A4FragID1(
     private val i_CategoriesRepository: I_CategoriesRepository,
     val h_GroupesCategoriesRepository: H_GroupesCategoriesRepository
 ) : ViewModel() {
+
+    var fitelProduits by mutableStateOf(false)
 
     val initDataBasesGenerateur = InitDataBasesGenerateur(
         a_ProduitModelRepository,

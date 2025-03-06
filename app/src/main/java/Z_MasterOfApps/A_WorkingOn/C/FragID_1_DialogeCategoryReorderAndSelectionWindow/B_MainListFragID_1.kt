@@ -61,10 +61,15 @@ fun B_MainList_A4FragID_1(
                 onClick = categoryClickHandler
             )
 
-            // Access pre-computed products for this category
-            val categoryProducts = productsByCategory[category.id]
-                ?.filter { it.etatesMutable.diponibilityEtate}
-                ?: emptyList()
+            val categoryProducts =
+                if (viewModel.fitelProduits) {
+                    productsByCategory[category.id]
+                        ?.filter { it.etatesMutable.diponibilityEtate }
+                        ?: emptyList()
+                } else {
+                    productsByCategory[category.id]
+                        ?: emptyList()
+                }
 
             // LazyRow of products in this category
             LazyRow(
