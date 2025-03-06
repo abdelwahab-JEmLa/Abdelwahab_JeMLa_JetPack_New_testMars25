@@ -139,6 +139,7 @@ internal fun A_StartupScreen(
             viewModelInitApp = viewModelInitApp,
             onDismiss = { viewModelInitApp.extentionStartup.dialogeOptions = false }
         )
+
         if (showCategorySelection) {
             A_MainScreen_SectionID4_FragmentID1() { showCategorySelection = false}
         }

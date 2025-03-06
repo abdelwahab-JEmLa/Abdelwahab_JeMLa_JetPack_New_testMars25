@@ -41,7 +41,9 @@ class A_ProduitModel(
     var besoinToBeUpdated: Boolean by mutableStateOf(init_besoin_To_Be_Updated)
     var non_Trouve: Boolean by mutableStateOf(initialNon_Trouve)
     var isVisible: Boolean by mutableStateOf(init_visible)
+
     var parentCategoryId by mutableLongStateOf(0L)
+    var indexInParentCategorie by mutableIntStateOf(0)
 
     var statuesBase: StatuesBase by mutableStateOf(StatuesBase())
     @IgnoreExtraProperties

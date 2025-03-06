@@ -1,6 +1,6 @@
 package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
-import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,8 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CategoryItemFragID_1(
-    category: CategoriesTabelleECB,
+fun C_MainItem_A4FragID_1(
+    category: I_CategoriesProduits,
     isSelected: Boolean,
     isMoving: Boolean,
     isHeld: Boolean,
@@ -34,8 +34,8 @@ fun CategoryItemFragID_1(
     selectionOrder: Int,
     onClick: () -> Unit
 ) {
-    val itsAddNewCatItem = category.nomCategorieInCategoriesTabele == "Add New Category"
-    val isSpecialCategory = category.idCategorieInCategoriesTabele in 1..3
+    val itsAddNewCatItem = category.infosDeBase.nom == "Add New Category"
+    val isSpecialCategory = category.statuesMutable.indexDonsParentList in 1..3
 
     val backgroundColor = when {
         isSpecialCategory -> Color.Red
@@ -90,7 +90,7 @@ fun CategoryItemFragID_1(
             }
 
             Text(
-                text = category.nomCategorieInCategoriesTabele,
+                text = category.infosDeBase.nom,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

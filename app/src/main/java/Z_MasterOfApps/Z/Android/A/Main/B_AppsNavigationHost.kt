@@ -41,9 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -257,6 +255,15 @@ data object InfosDatas_FramgmentId6 : Screen(
     color = Color(0xFFFF9800)
 
 )
+data object InfosDatas_App4FramgmentId1 : Screen(
+    keyID = "A4F1",
+    id =8,
+    icon = Icons.Default.PinDrop,
+    route = "Id_App2Fragment1",
+    titleArab = "",
+    color = Color(0xFFFF9800)
+
+)
 data object StartupIcon_Start : Screen(
     id =7,
     icon = Icons.Default.Home,
@@ -270,25 +277,8 @@ abstract class Screen(
     val titleArab: String,
     val color: Color,
     val icon: ImageVector,
-    val route: String
+    val route: String,
+    val keyID: String=""
 )
 
 
-@Preview
-@Composable
-private fun Preview_Fragment() {
-    val viewModelInitApp: ViewModelInitApp = viewModel()
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (viewModelInitApp.isLoading) {
-            // Loading indicator centered in the box
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .size(48.dp)
-                    .align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
-            )
-        } else {
-            A_id1_GerantDefinirePosition(viewModel = viewModelInitApp)
-        }
-    }
-}

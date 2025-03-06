@@ -1,7 +1,6 @@
 package Z_MasterOfApps.Kotlin.ViewModel
 
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.ViewModel.ExtensionVM_A4FragID_1
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.FromAncienDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
@@ -23,9 +22,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
 @SuppressLint("SuspiciousIndentation")
-class ViewModelInitApp(
-    val a_ProduitModelRepository: A_ProduitModelRepository
-) : ViewModel() {
+class ViewModelInitApp() : ViewModel() {
     var _paramatersAppsViewModelModel by mutableStateOf(ParamatersAppsModel())
     var _modelAppsFather by mutableStateOf(_ModelAppsFather())
 

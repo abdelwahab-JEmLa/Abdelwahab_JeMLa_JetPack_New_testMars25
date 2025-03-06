@@ -1,13 +1,10 @@
 package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
-import W.Ui.FragID_1_DialogeCategoryReorderAndSelectionWindow.B_MainListFragID_1
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.BottomActions
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.SearchField
-import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.handleCategoryClick
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI.BottonsActions
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI.SearchField_A4F1
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI.handleCategoryClick_F1
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
 import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
-import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB
-import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
-import a_MainAppCompnents.HeadOfViewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,11 +27,13 @@ fun A_MainScreen_SectionID4_FragmentID1(
     viewModel: ViewModel_A4FragID1 = viewModel(),
     onDismiss: () -> Unit,
 ) {
+    val i_Categories = viewModel.i_CategoriesProduits
+
     var multiSelectionMode by remember { mutableStateOf(false) }
     var renameOrFusionMode by remember { mutableStateOf(false) }
-    var selectedCategories by remember { mutableStateOf<List<CategoriesTabelleECB>>(emptyList()) }
-    var movingCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
-    var heldCategory by remember { mutableStateOf<CategoriesTabelleECB?>(null) }
+    var selectedCategories by remember { mutableStateOf<List<I_CategoriesProduits>>(emptyList()) }
+    var movingCategory by remember { mutableStateOf<I_CategoriesProduits?>(null) }
+    var heldCategory by remember { mutableStateOf<I_CategoriesProduits?>(null) }
     var filterText by remember { mutableStateOf("") }
     var reorderMode by remember { mutableStateOf(false) }
 
@@ -48,18 +47,18 @@ fun A_MainScreen_SectionID4_FragmentID1(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Search field
-                SearchField(
+                SearchField_A4F1(
                     filterText = filterText,
                     onFilterTextChange = { filterText = it }
                 )
 
                 // Filter categories based on search text
-                val filteredCategories = remember(uiState.categoriesECB, filterText) {
+                val filteredCategories = remember(i_Categories, filterText) {
                     if (filterText.isBlank()) {
-                        uiState.categoriesECB
+                        i_Categories
                     } else {
-                        uiState.categoriesECB.filter {
-                            it.nomCategorieInCategoriesTabele.contains(
+                        i_Categories.filter {
+                            it.infosDeBase.nom.contains(
                                 filterText,
                                 ignoreCase = true
                             )
@@ -76,7 +75,7 @@ fun A_MainScreen_SectionID4_FragmentID1(
                         heldCategory = heldCategory,
                         reorderMode = reorderMode,
                         onCategoryClick = { category ->
-                            handleCategoryClick(
+                            handleCategoryClick_F1(
                                 category = category,
                                 filterText = filterText,
                                 viewModel = viewModel,
@@ -91,14 +90,14 @@ fun A_MainScreen_SectionID4_FragmentID1(
                                 onRenameOrFusionModeChange = { renameOrFusionMode = it },
                                 onMovingCategoryChange = { movingCategory = it },
                                 onReorderModeChange = { reorderMode = it },
-                                onCategorySelected = onCategorySelected,
+                                onCategorySelected = {},
                                 onDismiss = onDismiss
                             )
                         }
                     )
                 }
 
-                BottomActions(
+                BottonsActions(
                     multiSelectionMode = multiSelectionMode,
                     renameOrFusionMode = renameOrFusionMode,
                     selectedCategories = selectedCategories,

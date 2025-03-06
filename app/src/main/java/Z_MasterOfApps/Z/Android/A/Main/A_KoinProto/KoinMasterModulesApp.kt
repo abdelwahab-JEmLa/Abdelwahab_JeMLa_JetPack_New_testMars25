@@ -2,13 +2,13 @@ package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
 
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.CategoriesRepositoryImpl
+import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
 import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepositoryImpl
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.CategoriesRepositoryImpl
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepositoryImpl
-import Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -25,8 +25,8 @@ val repositoryModule = module {
 // Module pour les ViewModels
 val viewModelModule = module {
     viewModel { FragmentViewModel(get(), get(), get()) }
-    viewModel { ViewModelInitApp(get()) }
-    viewModel { ViewModel_A4FragID1(get(), get(), get()) }}
+    viewModel { ViewModelInitApp() }
+    viewModel { ViewModel_A4FragID1(get(), get(), get()) }
 }
 
 val coordinatorModule = module {
@@ -36,5 +36,5 @@ val coordinatorModule = module {
 // Module principal qui regroupe tous les autres modules
 val appModule = module {
     // Inclure d'autres modules dans l'ordre correct
-    includes(repositoryModule, viewModelModule, coordinatorModule )
+    includes(repositoryModule, viewModelModule, coordinatorModule)
 }
