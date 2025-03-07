@@ -55,6 +55,7 @@ enum class SectionsAPP{
 @Composable
 fun AppNavigationHost(
     modifier: Modifier,
+    onClick: () -> Unit,
 ) {
     val viewModelInitApp: ViewModelInitApp = koinViewModel()
 
@@ -119,7 +120,7 @@ fun AppNavigationHost(
                                         launchSingleTop = true
                                         restoreState = true
                                     }
-                                })
+                                },onClick=onClick)
                             }
                         }
                     }

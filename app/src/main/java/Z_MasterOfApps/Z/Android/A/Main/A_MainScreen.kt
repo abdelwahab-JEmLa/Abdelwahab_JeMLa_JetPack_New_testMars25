@@ -11,15 +11,16 @@ import androidx.compose.ui.Modifier
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun MainScreen_NewComputerPatterns(
-    modifier: Modifier=Modifier,
-    permissionsGranted: Boolean=true,
+    modifier: Modifier = Modifier,
+    permissionsGranted: Boolean = true,
+    onClick: () -> Unit,
 ) {
     if (permissionsGranted) {
         Surface(
             modifier = modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            AppNavigationHost(modifier)
+            AppNavigationHost(modifier,onClick)
         }
     }
 }

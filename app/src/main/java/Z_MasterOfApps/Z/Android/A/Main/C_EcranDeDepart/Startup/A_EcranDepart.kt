@@ -41,7 +41,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 internal fun A_StartupScreen(
     viewModelInitApp: ViewModelInitApp = viewModel(),
     onNavigate: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     val extentionStartup = viewModelInitApp.extentionStartup
 
@@ -73,7 +74,10 @@ internal fun A_StartupScreen(
                             text = title,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                                .clickable {
+                                    onClick()
+                                },
                             color = MaterialTheme.colorScheme.primary
                         )
                     }

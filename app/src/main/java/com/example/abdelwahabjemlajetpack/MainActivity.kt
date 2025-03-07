@@ -4,7 +4,6 @@ import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.Article
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.Ancien.MainFragmentEditDatabaseWithCreateNewArticles
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.initializeFirebase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.AppNavigationKoin
 import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.appModule
 import Z_MasterOfApps.Z.Android.A.Main.MainScreen_NewComputerPatterns
 import a_MainAppCompnents.CreatAndEditeInBaseDonnRepositeryModels
@@ -214,7 +213,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxSize(),
                                     color = MaterialTheme.colorScheme.background
                                 ) {
-                                    MainScreen_NewComputerPatterns()
+                                    MainScreen_NewComputerPatterns(onClick={useKoinNavigation=false})
                                 }
                             }
                         }
