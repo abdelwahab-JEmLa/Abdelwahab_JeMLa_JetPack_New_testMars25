@@ -1,8 +1,8 @@
-package Z_MasterOfApps.A_WorkingOn.C.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel
+package Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Init.InitDataBasesGenerateur
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.ViewModel.Init.InitDataBasesGenerateur
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -34,7 +34,6 @@ class ViewModel_A4FragID1(
             if (false) {
                 initDataBasesGenerateur.checkAndUpdateImportedProduct()
             }
-            // Launch data collection AFTER initializations complete
 
         }
     }
