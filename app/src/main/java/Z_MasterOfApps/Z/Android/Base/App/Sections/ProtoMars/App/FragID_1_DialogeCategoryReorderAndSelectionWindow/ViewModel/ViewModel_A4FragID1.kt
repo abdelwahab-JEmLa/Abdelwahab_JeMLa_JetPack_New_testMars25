@@ -31,7 +31,7 @@ class ViewModel_A4FragID1(
         viewModelScope.launch {
             // Execute initialization sequentially
             initDataBasesGenerateur.verifierAndBakupModels()
-            if (false) {
+            if (true) {
                 initDataBasesGenerateur.checkAndUpdateImportedProduct()
             }
 
