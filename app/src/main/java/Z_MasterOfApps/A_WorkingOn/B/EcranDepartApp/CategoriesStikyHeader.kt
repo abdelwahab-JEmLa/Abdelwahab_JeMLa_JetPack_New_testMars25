@@ -3,7 +3,7 @@ package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.UiState
-import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

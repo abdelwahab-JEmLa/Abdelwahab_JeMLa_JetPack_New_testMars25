@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners
 
-import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesProduits
-import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
 import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos

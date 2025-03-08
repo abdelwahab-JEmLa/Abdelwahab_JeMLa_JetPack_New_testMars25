@@ -1,4 +1,4 @@
-package Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel
+package Z_MasterOfApps.Kotlin.Model
 
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.firebaseDatabase
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels

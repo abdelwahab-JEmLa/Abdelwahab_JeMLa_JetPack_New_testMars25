@@ -2,7 +2,7 @@ package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.ViewModel.Init
 
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
-import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.I_CategoriesRepository
+import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
 import a_MainAppCompnents.DataBaseArticles
 import android.annotation.SuppressLint
