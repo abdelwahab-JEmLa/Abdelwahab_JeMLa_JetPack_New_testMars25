@@ -4,6 +4,7 @@ import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates
 import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates.ApplicationEstInstalleDonTelephone.Companion.metricsWidthPixels
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.updateProduit
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.A.Main.SectionsAPP
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -27,6 +28,7 @@ class Startup_Extension(
 
     var dialogeOptions by mutableStateOf(false)
     var showCategorySelection by mutableStateOf(false)
+    var sectionDesFragmentAppAfficheMNT by mutableStateOf(SectionsAPP.MANAGE_ACHATS)
 
 
     init {
