@@ -124,6 +124,9 @@ fun AppNavigationHost(
                             composable(InfosDatas_FramgmentId6.route) {
                                 A_id1_ClientsLocationGps(viewModel = viewModelInitApp)
                             }
+                            composable(InfosDatas_App4FramgmentId1.route) {
+                                A_id1_ClientsLocationGps(viewModel = viewModelInitApp)
+                            }
                             composable(StartupIcon_Start.route) {
                                 isOnStartupRoute = true
                                 A_StartupScreen(viewModelInitApp, { route ->
@@ -206,6 +209,8 @@ object NavigationItems {
             if (isManagerPhone) {
                 add(InfosDatas_FramgmentId6)
             }
+        }  else{
+            add(InfosDatas_App4FramgmentId1)
         }
     }
 }
@@ -259,7 +264,7 @@ data object InfosDatas_FramgmentId6 : Screen(
 
 )
 
-data object InfosDatas_App4FramgmentId : Screen(
+data object InfosDatas_App4FramgmentId1 : Screen(
     keyID = "A4F1",
     id = 8,
     icon = Icons.Default.PinDrop,

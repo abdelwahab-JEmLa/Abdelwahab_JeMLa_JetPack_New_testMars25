@@ -1,11 +1,11 @@
 package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup
 
-import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.A_MainScreen_SectionID4_FragmentID1
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsControlsButtons
-import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog.A_OptionsDialog
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_MainOptionsControlle.A_OptionsControlsButtons
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_OptionsDialog
 import Z_MasterOfApps.Z.Android.A.Main.NavigationItems
 import Z_MasterOfApps.Z.Android.A.Main.Screen
+import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.A_MainScreen_SectionID4_FragmentID1
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

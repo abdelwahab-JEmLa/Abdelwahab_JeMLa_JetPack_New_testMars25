@@ -1,8 +1,9 @@
-package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs
+package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.A_MainOptionsControlle
 
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.ViewModel.Startup_Extension
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,9 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun B_5(
-    viewModel: ViewModelInitApp,
+fun B_2_ClearAchatsEtCommendsEtSauvgardHistoriques(
+    viewModelInitApp: ViewModelInitApp,
     showLabels: Boolean,
+    extensionVM: Startup_Extension
 ) {
     var clearDataClickCount by remember { mutableIntStateOf(0) }
 
@@ -23,14 +25,14 @@ fun B_5(
             if (clearDataClickCount == 0) {
                 clearDataClickCount++
             } else {
-                viewModel.extentionStartup.suppBonCommendSiNaPasDeBonVent()
+                extensionVM.clearAchats()
                 clearDataClickCount = 0
             }
         },
-        icon = if (clearDataClickCount == 0) Icons.Default.DeleteSweep else Icons.Default.Done,
-        contentDescription = "suppBonCommendSiNaPasDeBonVent",
+        icon = if (clearDataClickCount == 0) Icons.Default.Delete else Icons.Default.Done,
+        contentDescription = "Clear history",
         showLabels = showLabels,
-        labelText = if (clearDataClickCount == 0) "suppBonCommendSiNaPasDeBonVent" else "Click again to confirm",
-        containerColor = if (clearDataClickCount == 0) Color(0xFFF44336) else Color(0xFF7D7426)
+        labelText = if (clearDataClickCount == 0) "Clear History" else "Click again to confirm",
+        containerColor = if (clearDataClickCount == 0) Color(0xFF4CAF50) else Color(0xFFF44336)
     )
 }
