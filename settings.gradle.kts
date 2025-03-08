@@ -22,4 +22,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Abdelwahab JeMLa JetPack"
 include(":app")
-include(":el_mahale_el_electoni")
