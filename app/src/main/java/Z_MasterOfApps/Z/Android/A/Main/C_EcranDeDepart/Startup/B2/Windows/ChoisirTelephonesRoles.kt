@@ -182,18 +182,12 @@ fun MainScreen_Windows4Preview() {
 class ViewModelW4(
     val j_AppInstalleDonTelephone: J_AppInstalleDonTelephoneRepository,
 ) : ViewModel() {
-
     fun setAsReceiverPhone(phone: J_AppInstalleDonTelephone) {
-        // Reset all phones to not be receivers
-        j_AppInstalleDonTelephone.modelDatas.forEach {
-            it.etatesMutable.itsReciverTelephone = false
-        }
-
-        // Set the selected phone as receiver
         val updatedPhone = j_AppInstalleDonTelephone.modelDatas.find { it.id == phone.id }
-        updatedPhone?.etatesMutable?.itsReciverTelephone = true
 
-        // Update the database
+        updatedPhone?.etatesMutable?.itsReciverTelephone =
+            !updatedPhone?.etatesMutable?.itsReciverTelephone!!
+
         j_AppInstalleDonTelephone.updatePhones()
     }
 }
