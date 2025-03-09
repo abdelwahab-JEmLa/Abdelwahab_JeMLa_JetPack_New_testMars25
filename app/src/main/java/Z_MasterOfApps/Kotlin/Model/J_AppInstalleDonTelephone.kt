@@ -22,7 +22,6 @@ import kotlin.coroutines.resumeWithException
 class J_AppInstalleDonTelephone(
     var id: Long = 0,
 ) {
-
     var infosDeBase by mutableStateOf(InfosDeBase())
     @IgnoreExtraProperties
     class InfosDeBase{
