@@ -1,8 +1,26 @@
 package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B2.Windows
 
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
+import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -11,7 +29,10 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -24,14 +45,30 @@ import org.koin.androidx.compose.koinViewModel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-//-->
-//TODO(1): cree prevwie
 @Composable
 fun MainScreen_Windows4(
     modifier: Modifier = Modifier,
     viewModel: ViewModelW4 = koinViewModel(),
 ) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Choose Receiver Phone",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
+            MainList_Windows4(viewModel = viewModel)
+        }
+    }
 }
 
 @Composable
@@ -39,26 +76,126 @@ fun MainList_Windows4(
     modifier: Modifier = Modifier,
     viewModel: ViewModelW4 = koinViewModel(),
 ) {
-    //-->
-    //TODO(1): ici c lazy colum contien   modelDatas list
+    LazyColumn(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(viewModel.j_AppInstalleDonTelephone.modelDatas) { phoneData ->
+            MainItem_Windows4(
+                phoneData = phoneData,
+                onReceiverToggle = {
+                    viewModel.setAsReceiverPhone(phoneData)
+                }
+            )
+        }
+    }
 }
 
 @Composable
 fun MainItem_Windows4(
     modifier: Modifier = Modifier,
-    viewModel: ViewModelW4 = koinViewModel(),
-) {   //-->
-//TODO(1): ICI un belle elevated card 
-    //-->
-    //TODO(1): ajout un icon buton au click
+    phoneData: J_AppInstalleDonTelephone,
+    onReceiverToggle: () -> Unit
+) {
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = phoneData.infosDeBase.nom,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "Screen width: ${phoneData.infosDeBase.widthScreen}px",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            IconButton(onClick = onReceiverToggle) {
+                Icon(
+                    imageVector = if (phoneData.etatesMutable.itsReciverTelephone)
+                        Icons.Default.Check else Icons.Default.Phone,
+                    contentDescription = "Toggle receiver status",
+                    tint = if (phoneData.etatesMutable.itsReciverTelephone)
+                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreen_Windows4Preview() {
+    // Create mock data for preview
+    val mockRepository = object : J_AppInstalleDonTelephoneRepository {
+        @SuppressLint("UnrememberedMutableState")
+        override var modelDatas: SnapshotStateList<J_AppInstalleDonTelephone> = mutableStateListOf(
+            J_AppInstalleDonTelephone(1).apply {
+                infosDeBase.nom = "Samsung Galaxy S21"
+                infosDeBase.widthScreen = 1080
+                etatesMutable.itsReciverTelephone = true
+            },
+            J_AppInstalleDonTelephone(2).apply {
+                infosDeBase.nom = "Google Pixel 6"
+                infosDeBase.widthScreen = 1080
+                etatesMutable.itsReciverTelephone = false
+            },
+            J_AppInstalleDonTelephone(3).apply {
+                infosDeBase.nom = "Xiaomi Mi 11"
+                infosDeBase.widthScreen = 1440
+                etatesMutable.itsReciverTelephone = false
+            }
+        )
+
+        override val progressRepo = MutableStateFlow(1.0f)
+
+        override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<J_AppInstalleDonTelephone>, Flow<Float>> {
+            return Pair(modelDatas.toList(), progressRepo)
+        }
+
+
+        override suspend fun updateDatas(datas: SnapshotStateList<J_AppInstalleDonTelephone>) {
+            modelDatas.clear()
+            modelDatas.addAll(datas)
+        }
+
+        override fun updatePhones() {
+            // No-op for preview
+        }
+    }
+
+    val mockViewModel = ViewModelW4(mockRepository)
+
+    MaterialTheme {
+        MainScreen_Windows4(viewModel = mockViewModel)
+    }
 }
 
 class ViewModelW4(
-    val j_AppInstalleDonTelephone: J_AppInstalleDonTelephone,
+    val j_AppInstalleDonTelephone: J_AppInstalleDonTelephoneRepository,
 ) : ViewModel() {
 
+    fun setAsReceiverPhone(phone: J_AppInstalleDonTelephone) {
+        // Reset all phones to not be receivers
+        j_AppInstalleDonTelephone.modelDatas.forEach {
+            it.etatesMutable.itsReciverTelephone = false
+        }
 
+        // Set the selected phone as receiver
+        val updatedPhone = j_AppInstalleDonTelephone.modelDatas.find { it.id == phone.id }
+        updatedPhone?.etatesMutable?.itsReciverTelephone = true
 
+        // Update the database
+        j_AppInstalleDonTelephone.updatePhones()
+    }
 }
 
 class J_AppInstalleDonTelephone(
@@ -73,10 +210,10 @@ class J_AppInstalleDonTelephone(
     }
 
     var etatesMutable by mutableStateOf(EtatesMutable())
-     @IgnoreExtraProperties
+    @IgnoreExtraProperties
     class EtatesMutable {
-         var itsReciverTelephone by mutableStateOf(false)
-         var indexDonsParentList by mutableLongStateOf(0)
+        var itsReciverTelephone by mutableStateOf(false)
+        var indexDonsParentList by mutableLongStateOf(0)
     }
 
     companion object {
@@ -91,9 +228,8 @@ interface J_AppInstalleDonTelephoneRepository {
         get() = MutableStateFlow(0f)
 
     suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<J_AppInstalleDonTelephone>, Flow<Float>>
-    suspend fun getCategoriesById(id: String): J_AppInstalleDonTelephone?
     suspend fun updateDatas(datas: SnapshotStateList<J_AppInstalleDonTelephone>)
-
+    fun updatePhones()
 
     companion object {
         val metricsWidthPixels = Resources.getSystem().displayMetrics.widthPixels
@@ -126,9 +262,9 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
                 try {
                     val phone = J_AppInstalleDonTelephone().apply {
                         id = snap.child("id").getValue(Long::class.java) ?: 0
-                            infosDeBase.nom = snap.child("nom").getValue(String::class.java) ?: ""
+                        infosDeBase.nom = snap.child("nom").getValue(String::class.java) ?: ""
                         infosDeBase.widthScreen = snap.child("widthScreen").getValue(Int::class.java) ?: 0
-                            etatesMutable.itsReciverTelephone = snap.child("itsReciverTelephone").getValue(Boolean::class.java) ?: false
+                        etatesMutable.itsReciverTelephone = snap.child("itsReciverTelephone").getValue(Boolean::class.java) ?: false
                     }
 
                     // Update max ID
@@ -155,7 +291,7 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
                     id = newId
                     infosDeBase.nom = phoneName
                     infosDeBase.widthScreen = screenWidth
-                        etatesMutable.itsReciverTelephone = false
+                    etatesMutable.itsReciverTelephone = false
                 }
 
                 // Add to local state
@@ -296,11 +432,6 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
         }
     }
 
-    override suspend fun getCategoriesById(id: String): J_AppInstalleDonTelephone? {
-        return modelDatas.find { it.id.toString() == id }
-    }
-
-
     override suspend fun updateDatas(datas: SnapshotStateList<J_AppInstalleDonTelephone>) {
         // Update local modelDatas with the new data
         modelDatas.clear()
@@ -310,6 +441,14 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
         datas.forEach { category ->
             J_AppInstalleDonTelephoneRepository.caReference.child(category.id.toString())
                 .setValue(category)
+        }
+    }
+
+    override fun updatePhones() {
+        modelDatas.forEach { phone ->
+            J_AppInstalleDonTelephoneRepository.caReference
+                .child(phone.id.toString())
+                .setValue(phone)
         }
     }
 }
