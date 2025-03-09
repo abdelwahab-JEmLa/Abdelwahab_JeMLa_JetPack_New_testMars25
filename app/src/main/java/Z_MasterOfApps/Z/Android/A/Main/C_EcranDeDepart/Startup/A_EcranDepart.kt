@@ -39,9 +39,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 internal fun A_StartupScreen(
+    modifier: Modifier = Modifier,
     viewModelInitApp: ViewModelInitApp = viewModel(),
     onNavigate: (String) -> Unit,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val extentionStartup = viewModelInitApp.extentionStartup
