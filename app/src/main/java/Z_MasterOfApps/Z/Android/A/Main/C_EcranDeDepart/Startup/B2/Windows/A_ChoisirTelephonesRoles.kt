@@ -178,7 +178,6 @@ class J_AppInstalleDonTelephone(
     }
 }
 
-
 interface J_AppInstalleDonTelephoneRepository {
     var modelDatas: SnapshotStateList<J_AppInstalleDonTelephone>
     val progressRepo: MutableStateFlow<Float>  // Initialize progressRepo
@@ -209,45 +208,53 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
     }
 
     private fun verifyAndAddPhone(phoneName: String, screenWidth: Int) {
-        // Get reference to the phones in Firebase
+        // Obtenir tous les téléphones et vérifier localement
         J_AppInstalleDonTelephoneRepository.caReference.get().addOnSuccessListener { snapshot ->
             var phoneExists = false
             var maxId = 0L
 
-            Log.d("PhoneVerification", "Checking if phone $phoneName exists in database")
-
-            // Check if phone exists and find max ID
-            snapshot.children.forEach { snap ->
+            // Parcourir tous les téléphones pour trouver celui avec le même nom
+            snapshot.children.forEach { phoneSnapshot ->
                 try {
-                    val phone = J_AppInstalleDonTelephone().apply {
-                        id = snap.child("id").getValue(Long::class.java) ?: 0
-                        infosDeBase.nom = snap.child("nom").getValue(String::class.java) ?: ""
-                        infosDeBase.widthScreen = snap.child("widthScreen").getValue(Int::class.java) ?: 0
-                        etatesMutable.itsReciverTelephone = snap.child("itsReciverTelephone").getValue(Boolean::class.java) ?: false
+                    val id = phoneSnapshot.child("id").getValue(Long::class.java) ?: 0
+                    val nom = phoneSnapshot.child("infosDeBase/nom").getValue(String::class.java)
+                        ?: phoneSnapshot.child("infosDeBase").child("nom").getValue(String::class.java)
+                        ?: ""
+
+                    // Mettre à jour l'ID maximum
+                    if (id > maxId) {
+                        maxId = id
                     }
 
-                    // Update max ID
-                    if (phone.id > maxId) {
-                        maxId = phone.id
-                    }
-
-                    // Check if phone exists
-                    if (phone.infosDeBase.nom == phoneName) {
-                        Log.d("PhoneVerification", "Found existing phone: ${phone.infosDeBase.nom} with ID: ${phone.id}")
+                    // Vérifier si le téléphone existe déjà
+                    if (nom == phoneName) {
                         phoneExists = true
-                        // Update local state
-                        modelDatas.add(phone)
+
+                        // Créer l'objet téléphone à partir des données Firebase
+                        val phone = J_AppInstalleDonTelephone().apply {
+                            this.id = id
+                            infosDeBase.nom = nom
+                            infosDeBase.widthScreen = phoneSnapshot.child("infosDeBase/widthScreen").getValue(Int::class.java)
+                                ?: phoneSnapshot.child("infosDeBase").child("widthScreen").getValue(Int::class.java)
+                                        ?: screenWidth
+                            etatesMutable.itsReciverTelephone = phoneSnapshot.child("etatesMutable/itsReciverTelephone").getValue(Boolean::class.java)
+                                ?: phoneSnapshot.child("etatesMutable").child("itsReciverTelephone").getValue(Boolean::class.java)
+                                        ?: false
+                        }
+
+                        // Vérifier si le téléphone est déjà dans la liste locale
+                        if (modelDatas.none { it.id == id }) {
+                            modelDatas.add(phone)
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.e("PhoneVerification", "Error parsing phone data: ${e.message}", e)
                     e.printStackTrace()
                 }
             }
 
-            // If phone doesn't exist, add it
+            // Si le téléphone n'existe pas, l'ajouter
             if (!phoneExists) {
                 val newId = maxId + 1
-                Log.d("PhoneVerification", "Phone $phoneName not found, creating new with ID: $newId")
 
                 val newPhone = J_AppInstalleDonTelephone().apply {
                     id = newId
@@ -256,19 +263,17 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
                     etatesMutable.itsReciverTelephone = false
                 }
 
-                // Add to local state
-                modelDatas.add(newPhone)
+                // Ajouter à la liste locale
+                if (modelDatas.none { it.id == newId }) {
+                    modelDatas.add(newPhone)
 
-                // Add to Firebase
-                J_AppInstalleDonTelephone.caReference
-                    .child(newId.toString())
-                    .setValue(newPhone)
-            } else {
-                Log.d("PhoneVerification", "Phone already exists, no need to create a new one")
+                    // Ajouter à Firebase
+                    J_AppInstalleDonTelephoneRepository.caReference
+                        .child(newId.toString())
+                        .setValue(newPhone)
+                }
             }
         }.addOnFailureListener { exception ->
-            // Handle any errors
-            Log.e("PhoneVerification", "Failed to verify phone: ${exception.message}", exception)
             exception.printStackTrace()
         }
     }
