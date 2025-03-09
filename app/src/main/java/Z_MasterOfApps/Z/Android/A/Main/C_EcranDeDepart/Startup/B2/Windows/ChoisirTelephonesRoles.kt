@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.EmergencyRecording
+import androidx.compose.material.icons.filled.MapsHomeWork
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -121,7 +121,7 @@ fun MainItem_Windows4(
             IconButton(onClick = onReceiverToggle) {
                 Icon(
                     imageVector = if (phoneData.etatesMutable.itsReciverTelephone)
-                        Icons.Default.Check else Icons.Default.Phone,
+                        Icons.Default.EmergencyRecording else Icons.Default.MapsHomeWork,
                     contentDescription = "Toggle receiver status",
                     tint = if (phoneData.etatesMutable.itsReciverTelephone)
                         MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
