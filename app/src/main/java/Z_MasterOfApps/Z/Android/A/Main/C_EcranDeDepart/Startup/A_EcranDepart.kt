@@ -39,15 +39,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 internal fun A_StartupScreen(
-    modifier: Modifier = Modifier,
     viewModelInitApp: ViewModelInitApp = viewModel(),
     onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val extentionStartup = viewModelInitApp.extentionStartup
 
     val isManagerPhone = viewModelInitApp._paramatersAppsViewModelModel.cLeTelephoneDuGerant ?: false
-    val items = remember(isManagerPhone) { NavigationItems.getItems(isManagerPhone,) }
+    // Include the section type in the remember key to update when it changes
+    val items = remember(isManagerPhone, extentionStartup.sectionDesFragmentAppAfficheMNT) {
+        NavigationItems.getItems(isManagerPhone, extentionStartup.sectionDesFragmentAppAfficheMNT)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
@@ -65,16 +68,21 @@ internal fun A_StartupScreen(
                 "قسم العملاء" to { screen: Screen ->
                     screen.route in setOf("main_screen_f2", "مظهر الاماكن لمقسم المنتجات على الزبائن")
                 },
-                "خريطة التطبيق" to { screen: Screen -> screen.route == "Id_App2Fragment1" }
+                "خريطة التطبيق" to { screen: Screen ->
+                    screen.route == "Id_App2Fragment1" && screen.keyID != "A4F1"
+                },
+                "قاعدة البيانات" to { screen: Screen -> screen.keyID == "A4F1" }
             ).forEach { (title, filter) ->
                 val sectionItems = items.filter(filter)
-                if (sectionItems.isNotEmpty() && (title != "قسم المدير" && title != "خريطة التطبيق" || isManagerPhone)) {
+                if (sectionItems.isNotEmpty() &&
+                    ((title != "قسم المدير" && title != "خريطة التطبيق") || isManagerPhone || title == "قاعدة البيانات")) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         Text(
                             text = title,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
                                 .clickable {
                                     onClick()
                                 },
@@ -130,9 +138,9 @@ internal fun A_StartupScreen(
 
         if (viewModelInitApp._paramatersAppsViewModelModel.fabsVisibility) {
             A_OptionsControlsButtons(
-                extensionVM = extentionStartup, // Utilisez l'instance existante
+                extensionVM = extentionStartup,
                 viewModelInitApp = viewModelInitApp,
-                paddingValues = PaddingValues()  ,
+                paddingValues = PaddingValues(),
             )
         }
 
@@ -142,7 +150,7 @@ internal fun A_StartupScreen(
         )
 
         if (extentionStartup.showCategorySelection) {
-            A_MainScreen_SectionID4_FragmentID1() { extentionStartup.showCategorySelection = false}
+            A_MainScreen_SectionID4_FragmentID1() { extentionStartup.showCategorySelection = false }
         }
     }
 }

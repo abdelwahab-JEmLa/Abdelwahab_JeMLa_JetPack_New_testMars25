@@ -1,7 +1,6 @@
 package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B2.Windows
 
 import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.ref_HeadOfModels
-import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -134,48 +133,12 @@ fun MainItem_Windows4(
 @Preview(showBackground = true)
 @Composable
 fun MainScreen_Windows4Preview() {
-    // Create mock data for preview
-    val mockRepository = object : J_AppInstalleDonTelephoneRepository {
-        @SuppressLint("UnrememberedMutableState")
-        override var modelDatas: SnapshotStateList<J_AppInstalleDonTelephone> = mutableStateListOf(
-            J_AppInstalleDonTelephone(1).apply {
-                infosDeBase.nom = "Samsung Galaxy S21"
-                infosDeBase.widthScreen = 1080
-                etatesMutable.itsReciverTelephone = true
-            },
-            J_AppInstalleDonTelephone(2).apply {
-                infosDeBase.nom = "Google Pixel 6"
-                infosDeBase.widthScreen = 1080
-                etatesMutable.itsReciverTelephone = false
-            },
-            J_AppInstalleDonTelephone(3).apply {
-                infosDeBase.nom = "Xiaomi Mi 11"
-                infosDeBase.widthScreen = 1440
-                etatesMutable.itsReciverTelephone = false
-            }
-        )
-
-        override val progressRepo = MutableStateFlow(1.0f)
-
-        override suspend fun onDataBaseChangeListnerAndLoad(): Pair<List<J_AppInstalleDonTelephone>, Flow<Float>> {
-            return Pair(modelDatas.toList(), progressRepo)
-        }
-
-
-        override suspend fun updateDatas(datas: SnapshotStateList<J_AppInstalleDonTelephone>) {
-            modelDatas.clear()
-            modelDatas.addAll(datas)
-        }
-
-        override fun updatePhones() {
-            // No-op for preview
-        }
-    }
-
-    val mockViewModel = ViewModelW4(mockRepository)
+    // Utiliser le repository réel connecté à Firebase
+    val firebaseRepository = J_AppInstalleDonTelephoneRepositoryImpl()
+    val viewModel = ViewModelW4(firebaseRepository)
 
     MaterialTheme {
-        MainScreen_Windows4(viewModel = mockViewModel)
+        MainScreen_Windows4(viewModel = viewModel)
     }
 }
 
@@ -251,6 +214,8 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
             var phoneExists = false
             var maxId = 0L
 
+            Log.d("PhoneVerification", "Checking if phone $phoneName exists in database")
+
             // Check if phone exists and find max ID
             snapshot.children.forEach { snap ->
                 try {
@@ -268,11 +233,13 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
 
                     // Check if phone exists
                     if (phone.infosDeBase.nom == phoneName) {
+                        Log.d("PhoneVerification", "Found existing phone: ${phone.infosDeBase.nom} with ID: ${phone.id}")
                         phoneExists = true
                         // Update local state
                         modelDatas.add(phone)
                     }
                 } catch (e: Exception) {
+                    Log.e("PhoneVerification", "Error parsing phone data: ${e.message}", e)
                     e.printStackTrace()
                 }
             }
@@ -280,6 +247,7 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
             // If phone doesn't exist, add it
             if (!phoneExists) {
                 val newId = maxId + 1
+                Log.d("PhoneVerification", "Phone $phoneName not found, creating new with ID: $newId")
 
                 val newPhone = J_AppInstalleDonTelephone().apply {
                     id = newId
@@ -295,13 +263,15 @@ class J_AppInstalleDonTelephoneRepositoryImpl : J_AppInstalleDonTelephoneReposit
                 J_AppInstalleDonTelephone.caReference
                     .child(newId.toString())
                     .setValue(newPhone)
+            } else {
+                Log.d("PhoneVerification", "Phone already exists, no need to create a new one")
             }
         }.addOnFailureListener { exception ->
             // Handle any errors
+            Log.e("PhoneVerification", "Failed to verify phone: ${exception.message}", exception)
             exception.printStackTrace()
         }
     }
-
     private fun startDatabaseListener() {
         listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {

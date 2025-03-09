@@ -3,6 +3,7 @@ package Z_MasterOfApps.Z.Android.A.Main
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.A_StartupScreen
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B.Dialogs.C_SectionAppChoisisuer
+import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B2.Windows.MainScreen_Windows4
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_1.id4_DeplaceProduitsVerGrossist.A_id4_DeplaceProduitsVerGrossist
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_2.id1_GerantDefinirePosition.A_id1_GerantDefinirePosition
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_3.id5_VerificationProduitAcGrossist.A_ID5_VerificationProduitAcGrossist
@@ -72,8 +73,8 @@ fun AppNavigationHost(
     val isManagerPhone =
         viewModelInitApp._paramatersAppsViewModelModel.cLeTelephoneDuGerant ?: false
 
-
-    val items = remember(isManagerPhone) {
+    // Make items respond to changes in extentionStartup.sectionDesFragmentAppAfficheMNT
+    val items = remember(isManagerPhone, extentionStartup.sectionDesFragmentAppAfficheMNT) {
         NavigationItems.getItems(
             isManagerPhone,
             extentionStartup.sectionDesFragmentAppAfficheMNT
@@ -88,6 +89,8 @@ fun AppNavigationHost(
     var isOnStartupRoute by remember { mutableStateOf(false) }
     // State to control dialog visibility
     var showDialog by remember { mutableStateOf(false) }
+
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -125,7 +128,7 @@ fun AppNavigationHost(
                                 A_id1_ClientsLocationGps(viewModel = viewModelInitApp)
                             }
                             composable(InfosDatas_App4FramgmentId1.route) {
-                                A_id1_ClientsLocationGps(viewModel = viewModelInitApp)
+                                MainScreen_Windows4()
                             }
                             composable(StartupIcon_Start.route) {
                                 isOnStartupRoute = true
@@ -193,27 +196,44 @@ object NavigationItems {
     ) = buildList {
         add(StartupIcon_Start)
 
-        if (sectoionDesFragmentAppAfficheMNT == SectionsAPP.MANAGE_ACHATS) {
-            //Manageur_Fragments
-            if (isManagerPhone) {
-                add(InfosDatas_FramgmentId4)
-            }
-            add(InfosDatas_FragmentId1)
-            add(InfosDatas_FramgmentId5)
+        // Select which navigation items to show based on the active section
+        when (sectoionDesFragmentAppAfficheMNT) {
+            SectionsAPP.MANAGE_ACHATS -> {
+                //Manageur_Fragments
+                if (isManagerPhone) {
+                    add(InfosDatas_FramgmentId4)
+                }
+                add(InfosDatas_FragmentId1)
+                add(InfosDatas_FramgmentId5)
 
-            //Clients_Fragments
-            add(InfosDatas_FramgmentId2)
-            add(InfosDatas_FramgmentId3)
+                //Clients_Fragments
+                add(InfosDatas_FramgmentId2)
+                add(InfosDatas_FramgmentId3)
 
-            //MapApp_Fragments
-            if (isManagerPhone) {
-                add(InfosDatas_FramgmentId6)
+                //MapApp_Fragments
+                if (isManagerPhone) {
+                    add(InfosDatas_FramgmentId6)
+                }
             }
-        }  else{
-            add(InfosDatas_App4FramgmentId1)
+            SectionsAPP.BASE_DONNE -> {
+                // Only add the database section item when in BASE_DONNE mode
+                add(InfosDatas_App4FramgmentId1)
+            }
+            else -> {
+                // Default case - could add some basic items here if needed
+            }
         }
     }
 }
+
+data object InfosDatas_App4FramgmentId1 : Screen(
+    keyID = "A4F1",
+    id = 8,
+    icon = Icons.Default.PinDrop,
+    route = "Id_App2Fragment1",
+    titleArab = "قاعدة البيانات", // Add a proper title
+    color = Color(0xFFFF9800)
+)
 
 data object InfosDatas_FragmentId1 : Screen(
     1,
@@ -264,15 +284,7 @@ data object InfosDatas_FramgmentId6 : Screen(
 
 )
 
-data object InfosDatas_App4FramgmentId1 : Screen(
-    keyID = "A4F1",
-    id = 8,
-    icon = Icons.Default.PinDrop,
-    route = "Id_App2Fragment1",
-    titleArab = "",
-    color = Color(0xFFFF9800)
 
-)
 
 data object StartupIcon_Start : Screen(
     id = 7,
