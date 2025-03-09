@@ -61,7 +61,7 @@ fun MainScreen_Windows4(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Choose Receiver Phone",
+                text = "Choose Role Phone",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
