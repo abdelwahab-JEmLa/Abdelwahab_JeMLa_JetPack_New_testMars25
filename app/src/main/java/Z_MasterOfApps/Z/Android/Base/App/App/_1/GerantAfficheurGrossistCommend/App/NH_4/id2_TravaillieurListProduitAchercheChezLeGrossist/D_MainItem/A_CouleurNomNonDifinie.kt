@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,7 +77,7 @@ fun A_CouleurNomNonDefinie(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = mainItem.nom,
+                            text = "${mainItem.nom}id${mainItem.id}",
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                             ),
@@ -150,31 +151,36 @@ fun A_CouleurNomNonDefinie(
         }
     }
 }
+
 @Composable
 private fun ColorItemContent(
     colorFlavor: A_ProduitModel.GrossistBonCommandes.ColoursGoutsCommendee,
     mainItem: A_ProduitModel,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
+    Card(
+        modifier = modifier
+            .padding(4.dp),
+        shape = RoundedCornerShape(8.dp),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            contentAlignment = Alignment.Center
         ) {
-            // Image or fallback
-            val colorIndex = (colorFlavor.id.toInt() - 1)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                contentAlignment = Alignment.Center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp), // Added vertical spacing
+                modifier = Modifier.padding(6.dp) // Added padding inside card
             ) {
-                if (colorIndex >= 0 &&
-                    colorIndex < mainItem.statuesBase.coloursEtGoutsIds.size &&
-                    !mainItem.statuesBase.naAucunImage
+                // Image or fallback
+                val colorIndex = (colorFlavor.id.toInt() - 1)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     GlideDisplayImageBykeyId(
                         modifier = Modifier.fillMaxSize(),
@@ -184,24 +190,24 @@ private fun ColorItemContent(
                         qualityImage = 80,
                         colorIndex = colorIndex
                     )
-                }
 
-                // Quantity chip overlaid at the top of the image with semi-transparent background
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .background(
-                            color = Color.White.copy(alpha = 0.4f),
-                            shape = RoundedCornerShape(8.dp)
+                    // Quantity chip overlaid at the top of the image with semi-transparent background
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .background(
+                                color = Color.White.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "id${colorFlavor.id}idx${colorIndex}= ${colorFlavor.quantityAchete}",
+                            fontSize = 18.sp,
+                            color = Color.Black,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                         )
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "Qua= ${colorFlavor.quantityAchete}",
-                        fontSize = 18.sp,
-                        color = Color.Black,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    )
+                    }
                 }
             }
         }
