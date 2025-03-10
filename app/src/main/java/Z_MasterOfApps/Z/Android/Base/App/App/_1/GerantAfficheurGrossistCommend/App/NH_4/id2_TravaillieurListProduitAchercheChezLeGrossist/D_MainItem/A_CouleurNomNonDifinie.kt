@@ -35,12 +35,12 @@ fun A_CouleurNomNonDefinie(
     onCLickOnMain: () -> Unit = {},
     position: Int? = null,
 ) {
-    val height = 190.dp
-
-    // Move this declaration to the top level so it's available throughout the composable
+    // Get color list for calculations
     val colorAchatModelList = mainItem.bonCommendDeCetteCota
         ?.coloursEtGoutsCommendee
         ?.toList() ?: emptyList()
+
+    val height = if (colorAchatModelList.size >= 2) 130.dp else 200.dp
 
     val totalQuantity = colorAchatModelList
         .sumOf { it.quantityAchete }
@@ -196,7 +196,7 @@ private fun ColorItemContent(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .background(
-                                color = Color.White.copy(alpha = 0.4f),
+                                color = Color.White.copy(alpha = 0.6f),
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 8.dp, vertical = 2.dp)
