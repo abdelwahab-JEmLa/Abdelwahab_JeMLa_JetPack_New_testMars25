@@ -3,6 +3,7 @@ package Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel.Companion.ExtraiGrossistInfos
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_5.id3_AfficheurDesProduitsPourLeColecteur.D_MainItem.A_CouleurNomNonDifinie_FragID_3
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_5.id3_AfficheurDesProduitsPourLeColecteur.D_MainItem.ExpandedMainItem_F3
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_5.id3_AfficheurDesProduitsPourLeColecteur.D_MainItem.MainItem_F3
 import androidx.compose.animation.AnimatedVisibility
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 
 
 @Composable
@@ -133,7 +135,7 @@ private fun LazyListScope.ProductsList(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(android.graphics.Color.parseColor(grossist.statueDeBase.couleur)))
+                        .background(Color(grossist.statueDeBase.couleur.toColorInt()))
                         .padding(16.dp)
                 ) {
                     Text(
@@ -193,14 +195,29 @@ private fun ProductItem(
     onExpandedItemIdChange: (Long?) -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
-        MainItem_F3(
-            viewModelProduits = viewModel,
-            mainItem = product,
-            modifier = Modifier.fillMaxWidth(),
-            onCLickOnMain = {
-                onExpandedItemIdChange(if (expandedItemId == product.id) null else product.id)
-            }
-        )
+        // Check if any color has an ID less than or equal to 4
+        val hasColorWithIdLessOrEqual4 = product.statuesBase.coloursEtGoutsIds
+            .any { it <= 4L }
+
+        if (hasColorWithIdLessOrEqual4 && product.bonCommendDeCetteCota?.coloursEtGoutsCommendee?.any { it.quantityAchete > 0 } == true) {
+            A_CouleurNomNonDifinie_FragID_3(
+                mainItem = product,
+                modifier = Modifier.fillMaxWidth(),
+                onCLickOnMain = {
+                    onExpandedItemIdChange(if (expandedItemId == product.id) null else product.id)
+                }
+            )
+        } else {
+            // Use the standard component for other products
+            MainItem_F3(
+                viewModelProduits = viewModel,
+                mainItem = product,
+                modifier = Modifier.fillMaxWidth(),
+                onCLickOnMain = {
+                    onExpandedItemIdChange(if (expandedItemId == product.id) null else product.id)
+                }
+            )
+        }
 
         AnimatedVisibility(
             visible = expandedItemId == product.id,
