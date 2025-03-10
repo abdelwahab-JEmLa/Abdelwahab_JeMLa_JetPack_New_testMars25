@@ -44,6 +44,7 @@ fun ExpandedMainItem_F3(
     modifier: Modifier = Modifier,
     onCLickOnMain: () -> Unit = {},
 ) {
+    val frag3a1Extvm = viewModelInitApp.frag_3A1_ExtVM
     val produitsAChoisireLeurClient =
         viewModelInitApp._paramatersAppsViewModelModel.produitsAChoisireLeurClient
     var showDialog by remember { mutableStateOf(false) }
@@ -111,7 +112,9 @@ fun ExpandedMainItem_F3(
             }
 
             // List of buyers and their purchases
-            mainItem.bonsVentDeCetteCota.forEach { bonVent ->
+            mainItem.bonsVentDeCetteCota.filter {
+                it.clientIdChoisi == (frag3a1Extvm.clientFocused?.first?.id ?: 0)
+            }.forEach { bonVent ->
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -141,7 +144,11 @@ fun ExpandedMainItem_F3(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(bonVent.colours_Achete.filter { it.quantity_Achete > 0 }) { color ->
+                        items(
+                            bonVent
+
+                                .colours_Achete.filter { it.quantity_Achete > 0 }
+                        ) { color ->
                             // In ExpandedMainItem_F2.kt - Modified Column section for color display
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,

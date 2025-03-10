@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -112,11 +113,9 @@ fun MainScreenFilterFAB_F3(
 
                                 // Selection FAB
                                 val color = try {
-                                    Color(android.graphics.Color.parseColor(
-                                        client.statueDeBase.couleur.let {
-                                            if (it.startsWith("#")) it else "#$it"
-                                        }
-                                    ))
+                                    Color(client.statueDeBase.couleur.let {
+                                        if (it.startsWith("#")) it else "#$it"
+                                    }.toColorInt())
                                 } catch (e: Exception) {
                                     Color.Red
                                 }
@@ -126,6 +125,7 @@ fun MainScreenFilterFAB_F3(
                                         frag3a1Extvm.clientFocused= client to products.filter {
                                             it.bonCommendDeCetteCota?.mutableBasesStates?.cPositionCheyCeGrossit == true
                                         }
+
                                     },
                                     modifier = Modifier.size(48.dp),
                                     containerColor = color

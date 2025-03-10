@@ -36,6 +36,10 @@ fun MainItem_F3(
     onCLickOnMain: () -> Unit = {},
     position: Int? = null,
 ) {
+    val clientIdChoisi = viewModelProduits
+        .frag_3A1_ExtVM
+        .clientFocused?.first?.id ?: 0
+
     val height = 190.dp  // Matched with MainItem_F2
     Box(
         modifier = modifier
@@ -78,9 +82,7 @@ fun MainItem_F3(
 
         val colorAchatModelList = mainItem.bonsVentDeCetteCota
             .filter { bonVent ->
-                bonVent.clientIdChoisi == viewModelProduits
-                    .frag_3A1_ExtVM
-                    .iDClientAuFilter
+                bonVent.clientIdChoisi == clientIdChoisi
             }
             .flatMap { it.colours_Achete }
 

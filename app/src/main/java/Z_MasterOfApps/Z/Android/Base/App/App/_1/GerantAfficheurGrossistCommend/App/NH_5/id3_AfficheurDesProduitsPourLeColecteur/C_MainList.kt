@@ -3,7 +3,7 @@ package Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModel.Companion.ExtraiGrossistInfos
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_4.id2_TravaillieurListProduitAchercheChezLeGrossist.D_MainItem.ExpandedMainItem_F2
+import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_5.id3_AfficheurDesProduitsPourLeColecteur.D_MainItem.ExpandedMainItem_F3
 import Z_MasterOfApps.Z.Android.Base.App.App._1.GerantAfficheurGrossistCommend.App.NH_5.id3_AfficheurDesProduitsPourLeColecteur.D_MainItem.MainItem_F3
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -207,7 +207,7 @@ private fun ProductItem(
             enter = expandVertically(),
             exit = shrinkVertically()
         ) {
-            ExpandedMainItem_F2(
+            ExpandedMainItem_F3(
                 viewModelInitApp = viewModel,
                 mainItem = product,
                 modifier = Modifier

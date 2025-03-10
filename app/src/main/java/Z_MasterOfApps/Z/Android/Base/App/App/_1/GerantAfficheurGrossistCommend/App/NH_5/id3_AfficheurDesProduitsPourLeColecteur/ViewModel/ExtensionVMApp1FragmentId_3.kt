@@ -12,7 +12,6 @@ class ExtensionVMApp1FragmentId_3(
     val viewModelInitApp: ViewModelInitApp,
 ) {
     private val clientDataBaseSnapList = viewModelInitApp._modelAppsFather.clientDataBase
-    var iDClientAuFilter by mutableStateOf<Long?>(0)
     var clientFocused by mutableStateOf<Pair<B_ClientsDataBase, List<A_ProduitModel>>?>(null)
 
     fun upButton(index: Int) {
