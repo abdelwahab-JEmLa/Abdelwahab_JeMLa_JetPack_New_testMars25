@@ -27,8 +27,8 @@ import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PinDrop
+import androidx.compose.material.icons.filled.StarBorderPurple500
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -230,7 +230,7 @@ data object InfosDatas_App4FramgmentId1 : Screen(
     keyID = "A4F1",
     id = 8,
     icon = Icons.Default.PinDrop,
-    route = "Id_App2Fragment1",
+    route = "InfosDatas_App4FramgmentId1",
     titleArab = "قاعدة البيانات", // Add a proper title
     color = Color(0xFFFF9800)
 )
@@ -239,7 +239,7 @@ data object InfosDatas_FragmentId1 : Screen(
     1,
     "محدد اماكن المنتجات عند الجمال",
     Color(0xFFFF5722),
-    Icons.Default.LocationOn,
+    Icons.Default.StarBorderPurple500,
     "fragment_main_screen_1",
 )
 

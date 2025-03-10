@@ -10,7 +10,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.database.database
 
 class ParamatersAppsModel {
-    var cLeTelephoneDuGerant by mutableStateOf<Boolean?>(null)
+    var cLeTelephoneDuGerant by mutableStateOf<Boolean?>(true)
 
     var telephoneClientParamaters by mutableStateOf(TelephoneClientParamaters())
 
