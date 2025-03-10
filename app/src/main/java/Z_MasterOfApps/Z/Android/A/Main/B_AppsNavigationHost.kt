@@ -122,7 +122,7 @@ fun AppNavigationHost(
                                 A_Id2_TravaillieurListProduitAchercheChezLeGrossist(viewModel = viewModelInitApp)
                             }
                             composable(InfosDatas_FramgmentId3.route) {
-                                A_id3_AfficheurDesProduitsPourLeColecteur(viewModelInitApp = viewModelInitApp)
+                                A_id3_AfficheurDesProduitsPourLeColecteur()
                             }
                             composable(InfosDatas_FramgmentId6.route) {
                                 A_id1_ClientsLocationGps(viewModel = viewModelInitApp)
