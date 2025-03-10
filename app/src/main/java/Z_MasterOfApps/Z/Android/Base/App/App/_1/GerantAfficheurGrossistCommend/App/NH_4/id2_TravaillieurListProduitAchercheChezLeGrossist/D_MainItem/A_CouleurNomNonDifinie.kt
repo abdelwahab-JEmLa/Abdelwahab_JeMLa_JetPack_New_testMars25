@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -60,7 +59,6 @@ fun A_CouleurNomNonDefinie(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Row moved to the top (addressing TODO 1)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,24 +164,6 @@ private fun ColorItemContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Quantity chip floating above
-            Box(
-                modifier = Modifier
-                    .offset(y = (-8).dp)
-                    .background(
-                        color = Color.White,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = colorFlavor.quantityAchete.toString(),
-                    fontSize = 18.sp,
-                    color = Color.Black,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                )
-            }
-
             // Image or fallback
             val colorIndex = (colorFlavor.id.toInt() - 1)
             Box(
@@ -205,18 +185,25 @@ private fun ColorItemContent(
                         colorIndex = colorIndex
                     )
                 }
-            }
 
-            // Name/emoji below
-            Text(
-                text = when {
-                    colorFlavor.emogi.isNotEmpty() -> colorFlavor.emogi
-                    else -> colorFlavor.nom.take(2)
-                },
-                fontSize = 16.sp,
-                color = Color.Black,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+                // Quantity chip overlaid at the top of the image with semi-transparent background
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .background(
+                            color = Color.White.copy(alpha = 0.4f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "Qua= ${colorFlavor.quantityAchete}",
+                        fontSize = 18.sp,
+                        color = Color.Black,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }
