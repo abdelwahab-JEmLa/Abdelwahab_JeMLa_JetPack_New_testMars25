@@ -1,6 +1,6 @@
-package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.Option
+package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.Option
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.FragmentViewModel
+import Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.ViewModel.FragmentViewModel
 import Z_MasterOfApps.Z.Android.A.Main.Utils.LottieJsonGetterR_Raw_Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

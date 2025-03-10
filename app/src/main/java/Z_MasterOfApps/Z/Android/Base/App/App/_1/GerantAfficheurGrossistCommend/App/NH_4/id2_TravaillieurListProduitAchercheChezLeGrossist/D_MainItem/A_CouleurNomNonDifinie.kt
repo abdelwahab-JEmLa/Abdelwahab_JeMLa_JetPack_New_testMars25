@@ -36,6 +36,15 @@ fun A_CouleurNomNonDefinie(
     position: Int? = null,
 ) {
     val height = 190.dp
+
+    // Move this declaration to the top level so it's available throughout the composable
+    val colorAchatModelList = mainItem.bonCommendDeCetteCota
+        ?.coloursEtGoutsCommendee
+        ?.toList() ?: emptyList()
+
+    val totalQuantity = colorAchatModelList
+        .sumOf { it.quantityAchete }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -46,166 +55,103 @@ fun A_CouleurNomNonDefinie(
                 else MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(4.dp)
             )
-            .clickable { onCLickOnMain() },
-        contentAlignment = Alignment.Center
+            .clickable { onCLickOnMain() }
     ) {
-        val colorAchatModelList = mainItem.bonCommendDeCetteCota
-            ?.coloursEtGoutsCommendee
-            ?.toList() ?: emptyList()
-
-        val totalQuantity = colorAchatModelList
-            .sumOf { it.quantityAchete }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(7.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            val colorItems = colorAchatModelList
-                .filter { it.quantityAchete > 0 }
-
-            // Determine layout based on item count
-            when (colorItems.size) {
-                1 -> {
-                    // Single item takes full width
-                    colorItems.firstOrNull()?.let { colorFlavor ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            ColorItemContent(
-                                colorFlavor = colorFlavor,
-                                mainItem = mainItem,
-                                modifier = Modifier.fillMaxWidth(0.8f)
-                            )
-                        }
-                    }
-                }
-                else -> {
-                    // Multiple items use grid
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        items(colorItems) { colorFlavor ->
-                            ColorItemContent(
-                                colorFlavor = colorFlavor,
-                                mainItem = mainItem,
-                                modifier = Modifier.fillMaxWidth(0.9f)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Rest of the UI remains unchanged
-        val position = mainItem.bonCommendDeCetteCota
-            ?.mutableBasesStates
-            ?.positionProduitDonGrossistChoisiPourAcheterCeProduit
-
-        Text(
-            text = "$position>ID: ${mainItem.id}",
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(4.dp)
-                .background(
-                    color = Color.LightGray.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(4.dp)
-                )
-                .padding(4.dp),
-            style = MaterialTheme.typography.bodySmall,
-            fontSize = 8.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
+            // Row moved to the top (addressing TODO 1)
+            Row(
                 modifier = Modifier
-                    .width(270.dp)
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Start
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .width(270.dp)
+                        .padding(horizontal = 8.dp)
                 ) {
-                    Text(
-                        text = mainItem.nom,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                        ),
-                        color = Color.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .background(
-                                color = Color.White.copy(alpha = 0.8f),
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .padding(4.dp)
-                    )
-
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = totalQuantity.toString(),
-                            style = MaterialTheme.typography.bodyMedium.copy(
+                            text = mainItem.nom,
+                            style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                             ),
                             color = Color.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
+                                .weight(1f)
                                 .background(
                                     color = Color.White.copy(alpha = 0.8f),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .padding(4.dp)
                         )
-                        Text(
-                            text = "ك.الكلية",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                            ),
-                            color = Color.Black
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = totalQuantity.toString(),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                ),
+                                color = Color.Black,
+                                modifier = Modifier
+                                    .background(
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                                    .padding(4.dp)
+                            )
+                            Text(
+                                text = "ك.الكلية",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                ),
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Color items container
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(7.dp)
+            ) {
+                val colorItems = colorAchatModelList
+                    .filter { it.quantityAchete > 0 }
+
+                // Multiple items use grid
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    items(colorItems) { colorFlavor ->
+                        ColorItemContent(
+                            colorFlavor = colorFlavor,
+                            mainItem = mainItem,
+                            modifier = Modifier.fillMaxWidth(0.9f)
                         )
                     }
                 }
             }
         }
-
-        if (position != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(4.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = position.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
     }
 }
-
 @Composable
 private fun ColorItemContent(
     colorFlavor: A_ProduitModel.GrossistBonCommandes.ColoursGoutsCommendee,

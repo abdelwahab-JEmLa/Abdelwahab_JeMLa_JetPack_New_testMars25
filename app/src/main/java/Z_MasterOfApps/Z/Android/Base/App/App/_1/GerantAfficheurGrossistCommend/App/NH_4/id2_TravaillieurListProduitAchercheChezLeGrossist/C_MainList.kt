@@ -69,10 +69,10 @@ fun MainList_F2(
                     .padding(horizontal = 8.dp)
             ) {
                 // Check if any color has an ID less than or equal to 5
-                val hasColorWithMinus5 = product.statuesBase.coloursEtGoutsIds
+                val hasColorWithIdMinus5 = product.statuesBase.coloursEtGoutsIds
                     .any { it <= 4L }
 
-                if (hasColorWithMinus5) {
+                if (hasColorWithIdMinus5) {
                     A_CouleurNomNonDefinie(
                         mainItem = product,
                         modifier = Modifier.fillMaxWidth(),

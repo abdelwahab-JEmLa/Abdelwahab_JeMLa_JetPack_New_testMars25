@@ -1,4 +1,4 @@
-package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
+package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp
 
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import androidx.compose.foundation.clickable

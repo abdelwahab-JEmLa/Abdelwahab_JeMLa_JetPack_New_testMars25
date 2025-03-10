@@ -1,11 +1,11 @@
-package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel
+package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.ViewModel
 
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
 import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
 import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
 import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
 import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
-import Z_MasterOfApps.Z.Android.A.Main.A_KoinProto.Navigator
+import Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.Navigator
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
@@ -28,7 +28,7 @@ data class UiState(
     val categories: List<I_CategoriesProduits> = emptyList(),
     var groupesCategories: SnapshotStateList<H_GroupeCategories> =
         emptyList<H_GroupeCategories>().toMutableStateList(),
-    var ModeAuClickButton: ModeAuClickButton = Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.ModeAuClickButton.ITS_ONE_CATE_IN_HOLD, // Add this line
+    var ModeAuClickButton: ModeAuClickButton = Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.ViewModel.ModeAuClickButton.ITS_ONE_CATE_IN_HOLD, // Add this line
     var holdedCategoryID: Long = 0, // Add this line
     val isLoading: Boolean = false,
     val progress: Float = 0f,

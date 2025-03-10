@@ -1,7 +1,6 @@
-package Z_MasterOfApps.Z.Android.A.Main.A_KoinProto
+package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.A_MainScreen_FragDepart
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.ViewModel.Coordinator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

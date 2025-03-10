@@ -1,7 +1,7 @@
-package Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp
+package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp
 
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.Option.A_OptionsControlsButtons_FragDepart
-import Z_MasterOfApps.A_WorkingOn.B.EcranDepartApp.ViewModel.Coordinator
+import Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.Option.A_OptionsControlsButtons_FragDepart
+import Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.ViewModel.Coordinator
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
