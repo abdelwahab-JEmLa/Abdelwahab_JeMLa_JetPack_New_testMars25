@@ -219,9 +219,7 @@ object NavigationItems {
                 // Only add the database section item when in BASE_DONNE mode
                 add(InfosDatas_App4FramgmentId1)
             }
-            else -> {
-                // Default case - could add some basic items here if needed
-            }
+            else -> {}
         }
     }
 }
