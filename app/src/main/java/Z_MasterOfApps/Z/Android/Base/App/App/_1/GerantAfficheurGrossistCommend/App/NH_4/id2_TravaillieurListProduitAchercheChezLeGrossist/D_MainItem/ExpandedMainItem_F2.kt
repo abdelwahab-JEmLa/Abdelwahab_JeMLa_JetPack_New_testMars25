@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -43,11 +44,16 @@ fun ExpandedMainItem_F2(
     mainItem: A_ProduitModel,
     modifier: Modifier = Modifier,
     onCLickOnMain: () -> Unit = {},
+    imageQuiRepresentlaCouleurPasDeNom: Boolean,
 ) {
     val produitsAChoisireLeurClient =
         viewModelInitApp._paramatersAppsViewModelModel.produitsAChoisireLeurClient
     var showDialog by remember { mutableStateOf(false) }
-    var selectedColor by remember { mutableStateOf<A_ProduitModel.ClientBonVentModel.ColorAchatModel?>(null) }
+    var selectedColor by remember {
+        mutableStateOf<A_ProduitModel.ClientBonVentModel.ColorAchatModel?>(
+            null
+        )
+    }
     var selectedBonVent by remember { mutableStateOf<A_ProduitModel.ClientBonVentModel?>(null) }
 
     Box(
@@ -125,9 +131,9 @@ fun ExpandedMainItem_F2(
                 ) {
                     // Buyer info
                     Text(
-                        text =  viewModelInitApp._modelAppsFather.clientDataBase.find {
-                            it.id==bonVent.clientIdChoisi
-                        }?.nom  ?: "Unknown Client",
+                        text = viewModelInitApp._modelAppsFather.clientDataBase.find {
+                            it.id == bonVent.clientIdChoisi
+                        }?.nom ?: "Unknown Client",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -153,6 +159,25 @@ fun ExpandedMainItem_F2(
                                     .padding(4.dp)
                                 // Remove clickable from main Column
                             ) {
+                                if (imageQuiRepresentlaCouleurPasDeNom) {
+                                    // Calculate the color index
+                                    val colorIndex = (color.couleurId.toInt() - 1)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(60.dp)
+                                    ) {
+                                        GlideDisplayImageBykeyId(
+                                            modifier = Modifier.fillMaxSize(),
+                                            imageGlidReloadTigger = mainItem.statuesBase.imageGlidReloadTigger,
+                                            mainItem = mainItem,
+                                            size = 100.dp,
+                                            qualityImage = 100,
+                                            colorIndex = colorIndex
+                                        )
+                                    }
+                                }
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
@@ -189,10 +214,12 @@ fun ExpandedMainItem_F2(
                                             showDialog = true
                                         }
                                 ) {
-                                    Text(
-                                        text = color.imogi.ifEmpty { color.nom.take(2) },
-                                        fontSize = 20.sp
-                                    )
+                                    if (!imageQuiRepresentlaCouleurPasDeNom) {
+                                        Text(
+                                            text = color.imogi.ifEmpty { color.nom.take(2) },
+                                            fontSize = 20.sp
+                                        )
+                                    }
                                     Text(
                                         text = "${color.quantity_Achete}",
                                         style = MaterialTheme.typography.bodyMedium

@@ -40,7 +40,7 @@ fun A_CouleurNomNonDifinie_FragID_3(
         ?.coloursEtGoutsCommendee
         ?.toList() ?: emptyList()
 
-    val height = if (colorAchatModelList.size >= 2) 130.dp else 200.dp
+    val height = if (colorAchatModelList.size <= 2) 180.dp else 250.dp
 
     val totalQuantity = colorAchatModelList
         .sumOf { it.quantityAchete }
@@ -186,8 +186,8 @@ private fun ColorItemContent(
                         modifier = Modifier.fillMaxSize(),
                         imageGlidReloadTigger = mainItem.statuesBase.imageGlidReloadTigger,
                         mainItem = mainItem,
-                        size = 60.dp,
-                        qualityImage = 80,
+                        size = 100.dp,
+                        qualityImage = 100,
                         colorIndex = colorIndex
                     )
 
@@ -201,8 +201,13 @@ private fun ColorItemContent(
                             )
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
+                        val s = if (false) {
+                            "id${colorFlavor.id}idx${colorIndex}"
+                        } else {
+                            "Qu"
+                        }
                         Text(
-                            text = "id${colorFlavor.id}idx${colorIndex}= ${colorFlavor.quantityAchete}",
+                            text = "$s= ${colorFlavor.quantityAchete}",
                             fontSize = 18.sp,
                             color = Color.Black,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold

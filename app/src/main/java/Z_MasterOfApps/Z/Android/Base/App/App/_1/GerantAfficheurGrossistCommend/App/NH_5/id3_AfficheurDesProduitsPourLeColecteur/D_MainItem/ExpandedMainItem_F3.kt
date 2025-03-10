@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -43,6 +44,7 @@ fun ExpandedMainItem_F3(
     mainItem: A_ProduitModel,
     modifier: Modifier = Modifier,
     onCLickOnMain: () -> Unit = {},
+    imageQuiRepresentlaCouleurPasDeNom: Boolean,
 ) {
     val frag3a1Extvm = viewModelInitApp.frag_3A1_ExtVM
     val produitsAChoisireLeurClient =
@@ -145,9 +147,7 @@ fun ExpandedMainItem_F3(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(
-                            bonVent
-
-                                .colours_Achete.filter { it.quantity_Achete > 0 }
+                            bonVent.colours_Achete.filter { it.quantity_Achete > 0 }
                         ) { color ->
                             // In ExpandedMainItem_F2.kt - Modified Column section for color display
                             Column(
@@ -160,6 +160,25 @@ fun ExpandedMainItem_F3(
                                     .padding(4.dp)
                                 // Remove clickable from main Column
                             ) {
+                                if (imageQuiRepresentlaCouleurPasDeNom) {
+                                    // Calculate the color index
+                                    val colorIndex = (color.couleurId.toInt() - 1)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(60.dp)
+                                    ) {
+                                        GlideDisplayImageBykeyId(
+                                            modifier = Modifier.fillMaxSize(),
+                                            imageGlidReloadTigger = mainItem.statuesBase.imageGlidReloadTigger,
+                                            mainItem = mainItem,
+                                            size = 100.dp,
+                                            qualityImage = 100,
+                                            colorIndex = colorIndex
+                                        )
+                                    }
+                                }
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
@@ -196,10 +215,12 @@ fun ExpandedMainItem_F3(
                                             showDialog = true
                                         }
                                 ) {
-                                    Text(
-                                        text = color.imogi.ifEmpty { color.nom.take(2) },
-                                        fontSize = 20.sp
-                                    )
+                                    if (!imageQuiRepresentlaCouleurPasDeNom) {
+                                        Text(
+                                            text = color.imogi.ifEmpty { color.nom.take(2) },
+                                            fontSize = 20.sp
+                                        )
+                                    }
                                     Text(
                                         text = "${color.quantity_Achete}",
                                         style = MaterialTheme.typography.bodyMedium

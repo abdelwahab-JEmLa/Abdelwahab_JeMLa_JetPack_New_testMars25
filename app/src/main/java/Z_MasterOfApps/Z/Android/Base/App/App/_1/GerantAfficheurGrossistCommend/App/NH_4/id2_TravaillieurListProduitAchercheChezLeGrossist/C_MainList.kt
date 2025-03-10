@@ -69,17 +69,19 @@ fun MainList_F2(
                     .padding(horizontal = 8.dp)
             ) {
                 // Check if any color has an ID less than or equal to 5
-                val hasColorWithIdMinus5 = product.statuesBase.coloursEtGoutsIds
+                val imageQuiRepresentlaCouleurPasDeNom = product.statuesBase.coloursEtGoutsIds
                     .any { it <= 4L }
 
-                if (hasColorWithIdMinus5) {
+                if (imageQuiRepresentlaCouleurPasDeNom) {
                     A_CouleurNomNonDefinie(
                         mainItem = product,
                         modifier = Modifier.fillMaxWidth(),
                         onCLickOnMain = {
                             expandedItemId = if (expandedItemId == product.id)
                                 null else product.id
-                        }
+                        },
+                        nom = product.nom,
+                        id = product.id
                     )
                 } else {
                     D_MainItem_Fid2(
@@ -114,7 +116,8 @@ fun MainList_F2(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
-                        onCLickOnMain = { expandedItemId = null }
+                        onCLickOnMain = { expandedItemId = null },
+                        imageQuiRepresentlaCouleurPasDeNom=imageQuiRepresentlaCouleurPasDeNom
                     )
                 }
             }

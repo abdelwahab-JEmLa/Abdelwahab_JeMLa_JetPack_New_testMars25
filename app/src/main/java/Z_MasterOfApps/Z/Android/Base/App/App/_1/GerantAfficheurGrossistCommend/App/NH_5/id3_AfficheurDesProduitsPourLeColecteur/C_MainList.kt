@@ -196,10 +196,10 @@ private fun ProductItem(
 ) {
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         // Check if any color has an ID less than or equal to 4
-        val hasColorWithIdLessOrEqual4 = product.statuesBase.coloursEtGoutsIds
+        val imageQuiRepresentlaCouleurPasDeNom = product.statuesBase.coloursEtGoutsIds
             .any { it <= 4L }
 
-        if (hasColorWithIdLessOrEqual4 && product.bonCommendDeCetteCota?.coloursEtGoutsCommendee?.any { it.quantityAchete > 0 } == true) {
+        if (imageQuiRepresentlaCouleurPasDeNom && product.bonCommendDeCetteCota?.coloursEtGoutsCommendee?.any { it.quantityAchete > 0 } == true) {
             A_CouleurNomNonDifinie_FragID_3(
                 mainItem = product,
                 modifier = Modifier.fillMaxWidth(),
@@ -230,7 +230,8 @@ private fun ProductItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                onCLickOnMain = { onExpandedItemIdChange(null) }
+                onCLickOnMain = { onExpandedItemIdChange(null) } ,
+                imageQuiRepresentlaCouleurPasDeNom=imageQuiRepresentlaCouleurPasDeNom
             )
         }
     }
