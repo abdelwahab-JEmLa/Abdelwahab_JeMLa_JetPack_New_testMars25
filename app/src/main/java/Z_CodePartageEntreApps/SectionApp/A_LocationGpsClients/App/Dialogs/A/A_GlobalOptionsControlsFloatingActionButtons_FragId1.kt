@@ -1,6 +1,5 @@
 package Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.A
 
-import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.Utils.A_ChangeIdColor
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.Utils.AddMarkerButton
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.Utils.ClearHistoryButton
@@ -10,6 +9,7 @@ import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.Utils.
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.Utils.rememberLocationTracker
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Extension.ViewModelExtension_App2_F1
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Extension.VisbleClientsNow
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z.Android.A.Main.Utils.LottieJsonGetterR_Raw_Icons
 import Z_MasterOfApps.Z.Android.A.Main.Utils.XmlsFilesHandler.Companion.xmlResources
 import Z_MasterOfApps.Z_AppsFather.Kotlin.Partage.Views.AnimatedIconLottieJsonFile

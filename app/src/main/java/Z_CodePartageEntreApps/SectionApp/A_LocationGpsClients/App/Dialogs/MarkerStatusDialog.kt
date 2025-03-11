@@ -3,9 +3,9 @@ package Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs
 import Z_CodePartageEntreApps.Model.B_ClientsDataBase
 import Z_CodePartageEntreApps.Model.B_ClientsDataBase.Companion.updateClientsDataBase
 import Z_CodePartageEntreApps.Model._ModelAppsFather
-import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Extension.Utils.updateLongAppSetting
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Extension.ViewModelExtension_App2_F1
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

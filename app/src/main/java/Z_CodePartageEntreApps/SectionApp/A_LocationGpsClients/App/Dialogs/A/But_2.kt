@@ -1,8 +1,8 @@
 package Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Dialogs.A
 
-import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Extension.ViewModelExtension_App2_F1
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.Extension.VisbleClientsNow
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 

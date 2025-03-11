@@ -1,8 +1,8 @@
 package Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.A
 
-import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.LocationTracker
-import Z_MasterOfApps.Z.Android.Main.Utils.LottieJsonGetterR_Raw_Icons
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.A.Main.Utils.LottieJsonGetterR_Raw_Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

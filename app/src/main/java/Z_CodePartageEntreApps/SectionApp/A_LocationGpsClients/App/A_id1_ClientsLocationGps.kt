@@ -1,5 +1,7 @@
 package Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App
 
+import Z_CodePartageEntreApps.Model.B_ClientsDataBase
+import Z_CodePartageEntreApps.Model.B_ClientsDataBase.Companion.updateClientsDataBase
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.A.A_GlobalOptionsControlsFloatingActionButtons_FragId1
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.MarkerStatusDialog
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.DEFAULT_LATITUDE
@@ -7,10 +9,8 @@ import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Util
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.getCurrentLocation
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.ViewModel.Extension.ViewModelExtension_App2_F1
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.ViewModel.Extension.VisbleClientsNow
-import Z_CodePartageEntreApps.Model.B_ClientsDataBase
-import Z_CodePartageEntreApps.Model.B_ClientsDataBase.Companion.updateClientsDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
-import Z_MasterOfApps.Z.Android.Main.Utils.XmlsFilesHandler.Companion.xmlResources
+import Z_MasterOfApps.Z.Android.A.Main.Utils.XmlsFilesHandler.Companion.xmlResources
 import android.content.Context
 import android.widget.LinearLayout
 import androidx.compose.foundation.background

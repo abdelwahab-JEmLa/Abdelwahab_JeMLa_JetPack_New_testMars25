@@ -1,6 +1,5 @@
 package Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.A
 
-import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.A_ChangeIdColor
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.AddMarkerButton
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.ClearHistoryButton
@@ -10,8 +9,9 @@ import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Util
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.B.Dialogs.Utils.rememberLocationTracker
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.ViewModel.Extension.ViewModelExtension_App2_F1
 import Z_CodePartageEntreApps.SectionApp.A_LocationGpsClients.App.ViewModel.Extension.VisbleClientsNow
-import Z_MasterOfApps.Z.Android.Main.Utils.LottieJsonGetterR_Raw_Icons
-import Z_MasterOfApps.Z.Android.Main.Utils.XmlsFilesHandler.Companion.xmlResources
+import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
+import Z_MasterOfApps.Z.Android.A.Main.Utils.LottieJsonGetterR_Raw_Icons
+import Z_MasterOfApps.Z.Android.A.Main.Utils.XmlsFilesHandler.Companion.xmlResources
 import Z_MasterOfApps.Z_AppsFather.Kotlin.Partage.Views.AnimatedIconLottieJsonFile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
