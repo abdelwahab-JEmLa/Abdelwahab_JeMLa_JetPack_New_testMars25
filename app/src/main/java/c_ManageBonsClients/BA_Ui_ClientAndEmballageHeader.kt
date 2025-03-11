@@ -1,6 +1,6 @@
 package c_ManageBonsClients
 
-import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
+import Z_CodePartageEntreApps.Model.B_ClientsDataBase
 import a_MainAppCompnents.ArticlesAcheteModele
 import a_MainAppCompnents.HeadOfViewModels
 import android.annotation.SuppressLint

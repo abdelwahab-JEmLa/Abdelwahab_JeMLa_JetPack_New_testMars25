@@ -1,12 +1,12 @@
 package Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners
 
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
-import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
-import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
-import Z_MasterOfApps.Kotlin.Model.D_CouleursEtGoutesProduitsInfos
-import Z_MasterOfApps.Kotlin.Model.E_AppsOptionsStates
-import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
+import Z_CodePartageEntreApps.Model.A_ProduitModel
+import Z_CodePartageEntreApps.Model.B_ClientsDataBase
+import Z_CodePartageEntreApps.Model.C_GrossistsDataBase
+import Z_CodePartageEntreApps.Model.D_CouleursEtGoutesProduitsInfos
+import Z_CodePartageEntreApps.Model.E_AppsOptionsStates
+import Z_CodePartageEntreApps.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import android.util.Log
 import com.google.firebase.database.DataSnapshot
@@ -212,13 +212,15 @@ object CurrentModels {
 
                         val grossistsNode = snapshot.child("C_GrossistsDataBase")
                         if (!grossistsNode.exists()) {
-                            grossists.add(C_GrossistsDataBase(
+                            grossists.add(
+                                C_GrossistsDataBase(
                                 id = 1,
                                 nom = "Default Grossist",
                                 statueDeBase = C_GrossistsDataBase.StatueDeBase(
                                     cUnClientTemporaire = true
                                 )
-                            ))
+                            )
+                            )
                         } else {
                             grossistsNode.children.forEach { grossistSnapshot ->
                                 try {

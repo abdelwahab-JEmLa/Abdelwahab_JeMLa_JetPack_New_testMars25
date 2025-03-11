@@ -1,7 +1,7 @@
 // ParamatersAppsModel.kt
 package Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
+import Z_CodePartageEntreApps.Model.A_ProduitModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue

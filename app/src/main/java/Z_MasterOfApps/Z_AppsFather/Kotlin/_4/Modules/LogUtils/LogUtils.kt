@@ -1,7 +1,7 @@
 // LogUtils.kt
 package Z_MasterOfApps.Z_AppsFather.Kotlin._4.Modules.LogUtils
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
+import Z_CodePartageEntreApps.Model.A_ProduitModel
 
 object LogUtils {
     private const val APP_TAG = "MasterOfApps"

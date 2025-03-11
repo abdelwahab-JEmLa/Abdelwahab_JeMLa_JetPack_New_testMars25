@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z_AppsFather.Kotlin._4.Modules
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
-import Z_MasterOfApps.Kotlin.Model._ModelAppsFather.Companion.imagesProduitsLocalExternalStorageBasePath
+import Z_CodePartageEntreApps.Model.A_ProduitModel
+import Z_CodePartageEntreApps.Model._ModelAppsFather.Companion.imagesProduitsLocalExternalStorageBasePath
 import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.compose.foundation.layout.Box

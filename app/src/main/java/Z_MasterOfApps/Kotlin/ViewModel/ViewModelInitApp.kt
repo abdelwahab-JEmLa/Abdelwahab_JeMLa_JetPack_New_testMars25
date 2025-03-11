@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Kotlin.ViewModel
 
 import Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.ViewModel.ExtensionVM_A4FragID_1
-import Z_MasterOfApps.Kotlin.Model._ModelAppsFather
+import Z_CodePartageEntreApps.Model._ModelAppsFather
 import Z_MasterOfApps.Kotlin.ViewModel.Init.A_FirebaseListeners.FromAncienDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
 import Z_MasterOfApps.Kotlin.ViewModel.Partage.Functions.FunctionsPartageEntreFragment

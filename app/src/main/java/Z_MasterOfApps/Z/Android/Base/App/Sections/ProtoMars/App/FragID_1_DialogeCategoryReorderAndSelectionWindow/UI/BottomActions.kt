@@ -1,6 +1,6 @@
 package Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI
 
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
+import Z_CodePartageEntreApps.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel.ViewModel_A4FragID1
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

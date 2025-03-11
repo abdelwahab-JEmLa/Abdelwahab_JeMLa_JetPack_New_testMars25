@@ -1,7 +1,7 @@
 package Z.Views.FragID1.b2_Edite_Base_Donne_With_Creat_New_Articls.ViewModel
 
-import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
-import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories.Companion.caReference
+import Z_CodePartageEntreApps.Model.H_GroupeCategories
+import Z_CodePartageEntreApps.Model.H_GroupeCategories.Companion.caReference
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

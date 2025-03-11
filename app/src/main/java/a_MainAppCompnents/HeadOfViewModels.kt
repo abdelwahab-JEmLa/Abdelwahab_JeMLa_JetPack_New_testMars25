@@ -1,6 +1,6 @@
 package a_MainAppCompnents
 
-import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
+import Z_CodePartageEntreApps.Model.B_ClientsDataBase
 import Z_MasterOfApps.Kotlin.ViewModel.Init.B_Load.loadData
 import Z_MasterOfApps.Kotlin.ViewModel.ViewModelInitApp
 import Z_MasterOfApps.Z_AppsFather.Kotlin._1.Model.Archives.CategoriesTabelleECB

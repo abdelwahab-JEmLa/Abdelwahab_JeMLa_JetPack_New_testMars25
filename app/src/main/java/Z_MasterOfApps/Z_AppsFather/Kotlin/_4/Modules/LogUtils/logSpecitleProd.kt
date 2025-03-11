@@ -1,7 +1,7 @@
 package Z_MasterOfApps.Z_AppsFather.Kotlin._4.Modules.LogUtils
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModel
-import Z_MasterOfApps.Kotlin.Model.C_GrossistsDataBase
+import Z_CodePartageEntreApps.Model.A_ProduitModel
+import Z_CodePartageEntreApps.Model.C_GrossistsDataBase
 import android.content.ContentValues.TAG
 import android.util.Log
 

@@ -1,8 +1,8 @@
 package Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.B2.Windows
 
-import Z_MasterOfApps.Kotlin.Model.J_AppInstalleDonTelephone
-import Z_MasterOfApps.Kotlin.Model.J_AppInstalleDonTelephoneRepository
-import Z_MasterOfApps.Kotlin.Model.J_AppInstalleDonTelephoneRepositoryImpl
+import Z_CodePartageEntreApps.Model.J_AppInstalleDonTelephone
+import Z_CodePartageEntreApps.Model.J_AppInstalleDonTelephoneRepository
+import Z_CodePartageEntreApps.Model.J_AppInstalleDonTelephoneRepositoryImpl
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

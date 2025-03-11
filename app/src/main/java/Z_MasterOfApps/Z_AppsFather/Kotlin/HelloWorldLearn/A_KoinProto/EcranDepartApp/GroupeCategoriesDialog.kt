@@ -1,6 +1,6 @@
 package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp
 
-import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
+import Z_CodePartageEntreApps.Model.H_GroupeCategories
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn

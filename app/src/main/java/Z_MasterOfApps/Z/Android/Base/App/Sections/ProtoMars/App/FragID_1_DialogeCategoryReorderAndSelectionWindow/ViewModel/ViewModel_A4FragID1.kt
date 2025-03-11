@@ -1,9 +1,9 @@
 package Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.ViewModel
 
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
-import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
+import Z_CodePartageEntreApps.Model.A_ProduitModelRepository
+import Z_CodePartageEntreApps.Model.H_GroupesCategoriesRepository
+import Z_CodePartageEntreApps.Model.I_CategoriesProduits
+import Z_CodePartageEntreApps.Model.I_CategoriesRepository
 import Z_MasterOfApps.Z.Android.A.Main.C_EcranDeDepart.Startup.ViewModel.Init.InitDataBasesGenerateur
 import android.annotation.SuppressLint
 import android.util.Log

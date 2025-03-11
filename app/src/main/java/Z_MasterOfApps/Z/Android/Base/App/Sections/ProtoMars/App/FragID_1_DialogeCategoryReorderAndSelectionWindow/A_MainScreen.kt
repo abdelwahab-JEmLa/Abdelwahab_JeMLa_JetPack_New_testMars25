@@ -1,6 +1,6 @@
 package Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow
 
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
+import Z_CodePartageEntreApps.Model.I_CategoriesProduits
 import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI.BottonsActions
 import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI.SearchField_A4F1
 import Z_MasterOfApps.Z.Android.Base.App.Sections.ProtoMars.App.FragID_1_DialogeCategoryReorderAndSelectionWindow.UI.handleCategoryClick_F1

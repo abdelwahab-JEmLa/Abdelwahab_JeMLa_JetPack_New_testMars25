@@ -1,6 +1,6 @@
 package g_BoardStatistiques.f_2_CreditsClients
 
-import Z_MasterOfApps.Kotlin.Model.B_ClientsDataBase
+import Z_CodePartageEntreApps.Model.B_ClientsDataBase
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

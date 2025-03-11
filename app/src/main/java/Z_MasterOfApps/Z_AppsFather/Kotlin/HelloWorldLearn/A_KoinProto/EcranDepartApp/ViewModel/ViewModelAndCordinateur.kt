@@ -1,10 +1,10 @@
 package Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.ViewModel
 
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesProduits
-import Z_MasterOfApps.Kotlin.Model.I_CategoriesRepository
-import Z_MasterOfApps.Kotlin.Model.A_ProduitModelRepository
-import Z_MasterOfApps.Kotlin.Model.H_GroupeCategories
-import Z_MasterOfApps.Kotlin.Model.H_GroupesCategoriesRepository
+import Z_CodePartageEntreApps.Model.I_CategoriesProduits
+import Z_CodePartageEntreApps.Model.I_CategoriesRepository
+import Z_CodePartageEntreApps.Model.A_ProduitModelRepository
+import Z_CodePartageEntreApps.Model.H_GroupeCategories
+import Z_CodePartageEntreApps.Model.H_GroupesCategoriesRepository
 import Z_MasterOfApps.Z_AppsFather.Kotlin.HelloWorldLearn.A_KoinProto.EcranDepartApp.Navigator
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
